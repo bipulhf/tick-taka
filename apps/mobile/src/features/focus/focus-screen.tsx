@@ -7,6 +7,7 @@ import { AppState, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tiki } from "@/components/tiki/tiki";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useNow } from "@/features/timer/use-now";
 import { api, unwrap } from "@/lib/api";
@@ -136,9 +137,13 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
           <Text variant="label" tone="muted">
             {session?.phase === "break" ? "Break" : "Focus"}
           </Text>
-          <Text variant="heading" className="text-center" numberOfLines={2}>
-            {task.data?.title ?? "Deep work"}
-          </Text>
+          {linkedTaskId && task.data === undefined && !task.isError ? (
+            <Skeleton className="my-0.5 h-[22px] w-48" />
+          ) : (
+            <Text variant="heading" className="text-center" numberOfLines={2}>
+              {task.data?.title ?? "Deep work"}
+            </Text>
+          )}
         </View>
         <View className="items-center">
           <Plant growth={growth} drooping={drooping} />

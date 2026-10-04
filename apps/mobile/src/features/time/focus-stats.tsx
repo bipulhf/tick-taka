@@ -2,9 +2,12 @@ import { addDays, startOfLocalDay, startOfWeek, toLocalDate } from "@tick-taka/s
 import { useState } from "react";
 import { View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
+import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useAreas, useSettings } from "@/lib/queries";
@@ -34,45 +37,68 @@ export function FocusStats() {
   }));
   return (
     <Screen title="Focus" subtitle={`Week of ${formatLocalDate(weekStart)}`} tabBarPadding={false}>
-      <Card className="gap-1">
-        <Text variant="display" numeric>
-          {formatMinutes(stats.data?.totalMinutes ?? 0)}
-        </Text>
-        <Text tone="muted">{plural(stats.data?.sessions ?? 0, "focus session")}</Text>
-      </Card>
-      <Card>
-        <BarChart
-          data={bars}
-          barWidth={22}
-          spacing={18}
-          roundedTop
-          noOfSections={3}
-          yAxisThickness={0}
-          xAxisColor={colors.line}
-          yAxisTextStyle={{ color: colors.muted }}
-          xAxisLabelTextStyle={{ color: colors.muted }}
-          hideRules
-        />
-      </Card>
-      <Card className="gap-2">
-        <Text variant="label" tone="muted">
-          By area
-        </Text>
-        {(stats.data?.byArea ?? []).map((row) => {
-          const area = areas.find((a) => a.id === row.areaId);
-          return (
-            <View key={row.areaId ?? "none"} className="flex-row justify-between">
-              <Text>{area ? `${area.emoji} ${area.name}` : "No area"}</Text>
-              <Text variant="strong" numeric>
-                {formatMinutes(row.minutes)}
+      <AsyncContent
+        query={stats}
+        skeleton={
+          <>
+            <SkeletonCard hero lines={1} />
+            <Skeleton className="h-56 w-full rounded-3xl" />
+            <SkeletonCard lines={3} />
+          </>
+        }
+        isEmpty={(data) => data.sessions === 0}
+        empty={
+          <EmptyState
+            title="No focus sessions this week"
+            message="Each session lands here, so you can see where your deep work went."
+            mood="calm"
+          />
+        }
+      >
+        {() => (
+          <>
+            <Card className="gap-1">
+              <Text variant="display" numeric>
+                {formatMinutes(stats.data?.totalMinutes ?? 0)}
               </Text>
-            </View>
-          );
-        })}
-        {stats.data?.byArea.length === 0 ? (
-          <Text tone="muted">No focus sessions this week.</Text>
-        ) : null}
-      </Card>
+              <Text tone="muted">{plural(stats.data?.sessions ?? 0, "focus session")}</Text>
+            </Card>
+            <Card>
+              <BarChart
+                data={bars}
+                barWidth={22}
+                spacing={18}
+                roundedTop
+                noOfSections={3}
+                yAxisThickness={0}
+                xAxisColor={colors.line}
+                yAxisTextStyle={{ color: colors.muted }}
+                xAxisLabelTextStyle={{ color: colors.muted }}
+                hideRules
+              />
+            </Card>
+            <Card className="gap-2">
+              <Text variant="label" tone="muted">
+                By area
+              </Text>
+              {(stats.data?.byArea ?? []).map((row) => {
+                const area = areas.find((a) => a.id === row.areaId);
+                return (
+                  <View key={row.areaId ?? "none"} className="flex-row justify-between">
+                    <Text>{area ? `${area.emoji} ${area.name}` : "No area"}</Text>
+                    <Text variant="strong" numeric>
+                      {formatMinutes(row.minutes)}
+                    </Text>
+                  </View>
+                );
+              })}
+              {stats.data?.byArea.length === 0 ? (
+                <Text tone="muted">No focus sessions this week.</Text>
+              ) : null}
+            </Card>
+          </>
+        )}
+      </AsyncContent>
       <View className="flex-row gap-2">
         <Button
           label="Earlier"

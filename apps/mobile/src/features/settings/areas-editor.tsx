@@ -1,11 +1,14 @@
 import { newId } from "@tick-taka/shared/ids";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { notify } from "@/lib/notify";
@@ -19,8 +22,10 @@ const BUCKET_LABEL = { flexible: "Flexible", fixed: "Fixed", non_monthly: "Non-m
 /** Rename areas, give them a colour and emoji; add categories and pick their bucket. */
 export function AreasEditor() {
   const send = useOutbox();
-  const { data: areas = [] } = useAreas();
-  const { data: categories = [] } = useCategories();
+  const areasQuery = useAreas();
+  const categoriesQuery = useCategories();
+  const areas = areasQuery.data ?? [];
+  const categories = categoriesQuery.data ?? [];
   const [names, setNames] = useState<Record<string, string>>({});
   const [newArea, setNewArea] = useState("");
   const [newCategory, setNewCategory] = useState("");
@@ -30,47 +35,58 @@ export function AreasEditor() {
   return (
     <Screen title="Areas & categories" tabBarPadding={false}>
       <Section title="Areas">
-        {areas.map((area) => (
-          <Card key={area.id} className="gap-2">
-            <View className="flex-row gap-2">
-              <TextField
-                value={area.emoji}
-                onChangeText={(emoji) =>
-                  emoji && send({ method: "PATCH", path: `/areas/${area.id}`, body: { emoji } })
-                }
-                className="w-16"
-              />
-              <TextField
-                value={names[area.id] ?? area.name}
-                onChangeText={(v) => setNames((n) => ({ ...n, [area.id]: v }))}
-                onEndEditing={() =>
-                  names[area.id]?.trim() &&
-                  send({
-                    method: "PATCH",
-                    path: `/areas/${area.id}`,
-                    body: { name: names[area.id]?.trim() },
-                  })
-                }
-                className="flex-1"
-              />
-            </View>
-            <View className="flex-row gap-2">
-              {COLORS.map((color) => (
-                <Pressable
-                  key={color}
-                  onPress={() =>
-                    send({ method: "PATCH", path: `/areas/${area.id}`, body: { color } })
-                  }
-                  accessibilityLabel={`Colour ${color}`}
-                  className="h-10 w-10 items-center justify-center rounded-full"
-                  style={{ backgroundColor: color }}
-                >
-                  {area.color === color ? <Text tone="inverse">✓</Text> : null}
-                </Pressable>
-              ))}
-            </View>
-          </Card>
-        ))}
+        <AsyncContent
+          query={areasQuery}
+          skeleton={<SkeletonList rows={3} />}
+          isEmpty={(data) => data.length === 0}
+          empty={
+            <EmptyState title="No areas yet" message="Add one below, like Work, Home or Health." />
+          }
+        >
+          {() =>
+            areas.map((area) => (
+              <Card key={area.id} className="gap-2">
+                <View className="flex-row gap-2">
+                  <TextField
+                    value={area.emoji}
+                    onChangeText={(emoji) =>
+                      emoji && send({ method: "PATCH", path: `/areas/${area.id}`, body: { emoji } })
+                    }
+                    className="w-16"
+                  />
+                  <TextField
+                    value={names[area.id] ?? area.name}
+                    onChangeText={(v) => setNames((n) => ({ ...n, [area.id]: v }))}
+                    onEndEditing={() =>
+                      names[area.id]?.trim() &&
+                      send({
+                        method: "PATCH",
+                        path: `/areas/${area.id}`,
+                        body: { name: names[area.id]?.trim() },
+                      })
+                    }
+                    className="flex-1"
+                  />
+                </View>
+                <View className="flex-row gap-2">
+                  {COLORS.map((color) => (
+                    <Pressable
+                      key={color}
+                      onPress={() =>
+                        send({ method: "PATCH", path: `/areas/${area.id}`, body: { color } })
+                      }
+                      accessibilityLabel={`Colour ${color}`}
+                      className="h-10 w-10 items-center justify-center rounded-full"
+                      style={{ backgroundColor: color }}
+                    >
+                      {area.color === color ? <Text tone="inverse">✓</Text> : null}
+                    </Pressable>
+                  ))}
+                </View>
+              </Card>
+            ))
+          }
+        </AsyncContent>
         <View className="flex-row gap-2">
           <TextField
             value={newArea}
@@ -99,37 +115,51 @@ export function AreasEditor() {
         </View>
       </Section>
       <Section title="Expense categories">
-        <Card className="gap-2">
-          {parents.map((category) => (
-            <View key={category.id} className="gap-1">
-              <View className="flex-row items-center justify-between gap-2">
-                <Text className="flex-1">
-                  {category.emoji} {category.name}
-                </Text>
-                <Chip
-                  label={BUCKET_LABEL[category.budgetType]}
-                  onPress={() =>
-                    send({
-                      method: "PATCH",
-                      path: `/categories/${category.id}`,
-                      body: {
-                        budgetType:
-                          BUCKETS[(BUCKETS.indexOf(category.budgetType) + 1) % BUCKETS.length],
-                      },
-                    })
-                  }
-                />
-              </View>
-              {categories
-                .filter((c) => c.parentId === category.id)
-                .map((child) => (
-                  <Text key={child.id} variant="caption" tone="muted" className="pl-6">
-                    › {child.emoji} {child.name}
-                  </Text>
-                ))}
-            </View>
-          ))}
-        </Card>
+        <AsyncContent
+          query={categoriesQuery}
+          skeleton={<SkeletonList rows={4} leading="none" trailing />}
+          isEmpty={() => parents.length === 0}
+          empty={
+            <EmptyState
+              title="No categories yet"
+              message="Add one below to start sorting your spending."
+            />
+          }
+        >
+          {() => (
+            <Card className="gap-2">
+              {parents.map((category) => (
+                <View key={category.id} className="gap-1">
+                  <View className="flex-row items-center justify-between gap-2">
+                    <Text className="flex-1">
+                      {category.emoji} {category.name}
+                    </Text>
+                    <Chip
+                      label={BUCKET_LABEL[category.budgetType]}
+                      onPress={() =>
+                        send({
+                          method: "PATCH",
+                          path: `/categories/${category.id}`,
+                          body: {
+                            budgetType:
+                              BUCKETS[(BUCKETS.indexOf(category.budgetType) + 1) % BUCKETS.length],
+                          },
+                        })
+                      }
+                    />
+                  </View>
+                  {categories
+                    .filter((c) => c.parentId === category.id)
+                    .map((child) => (
+                      <Text key={child.id} variant="caption" tone="muted" className="pl-6">
+                        › {child.emoji} {child.name}
+                      </Text>
+                    ))}
+                </View>
+              ))}
+            </Card>
+          )}
+        </AsyncContent>
         <TextField
           value={newCategory}
           onChangeText={setNewCategory}

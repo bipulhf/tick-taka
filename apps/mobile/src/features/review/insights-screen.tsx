@@ -4,10 +4,13 @@ import { useState } from "react";
 import { View } from "react-native";
 import { BarChart, LineChart } from "react-native-gifted-charts";
 import { Amount } from "@/components/ui/amount";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { Segmented } from "@/components/ui/segmented";
+import { Skeleton, SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useInsights } from "@/features/money/queries";
 import { formatMinutes, formatMonth } from "@/lib/format";
@@ -74,6 +77,11 @@ export function InsightsScreen() {
     );
   const ranked = [...byParent.entries()].sort((a, b) => b[1] - a[1]);
   const top = ranked[0]?.[1] ?? 1;
+  const areaStats = (areaId: string) => ({
+    spent: data?.spendingByArea.find((r) => r.areaId === areaId)?.amountMinor ?? 0,
+    hours: data?.hoursByArea.find((r) => r.areaId === areaId)?.minutes ?? 0,
+    rate: data?.hourlyRates.find((r) => r.areaId === areaId)?.rateMinor ?? null,
+  });
 
   const monthBars = (series.data ?? []).flatMap((m) => [
     {
@@ -107,141 +115,187 @@ export function InsightsScreen() {
           { value: "quarter", label: "3 months" },
         ]}
       />
-      {data ? (
-        <View className="flex-row gap-2">
-          <Card className="flex-1">
-            <Text variant="label" tone="muted">
-              In
-            </Text>
-            <Amount minor={data.totals.incomeMinor} variant="heading" />
-          </Card>
-          <Card className="flex-1">
-            <Text variant="label" tone="muted">
-              Out
-            </Text>
-            <Amount minor={data.totals.spentMinor} variant="heading" />
-          </Card>
-          <Card className="flex-1">
-            <Text variant="label" tone="muted">
-              Net
-            </Text>
-            <Amount minor={data.totals.netMinor} variant="heading" signed />
-          </Card>
-        </View>
-      ) : null}
+      <AsyncContent query={summary} skeleton={<SkeletonCard lines={0} />}>
+        {(data) => (
+          <View className="flex-row gap-2">
+            <Card className="flex-1">
+              <Text variant="label" tone="muted">
+                In
+              </Text>
+              <Amount minor={data.totals.incomeMinor} variant="heading" />
+            </Card>
+            <Card className="flex-1">
+              <Text variant="label" tone="muted">
+                Out
+              </Text>
+              <Amount minor={data.totals.spentMinor} variant="heading" />
+            </Card>
+            <Card className="flex-1">
+              <Text variant="label" tone="muted">
+                Net
+              </Text>
+              <Amount minor={data.totals.netMinor} variant="heading" signed />
+            </Card>
+          </View>
+        )}
+      </AsyncContent>
       <Section title="Spending by category">
-        <Card className="gap-3">
-          {ranked.map(([id, amount]) => {
-            const category = categories.find((c) => c.id === id);
-            return (
-              <View
-                key={id ?? "none"}
-                className="gap-1"
-                accessible
-                accessibilityLabel={`${category?.name ?? "Uncategorised"}: ${formatAmount(amount)}`}
-              >
-                <View className="flex-row justify-between">
-                  <Text>{category ? `${category.emoji} ${category.name}` : "Uncategorised"}</Text>
-                  <Amount minor={amount} variant="strong" animate={false} />
-                </View>
-                <View className="h-2.5 flex-row overflow-hidden rounded-full bg-line">
+        <AsyncContent
+          query={summary}
+          skeleton={<SkeletonList rows={4} leading="none" trailing />}
+          isEmpty={() => ranked.length === 0}
+          empty={
+            <EmptyState
+              title="No spending in this range"
+              message="Spending you log in this period shows up here."
+              mood="relaxed"
+            />
+          }
+        >
+          {() => (
+            <Card className="gap-3">
+              {ranked.map(([id, amount]) => {
+                const category = categories.find((c) => c.id === id);
+                return (
                   <View
-                    style={{ width: `${(amount / top) * 100}%`, backgroundColor: chart.moneyOut }}
-                    className="rounded-full"
-                  />
-                </View>
-              </View>
-            );
-          })}
-          {ranked.length === 0 ? <Text tone="muted">No spending in this range.</Text> : null}
-        </Card>
+                    key={id ?? "none"}
+                    className="gap-1"
+                    accessible
+                    accessibilityLabel={`${category?.name ?? "Uncategorised"}: ${formatAmount(amount)}`}
+                  >
+                    <View className="flex-row justify-between">
+                      <Text>
+                        {category ? `${category.emoji} ${category.name}` : "Uncategorised"}
+                      </Text>
+                      <Amount minor={amount} variant="strong" animate={false} />
+                    </View>
+                    <View className="h-2.5 flex-row overflow-hidden rounded-full bg-line">
+                      <View
+                        style={{
+                          width: `${(amount / top) * 100}%`,
+                          backgroundColor: chart.moneyOut,
+                        }}
+                        className="rounded-full"
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </Card>
+          )}
+        </AsyncContent>
       </Section>
       <Section title="Income vs spending by month">
-        <Card className="gap-3">
-          <View className="flex-row gap-4">
-            <LegendDot color={chart.moneyIn} label="Income" />
-            <LegendDot color={chart.moneyOut} label="Spending" />
-          </View>
-          {hidden ? (
-            <Text tone="muted">Hidden in privacy mode.</Text>
-          ) : (
-            <BarChart
-              data={monthBars}
-              formatYLabel={compactLabel}
-              yAxisLabelWidth={44}
-              labelWidth={30}
-              barWidth={12}
-              spacing={18}
-              roundedTop
-              noOfSections={3}
-              hideRules={false}
-              {...axis}
-            />
+        <AsyncContent query={series} skeleton={<Skeleton className="h-56 w-full rounded-3xl" />}>
+          {() => (
+            <Card className="gap-3">
+              <View className="flex-row gap-4">
+                <LegendDot color={chart.moneyIn} label="Income" />
+                <LegendDot color={chart.moneyOut} label="Spending" />
+              </View>
+              {hidden ? (
+                <Text tone="muted">Hidden in privacy mode.</Text>
+              ) : (
+                <BarChart
+                  data={monthBars}
+                  formatYLabel={compactLabel}
+                  yAxisLabelWidth={44}
+                  labelWidth={30}
+                  barWidth={12}
+                  spacing={18}
+                  roundedTop
+                  noOfSections={3}
+                  hideRules={false}
+                  {...axis}
+                />
+              )}
+              {(series.data ?? []).map((m) => (
+                <View key={m.month} className="flex-row justify-between">
+                  <Text variant="caption" tone="muted">
+                    {formatMonth(m.month)}
+                  </Text>
+                  <Text variant="caption" numeric className="flex-1 text-right">
+                    {hidden
+                      ? "•••"
+                      : `${formatAmount(m.incomeMinor)} in · ${formatAmount(m.spentMinor)} out`}
+                  </Text>
+                </View>
+              ))}
+            </Card>
           )}
-          {(series.data ?? []).map((m) => (
-            <View key={m.month} className="flex-row justify-between">
-              <Text variant="caption" tone="muted">
-                {formatMonth(m.month)}
-              </Text>
-              <Text variant="caption" numeric className="flex-1 text-right">
-                {hidden
-                  ? "•••"
-                  : `${formatAmount(m.incomeMinor)} in · ${formatAmount(m.spentMinor)} out`}
-              </Text>
-            </View>
-          ))}
-        </Card>
+        </AsyncContent>
       </Section>
       <Section title="Net worth">
-        <Card className="gap-2">
-          {worthPoints.length && !hidden ? (
-            <LineChart
-              adjustToWidth
-              width={240}
-              data={worthPoints}
-              formatYLabel={compactLabel}
-              yAxisLabelWidth={44}
-              color={chart.moneyIn}
-              thickness={2}
-              hideDataPoints={false}
-              dataPointsColor={chart.moneyIn}
-              dataPointsRadius={4}
-              curved
-              noOfSections={3}
-              {...axis}
-            />
-          ) : null}
-          {worth.data ? (
-            <Amount minor={worth.data.series.at(-1)?.netWorthMinor ?? 0} variant="heading" />
-          ) : null}
-          {worth.data?.excludedAccounts.length ? (
-            <Text variant="caption" tone="muted">
-              Not counted (other currency):{" "}
-              {worth.data.excludedAccounts.map((a) => a.name).join(", ")}
-            </Text>
-          ) : null}
-        </Card>
+        <AsyncContent query={worth} skeleton={<Skeleton className="h-56 w-full rounded-3xl" />}>
+          {() => (
+            <Card className="gap-2">
+              {worthPoints.length && !hidden ? (
+                <LineChart
+                  adjustToWidth
+                  width={240}
+                  data={worthPoints}
+                  formatYLabel={compactLabel}
+                  yAxisLabelWidth={44}
+                  color={chart.moneyIn}
+                  thickness={2}
+                  hideDataPoints={false}
+                  dataPointsColor={chart.moneyIn}
+                  dataPointsRadius={4}
+                  curved
+                  noOfSections={3}
+                  {...axis}
+                />
+              ) : null}
+              {worth.data ? (
+                <Amount minor={worth.data.series.at(-1)?.netWorthMinor ?? 0} variant="heading" />
+              ) : null}
+              {worth.data?.excludedAccounts.length ? (
+                <Text variant="caption" tone="muted">
+                  Not counted (other currency):{" "}
+                  {worth.data.excludedAccounts.map((a) => a.name).join(", ")}
+                </Text>
+              ) : null}
+            </Card>
+          )}
+        </AsyncContent>
       </Section>
       <Section title="By area">
-        <Card className="gap-2">
-          {areas.map((area) => {
-            const spent = data?.spendingByArea.find((r) => r.areaId === area.id)?.amountMinor ?? 0;
-            const hours = data?.hoursByArea.find((r) => r.areaId === area.id)?.minutes ?? 0;
-            const rate = data?.hourlyRates.find((r) => r.areaId === area.id)?.rateMinor ?? null;
-            if (!spent && !hours && !rate) return null;
-            return (
-              <View key={area.id} className="flex-row items-center justify-between gap-2">
-                <Text className="flex-1">
-                  {area.emoji} {area.name}
-                </Text>
-                <Text variant="caption" tone="muted" numeric>
-                  {formatMinutes(hours)} · spent {hidden ? "•••" : formatAmount(spent)}
-                  {rate ? ` · ${hidden ? "•••" : formatAmount(rate)}/h` : ""}
-                </Text>
-              </View>
-            );
-          })}
-        </Card>
+        <AsyncContent
+          query={summary}
+          skeleton={<SkeletonList rows={3} leading="none" />}
+          isEmpty={() =>
+            areas.every((area) => {
+              const { spent, hours, rate } = areaStats(area.id);
+              return !spent && !hours && !rate;
+            })
+          }
+          empty={
+            <EmptyState
+              title="Nothing by area yet"
+              message="Tag time and spending with an area to compare them here."
+            />
+          }
+        >
+          {() => (
+            <Card className="gap-2">
+              {areas.map((area) => {
+                const { spent, hours, rate } = areaStats(area.id);
+                if (!spent && !hours && !rate) return null;
+                return (
+                  <View key={area.id} className="flex-row items-center justify-between gap-2">
+                    <Text className="flex-1">
+                      {area.emoji} {area.name}
+                    </Text>
+                    <Text variant="caption" tone="muted" numeric>
+                      {formatMinutes(hours)} · spent {hidden ? "•••" : formatAmount(spent)}
+                      {rate ? ` · ${hidden ? "•••" : formatAmount(rate)}/h` : ""}
+                    </Text>
+                  </View>
+                );
+              })}
+            </Card>
+          )}
+        </AsyncContent>
       </Section>
     </Screen>
   );

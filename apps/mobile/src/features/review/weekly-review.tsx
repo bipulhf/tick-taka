@@ -6,8 +6,10 @@ import { View } from "react-native";
 import { Tiki } from "@/components/tiki/tiki";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
+import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
@@ -39,7 +41,14 @@ export function WeeklyReview() {
   if (!data)
     return (
       <Screen title="Weekly review" tabBarPadding={false}>
-        <Text tone="muted">Loading…</Text>
+        {review.isError ? (
+          <ErrorState onRetry={() => void review.refetch()} />
+        ) : (
+          <>
+            <SkeletonCard lines={3} />
+            <SkeletonCard lines={2} />
+          </>
+        )}
       </Screen>
     );
   const area = (id: string | null) => areas.find((a) => a.id === id);
@@ -60,7 +69,14 @@ export function WeeklyReview() {
         ))}
       </View>
       <Text variant="heading">{STEPS[step]}</Text>
-      {step === 0 ? (
+      {step === 0 && data.hoursVsPlan.length === 0 ? (
+        <EmptyState
+          title="No hours this week"
+          message="Plan or track time this week and it shows up here."
+          mood="relaxed"
+        />
+      ) : null}
+      {step === 0 && data.hoursVsPlan.length > 0 ? (
         <Card className="gap-3">
           {data.hoursVsPlan.map((row) => (
             <View key={row.areaId ?? "none"} className="gap-1">
@@ -86,9 +102,6 @@ export function WeeklyReview() {
               />
             </View>
           ))}
-          {data.hoursVsPlan.length === 0 ? (
-            <Text tone="muted">No planned or tracked hours this week.</Text>
-          ) : null}
         </Card>
       ) : null}
       {step === 1 ? (
@@ -110,7 +123,15 @@ export function WeeklyReview() {
           })}
         </Card>
       ) : null}
-      {step === 2 ? (
+      {step === 2 && data.habits.length === 0 ? (
+        <EmptyState
+          title="No habits yet"
+          message="Start one small habit and its streak will show up here."
+          actionLabel="Add a habit"
+          onAction={() => router.push("/plan/habits")}
+        />
+      ) : null}
+      {step === 2 && data.habits.length > 0 ? (
         <Card className="gap-2">
           {data.habits.map((habit) => (
             <View key={habit.id} className="flex-row justify-between">
@@ -122,7 +143,6 @@ export function WeeklyReview() {
               </Text>
             </View>
           ))}
-          {data.habits.length === 0 ? <Text tone="muted">No habits yet.</Text> : null}
         </Card>
       ) : null}
       {step === 3 ? (

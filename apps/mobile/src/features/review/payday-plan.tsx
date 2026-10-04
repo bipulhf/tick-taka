@@ -4,10 +4,13 @@ import { formatAmount, parseAmountToMinor, toMajor } from "@tick-taka/shared/mon
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { useBudgets, useGoals } from "@/features/money/queries";
@@ -110,34 +113,52 @@ export function PaydayPlan() {
           {formatAmount(left)}
         </Text>
       </Card>
-      <Section title="Fixed">
-        <Card className="gap-2">
-          {lines
-            .filter((l) => l.budgetType === "fixed")
-            .map((l) => row(l.categoryId, `${l.emoji} ${l.name}`))}
-        </Card>
-      </Section>
-      <Section title="Non-monthly set-asides">
-        <Card className="gap-2">
-          {lines
-            .filter((l) => l.budgetType === "non_monthly")
-            .map((l) => row(l.categoryId, `${l.emoji} ${l.name}`))}
-        </Card>
-      </Section>
-      {jars.length ? (
-        <Section title="Savings jars">
-          <Card className="gap-2">
-            {jars.map((g) => row(`goal:${g.id}`, `${g.emoji} ${g.name}`))}
-          </Card>
-        </Section>
-      ) : null}
-      <Section title="Flexible">
-        <Card className="gap-2">
-          {lines
-            .filter((l) => l.budgetType === "flexible")
-            .map((l) => row(l.categoryId, `${l.emoji} ${l.name}`))}
-        </Card>
-      </Section>
+      <AsyncContent
+        query={budgets}
+        skeleton={<SkeletonList rows={4} leading="none" trailing />}
+        isEmpty={() => lines.length === 0}
+        empty={
+          <EmptyState
+            title="No categories yet"
+            message="Add a few spending categories to split your salary across them."
+            actionLabel="Add categories"
+            onAction={() => router.push("/settings/areas")}
+          />
+        }
+      >
+        {() => (
+          <>
+            <Section title="Fixed">
+              <Card className="gap-2">
+                {lines
+                  .filter((l) => l.budgetType === "fixed")
+                  .map((l) => row(l.categoryId, `${l.emoji} ${l.name}`))}
+              </Card>
+            </Section>
+            <Section title="Non-monthly set-asides">
+              <Card className="gap-2">
+                {lines
+                  .filter((l) => l.budgetType === "non_monthly")
+                  .map((l) => row(l.categoryId, `${l.emoji} ${l.name}`))}
+              </Card>
+            </Section>
+            {jars.length ? (
+              <Section title="Savings jars">
+                <Card className="gap-2">
+                  {jars.map((g) => row(`goal:${g.id}`, `${g.emoji} ${g.name}`))}
+                </Card>
+              </Section>
+            ) : null}
+            <Section title="Flexible">
+              <Card className="gap-2">
+                {lines
+                  .filter((l) => l.budgetType === "flexible")
+                  .map((l) => row(l.categoryId, `${l.emoji} ${l.name}`))}
+              </Card>
+            </Section>
+          </>
+        )}
+      </AsyncContent>
       <Button
         label={left === 0 ? "Save plan" : `Save with ${formatAmount(left)} unassigned`}
         onPress={save}

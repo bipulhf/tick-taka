@@ -1,11 +1,14 @@
 import { addDays, startOfLocalDay, startOfWeek, toLocalDate } from "@tick-taka/shared/dates";
 import { useState } from "react";
 import { Share, View } from "react-native";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatClock, formatLocalDate } from "@/lib/format";
@@ -93,21 +96,37 @@ export function LogbookList() {
           className="flex-1"
         />
       </View>
-      {byDay.size === 0 ? <Text tone="muted">Nothing finished this week yet.</Text> : null}
-      {[...byDay.entries()].map(([day, tasks]) => (
-        <Section key={day} title={formatLocalDate(day, "long")}>
-          <Card className="gap-2">
-            {tasks.map((task) => (
-              <View key={task.id} className="flex-row justify-between gap-3">
-                <Text className="flex-1">✓ {task.title}</Text>
-                <Text variant="caption" tone="muted" numeric>
-                  {formatClock(task.doneAt!, timeZone)}
-                </Text>
-              </View>
+      <AsyncContent
+        query={done}
+        skeleton={<SkeletonCard lines={3} />}
+        isEmpty={() => byDay.size === 0}
+        empty={
+          <EmptyState
+            title="Nothing finished this week yet"
+            message="Finished tasks gather here, so you can look back or share a timesheet."
+            mood="calm"
+          />
+        }
+      >
+        {() => (
+          <>
+            {[...byDay.entries()].map(([day, tasks]) => (
+              <Section key={day} title={formatLocalDate(day, "long")}>
+                <Card className="gap-2">
+                  {tasks.map((task) => (
+                    <View key={task.id} className="flex-row justify-between gap-3">
+                      <Text className="flex-1">✓ {task.title}</Text>
+                      <Text variant="caption" tone="muted" numeric>
+                        {formatClock(task.doneAt!, timeZone)}
+                      </Text>
+                    </View>
+                  ))}
+                </Card>
+              </Section>
             ))}
-          </Card>
-        </Section>
-      ))}
+          </>
+        )}
+      </AsyncContent>
     </Screen>
   );
 }

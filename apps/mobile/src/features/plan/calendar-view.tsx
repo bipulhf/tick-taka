@@ -13,11 +13,14 @@ import { nextOccurrence } from "@tick-taka/shared/recurrence";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
 import { Icon } from "@/components/ui/icon";
 import { Screen } from "@/components/ui/screen";
 import { Segmented } from "@/components/ui/segmented";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { formatLocalDate, formatMonth } from "@/lib/format";
@@ -154,29 +157,43 @@ export function CalendarView() {
         </View>
       </Card>
       <Text variant="heading">{formatLocalDate(selected, "long")}</Text>
-      {dayBills.map((bill) => (
-        <Card key={bill.id} className="flex-row items-center gap-3 py-3">
-          <Icon
-            name={bill.kind === "bill" ? "receipt" : "cash-plus"}
-            color={bill.kind === "bill" ? "coral" : "mint"}
+      <AsyncContent
+        query={tasks}
+        skeleton={<SkeletonList rows={3} />}
+        isEmpty={() => dayTasks.length === 0 && dayBills.length === 0}
+        empty={
+          <EmptyState
+            title="A free day"
+            message="Nothing planned or due. Enjoy the room to breathe."
+            mood="relaxed"
           />
-          <Text className="flex-1">{bill.name}</Text>
-          <Amount
-            minor={bill.amountMinor}
-            currency={bill.currency}
-            variant="strong"
-            animate={false}
-          />
-        </Card>
-      ))}
-      <Group inset={TASK_ROW_INSET}>
-        {dayTasks.map((task) => (
-          <TaskRow key={task.id} task={task} today={today} />
-        ))}
-      </Group>
-      {dayTasks.length === 0 && dayBills.length === 0 ? (
-        <Text tone="muted">A free day.</Text>
-      ) : null}
+        }
+      >
+        {() => (
+          <>
+            {dayBills.map((bill) => (
+              <Card key={bill.id} className="flex-row items-center gap-3 py-3">
+                <Icon
+                  name={bill.kind === "bill" ? "receipt" : "cash-plus"}
+                  color={bill.kind === "bill" ? "coral" : "mint"}
+                />
+                <Text className="flex-1">{bill.name}</Text>
+                <Amount
+                  minor={bill.amountMinor}
+                  currency={bill.currency}
+                  variant="strong"
+                  animate={false}
+                />
+              </Card>
+            ))}
+            <Group inset={TASK_ROW_INSET}>
+              {dayTasks.map((task) => (
+                <TaskRow key={task.id} task={task} today={today} />
+              ))}
+            </Group>
+          </>
+        )}
+      </AsyncContent>
     </Screen>
   );
 }

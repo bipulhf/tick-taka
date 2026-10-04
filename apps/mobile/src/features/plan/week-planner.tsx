@@ -8,9 +8,11 @@ import {
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Draggable, DragProvider, DropZone } from "@/components/ui/drag";
 import { Icon } from "@/components/ui/icon";
 import { Screen } from "@/components/ui/screen";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMinutes } from "@/lib/format";
 import { useSettings } from "@/lib/queries";
@@ -73,7 +75,9 @@ export function WeekPlanner() {
           <Text variant="label" tone="muted">
             Unscheduled · long-press to drag
           </Text>
-          {tray.length === 0 ? (
+          {unscheduled.data === undefined ? (
+            <Skeleton className="h-11 w-full rounded-xl" />
+          ) : tray.length === 0 ? (
             <Text variant="caption" tone="muted">
               Nothing waiting.
             </Text>
@@ -84,39 +88,46 @@ export function WeekPlanner() {
             </Draggable>
           ))}
         </DropZone>
-        {days.map((day) => {
-          const tasks = (week.data ?? []).filter(
-            (t) => t.doAt !== null && toLocalDate(t.doAt, timeZone) === day,
-          );
-          const planned = tasks
-            .filter((t) => t.status !== "done")
-            .reduce((sum, t) => sum + (t.estimateMin ?? 30), 0);
-          return (
-            <DropZone
-              key={day}
-              id={day}
-              className={`gap-2 rounded-2xl p-3 ${day === today ? "bg-sky/10" : "bg-card/60"}`}
-            >
-              <Pressable
-                onPress={() => router.push(`/plan/day?date=${day}`)}
-                className="flex-row items-center justify-between"
-                accessibilityRole="button"
-              >
-                <Text variant="strong" className="flex-1" numberOfLines={1}>
-                  {formatLocalDate(day, "long")}
-                </Text>
-                <Text variant="caption" tone={planned > capacity ? "coral" : "muted"} numeric>
-                  {formatMinutes(planned)} planned ›
-                </Text>
-              </Pressable>
-              {tasks.map((task) => (
-                <Draggable key={task.id} id={task.id}>
-                  <CompactTask task={task} />
-                </Draggable>
-              ))}
-            </DropZone>
-          );
-        })}
+        <AsyncContent
+          query={week}
+          skeleton={days.map((day) => <Skeleton key={day} className="h-16 w-full rounded-2xl" />)}
+        >
+          {() =>
+            days.map((day) => {
+              const tasks = (week.data ?? []).filter(
+                (t) => t.doAt !== null && toLocalDate(t.doAt, timeZone) === day,
+              );
+              const planned = tasks
+                .filter((t) => t.status !== "done")
+                .reduce((sum, t) => sum + (t.estimateMin ?? 30), 0);
+              return (
+                <DropZone
+                  key={day}
+                  id={day}
+                  className={`gap-2 rounded-2xl p-3 ${day === today ? "bg-sky/10" : "bg-card/60"}`}
+                >
+                  <Pressable
+                    onPress={() => router.push(`/plan/day?date=${day}`)}
+                    className="flex-row items-center justify-between"
+                    accessibilityRole="button"
+                  >
+                    <Text variant="strong" className="flex-1" numberOfLines={1}>
+                      {formatLocalDate(day, "long")}
+                    </Text>
+                    <Text variant="caption" tone={planned > capacity ? "coral" : "muted"} numeric>
+                      {formatMinutes(planned)} planned ›
+                    </Text>
+                  </Pressable>
+                  {tasks.map((task) => (
+                    <Draggable key={task.id} id={task.id}>
+                      <CompactTask task={task} />
+                    </Draggable>
+                  ))}
+                </DropZone>
+              );
+            })
+          }
+        </AsyncContent>
       </Screen>
     </DragProvider>
   );

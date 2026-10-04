@@ -3,6 +3,7 @@ import { SPARKS } from "@tick-taka/shared/gamification";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { haptic } from "@/lib/haptics";
@@ -99,9 +100,13 @@ export function HabitChips({ data }: { data: TodayData }) {
   return (
     <Section title="Habits" action="All" onAction={() => router.push("/plan/habits")}>
       {data.habits.length === 0 ? (
-        <Pressable onPress={() => router.push("/plan/habits")} className="px-1">
-          <Text tone="muted">Add a small habit, like water or a walk.</Text>
-        </Pressable>
+        <EmptyState
+          icon="repeat"
+          title="No habits yet"
+          message="Start small, like water or a walk."
+          actionLabel="Add"
+          onAction={() => router.push("/plan/habits")}
+        />
       ) : (
         <ScrollView
           horizontal

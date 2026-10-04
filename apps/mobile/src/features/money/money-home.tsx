@@ -3,6 +3,7 @@ import type { AccountType } from "@tick-taka/shared/schemas/money";
 import { useRouter } from "expo-router";
 import { View } from "react-native";
 import { Amount } from "@/components/ui/amount";
+import { AsyncContent } from "@/components/ui/async-content";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
 import type { IconName } from "@/components/ui/icon";
@@ -10,6 +11,7 @@ import { ListRow } from "@/components/ui/list-row";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { ShortcutRow } from "@/components/ui/shortcut-row";
+import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
@@ -50,37 +52,49 @@ export function MoneyHome() {
         <Text variant="callout" tone="muted">
           All accounts
         </Text>
-        <Amount minor={total} currency={currency} variant="hero" />
+        {accounts.data ? (
+          <Amount minor={total} currency={currency} variant="hero" />
+        ) : (
+          <Skeleton className="mt-1 h-11 w-1/2 rounded-2xl" />
+        )}
       </View>
-      {list.length === 0 ? (
-        <EmptyState
-          message="Add your accounts: cash, bKash, bank, cards."
-          actionLabel="Add an account"
-          onAction={() => router.push("/account/new")}
-        />
-      ) : (
-        <Group inset={60}>
-          {list.map((account) => (
-            <ListRow
-              key={account.id}
-              emoji={account.icon ?? undefined}
-              icon={ACCOUNT_ICON[account.type]}
-              iconColor="mint"
-              title={account.name}
-              onPress={() => router.push(`/money/transactions?accountId=${account.id}`)}
-              right={
-                <Amount
-                  minor={account.balanceMinor}
-                  currency={account.currency}
-                  variant="strong"
-                  animate={false}
-                  tone={account.balanceMinor < 0 ? "coral" : "ink"}
-                />
-              }
-            />
-          ))}
-        </Group>
-      )}
+      <AsyncContent
+        query={accounts}
+        skeleton={<SkeletonList rows={3} trailing />}
+        isEmpty={(data) => data.length === 0}
+        empty={
+          <EmptyState
+            title="No accounts yet"
+            message="Add where your money lives: cash, bKash, bank, cards."
+            actionLabel="Add an account"
+            onAction={() => router.push("/account/new")}
+          />
+        }
+      >
+        {() => (
+          <Group inset={60}>
+            {list.map((account) => (
+              <ListRow
+                key={account.id}
+                emoji={account.icon ?? undefined}
+                icon={ACCOUNT_ICON[account.type]}
+                iconColor="mint"
+                title={account.name}
+                onPress={() => router.push(`/money/transactions?accountId=${account.id}`)}
+                right={
+                  <Amount
+                    minor={account.balanceMinor}
+                    currency={account.currency}
+                    variant="strong"
+                    animate={false}
+                    tone={account.balanceMinor < 0 ? "coral" : "ink"}
+                  />
+                }
+              />
+            ))}
+          </Group>
+        )}
+      </AsyncContent>
       <ShortcutRow
         items={[
           {
@@ -122,17 +136,29 @@ export function MoneyHome() {
         </Group>
       ) : null}
       <Section title="Recent" action="All" onAction={() => router.push("/money/transactions")}>
-        {items.length === 0 ? (
-          <Text tone="muted">No transactions yet. Try “lunch 250” in quick-add.</Text>
-        ) : (
-          <Group inset={60}>
-            {items.map((tx) => (
-              <View key={tx.id} className="px-4">
-                <TransactionRow tx={tx} lookup={lookup} />
-              </View>
-            ))}
-          </Group>
-        )}
+        <AsyncContent
+          query={recent}
+          skeleton={<SkeletonList rows={4} trailing />}
+          isEmpty={() => items.length === 0}
+          empty={
+            <EmptyState
+              title="No transactions yet"
+              message="Log one in seconds: try “lunch 250” in quick-add, or tell Tiki."
+              actionLabel="Add one"
+              onAction={() => router.push("/add?kind=expense")}
+            />
+          }
+        >
+          {() => (
+            <Group inset={60}>
+              {items.map((tx) => (
+                <View key={tx.id} className="px-4">
+                  <TransactionRow tx={tx} lookup={lookup} />
+                </View>
+              ))}
+            </Group>
+          )}
+        </AsyncContent>
       </Section>
       <Section title="More">
         <Group inset={60}>

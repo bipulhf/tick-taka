@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { celebrate } from "@/components/ui/confetti";
+import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
+import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { useNow } from "@/features/timer/use-now";
@@ -144,7 +146,14 @@ export function RoutineRunner({ id, startInEdit }: { id: string; startInEdit: bo
   if (!routine)
     return (
       <Screen title="Routine" tabBarPadding={false}>
-        <Text tone="muted">Loading…</Text>
+        {routines.isError ? (
+          <ErrorState onRetry={() => void routines.refetch()} />
+        ) : (
+          <>
+            <Skeleton className="h-2.5 w-full" />
+            <SkeletonList rows={4} />
+          </>
+        )}
       </Screen>
     );
   return (
@@ -165,6 +174,14 @@ export function RoutineRunner({ id, startInEdit }: { id: string; startInEdit: bo
       ) : (
         <>
           <ProgressBar value={total ? checked.size / total : 0} tone="grape" />
+          {total === 0 ? (
+            <EmptyState
+              title="No steps yet"
+              message="Add a few small steps and this routine runs itself."
+              actionLabel="Add steps"
+              onAction={() => setEditing(true)}
+            />
+          ) : null}
           {routine.steps.map((step) => (
             <Card key={step.id} className="flex-row items-center gap-2 py-1 pl-1">
               <Checkbox

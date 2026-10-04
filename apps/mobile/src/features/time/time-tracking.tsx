@@ -3,11 +3,14 @@ import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useNow } from "@/features/timer/use-now";
 import { formatClock, formatLocalDate, formatMinutes, formatTimer } from "@/lib/format";
@@ -61,83 +64,104 @@ export function TimeTracking() {
         />
       }
     >
-      <Card className="gap-3">
-        {active ? (
-          <>
-            <Text variant="label" tone="muted">
-              Running
-            </Text>
-            <Text variant="display" numeric>
-              {formatTimer(now - active.startedAt)}
-            </Text>
-            <Text tone="muted">{areas.find((a) => a.id === active.areaId)?.name ?? "No area"}</Text>
-            <Button
-              label="Stop"
-              variant="secondary"
-              icon="stop"
-              onPress={() =>
-                send({
-                  method: "POST",
-                  path: "/timer/stop",
-                  body: { endedAt: Date.now() },
-                  label: "Couldn't stop",
-                })
-              }
-            />
-          </>
-        ) : (
-          <>
-            <View className="flex-row flex-wrap gap-2">
-              {areas.map((area) => (
-                <Chip
-                  key={area.id}
-                  label={`${area.emoji} ${area.name}`}
-                  tone="sky"
-                  selected={areaId === area.id}
-                  onPress={() => setAreaId(areaId === area.id ? null : area.id)}
+      <AsyncContent query={running} skeleton={<SkeletonCard hero lines={1} />}>
+        {() => (
+          <Card className="gap-3">
+            {active ? (
+              <>
+                <Text variant="label" tone="muted">
+                  Running
+                </Text>
+                <Text variant="display" numeric>
+                  {formatTimer(now - active.startedAt)}
+                </Text>
+                <Text tone="muted">
+                  {areas.find((a) => a.id === active.areaId)?.name ?? "No area"}
+                </Text>
+                <Button
+                  label="Stop"
+                  variant="secondary"
+                  icon="stop"
+                  onPress={() =>
+                    send({
+                      method: "POST",
+                      path: "/timer/stop",
+                      body: { endedAt: Date.now() },
+                      label: "Couldn't stop",
+                    })
+                  }
                 />
-              ))}
-            </View>
-            <Chip
-              label={billable ? "Billable" : "Not billable"}
-              tone="mint"
-              selected={billable}
-              onPress={() => setBillable(!billable)}
-            />
-            <Button
-              label="Start timer"
-              variant="time"
-              icon="play"
-              onPress={() => {
-                send({
-                  method: "POST",
-                  path: "/timer/start",
-                  body: { id: newId(), areaId, billable, source: "timer" },
-                  label: "Couldn't start",
-                });
-                notify("Timer started");
-              }}
-            />
-          </>
-        )}
-      </Card>
-      <Section title="This week by area">
-        <Card className="gap-2">
-          {[...byArea.entries()]
-            .sort((a, b) => b[1] - a[1])
-            .map(([id, minutes]) => {
-              const area = areas.find((a) => a.id === id);
-              return (
-                <View key={id ?? "none"} className="flex-row justify-between">
-                  <Text>{area ? `${area.emoji} ${area.name}` : "No area"}</Text>
-                  <Text variant="strong" numeric>
-                    {formatMinutes(minutes)}
-                  </Text>
+              </>
+            ) : (
+              <>
+                <View className="flex-row flex-wrap gap-2">
+                  {areas.map((area) => (
+                    <Chip
+                      key={area.id}
+                      label={`${area.emoji} ${area.name}`}
+                      tone="sky"
+                      selected={areaId === area.id}
+                      onPress={() => setAreaId(areaId === area.id ? null : area.id)}
+                    />
+                  ))}
                 </View>
-              );
-            })}
-          {byArea.size === 0 ? <Text tone="muted">No time tracked yet this week.</Text> : null}
-        </Card>
+                <Chip
+                  label={billable ? "Billable" : "Not billable"}
+                  tone="mint"
+                  selected={billable}
+                  onPress={() => setBillable(!billable)}
+                />
+                <Button
+                  label="Start timer"
+                  variant="time"
+                  icon="play"
+                  onPress={() => {
+                    send({
+                      method: "POST",
+                      path: "/timer/start",
+                      body: { id: newId(), areaId, billable, source: "timer" },
+                      label: "Couldn't start",
+                    });
+                    notify("Timer started");
+                  }}
+                />
+              </>
+            )}
+          </Card>
+        )}
+      </AsyncContent>
+      <Section title="This week by area">
+        <AsyncContent
+          query={entries}
+          skeleton={<SkeletonList rows={3} leading="none" trailing />}
+          isEmpty={() => list.length === 0}
+          empty={
+            <EmptyState
+              title="No time tracked yet"
+              message="Start a timer or log time by hand to see where this week's hours go."
+              actionLabel="Log time"
+              onAction={() => router.push("/time-entry")}
+            />
+          }
+        >
+          {() => (
+            <Card className="gap-2">
+              {[...byArea.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .map(([id, minutes]) => {
+                  const area = areas.find((a) => a.id === id);
+                  return (
+                    <View key={id ?? "none"} className="flex-row justify-between">
+                      <Text>{area ? `${area.emoji} ${area.name}` : "No area"}</Text>
+                      <Text variant="strong" numeric>
+                        {formatMinutes(minutes)}
+                      </Text>
+                    </View>
+                  );
+                })}
+            </Card>
+          )}
+        </AsyncContent>
       </Section>
       {[...byDay.entries()].map(([day, dayEntries]) => (
         <Section key={day} title={formatLocalDate(day, "long")}>

@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import type { TikiOutfit } from "@/components/tiki/tiki";
-import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { HabitChips } from "@/features/habits/habit-chips";
 import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
@@ -9,6 +9,7 @@ import { LaterToday } from "@/features/today/later-today";
 import { NextUp } from "@/features/today/next-up";
 import { SafeToSpendCard } from "@/features/today/safe-to-spend-card";
 import { TodayHeader } from "@/features/today/today-header";
+import { TodaySkeleton } from "@/features/today/today-skeleton";
 import { TopThree } from "@/features/today/top-three";
 import { useAreas, useSettings, useToday } from "@/lib/queries";
 
@@ -23,15 +24,8 @@ export default function TodayScreen() {
 
   if (!data) {
     return (
-      <Screen>
-        <EmptyState
-          message={
-            today.isError ? "Can't reach the server yet. Pull to retry." : "Getting today ready…"
-          }
-          actionLabel="Try again"
-          onAction={() => void today.refetch()}
-          mood={today.isError ? "calm" : "curious"}
-        />
+      <Screen refreshing={false} onRefresh={() => void today.refetch()}>
+        {today.isError ? <ErrorState onRetry={() => void today.refetch()} /> : <TodaySkeleton />}
       </Screen>
     );
   }

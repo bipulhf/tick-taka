@@ -2,10 +2,13 @@ import { useMutation } from "@tanstack/react-query";
 import { endOfLocalDay, localMinuteOfDay, startOfLocalDay } from "@tick-taka/shared/dates";
 import { useState } from "react";
 import { View } from "react-native";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Draggable, DragProvider, DropZone } from "@/components/ui/drag";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { api, unwrap } from "@/lib/api";
 import { formatLocalDate } from "@/lib/format";
@@ -118,55 +121,81 @@ export function DayTimeline({ date }: { date: string }) {
             </View>
           </Card>
         ) : null}
-        {untimed.length > 0 ? (
-          <View className="gap-2">
-            <Text variant="label" tone="muted">
-              No time yet
-            </Text>
-            {untimed.map((task) => (
-              <Draggable key={task.id} id={task.id}>
-                <CompactTask task={task} tone="grape" />
-              </Draggable>
-            ))}
-          </View>
-        ) : null}
-        <DropZone
-          id="grid"
-          style={{ height: hours.length * 60 * PX_PER_MIN }}
-          className="rounded-2xl bg-card/60"
-        >
-          {hours.map((hour) => (
-            <View
-              key={hour}
-              style={{
-                position: "absolute",
-                top: (hour - START_HOUR) * 60 * PX_PER_MIN,
-                left: 0,
-                right: 0,
-              }}
-              className="flex-row border-t border-line"
-            >
-              <Text variant="caption" tone="muted" className="w-14 pl-2 pt-0.5" numeric>
-                {hour % 12 === 0 ? 12 : hour % 12}
-                {hour < 12 ? "am" : "pm"}
-              </Text>
+        <AsyncContent
+          query={tasks}
+          skeleton={
+            <View className="gap-2">
+              <Skeleton className="h-14 w-full rounded-2xl" />
+              <Skeleton className="h-14 w-full rounded-2xl" />
+              <Skeleton className="h-14 w-full rounded-2xl" />
             </View>
-          ))}
-          {timed.map((task) => {
-            const minute = localMinuteOfDay(task.doAt!, timeZone);
-            const top = Math.max(0, (minute - START_HOUR * 60) * PX_PER_MIN);
-            const height = Math.max(44, (task.estimateMin ?? 30) * PX_PER_MIN);
-            return (
-              <View key={task.id} style={{ position: "absolute", top, left: 58, right: 8, height }}>
-                <Draggable id={task.id}>
-                  <View style={{ height }} className="justify-center rounded-xl bg-sky/20 px-1">
-                    <CompactTask task={task} />
+          }
+        >
+          {() => (
+            <>
+              {untimed.length > 0 ? (
+                <View className="gap-2">
+                  <Text variant="label" tone="muted">
+                    No time yet
+                  </Text>
+                  {untimed.map((task) => (
+                    <Draggable key={task.id} id={task.id}>
+                      <CompactTask task={task} tone="grape" />
+                    </Draggable>
+                  ))}
+                </View>
+              ) : all.size === 0 ? (
+                <EmptyState
+                  title="Nothing on this day yet"
+                  message="Tasks for this day show up here, ready to drop onto a time."
+                />
+              ) : null}
+              <DropZone
+                id="grid"
+                style={{ height: hours.length * 60 * PX_PER_MIN }}
+                className="rounded-2xl bg-card/60"
+              >
+                {hours.map((hour) => (
+                  <View
+                    key={hour}
+                    style={{
+                      position: "absolute",
+                      top: (hour - START_HOUR) * 60 * PX_PER_MIN,
+                      left: 0,
+                      right: 0,
+                    }}
+                    className="flex-row border-t border-line"
+                  >
+                    <Text variant="caption" tone="muted" className="w-14 pl-2 pt-0.5" numeric>
+                      {hour % 12 === 0 ? 12 : hour % 12}
+                      {hour < 12 ? "am" : "pm"}
+                    </Text>
                   </View>
-                </Draggable>
-              </View>
-            );
-          })}
-        </DropZone>
+                ))}
+                {timed.map((task) => {
+                  const minute = localMinuteOfDay(task.doAt!, timeZone);
+                  const top = Math.max(0, (minute - START_HOUR * 60) * PX_PER_MIN);
+                  const height = Math.max(44, (task.estimateMin ?? 30) * PX_PER_MIN);
+                  return (
+                    <View
+                      key={task.id}
+                      style={{ position: "absolute", top, left: 58, right: 8, height }}
+                    >
+                      <Draggable id={task.id}>
+                        <View
+                          style={{ height }}
+                          className="justify-center rounded-xl bg-sky/20 px-1"
+                        >
+                          <CompactTask task={task} />
+                        </View>
+                      </Draggable>
+                    </View>
+                  );
+                })}
+              </DropZone>
+            </>
+          )}
+        </AsyncContent>
       </Screen>
     </DragProvider>
   );

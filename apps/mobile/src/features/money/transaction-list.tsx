@@ -5,7 +5,8 @@ import { ActivityIndicator, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { EmptyState } from "@/components/ui/empty-state";
+import { EmptyState, ErrorState } from "@/components/ui/empty-state";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatLocalDate } from "@/lib/format";
@@ -32,6 +33,7 @@ export function TransactionList({ accountId, eventId }: { accountId?: string; ev
     ...(account ? { accountId: account } : {}),
     ...(eventId ? { eventId } : {}),
   });
+  const filtered = Boolean(q || type || account || eventId);
   const timeZone = settings?.timeZone ?? "Asia/Dhaka";
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
   const sections: { title: string; data: Transaction[] }[] = [];
@@ -100,11 +102,20 @@ export function TransactionList({ accountId, eventId }: { accountId?: string; ev
         </View>
       )}
       ListEmptyComponent={
-        query.isLoading ? (
-          <ActivityIndicator />
+        query.data === undefined ? (
+          query.isError ? (
+            <ErrorState onRetry={() => void query.refetch()} />
+          ) : (
+            <SkeletonList rows={6} trailing />
+          )
         ) : (
           <EmptyState
-            message="No transactions match."
+            title={filtered ? "No matches" : "No transactions yet"}
+            message={
+              filtered
+                ? "No transactions match. Try another search or clear a filter."
+                : "Log one in seconds and your history starts here."
+            }
             actionLabel="Add one"
             onAction={() => router.push("/transaction/new")}
           />

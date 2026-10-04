@@ -3,12 +3,15 @@ import { formatAmount, parseAmountToMinor } from "@tick-taka/shared/money";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Chip } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { Screen } from "@/components/ui/screen";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { notify } from "@/lib/notify";
@@ -113,38 +116,47 @@ export function ShoppingScreen() {
           onSubmitEditing={add}
         />
       </View>
-      <Card className="py-1">
-        {list.map((item) => (
-          <View key={item.id} className="flex-row items-center">
-            <Checkbox
-              tone="mint"
-              checked={Boolean(item.checkedAt)}
-              label={item.title}
-              onChange={(on) =>
-                send({ method: "PATCH", path: `/shopping/${item.id}`, body: { checked: on } })
-              }
-            />
-            <Text className={`flex-1 ${item.checkedAt ? "text-muted line-through" : ""}`}>
-              {item.title}
-            </Text>
-            {item.estMinor ? (
-              <Amount minor={item.estMinor} variant="caption" tone="muted" animate={false} />
-            ) : null}
-            <Pressable
-              onPress={() => send({ method: "DELETE", path: `/shopping/${item.id}` })}
-              className="h-12 w-10 items-center justify-center"
-              accessibilityLabel={`Remove ${item.title}`}
-            >
-              <Icon name="close" size={18} color="muted" />
-            </Pressable>
-          </View>
-        ))}
-        {list.length === 0 ? (
-          <Text tone="muted" className="py-3">
-            List the bazar before you go.
-          </Text>
-        ) : null}
-      </Card>
+      <AsyncContent
+        query={items}
+        skeleton={<SkeletonList rows={4} leading="none" trailing />}
+        isEmpty={() => list.length === 0}
+        empty={
+          <EmptyState
+            title="Nothing on this list yet"
+            message="List the bazar before you go, then tick items off at checkout."
+          />
+        }
+      >
+        {() => (
+          <Card className="py-1">
+            {list.map((item) => (
+              <View key={item.id} className="flex-row items-center">
+                <Checkbox
+                  tone="mint"
+                  checked={Boolean(item.checkedAt)}
+                  label={item.title}
+                  onChange={(on) =>
+                    send({ method: "PATCH", path: `/shopping/${item.id}`, body: { checked: on } })
+                  }
+                />
+                <Text className={`flex-1 ${item.checkedAt ? "text-muted line-through" : ""}`}>
+                  {item.title}
+                </Text>
+                {item.estMinor ? (
+                  <Amount minor={item.estMinor} variant="caption" tone="muted" animate={false} />
+                ) : null}
+                <Pressable
+                  onPress={() => send({ method: "DELETE", path: `/shopping/${item.id}` })}
+                  className="h-12 w-10 items-center justify-center"
+                  accessibilityLabel={`Remove ${item.title}`}
+                >
+                  <Icon name="close" size={18} color="muted" />
+                </Pressable>
+              </View>
+            ))}
+          </Card>
+        )}
+      </AsyncContent>
       {checked.length > 0 ? (
         <Card className="gap-2">
           <Text variant="strong">

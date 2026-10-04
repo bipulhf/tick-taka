@@ -8,8 +8,10 @@ import { Pressable, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Chip } from "@/components/ui/chip";
+import { ErrorState } from "@/components/ui/empty-state";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
+import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
@@ -221,6 +223,18 @@ export function TaskSheet({ id }: { id: string | null }) {
 
   const doDate = form.doAt ? toLocalDate(form.doAt, timeZone) : null;
   const advanced = settings?.advancedViews;
+
+  // Editing: hold the form back until the task has filled it (any edit replaces EMPTY).
+  if (id && form === EMPTY)
+    return (
+      <Sheet title="Task">
+        {query.isError ? (
+          <ErrorState onRetry={() => void query.refetch()} />
+        ) : (
+          <SkeletonForm fields={5} />
+        )}
+      </Sheet>
+    );
 
   return (
     <Sheet

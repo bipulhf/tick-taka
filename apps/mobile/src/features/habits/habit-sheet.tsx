@@ -4,8 +4,10 @@ import { useState } from "react";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { ErrorState } from "@/components/ui/empty-state";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
+import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { notify } from "@/lib/notify";
@@ -155,7 +157,7 @@ export function HabitSheet({ id }: { id: string | null }) {
   if (id && !habits.data)
     return (
       <Sheet title="Habit">
-        <Text tone="muted">Loading…</Text>
+        {habits.isError ? <ErrorState onRetry={() => void habits.refetch()} /> : <SkeletonForm />}
       </Sheet>
     );
   return <HabitForm habit={id ? (habits.data?.find((h) => h.id === id) ?? null) : null} />;

@@ -3,8 +3,10 @@ import { View } from "react-native";
 import { Tiki, type TikiOutfit } from "@/components/tiki/tiki";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { ErrorState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
+import { SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { plural } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
@@ -20,7 +22,14 @@ export function RewardsScreen() {
   if (!data)
     return (
       <Screen title="Rewards" tabBarPadding={false}>
-        <Text tone="muted">Loading…</Text>
+        {game.isError ? (
+          <ErrorState onRetry={() => void game.refetch()} />
+        ) : (
+          <>
+            <SkeletonCard hero lines={2} />
+            <SkeletonList rows={4} />
+          </>
+        )}
       </Screen>
     );
   const unlocked = new Set(data.rewards.map((r) => r.id));

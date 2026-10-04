@@ -24,8 +24,10 @@ export function TopThree({ data }: { data: TodayData }) {
     >
       {data.topThree.length === 0 ? (
         <EmptyState
-          message="Pick the three things that matter most today."
-          actionLabel="Pick top three"
+          icon="star-outline"
+          title="No top three yet"
+          message="Pick what matters most today."
+          actionLabel="Pick"
           onAction={pick}
         />
       ) : (

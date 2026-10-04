@@ -7,6 +7,7 @@ import type { IconName } from "@/components/ui/icon";
 import { ListRow } from "@/components/ui/list-row";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
+import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useAiStatus } from "@/lib/queries";
 import { useGamification } from "./queries";
@@ -101,6 +102,8 @@ export function ReviewHome() {
             {game.data?.rewards.length} rewards unlocked
           </Text>
         </Card>
+      ) : game.isPending ? (
+        <SkeletonCard lines={1} />
       ) : null}
       <Group inset={60}>
         {entries

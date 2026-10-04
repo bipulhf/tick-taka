@@ -2,10 +2,12 @@ import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { ErrorState } from "@/components/ui/empty-state";
 import { ListRow } from "@/components/ui/list-row";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { Segmented } from "@/components/ui/segmented";
+import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatMinutes } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -30,7 +32,7 @@ const CAPS = [500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];
 
 export function SettingsScreen() {
   const router = useRouter();
-  const { data: s } = useSettings();
+  const { data: s, isError, refetch } = useSettings();
   const { data: accounts = [] } = useAccounts();
   const ai = useAiStatus();
   const privacy = usePrivacy();
@@ -38,7 +40,7 @@ export function SettingsScreen() {
   if (!s)
     return (
       <Screen title="Settings" tabBarPadding={false}>
-        <Text tone="muted">Loading…</Text>
+        {isError ? <ErrorState onRetry={() => void refetch()} /> : <SkeletonForm fields={6} />}
       </Screen>
     );
 

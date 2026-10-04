@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Amount } from "@/components/ui/amount";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
@@ -12,6 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
@@ -89,70 +91,84 @@ export function DebtsScreen() {
       tabBarPadding={false}
       right={<Button label="New" size="sm" icon="plus" onPress={() => router.push("/debt/new")} />}
     >
-      {open.length === 0 ? (
-        <EmptyState
-          message="All square. No loans to track."
-          actionLabel="Add a loan"
-          onAction={() => router.push("/debt/new")}
-          mood="relaxed"
-        />
-      ) : null}
-      {groups.map((group) =>
-        group.items.length ? (
-          <Section key={group.title} title={group.title}>
-            {group.items.map((debt) => (
-              <Card key={debt.id} className="gap-2">
-                <View className="flex-row items-center justify-between">
-                  <Text variant="strong">{debt.person}</Text>
-                  <Amount
-                    minor={debt.outstandingMinor}
-                    currency={debt.currency}
-                    variant="heading"
-                    tone={debt.direction === "owed_to_me" ? "mint" : "coral"}
-                  />
-                </View>
-                <ProgressBar value={debt.repaidMinor / debt.principalMinor} tone="grape" />
-                <Text variant="caption" tone="muted">
-                  {formatAmount(debt.repaidMinor, { currency: debt.currency })} of{" "}
-                  {formatAmount(debt.principalMinor, { currency: debt.currency })} repaid
-                  {debt.note ? ` · ${debt.note}` : ""}
-                </Text>
-                <Forecast debt={debt} />
-                {repaying === debt.id ? (
-                  <View className="gap-2">
-                    <TextField
-                      value={amount}
-                      onChangeText={setAmount}
-                      keyboardType="decimal-pad"
-                      placeholder="Amount repaid"
-                      autoFocus
-                    />
-                    <View className="flex-row flex-wrap gap-2">
-                      {accounts.map((a) => (
-                        <Chip
-                          key={a.id}
-                          label={a.name}
-                          tone="mint"
-                          selected={(accountId ?? accounts[0]?.id) === a.id}
-                          onPress={() => setAccountId(a.id)}
-                        />
-                      ))}
+      <AsyncContent
+        query={debts}
+        skeleton={
+          <>
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={2} />
+          </>
+        }
+        isEmpty={() => open.length === 0}
+        empty={
+          <EmptyState
+            title="All square"
+            message="No loans to track. Note one down so nobody has to remember."
+            actionLabel="Add a loan"
+            onAction={() => router.push("/debt/new")}
+            mood="relaxed"
+          />
+        }
+      >
+        {() =>
+          groups.map((group) =>
+            group.items.length ? (
+              <Section key={group.title} title={group.title}>
+                {group.items.map((debt) => (
+                  <Card key={debt.id} className="gap-2">
+                    <View className="flex-row items-center justify-between">
+                      <Text variant="strong">{debt.person}</Text>
+                      <Amount
+                        minor={debt.outstandingMinor}
+                        currency={debt.currency}
+                        variant="heading"
+                        tone={debt.direction === "owed_to_me" ? "mint" : "coral"}
+                      />
                     </View>
-                    <Button label="Log repayment" variant="money" onPress={() => repay(debt)} />
-                  </View>
-                ) : (
-                  <Button
-                    label="Log a repayment"
-                    size="sm"
-                    variant="secondary"
-                    onPress={() => setRepaying(debt.id)}
-                  />
-                )}
-              </Card>
-            ))}
-          </Section>
-        ) : null,
-      )}
+                    <ProgressBar value={debt.repaidMinor / debt.principalMinor} tone="grape" />
+                    <Text variant="caption" tone="muted">
+                      {formatAmount(debt.repaidMinor, { currency: debt.currency })} of{" "}
+                      {formatAmount(debt.principalMinor, { currency: debt.currency })} repaid
+                      {debt.note ? ` · ${debt.note}` : ""}
+                    </Text>
+                    <Forecast debt={debt} />
+                    {repaying === debt.id ? (
+                      <View className="gap-2">
+                        <TextField
+                          value={amount}
+                          onChangeText={setAmount}
+                          keyboardType="decimal-pad"
+                          placeholder="Amount repaid"
+                          autoFocus
+                        />
+                        <View className="flex-row flex-wrap gap-2">
+                          {accounts.map((a) => (
+                            <Chip
+                              key={a.id}
+                              label={a.name}
+                              tone="mint"
+                              selected={(accountId ?? accounts[0]?.id) === a.id}
+                              onPress={() => setAccountId(a.id)}
+                            />
+                          ))}
+                        </View>
+                        <Button label="Log repayment" variant="money" onPress={() => repay(debt)} />
+                      </View>
+                    ) : (
+                      <Button
+                        label="Log a repayment"
+                        size="sm"
+                        variant="secondary"
+                        onPress={() => setRepaying(debt.id)}
+                      />
+                    )}
+                  </Card>
+                ))}
+              </Section>
+            ) : null,
+          )
+        }
+      </AsyncContent>
     </Screen>
   );
 }

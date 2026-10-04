@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
+import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
@@ -200,6 +201,13 @@ export function TransactionSheet({ id }: { id: string | null }) {
   );
   const tone = values.type === "income" ? "mint" : values.type === "expense" ? "coral" : "ink";
   const errors = form.formState.errors;
+
+  if (id && !existing.data)
+    return (
+      <Sheet title="Transaction">
+        <SkeletonForm fields={5} />
+      </Sheet>
+    );
 
   return (
     <Sheet

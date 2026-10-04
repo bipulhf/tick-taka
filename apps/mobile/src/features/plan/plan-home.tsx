@@ -1,6 +1,7 @@
 import { addDays, endOfLocalDay, startOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { AsyncContent } from "@/components/ui/async-content";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
 import { ListRow } from "@/components/ui/list-row";
@@ -8,6 +9,7 @@ import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { Segmented } from "@/components/ui/segmented";
 import { ShortcutRow } from "@/components/ui/shortcut-row";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { formatLocalDate, plural } from "@/lib/format";
 import { useAreas, useSettings } from "@/lib/queries";
@@ -72,41 +74,63 @@ export function PlanHome() {
         ]}
       />
       {tab === "inbox" ? (
-        inboxTasks.length === 0 ? (
-          <EmptyState
-            message="Inbox zero. Everything has a home."
-            actionLabel="Capture something"
-            onAction={() => router.push("/add")}
-            mood="proud"
-          />
-        ) : (
-          <Group inset={TASK_ROW_INSET}>
-            {inboxTasks.map((task) => (
-              <TaskRow key={task.id} task={task} today={today} areaEmoji={emoji(task.areaId)} />
-            ))}
-          </Group>
-        )
+        <AsyncContent
+          query={inbox}
+          skeleton={<SkeletonList rows={4} />}
+          isEmpty={() => inboxTasks.length === 0}
+          empty={
+            <EmptyState
+              title="Inbox zero"
+              message="Everything has a home. New ideas land here first."
+              actionLabel="Capture something"
+              onAction={() => router.push("/add")}
+              mood="proud"
+            />
+          }
+        >
+          {() => (
+            <Group inset={TASK_ROW_INSET}>
+              {inboxTasks.map((task) => (
+                <TaskRow key={task.id} task={task} today={today} areaEmoji={emoji(task.areaId)} />
+              ))}
+            </Group>
+          )}
+        </AsyncContent>
       ) : null}
       {tab === "upcoming" ? (
-        byDay.size === 0 ? (
-          <EmptyState
-            message="Nothing planned for the next two weeks."
-            actionLabel="Open the week"
-            onAction={() => router.push("/plan/week")}
-          />
-        ) : (
-          [...byDay.entries()].map(([day, tasks]) => (
-            <Section key={day} title={formatLocalDate(day, "long")}>
-              <Group inset={TASK_ROW_INSET}>
-                {tasks.map((task) => (
-                  <TaskRow key={task.id} task={task} today={today} areaEmoji={emoji(task.areaId)} />
-                ))}
-              </Group>
-            </Section>
-          ))
-        )
+        <AsyncContent
+          query={upcoming}
+          skeleton={<SkeletonList rows={4} />}
+          isEmpty={() => byDay.size === 0}
+          empty={
+            <EmptyState
+              title="Nothing planned yet"
+              message="The next two weeks are open. Give a few tasks a day."
+              actionLabel="Open the week"
+              onAction={() => router.push("/plan/week")}
+            />
+          }
+        >
+          {() =>
+            [...byDay.entries()].map(([day, tasks]) => (
+              <Section key={day} title={formatLocalDate(day, "long")}>
+                <Group inset={TASK_ROW_INSET}>
+                  {tasks.map((task) => (
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      today={today}
+                      areaEmoji={emoji(task.areaId)}
+                    />
+                  ))}
+                </Group>
+              </Section>
+            ))
+          }
+        </AsyncContent>
       ) : null}
-      {tab === "projects" ? (
+      {tab === "projects" && projects.data === undefined ? <SkeletonList rows={4} /> : null}
+      {tab === "projects" && projects.data !== undefined ? (
         <Group inset={60}>
           {areas.map((area) => {
             const count = (projects.data ?? []).filter(

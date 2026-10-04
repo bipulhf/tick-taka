@@ -3,12 +3,15 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatMonth } from "@/lib/format";
 import { useBudgets } from "./queries";
@@ -60,8 +63,27 @@ export function BudgetsScreen() {
         icon="pencil"
         onPress={() => router.push(`/budget-edit?month=${month}`)}
       />
-      {data
-        ? BUCKETS.map((bucket) => {
+      <AsyncContent
+        query={budgets}
+        skeleton={
+          <>
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={2} />
+          </>
+        }
+        isEmpty={(loaded) => loaded.lines.every((l) => !l.hasBudget && l.spentMinor === 0)}
+        empty={
+          <EmptyState
+            title="No budgets yet"
+            message="Give a few categories a monthly limit so you can spend without second-guessing."
+            actionLabel="Set budgets"
+            onAction={() => router.push(`/budget-edit?month=${month}`)}
+          />
+        }
+      >
+        {(data) =>
+          BUCKETS.map((bucket) => {
             const totals = data.buckets[bucket.key];
             const lines = data.lines.filter(
               (l) =>
@@ -152,7 +174,8 @@ export function BudgetsScreen() {
               </Section>
             );
           })
-        : null}
+        }
+      </AsyncContent>
     </Screen>
   );
 }

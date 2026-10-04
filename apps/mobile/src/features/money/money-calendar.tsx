@@ -13,9 +13,12 @@ import {
 import { formatAmount } from "@tick-taka/shared/money";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { Screen } from "@/components/ui/screen";
+import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMonth } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
@@ -79,54 +82,80 @@ export function MoneyCalendar() {
         </View>
       }
     >
-      <Card className="flex-row flex-wrap p-2">
-        {WEEK_OFFSETS.map((i) => (
-          <Text
-            key={`weekday-${(weekStartsOn + i) % 7}`}
-            variant="caption"
-            tone="muted"
-            className="w-[14.28%] pb-1 text-center"
-          >
-            {WEEKDAYS[(weekStartsOn + i) % 7]}
-          </Text>
-        ))}
-        {cells.map((date) => {
-          const spent = byDay.get(date) ?? 0;
-          const inMonth = date.slice(0, 7) === month;
-          const intensity = spent / max;
-          return (
-            <Pressable
-              key={date}
-              onPress={() => setSelected(date)}
-              accessibilityLabel={`${formatLocalDate(date)}, spent ${formatAmount(spent)}`}
-              className={`h-16 w-[14.28%] items-center justify-center rounded-xl ${date === selected ? "border-2 border-coral" : ""}`}
-              style={{
-                backgroundColor:
-                  spent > 0 && inMonth ? `rgba(255,122,107,${0.12 + intensity * 0.55})` : undefined,
-              }}
-            >
-              <Text variant="caption" tone={inMonth ? "ink" : "muted"} numeric>
-                {Number(date.slice(8))}
+      <AsyncContent
+        query={insights}
+        skeleton={<Skeleton className="h-[26rem] w-full rounded-3xl" />}
+      >
+        {() => (
+          <Card className="flex-row flex-wrap p-2">
+            {WEEK_OFFSETS.map((i) => (
+              <Text
+                key={`weekday-${(weekStartsOn + i) % 7}`}
+                variant="caption"
+                tone="muted"
+                className="w-[14.28%] pb-1 text-center"
+              >
+                {WEEKDAYS[(weekStartsOn + i) % 7]}
               </Text>
-              {spent > 0 && inMonth ? (
-                <Text className="text-[9px]" numeric numberOfLines={1}>
-                  {hidden
-                    ? "•"
-                    : spent >= 100_000
-                      ? `${Math.round(spent / 100_000)}k`
-                      : Math.round(spent / 100)}
-                </Text>
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </Card>
+            ))}
+            {cells.map((date) => {
+              const spent = byDay.get(date) ?? 0;
+              const inMonth = date.slice(0, 7) === month;
+              const intensity = spent / max;
+              return (
+                <Pressable
+                  key={date}
+                  onPress={() => setSelected(date)}
+                  accessibilityLabel={`${formatLocalDate(date)}, spent ${formatAmount(spent)}`}
+                  className={`h-16 w-[14.28%] items-center justify-center rounded-xl ${date === selected ? "border-2 border-coral" : ""}`}
+                  style={{
+                    backgroundColor:
+                      spent > 0 && inMonth
+                        ? `rgba(255,122,107,${0.12 + intensity * 0.55})`
+                        : undefined,
+                  }}
+                >
+                  <Text variant="caption" tone={inMonth ? "ink" : "muted"} numeric>
+                    {Number(date.slice(8))}
+                  </Text>
+                  {spent > 0 && inMonth ? (
+                    <Text className="text-[9px]" numeric numberOfLines={1}>
+                      {hidden
+                        ? "•"
+                        : spent >= 100_000
+                          ? `${Math.round(spent / 100_000)}k`
+                          : Math.round(spent / 100)}
+                    </Text>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </Card>
+        )}
+      </AsyncContent>
       <Text variant="heading">{formatLocalDate(selected, "long")}</Text>
-      <Card className="py-1">
-        {(dayTx.data?.pages.flatMap((p) => p.items) ?? []).map((tx) => (
-          <TransactionRow key={tx.id} tx={tx} lookup={lookup} />
-        ))}
-      </Card>
+      <AsyncContent
+        query={dayTx}
+        skeleton={<SkeletonList rows={3} trailing />}
+        isEmpty={(data) => data.pages.every((p) => p.items.length === 0)}
+        empty={
+          <EmptyState
+            title="Nothing logged this day"
+            message="A quiet day for your wallet. Tap another day to see where money moved."
+            mood="relaxed"
+          />
+        }
+      >
+        {(data) => (
+          <Card className="py-1">
+            {data.pages
+              .flatMap((p) => p.items)
+              .map((tx) => (
+                <TransactionRow key={tx.id} tx={tx} lookup={lookup} />
+              ))}
+          </Card>
+        )}
+      </AsyncContent>
     </Screen>
   );
 }

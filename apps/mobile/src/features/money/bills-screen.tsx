@@ -1,12 +1,14 @@
 import { describeRRule } from "@tick-taka/shared/recurrence";
 import { useRouter } from "expo-router";
 import { Amount } from "@/components/ui/amount";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
 import { ListRow } from "@/components/ui/list-row";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { useRecurring } from "@/features/plan/queries";
 import { formatLocalDate } from "@/lib/format";
 
@@ -39,49 +41,58 @@ export function BillsScreen() {
         />
       }
     >
-      {list.length === 0 ? (
-        <EmptyState
-          message="Add rent, internet or your salary so nothing sneaks up."
-          actionLabel="Add a bill"
-          onAction={() => router.push("/money/recurring/new")}
-        />
-      ) : null}
-      {groups.map((group) =>
-        group.items.length ? (
-          <Section key={group.title} title={group.title}>
-            <Group>
-              {group.items.map((item) => (
-                <ListRow
-                  key={item.id}
-                  title={item.name}
-                  subtitle={[
-                    STATUS[item.status],
-                    formatLocalDate(item.dueDate),
-                    describeRRule(item.rrule),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  onPress={() => router.push(`/money/recurring/${item.id}`)}
-                  right={
-                    <Amount
-                      minor={item.amountMinor}
-                      currency={item.currency}
-                      variant="strong"
-                      tone={
-                        item.kind === "income"
-                          ? "mint"
-                          : item.status === "overdue"
-                            ? "coral"
-                            : "ink"
+      <AsyncContent
+        query={recurring}
+        skeleton={<SkeletonList rows={4} leading="none" trailing />}
+        isEmpty={() => list.length === 0}
+        empty={
+          <EmptyState
+            title="No bills yet"
+            message="Add rent, internet or your salary so nothing sneaks up."
+            actionLabel="Add a bill"
+            onAction={() => router.push("/money/recurring/new")}
+          />
+        }
+      >
+        {() =>
+          groups.map((group) =>
+            group.items.length ? (
+              <Section key={group.title} title={group.title}>
+                <Group>
+                  {group.items.map((item) => (
+                    <ListRow
+                      key={item.id}
+                      title={item.name}
+                      subtitle={[
+                        STATUS[item.status],
+                        formatLocalDate(item.dueDate),
+                        describeRRule(item.rrule),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      onPress={() => router.push(`/money/recurring/${item.id}`)}
+                      right={
+                        <Amount
+                          minor={item.amountMinor}
+                          currency={item.currency}
+                          variant="strong"
+                          tone={
+                            item.kind === "income"
+                              ? "mint"
+                              : item.status === "overdue"
+                                ? "coral"
+                                : "ink"
+                          }
+                        />
                       }
                     />
-                  }
-                />
-              ))}
-            </Group>
-          </Section>
-        ) : null,
-      )}
+                  ))}
+                </Group>
+              </Section>
+            ) : null,
+          )
+        }
+      </AsyncContent>
     </Screen>
   );
 }

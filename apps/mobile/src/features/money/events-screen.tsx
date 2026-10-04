@@ -5,12 +5,14 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Amount } from "@/components/ui/amount";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
+import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatLocalDate } from "@/lib/format";
@@ -79,44 +81,68 @@ export function EventsScreen() {
           <Button label="Create event" onPress={save} disabled={!name.trim()} />
         </Card>
       ) : null}
-      {(events.data ?? []).length === 0 && !adding ? (
-        <EmptyState
-          message="Group a trip's spending from cash, bKash and card in one place."
-          actionLabel="Create an event"
-          onAction={() => setAdding(true)}
-        />
-      ) : null}
-      {(events.data ?? []).map((event) => (
-        <Card
-          key={event.id}
-          className="gap-2"
-          onPress={() => router.push(`/money/transactions?eventId=${event.id}`)}
-        >
-          <View className="flex-row items-center justify-between">
-            <Text variant="strong">
-              {event.emoji} {event.name}
-            </Text>
-            <Amount minor={event.spentMinor} variant="heading" tone="coral" />
-          </View>
-          <Text variant="caption" tone="muted">
-            {formatLocalDate(event.startsOn)} – {formatLocalDate(event.endsOn)} ·{" "}
-            {event.transactionCount} transactions
-          </Text>
-          {event.budgetMinor ? (
-            <>
-              <ProgressBar
-                value={event.spentMinor / event.budgetMinor}
-                tone={event.leftMinor !== null && event.leftMinor < 0 ? "coral" : "mint"}
-              />
+      <AsyncContent
+        query={events}
+        skeleton={
+          <>
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={2} />
+          </>
+        }
+        isEmpty={(data) => data.length === 0 && !adding}
+        empty={
+          <EmptyState
+            title="No events yet"
+            message="Group a trip's spending from cash, bKash and card in one place."
+            actionLabel="Create an event"
+            onAction={() => setAdding(true)}
+          />
+        }
+      >
+        {(data) =>
+          data.map((event) => (
+            <Card
+              key={event.id}
+              className="gap-2"
+              onPress={() => router.push(`/money/transactions?eventId=${event.id}`)}
+            >
+              <View className="flex-row items-center justify-between">
+                <Text variant="strong">
+                  {event.emoji} {event.name}
+                </Text>
+                <Amount minor={event.spentMinor} variant="heading" tone="coral" />
+              </View>
               <Text variant="caption" tone="muted">
-                <Amount minor={event.leftMinor ?? 0} variant="caption" tone="ink" animate={false} />{" "}
-                left of{" "}
-                <Amount minor={event.budgetMinor} variant="caption" tone="muted" animate={false} />
+                {formatLocalDate(event.startsOn)} – {formatLocalDate(event.endsOn)} ·{" "}
+                {event.transactionCount} transactions
               </Text>
-            </>
-          ) : null}
-        </Card>
-      ))}
+              {event.budgetMinor ? (
+                <>
+                  <ProgressBar
+                    value={event.spentMinor / event.budgetMinor}
+                    tone={event.leftMinor !== null && event.leftMinor < 0 ? "coral" : "mint"}
+                  />
+                  <Text variant="caption" tone="muted">
+                    <Amount
+                      minor={event.leftMinor ?? 0}
+                      variant="caption"
+                      tone="ink"
+                      animate={false}
+                    />{" "}
+                    left of{" "}
+                    <Amount
+                      minor={event.budgetMinor}
+                      variant="caption"
+                      tone="muted"
+                      animate={false}
+                    />
+                  </Text>
+                </>
+              ) : null}
+            </Card>
+          ))
+        }
+      </AsyncContent>
     </Screen>
   );
 }

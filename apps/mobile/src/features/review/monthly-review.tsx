@@ -5,8 +5,10 @@ import { useRouter } from "expo-router";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { api, unwrap } from "@/lib/api";
 import { formatMinutes, formatMonth } from "@/lib/format";
@@ -43,26 +45,42 @@ export function MonthlyReview() {
   if (!data)
     return (
       <Screen title="Monthly review" tabBarPadding={false}>
-        <Text tone="muted">Loading…</Text>
+        {review.isError ? (
+          <ErrorState onRetry={() => void review.refetch()} />
+        ) : (
+          <>
+            <SkeletonCard lines={3} />
+            <SkeletonCard hero lines={1} />
+            <SkeletonCard lines={3} />
+          </>
+        )}
       </Screen>
     );
   const lines = data.budgets.lines.filter((l) => l.hasBudget);
   return (
     <Screen title="Monthly review" subtitle={formatMonth(month)} tabBarPadding={false}>
       <Section title="Budgets vs actual">
-        <Card className="gap-2">
-          {lines.map((line) => (
-            <View key={line.categoryId} className="flex-row justify-between">
-              <Text>
-                {line.emoji} {line.name}
-              </Text>
-              <Text tone={line.availableMinor < 0 ? "coral" : "muted"} numeric>
-                {money(line.spentMinor)} / {money(line.limitMinor)}
-              </Text>
-            </View>
-          ))}
-          {lines.length === 0 ? <Text tone="muted">No budgets this month.</Text> : null}
-        </Card>
+        {lines.length === 0 ? (
+          <EmptyState
+            title="No budgets this month"
+            message="Set a few limits and this shows how the month went."
+            actionLabel="Set budgets"
+            onAction={() => router.push(`/budget-edit?month=${month}`)}
+          />
+        ) : (
+          <Card className="gap-2">
+            {lines.map((line) => (
+              <View key={line.categoryId} className="flex-row justify-between">
+                <Text>
+                  {line.emoji} {line.name}
+                </Text>
+                <Text tone={line.availableMinor < 0 ? "coral" : "muted"} numeric>
+                  {money(line.spentMinor)} / {money(line.limitMinor)}
+                </Text>
+              </View>
+            ))}
+          </Card>
+        )}
       </Section>
       <Section title="Net worth">
         <Card>
@@ -79,42 +97,53 @@ export function MonthlyReview() {
         </Card>
       </Section>
       <Section title="Hourly rate by area">
-        <Card className="gap-2">
-          {data.hourlyRates.map((rate) => {
-            const area = areas.find((a) => a.id === rate.areaId);
-            return (
-              <View key={rate.areaId} className="flex-row justify-between">
-                <Text>{area ? `${area.emoji} ${area.name}` : "Area"}</Text>
-                <Text numeric>
-                  {rate.rateMinor === null || rate.incomeMinor === 0
-                    ? `${formatMinutes(rate.minutes)}, no income`
-                    : `${money(rate.rateMinor)}/h`}
-                </Text>
-              </View>
-            );
-          })}
-          {data.hourlyRates.length === 0 ? (
-            <Text tone="muted">Tag income and time with areas to see which work pays best.</Text>
-          ) : null}
-        </Card>
+        {data.hourlyRates.length === 0 ? (
+          <EmptyState
+            title="No hourly rates yet"
+            message="Tag income and time with areas to see which work pays best."
+          />
+        ) : (
+          <Card className="gap-2">
+            {data.hourlyRates.map((rate) => {
+              const area = areas.find((a) => a.id === rate.areaId);
+              return (
+                <View key={rate.areaId} className="flex-row justify-between">
+                  <Text>{area ? `${area.emoji} ${area.name}` : "Area"}</Text>
+                  <Text numeric>
+                    {rate.rateMinor === null || rate.incomeMinor === 0
+                      ? `${formatMinutes(rate.minutes)}, no income`
+                      : `${money(rate.rateMinor)}/h`}
+                  </Text>
+                </View>
+              );
+            })}
+          </Card>
+        )}
       </Section>
       <Section title="Someday">
-        <Card className="gap-2">
-          {data.someday.map((task) => (
-            <View key={task.id} className="flex-row items-center justify-between gap-2">
-              <Text className="flex-1">{task.title}</Text>
-              <Button
-                label="Inbox"
-                size="sm"
-                variant="secondary"
-                onPress={() =>
-                  send({ method: "PATCH", path: `/tasks/${task.id}`, body: { status: "inbox" } })
-                }
-              />
-            </View>
-          ))}
-          {data.someday.length === 0 ? <Text tone="muted">Nothing parked.</Text> : null}
-        </Card>
+        {data.someday.length === 0 ? (
+          <EmptyState
+            title="Nothing parked"
+            message="Ideas you save for later will wait here."
+            mood="relaxed"
+          />
+        ) : (
+          <Card className="gap-2">
+            {data.someday.map((task) => (
+              <View key={task.id} className="flex-row items-center justify-between gap-2">
+                <Text className="flex-1">{task.title}</Text>
+                <Button
+                  label="Inbox"
+                  size="sm"
+                  variant="secondary"
+                  onPress={() =>
+                    send({ method: "PATCH", path: `/tasks/${task.id}`, body: { status: "inbox" } })
+                  }
+                />
+              </View>
+            ))}
+          </Card>
+        )}
       </Section>
       {data.subscriptions.length ? (
         <Button

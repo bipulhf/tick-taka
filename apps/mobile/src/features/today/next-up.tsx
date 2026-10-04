@@ -2,6 +2,7 @@ import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { Amount } from "@/components/ui/amount";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
 import { ListRow } from "@/components/ui/list-row";
 import { Section } from "@/components/ui/section";
@@ -83,9 +84,13 @@ export function NextUp({
         </Text>
       ) : null}
       {items.length === 0 ? (
-        <Text variant="callout" tone="muted" className="px-1">
-          Nothing else scheduled. A calm day.
-        </Text>
+        <EmptyState
+          icon="weather-sunny"
+          title="Nothing else scheduled"
+          message="A calm day. Add something if you like."
+          actionLabel="Add"
+          onAction={() => router.push("/add")}
+        />
       ) : (
         <Group inset={64}>
           {items

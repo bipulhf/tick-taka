@@ -178,6 +178,7 @@ export function SmsReviewPanel() {
       ) : null}
       {pending.length === 0 ? (
         <EmptyState
+          title="All caught up"
           message="No SMS waiting. Everything's logged."
           actionLabel="SMS sources"
           onAction={() => router.replace("/settings/sms")}

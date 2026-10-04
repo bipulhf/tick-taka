@@ -3,10 +3,13 @@ import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
+import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
@@ -50,46 +53,70 @@ export function AreaDetail({ areaId }: { areaId: string }) {
           }}
         />
       </View>
-      {projectList.map((project) => {
-        const projectTasks = (tasks.data ?? []).filter((t) => t.projectId === project.id);
-        const nextStatus =
-          project.status === "active" ? "paused" : project.status === "paused" ? "done" : "active";
-        return (
-          <Section
-            key={project.id}
-            title={project.name}
-            action={project.status}
-            onAction={() =>
-              send({
-                method: "PATCH",
-                path: `/projects/${project.id}`,
-                body: { status: nextStatus, updatedAt: Date.now() },
-              })
+      <AsyncContent query={projects} skeleton={<SkeletonList rows={4} />}>
+        {() => (
+          <AsyncContent
+            query={tasks}
+            skeleton={<SkeletonList rows={4} />}
+            isEmpty={() => projectList.length === 0 && loose.length === 0}
+            empty={
+              <EmptyState
+                title="No projects yet"
+                message="Name one above to group related tasks in this area."
+              />
             }
           >
-            {projectTasks.length === 0 ? (
-              <Text variant="callout" tone="muted" className="px-1">
-                No open tasks.
-              </Text>
-            ) : (
-              <Group inset={TASK_ROW_INSET}>
-                {projectTasks.map((task) => (
-                  <TaskRow key={task.id} task={task} today={today} showWhen />
-                ))}
-              </Group>
+            {() => (
+              <>
+                {projectList.map((project) => {
+                  const projectTasks = (tasks.data ?? []).filter((t) => t.projectId === project.id);
+                  const nextStatus =
+                    project.status === "active"
+                      ? "paused"
+                      : project.status === "paused"
+                        ? "done"
+                        : "active";
+                  return (
+                    <Section
+                      key={project.id}
+                      title={project.name}
+                      action={project.status}
+                      onAction={() =>
+                        send({
+                          method: "PATCH",
+                          path: `/projects/${project.id}`,
+                          body: { status: nextStatus, updatedAt: Date.now() },
+                        })
+                      }
+                    >
+                      {projectTasks.length === 0 ? (
+                        <Text variant="callout" tone="muted" className="px-1">
+                          No open tasks.
+                        </Text>
+                      ) : (
+                        <Group inset={TASK_ROW_INSET}>
+                          {projectTasks.map((task) => (
+                            <TaskRow key={task.id} task={task} today={today} showWhen />
+                          ))}
+                        </Group>
+                      )}
+                    </Section>
+                  );
+                })}
+                {loose.length > 0 ? (
+                  <Section title="No project">
+                    <Group inset={TASK_ROW_INSET}>
+                      {loose.map((task) => (
+                        <TaskRow key={task.id} task={task} today={today} showWhen />
+                      ))}
+                    </Group>
+                  </Section>
+                ) : null}
+              </>
             )}
-          </Section>
-        );
-      })}
-      {loose.length > 0 ? (
-        <Section title="No project">
-          <Group inset={TASK_ROW_INSET}>
-            {loose.map((task) => (
-              <TaskRow key={task.id} task={task} today={today} showWhen />
-            ))}
-          </Group>
-        </Section>
-      ) : null}
+          </AsyncContent>
+        )}
+      </AsyncContent>
       <Button
         label="Rename or recolour areas"
         variant="ghost"

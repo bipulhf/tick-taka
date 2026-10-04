@@ -21,7 +21,7 @@ import { Snackbar } from "@/components/ui/snackbar";
 import { AppServices } from "@/features/app/app-services";
 import { loadFocusSession } from "@/features/focus/focus-session";
 import { AppLock } from "@/features/security/app-lock";
-import { ThemedRoot } from "@/features/settings/themed-root";
+import { loadThemeChoice, ThemedRoot } from "@/features/settings/themed-root";
 import { loadToken, tokenStore } from "@/lib/auth";
 import { loadPrivacy } from "@/lib/privacy";
 import { PERSIST_MAX_AGE, persister, queryClient } from "@/lib/query-client";
@@ -55,6 +55,7 @@ export default function RootLayout() {
     void loadToken();
     void loadPrivacy();
     void loadFocusSession();
+    void loadThemeChoice();
   }, []);
 
   useEffect(() => {

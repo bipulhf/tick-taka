@@ -5,6 +5,7 @@ import { Chip } from "@/components/ui/chip";
 import { ListRow } from "@/components/ui/list-row";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { Segmented } from "@/components/ui/segmented";
 import { Text } from "@/components/ui/text";
 import { formatMinutes } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -57,6 +58,17 @@ export function SettingsScreen() {
 
   return (
     <Screen title="Settings" tabBarPadding={false}>
+      <Section title="Appearance">
+        <Segmented<"system" | "light" | "dark">
+          value={s.theme}
+          onChange={(theme) => update({ theme })}
+          options={[
+            { value: "system", label: "System" },
+            { value: "light", label: "Light" },
+            { value: "dark", label: "Dark" },
+          ]}
+        />
+      </Section>
       <Section title="Today">
         <Card className="gap-1">
           <ChoiceRow label="Daily task goal">

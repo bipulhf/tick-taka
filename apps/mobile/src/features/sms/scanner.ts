@@ -67,7 +67,13 @@ export async function scanSms(
       since,
       sources.map((s) => s.sender),
     );
-    return await ingest(messages, settings, context, accounts);
+    const cards = await ingest(messages, settings, context, accounts);
+    // Only an inbox scan moves the cursor, and only past messages it actually read.
+    const latest = Math.max(settings.smsLastScanAt, ...messages.map((m) => m.receivedAt));
+    if (latest > settings.smsLastScanAt) {
+      void send("PATCH", "/settings", { smsLastScanAt: latest }).catch(() => {});
+    }
+    return cards;
   } finally {
     scanning = false;
   }
@@ -138,8 +144,5 @@ export async function ingest(
     }
   }
   addCards(fresh);
-  const latest = Math.max(settings.smsLastScanAt, ...messages.map((m) => m.receivedAt));
-  if (latest > settings.smsLastScanAt)
-    void send("PATCH", "/settings", { smsLastScanAt: latest }).catch(() => {});
   return fresh;
 }

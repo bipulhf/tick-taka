@@ -11,6 +11,7 @@ import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { useUpdateSettings } from "@/features/settings/use-update-settings";
+import { plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useAccounts, useSettings } from "@/lib/queries";
 import { useSmsScan } from "./use-sms-capture";
@@ -97,8 +98,8 @@ export function SmsSourcesScreen() {
           icon="refresh"
           variant="secondary"
           onPress={() =>
-            void scan().then((n) =>
-              notify(n ? `${n} new card${n === 1 ? "" : "s"}` : "Nothing new"),
+            void scan().then((cards) =>
+              notify(cards.length ? plural(cards.length, "new card") : "Nothing new"),
             )
           }
         />
@@ -153,7 +154,7 @@ export function SmsSourcesScreen() {
             onChangeText={setSamples}
             multiline
             numberOfLines={8}
-            className="min-h-40"
+            style={{ minHeight: 160 }}
             textAlignVertical="top"
           />
           {sampleList.map((sample, i) => {

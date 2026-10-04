@@ -43,7 +43,7 @@ function CardView({
       <Card className="gap-2">
         <View className="flex-row items-center justify-between">
           <Text variant="caption" tone="muted">
-            {card.sender} → {accountName}
+            {card.kind === "transfer" ? accountName : `${card.sender} → ${accountName}`}
             {card.aiParsed ? " · ✨ AI read" : ""}
           </Text>
           <Text variant="caption" tone="muted">
@@ -79,7 +79,7 @@ function CardView({
                 <Chip
                   key={c.id}
                   label={`${c.emoji} ${c.name}`}
-                  tone="coral"
+                  tone={card.kind === "income" ? "mint" : "coral"}
                   selected={card.categoryId === c.id}
                   onPress={() => {
                     updateCard(card.fingerprint, { categoryId: c.id, confident: true });
@@ -188,7 +188,11 @@ export function SmsReviewPanel() {
         <CardView
           key={card.fingerprint}
           card={card}
-          accountName={accountName(card.accountId)}
+          accountName={
+            card.kind === "transfer" && card.toAccountId
+              ? `${accountName(card.accountId)} → ${accountName(card.toAccountId)}`
+              : accountName(card.accountId)
+          }
           categories={categories}
           onAdd={() => add(card)}
           onIgnore={() => actions.ignore(card)}

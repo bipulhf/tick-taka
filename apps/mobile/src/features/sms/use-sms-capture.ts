@@ -1,11 +1,15 @@
 import { onSmsReceived } from "@modules/sms-reader";
+import { onlineManager } from "@tanstack/react-query";
 import { formatAmount } from "@tick-taka/shared/money";
 import type { QuickAddContext } from "@tick-taka/shared/quick-add";
+import type { Settings } from "@tick-taka/shared/schemas/settings";
 import * as Notifications from "expo-notifications";
 import { useCallback, useEffect, useRef } from "react";
 import { AppState } from "react-native";
-import { useReference } from "@/lib/queries";
-import { ingest, scanSms } from "./scanner";
+import { api, unwrap } from "@/lib/api";
+import { keys, useReference } from "@/lib/queries";
+import { queryClient } from "@/lib/query-client";
+import { scanSms } from "./scanner";
 import { loadSmsCards, type SmsCard } from "./sms-store";
 
 export const SMS_CATEGORY = "sms-card";
@@ -19,7 +23,7 @@ async function notifyCard(card: SmsCard) {
         : "add as expense?";
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: `${card.sender} · ${formatAmount(card.parsed.amountMinor)} ${card.parsed.direction === "in" ? "received" : "payment"}`,
+      title: `${card.sender} · ${formatAmount(card.parsed.amountMinor)} ${card.parsed.direction === "in" ? "received" : card.kind === "transfer" ? "cash out" : "payment"}`,
       body: verb[0]!.toUpperCase() + verb.slice(1),
       categoryIdentifier: SMS_CATEGORY,
       data: {
@@ -31,14 +35,29 @@ async function notifyCard(card: SmsCard) {
   });
 }
 
-/** Returns a function that scans the inbox now and resolves to the number of new cards. */
+/** Settings straight from the server when online, so a just-added sender is never missed. */
+async function freshSettings(cached: Settings | undefined): Promise<Settings | undefined> {
+  if (!onlineManager.isOnline()) return cached;
+  try {
+    return await queryClient.fetchQuery({
+      queryKey: keys.settings,
+      queryFn: () => unwrap(api.settings.$get()),
+      staleTime: 0,
+    });
+  } catch {
+    return cached;
+  }
+}
+
+/** Returns a function that scans the inbox now and resolves to the new cards. */
 export function useSmsScan() {
   const reference = useReference();
   const latest = useRef(reference);
   latest.current = reference;
-  return useCallback(async () => {
-    const { settings, accounts, categories, areas, rules } = latest.current;
-    if (!settings) return 0;
+  return useCallback(async (): Promise<SmsCard[]> => {
+    const { accounts, categories, areas, rules } = latest.current;
+    const settings = await freshSettings(latest.current.settings);
+    if (!settings) return [];
     const context: QuickAddContext = {
       now: Date.now(),
       timeZone: settings.timeZone,
@@ -48,21 +67,18 @@ export function useSmsScan() {
       areas,
       rules,
     };
-    const cards = await scanSms(settings, context, accounts);
-    return cards.length;
+    return scanSms(settings, context, accounts);
   }, []);
 }
 
 /**
- * Scan-on-open plus the live receiver: each time the app opens it reads allowed
- * messages since the last scan; while open, new SMS arrive as events.
+ * Scan-on-open plus the live receiver. A new SMS while the app is open triggers the
+ * same inbox scan (so the scan cursor stays honest) and a notification per new card.
  */
 export function useSmsCapture() {
   const reference = useReference();
   const scan = useSmsScan();
   const ready = reference.ready;
-  const latest = useRef(reference);
-  latest.current = reference;
 
   useEffect(() => {
     void loadSmsCards();
@@ -78,25 +94,10 @@ export function useSmsCapture() {
     const appState = AppState.addEventListener("change", (status) => {
       if (status === "active") void scan();
     });
-    const live = onSmsReceived(async (sms) => {
-      const { settings, accounts, categories, areas, rules } = latest.current;
-      if (!settings) return;
-      const context: QuickAddContext = {
-        now: Date.now(),
-        timeZone: settings.timeZone,
-        accounts,
-        defaultAccountId: settings.defaultAccountId,
-        categories,
-        areas,
-        rules,
-      };
-      const cards = await ingest(
-        [{ id: String(sms.receivedAt), ...sms }],
-        settings,
-        context,
-        accounts,
-      );
-      for (const card of cards) await notifyCard(card);
+    const live = onSmsReceived(async () => {
+      // The provider may not have stored the message yet when the broadcast arrives.
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      for (const card of await scan()) await notifyCard(card);
     });
     return () => {
       appState.remove();

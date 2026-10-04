@@ -9,6 +9,7 @@ import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { useTaskActions } from "@/features/tasks/use-task-actions";
+import { plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useShutdown } from "./queries";
@@ -31,7 +32,7 @@ export function ShutdownFlow() {
   return (
     <Screen
       title="Daily shutdown"
-      subtitle={`${data.tasksDone} tasks done today`}
+      subtitle={`${plural(data.tasksDone, "task")} done today`}
       tabBarPadding={false}
     >
       {sms > 0 ? (

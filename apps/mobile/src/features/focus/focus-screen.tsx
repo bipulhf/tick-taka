@@ -127,59 +127,61 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
   const drooping = session?.drooping ?? false;
 
   return (
-    <View
-      className={`flex-1 items-center justify-between px-6 ${session?.phase === "break" ? "bg-mint/10" : "bg-sky/10"}`}
-      style={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }}
-    >
-      <View className="items-center gap-1">
-        <Text variant="label" tone="muted">
-          {session?.phase === "break" ? "Break" : "Focus"}
-        </Text>
-        <Text variant="heading" className="text-center" numberOfLines={2}>
-          {task.data?.title ?? "Deep work"}
-        </Text>
-      </View>
-      <View className="items-center">
-        <Plant growth={growth} drooping={drooping} />
-        <Text variant="display" className="text-6xl" numeric accessibilityLiveRegion="polite">
-          {formatTimer(remaining)}
-        </Text>
-        {drooping ? (
-          <Text tone="muted" className="mt-2 text-center">
-            The plant missed you. It perks up when you stay.
+    <View className="flex-1 bg-background">
+      <View
+        className={`flex-1 items-center justify-between px-6 ${session?.phase === "break" ? "bg-mint/10" : ""}`}
+        style={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }}
+      >
+        <View className="items-center gap-1">
+          <Text variant="label" tone="muted">
+            {session?.phase === "break" ? "Break" : "Focus"}
           </Text>
-        ) : null}
-      </View>
-      <View className="w-full gap-3">
-        <View className="flex-row items-center justify-center gap-3">
-          <Tiki
-            mood={
-              session?.phase === "work"
-                ? "focused"
-                : session?.phase === "break"
-                  ? "relaxed"
-                  : "happy"
-            }
-            size={56}
-          />
-          <Text tone="muted" className="flex-1">
-            {session?.phase === "work"
-              ? "Tiki is watering the plant. Stay with it."
-              : session?.phase === "break"
-                ? "Stretch, sip some water."
-                : `${settings?.focus.workMinutes ?? 25} min work, ${settings?.focus.breakMinutes ?? 5} min break.`}
+          <Text variant="heading" className="text-center" numberOfLines={2}>
+            {task.data?.title ?? "Deep work"}
           </Text>
         </View>
-        {session ? (
-          <Button
-            label={session.phase === "work" ? "Stop and log time" : "Skip break"}
-            variant="secondary"
-            onPress={stop}
-          />
-        ) : (
-          <Button label="Start focus" variant="time" icon="play" onPress={startWork} />
-        )}
-        <Button label="Close" variant="ghost" onPress={() => router.back()} />
+        <View className="items-center">
+          <Plant growth={growth} drooping={drooping} />
+          <Text variant="display" className="text-6xl" numeric accessibilityLiveRegion="polite">
+            {formatTimer(remaining)}
+          </Text>
+          {drooping ? (
+            <Text tone="muted" className="mt-2 text-center">
+              The plant missed you. It perks up when you stay.
+            </Text>
+          ) : null}
+        </View>
+        <View className="w-full gap-3">
+          <View className="flex-row items-center justify-center gap-3">
+            <Tiki
+              mood={
+                session?.phase === "work"
+                  ? "focused"
+                  : session?.phase === "break"
+                    ? "relaxed"
+                    : "happy"
+              }
+              size={56}
+            />
+            <Text tone="muted" className="flex-1">
+              {session?.phase === "work"
+                ? "Tiki is watering the plant. Stay with it."
+                : session?.phase === "break"
+                  ? "Stretch, sip some water."
+                  : `${settings?.focus.workMinutes ?? 25} min work, ${settings?.focus.breakMinutes ?? 5} min break.`}
+            </Text>
+          </View>
+          {session ? (
+            <Button
+              label={session.phase === "work" ? "Stop and log time" : "Skip break"}
+              variant="secondary"
+              onPress={stop}
+            />
+          ) : (
+            <Button label="Start focus" variant="time" icon="play" onPress={startWork} />
+          )}
+          <Button label="Close" variant="ghost" onPress={() => router.back()} />
+        </View>
       </View>
     </View>
   );

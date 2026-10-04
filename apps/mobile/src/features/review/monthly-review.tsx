@@ -86,7 +86,7 @@ export function MonthlyReview() {
               <View key={rate.areaId} className="flex-row justify-between">
                 <Text>{area ? `${area.emoji} ${area.name}` : "Area"}</Text>
                 <Text numeric>
-                  {rate.rateMinor === null
+                  {rate.rateMinor === null || rate.incomeMinor === 0
                     ? `${formatMinutes(rate.minutes)}, no income`
                     : `${money(rate.rateMinor)}/h`}
                 </Text>

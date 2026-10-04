@@ -46,9 +46,9 @@ function Eyes({ mood }: { mood: TikiMood }) {
     case "focused":
       return (
         <G>
-          <G stroke={INK} strokeWidth={3} strokeLinecap="round">
-            <Line x1={41} y1={48} x2={54} y2={51} />
-            <Line x1={79} y1={48} x2={66} y2={51} />
+          <G stroke={INK} strokeWidth={2.5} strokeLinecap="round" fill="none">
+            <Path d="M42 48 Q48 45 54 48" />
+            <Path d="M66 48 Q72 45 78 48" />
           </G>
           <Circle cx={48} cy={58} r={4.5} fill={INK} />
           <Circle cx={72} cy={58} r={4.5} fill={INK} />
@@ -94,7 +94,7 @@ function Mouth({ mood }: { mood: TikiMood }) {
     case "sleepy":
       return <Circle cx={60} cy={74} r={3.5} fill={INK} />;
     case "focused":
-      return <Line x1={53} y1={73} x2={67} y2={73} {...stroke} />;
+      return <Path d="M52 72 Q60 76 68 72" {...stroke} />;
     case "curious":
       return <Circle cx={61} cy={74} r={3} fill={INK} />;
     default:

@@ -11,7 +11,7 @@ import { Screen } from "@/components/ui/screen";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
-import { formatLocalDate, formatMinutes } from "@/lib/format";
+import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { usePrivacy } from "@/lib/privacy";
@@ -127,13 +127,13 @@ export function WeeklyReview() {
       ) : null}
       {step === 3 ? (
         <Card className="gap-2">
-          <Text>✓ {data.wins.tasksDone} tasks finished</Text>
+          <Text>✓ {plural(data.wins.tasksDone, "task")} finished</Text>
           <Text>
             ⭐ {data.wins.topThreeDone} of {data.wins.topThreePlanned} top-three tasks
           </Text>
           <Text>
-            🌱 {formatMinutes(data.wins.focusMinutes)} of focus in {data.wins.focusSessions}{" "}
-            sessions
+            🌱 {formatMinutes(data.wins.focusMinutes)} of focus in{" "}
+            {plural(data.wins.focusSessions, "session")}
           </Text>
           {data.wins.highlights.map((title) => (
             <Text key={title} tone="muted">

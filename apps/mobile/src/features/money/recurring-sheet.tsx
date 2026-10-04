@@ -217,7 +217,7 @@ export function RecurringSheet({ id }: { id: string | null }) {
       <Text variant="label" tone="muted">
         Remind me
       </Text>
-      <View className="flex-row gap-2">
+      <View className="flex-row flex-wrap gap-2">
         {[0, 1, 2, 3, 7].map((d) => (
           <Chip
             key={d}

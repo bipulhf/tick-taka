@@ -28,8 +28,9 @@ export function OverdueBanner({ data }: { data: TodayData }) {
   return (
     <Card className="gap-3">
       <Text>
-        {count} task{count === 1 ? "" : "s"} slipped past their day. Where should{" "}
-        {count === 1 ? "it" : "they"} go?
+        {count === 1
+          ? "1 task slipped past its day. Where should it go?"
+          : `${count} tasks slipped past their day. Where should they go?`}
       </Text>
       <View className="flex-row gap-2">
         <Button

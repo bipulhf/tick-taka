@@ -23,6 +23,9 @@ import { useAccounts, useCategories, useSettings } from "@/lib/queries";
 import { useInsights, useTransactions } from "./queries";
 import { TransactionRow, useLookup } from "./transaction-row";
 
+const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEK_OFFSETS = [0, 1, 2, 3, 4, 5, 6];
+
 /** A month grid of daily spending; tap a spike to see what it was. */
 export function MoneyCalendar() {
   const { data: settings } = useSettings();
@@ -77,6 +80,16 @@ export function MoneyCalendar() {
       }
     >
       <Card className="flex-row flex-wrap p-2">
+        {WEEK_OFFSETS.map((i) => (
+          <Text
+            key={`weekday-${(weekStartsOn + i) % 7}`}
+            variant="caption"
+            tone="muted"
+            className="w-[14.28%] pb-1 text-center"
+          >
+            {WEEKDAYS[(weekStartsOn + i) % 7]}
+          </Text>
+        ))}
         {cells.map((date) => {
           const spent = byDay.get(date) ?? 0;
           const inMonth = date.slice(0, 7) === month;

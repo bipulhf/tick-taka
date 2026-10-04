@@ -6,6 +6,7 @@ import { Chip } from "@/components/ui/chip";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { Text } from "@/components/ui/text";
+import { plural } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { useSettings } from "@/lib/queries";
 import { useGamification } from "./queries";
@@ -34,8 +35,8 @@ export function RewardsScreen() {
           {data.sparks} sparks · {data.level.nextLevelSparks - data.sparks} to go
         </Text>
         <Text variant="caption" tone="muted">
-          Logging streak {data.loggingStreak.current} days · Daily goal streak{" "}
-          {data.dailyGoal.streak.current} days
+          Logging streak {plural(data.loggingStreak.current, "day")} · Daily goal streak{" "}
+          {plural(data.dailyGoal.streak.current, "day")}
         </Text>
       </Card>
       {REWARDS.map((reward) => {

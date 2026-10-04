@@ -8,7 +8,7 @@ import { Draggable, DragProvider, DropZone } from "@/components/ui/drag";
 import { Screen } from "@/components/ui/screen";
 import { Text } from "@/components/ui/text";
 import { api, unwrap } from "@/lib/api";
-import { formatClock, formatLocalDate } from "@/lib/format";
+import { formatLocalDate } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAiStatus, useSettings } from "@/lib/queries";
@@ -18,7 +18,7 @@ import { useMoveTask } from "./use-move-task";
 
 const START_HOUR = 6;
 const END_HOUR = 23;
-const PX_PER_MIN = 1.2;
+const PX_PER_MIN = 1.6;
 const SNAP_MIN = 15;
 
 type Plan = Awaited<ReturnType<typeof requestPlan>>;
@@ -155,15 +155,12 @@ export function DayTimeline({ date }: { date: string }) {
           {timed.map((task) => {
             const minute = localMinuteOfDay(task.doAt!, timeZone);
             const top = Math.max(0, (minute - START_HOUR * 60) * PX_PER_MIN);
-            const height = Math.max(36, (task.estimateMin ?? 30) * PX_PER_MIN);
+            const height = Math.max(44, (task.estimateMin ?? 30) * PX_PER_MIN);
             return (
               <View key={task.id} style={{ position: "absolute", top, left: 58, right: 8, height }}>
                 <Draggable id={task.id}>
                   <View style={{ height }} className="justify-center rounded-xl bg-sky/20 px-1">
                     <CompactTask task={task} />
-                    <Text variant="caption" tone="muted" className="px-3" numeric>
-                      {formatClock(task.doAt!, timeZone)}
-                    </Text>
                   </View>
                 </Draggable>
               </View>

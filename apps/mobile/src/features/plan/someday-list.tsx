@@ -1,6 +1,4 @@
-import { toLocalDate } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
-import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -44,10 +42,6 @@ export function SomedayList() {
           </Card>
         ))
       )}
-      <View className="h-2" />
-      <Text variant="caption" tone="muted">
-        Today is {toLocalDate(Date.now())}. Someday can wait.
-      </Text>
     </Screen>
   );
 }

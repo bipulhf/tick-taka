@@ -1,9 +1,9 @@
 import { toLocalDate } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
@@ -15,6 +15,7 @@ import { useProjects, useTasks } from "./queries";
 
 /** Areas hold projects; projects hold tasks. */
 export function AreaDetail({ areaId }: { areaId: string }) {
+  const router = useRouter();
   const send = useOutbox();
   const { data: areas = [] } = useAreas();
   const area = areas.find((a) => a.id === areaId);
@@ -87,9 +88,12 @@ export function AreaDetail({ areaId }: { areaId: string }) {
           </View>
         </Section>
       ) : null}
-      <View className="flex-row flex-wrap gap-2">
-        <Chip label="Rename or recolour this area in Settings" />
-      </View>
+      <Button
+        label="Rename or recolour areas"
+        variant="ghost"
+        size="sm"
+        onPress={() => router.push("/settings/areas")}
+      />
     </Screen>
   );
 }

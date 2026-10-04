@@ -103,7 +103,11 @@ export function QuickAddSheet({
   };
 
   const moneyKind = draft?.kind === "expense" || draft?.kind === "income" ? draft.kind : null;
-  const categories = reference.categories.filter((c) => c.kind === (moneyKind ?? "expense"));
+  const selectedCategoryId = draft && "categoryId" in draft ? draft.categoryId : null;
+  // The guessed or picked category comes first so it is visible without scrolling.
+  const categories = reference.categories
+    .filter((c) => c.kind === (moneyKind ?? "expense"))
+    .sort((a, b) => Number(b.id === selectedCategoryId) - Number(a.id === selectedCategoryId));
 
   return (
     <Sheet
@@ -129,6 +133,7 @@ export function QuickAddSheet({
         returnKeyType="done"
         onSubmitEditing={save}
         accessibilityLabel="What to add"
+        autoCapitalize="none"
         className="min-h-14 rounded-2xl border border-line bg-card px-4 font-nunito-bold text-xl text-ink"
       />
       <View className="min-h-6 flex-row items-center gap-2">
@@ -140,7 +145,7 @@ export function QuickAddSheet({
       </View>
       {qa.hoursOfWork ? (
         <Text variant="caption" tone="muted">
-          ≈ {qa.hoursOfWork} hours of work
+          ≈ {qa.hoursOfWork} {qa.hoursOfWork === 1 ? "hour" : "hours"} of work
         </Text>
       ) : null}
 

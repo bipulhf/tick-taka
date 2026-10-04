@@ -19,6 +19,8 @@ const TONES = {
   grape: "text-grape",
   mango: "text-mango",
   inverse: "text-white",
+  /** For text on an ink-coloured surface; flips with the theme. */
+  background: "text-background",
 } as const;
 
 export type TextVariant = keyof typeof VARIANTS;

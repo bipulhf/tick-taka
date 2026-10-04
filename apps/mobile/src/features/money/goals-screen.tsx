@@ -32,7 +32,10 @@ export function GoalsScreen() {
 
   const contribute = async (goalId: string) => {
     const amountMinor = parseAmountToMinor(amount);
-    const fromAccountId = from ?? accounts[0]?.id;
+    const jarAccountId = goals.data?.find((g) => g.id === goalId)?.accountId;
+    // Never move money from the jar's own account into itself.
+    const fromAccountId =
+      from && from !== jarAccountId ? from : accounts.find((a) => a.id !== jarAccountId)?.id;
     if (!amountMinor || !fromAccountId) return;
     try {
       const result = await unwrap(

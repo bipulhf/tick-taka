@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { Text } from "@/components/ui/text";
-import { formatClock } from "@/lib/format";
+import { formatWhen } from "@/lib/format";
 import type { Transaction } from "./queries";
 
 export interface Lookup {
@@ -62,7 +62,7 @@ export function TransactionRow({
           {[
             category && tx.note ? category.name : null,
             tx.type !== "transfer" ? account?.name : null,
-            formatClock(tx.occurredAt),
+            formatWhen(tx.occurredAt, true),
           ]
             .filter(Boolean)
             .join(" · ")}

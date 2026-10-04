@@ -55,6 +55,7 @@ function HabitChip({
             fill={habit.doneToday ? habit.color : "none"}
             fillOpacity={0.2}
             strokeDasharray={`${CIRCUMFERENCE * progress} ${CIRCUMFERENCE}`}
+            strokeOpacity={progress === 0 ? 0 : 1}
             strokeLinecap="round"
             transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
           />

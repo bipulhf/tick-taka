@@ -18,6 +18,13 @@ import { useMonthlySeries, useNetWorth } from "./queries";
 
 type Range = "this" | "last" | "quarter";
 
+/** Axis labels in taka: 126010 → "126k". */
+const compactLabel = (label: string) => {
+  const value = Number(label);
+  if (!Number.isFinite(value)) return label;
+  return Math.abs(value) >= 1000 ? `${Math.round(value / 1000)}k` : String(Math.round(value));
+};
+
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <View className="flex-row items-center gap-1.5">
@@ -51,7 +58,7 @@ export function InsightsScreen() {
           };
   const summary = useInsights(span.from, span.to);
   const series = useMonthlySeries(6);
-  const worth = useNetWorth(12);
+  const worth = useNetWorth(6);
   const data = summary.data;
 
   // Roll child categories into their parents for a readable ranking.
@@ -160,6 +167,9 @@ export function InsightsScreen() {
           ) : (
             <BarChart
               data={monthBars}
+              formatYLabel={compactLabel}
+              yAxisLabelWidth={44}
+              labelWidth={30}
               barWidth={12}
               spacing={18}
               roundedTop
@@ -173,7 +183,7 @@ export function InsightsScreen() {
               <Text variant="caption" tone="muted">
                 {formatMonth(m.month)}
               </Text>
-              <Text variant="caption" numeric>
+              <Text variant="caption" numeric className="flex-1 text-right">
                 {hidden
                   ? "•••"
                   : `${formatAmount(m.incomeMinor)} in · ${formatAmount(m.spentMinor)} out`}
@@ -186,7 +196,11 @@ export function InsightsScreen() {
         <Card className="gap-2">
           {worthPoints.length && !hidden ? (
             <LineChart
+              adjustToWidth
+              width={240}
               data={worthPoints}
+              formatYLabel={compactLabel}
+              yAxisLabelWidth={44}
               color={chart.moneyIn}
               thickness={2}
               hideDataPoints={false}

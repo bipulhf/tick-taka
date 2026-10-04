@@ -31,7 +31,7 @@ export function Snackbar() {
         className="flex-row items-center gap-3 rounded-2xl bg-ink px-4 py-3"
         accessibilityLiveRegion="polite"
       >
-        <Text className="flex-1 text-background" numberOfLines={2}>
+        <Text tone="background" className="flex-1" numberOfLines={2}>
           {snack.message}
         </Text>
         {snack.actionLabel ? (

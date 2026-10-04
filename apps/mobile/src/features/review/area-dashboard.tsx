@@ -31,7 +31,7 @@ export function AreaDashboard() {
           <View className="flex-row justify-between">
             <View>
               <Text variant="label" tone="muted">
-                This week
+                Week
               </Text>
               <Text variant="heading" numeric>
                 {formatMinutes(row.weekMinutes)}

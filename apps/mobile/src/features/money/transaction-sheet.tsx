@@ -242,7 +242,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
       ) : null}
       {hours ? (
         <Text variant="caption" tone="muted">
-          ≈ {hours} hours of work
+          ≈ {hours} {hours === 1 ? "hour" : "hours"} of work
         </Text>
       ) : null}
 

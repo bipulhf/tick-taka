@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { Text } from "@/components/ui/text";
-import { formatLocalDate, formatMinutes } from "@/lib/format";
+import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useAreas, useSettings } from "@/lib/queries";
 import { useColors } from "@/theme/colors";
 import { useFocusStats } from "./queries";
@@ -38,7 +38,7 @@ export function FocusStats() {
         <Text variant="display" numeric>
           {formatMinutes(stats.data?.totalMinutes ?? 0)}
         </Text>
-        <Text tone="muted">{stats.data?.sessions ?? 0} focus sessions</Text>
+        <Text tone="muted">{plural(stats.data?.sessions ?? 0, "focus session")}</Text>
       </Card>
       <Card>
         <BarChart
@@ -52,7 +52,6 @@ export function FocusStats() {
           yAxisTextStyle={{ color: colors.muted }}
           xAxisLabelTextStyle={{ color: colors.muted }}
           hideRules
-          isAnimated
         />
       </Card>
       <Card className="gap-2">

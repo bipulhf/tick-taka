@@ -33,7 +33,9 @@ void SplashScreen.preventAutoHideAsync();
 const sheet = {
   presentation: "formSheet" as const,
   sheetGrabberVisible: false,
-  sheetAllowedDetents: [0.75, 1],
+  // One detent: the sheet content is laid out at its largest height, so a second,
+  // smaller detent would hide the footer buttons.
+  sheetAllowedDetents: [0.92],
   sheetCornerRadius: 28,
 };
 

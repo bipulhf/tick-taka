@@ -1,7 +1,23 @@
-import type { ReactNode } from "react";
-import { ScrollView, View } from "react-native";
+import { type ReactNode, useEffect, useState } from "react";
+import { Keyboard, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "./text";
+
+/** Height of the on-screen keyboard; form sheets don't resize for it on their own. */
+function useKeyboardHeight(): number {
+  const [height, setHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", (event) =>
+      setHeight(event.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener("keyboardDidHide", () => setHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return height;
+}
 
 /** Body of a bottom-sheet route: creating and editing never open a full screen. */
 export function Sheet({
@@ -14,8 +30,9 @@ export function Sheet({
   footer?: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardHeight();
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-background" style={{ paddingBottom: keyboard }}>
       <View className="items-center pt-2">
         <View className="h-1.5 w-10 rounded-full bg-line" />
       </View>
@@ -31,7 +48,7 @@ export function Sheet({
       {footer ? (
         <View
           className="gap-2 border-t border-line px-5 pt-3"
-          style={{ paddingBottom: insets.bottom + 12 }}
+          style={{ paddingBottom: (keyboard ? 0 : insets.bottom) + 12 }}
         >
           {footer}
         </View>

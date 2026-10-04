@@ -74,6 +74,8 @@ export function createOpenAiClient(env: Env): AiClient | null {
       const completion = await openai.chat.completions.create({
         model: modelName(request.model),
         messages: request.messages.map(toOpenAi),
+        // Function tools on Chat Completions require reasoning to be off for newer models.
+        reasoning_effort: "none",
         tools: request.tools.map((tool) => ({
           type: "function" as const,
           function: {

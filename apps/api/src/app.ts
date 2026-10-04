@@ -2,14 +2,26 @@ import { Hono } from "hono";
 import type { Deps } from "./lib/deps";
 import { requireAuth } from "./middleware/auth";
 import { onError, onNotFound } from "./middleware/error-handler";
+import { accountsRoutes } from "./modules/accounts/routes";
 import { areasRoutes } from "./modules/areas/routes";
 import { authRoutes } from "./modules/auth/routes";
+import { budgetsRoutes } from "./modules/budgets/routes";
+import { categoriesRoutes } from "./modules/categories/routes";
+import { categoryRulesRoutes } from "./modules/category-rules/routes";
+import { debtsRoutes } from "./modules/debts/routes";
+import { eventsRoutes } from "./modules/events/routes";
+import { goalsRoutes } from "./modules/goals/routes";
 import { habitsRoutes } from "./modules/habits/routes";
 import { projectsRoutes } from "./modules/projects/routes";
+import { recurringRoutes } from "./modules/recurring/routes";
 import { routinesRoutes } from "./modules/routines/routes";
 import { settingsRoutes } from "./modules/settings/routes";
+import { shoppingRoutes } from "./modules/shopping/routes";
+import { smsImportsRoutes } from "./modules/sms-imports/routes";
 import { tasksRoutes } from "./modules/tasks/routes";
 import { timeEntriesRoutes, timerRoutes } from "./modules/time-entries/routes";
+import { transactionsRoutes } from "./modules/transactions/routes";
+import { uploadsRoutes } from "./modules/uploads/routes";
 
 const startedAt = Date.now();
 
@@ -23,7 +35,19 @@ export function createApp(deps: Deps) {
     .route("/routines", routinesRoutes(deps))
     .route("/timer", timerRoutes(deps))
     .route("/time-entries", timeEntriesRoutes(deps))
-    .route("/habits", habitsRoutes(deps));
+    .route("/habits", habitsRoutes(deps))
+    .route("/accounts", accountsRoutes(deps))
+    .route("/transactions", transactionsRoutes(deps))
+    .route("/categories", categoriesRoutes(deps))
+    .route("/category-rules", categoryRulesRoutes(deps))
+    .route("/budgets", budgetsRoutes(deps))
+    .route("/recurring", recurringRoutes(deps))
+    .route("/goals", goalsRoutes(deps))
+    .route("/debts", debtsRoutes(deps))
+    .route("/events", eventsRoutes(deps))
+    .route("/shopping", shoppingRoutes(deps))
+    .route("/sms-imports", smsImportsRoutes(deps))
+    .route("/uploads", uploadsRoutes(deps));
 
   return new Hono()
     .onError(onError)

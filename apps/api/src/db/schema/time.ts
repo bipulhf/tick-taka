@@ -56,6 +56,8 @@ export const tasks = sqliteTable(
     urgent: bool("urgent").notNull().default(false),
     sort: integer("sort").notNull().default(0),
     doneAt: integer("done_at"),
+    /** Set on "move ৳X to the jar" tasks that a savings goal creates each month */
+    goalId: text("goal_id"),
   },
   (t) => [
     index("tasks_status_do_at_idx").on(t.status, t.doAt),

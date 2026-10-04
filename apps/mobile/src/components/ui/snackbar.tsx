@@ -25,7 +25,7 @@ export function Snackbar() {
       entering={FadeInDown.springify()}
       exiting={FadeOutDown}
       pointerEvents="box-none"
-      style={{ position: "absolute", left: 16, right: 16, bottom: insets.bottom + 88 }}
+      style={{ position: "absolute", left: 16, right: 16, bottom: insets.bottom + 160 }}
     >
       <View
         className="flex-row items-center gap-3 rounded-2xl bg-ink px-4 py-3"

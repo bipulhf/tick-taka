@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TAB_BAR_GAP, TAB_BAR_HEIGHT } from "@/components/navigation/tab-bar";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { formatTimer } from "@/lib/format";
@@ -25,7 +26,11 @@ export function RunningTimerBar({
   const now = useNow();
   const focus = entry.source === "focus";
   return (
-    <View className="absolute left-3 right-3" style={{ bottom: insets.bottom + 84 }}>
+    // Sits beside the floating chat bubble, just above the tab bar.
+    <View
+      className="absolute right-4"
+      style={{ left: 88, bottom: insets.bottom + TAB_BAR_GAP + TAB_BAR_HEIGHT + 12 }}
+    >
       <Pressable
         onPress={() => router.push(focus ? "/focus" : "/plan/time")}
         accessibilityRole="button"

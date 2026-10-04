@@ -25,7 +25,7 @@ const DAY_START_MINUTES = 9 * 60;
 /** Plan my day: top three, estimates, fixed blocks and bills → a draggable timeline. */
 export async function aiPlanDay(deps: Deps, date: LocalDate) {
   const ai = requireAi(deps, "planDay");
-  const { timeZone, settings } = userTime(deps);
+  const { timeZone, settings, today, now } = userTime(deps);
   const from = startOfLocalDay(date, timeZone);
   const to = endOfLocalDay(date, timeZone);
   const candidates = deps.db
@@ -45,9 +45,12 @@ export async function aiPlanDay(deps: Deps, date: LocalDate) {
   const bills = recurringService(deps)
     .listWithStatus()
     .filter((item) => item.dueDate === date);
-  const firstFixed = Math.min(
-    DAY_START_MINUTES,
-    ...fixed.map((t) => localMinuteOfDay(t.doAt!, timeZone)),
+  // Planning today starts from now (rounded up to the next quarter hour), not 9 am.
+  const nowMinute = date === today ? Math.ceil(localMinuteOfDay(now, timeZone) / 15) * 15 : 0;
+  const upcomingFixed = fixed.filter((t) => date !== today || t.doAt! >= now);
+  const firstFixed = Math.max(
+    nowMinute,
+    Math.min(DAY_START_MINUTES, ...upcomingFixed.map((t) => localMinuteOfDay(t.doAt!, timeZone))),
   );
   const dayEnd = Math.min(23 * 60, firstFixed + settings.dayCapacityMinutes + 120);
 

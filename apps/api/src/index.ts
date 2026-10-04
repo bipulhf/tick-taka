@@ -13,8 +13,6 @@ const deps = { db, sqlite, env, now: Date.now, ai: createOpenAiClient(env) };
 const app = createApp(deps);
 if (env.JOBS_ENABLED) startJobs(deps);
 
-console.log(`Tick & Taka API listening on http://${env.HOST}:${env.PORT}`);
-
 export default {
   port: env.PORT,
   hostname: env.HOST,

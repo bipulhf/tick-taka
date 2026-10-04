@@ -1,0 +1,3 @@
+[install]
+# React Native and Metro expect a flat node_modules.
+linker = "hoisted"

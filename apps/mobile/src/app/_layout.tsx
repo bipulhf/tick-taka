@@ -1,0 +1,105 @@
+import "@/lib/polyfills";
+import "../global.css";
+import {
+  Nunito_400Regular,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+  useFonts,
+} from "@expo-google-fonts/nunito";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { Stack } from "expo-router";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { useColorScheme } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ConfettiLayer } from "@/components/ui/confetti";
+import { Snackbar } from "@/components/ui/snackbar";
+import { AppLock } from "@/features/security/app-lock";
+import { loadToken, tokenStore } from "@/lib/auth";
+import { loadPrivacy } from "@/lib/privacy";
+import { PERSIST_MAX_AGE, persister, queryClient } from "@/lib/query-client";
+import { useStore } from "@/lib/store";
+import { palette } from "@/theme/colors";
+
+void SplashScreen.preventAutoHideAsync();
+
+const sheet = {
+  presentation: "formSheet" as const,
+  sheetGrabberVisible: false,
+  sheetAllowedDetents: [0.75, 1],
+  sheetCornerRadius: 28,
+};
+
+export default function RootLayout() {
+  const scheme = useColorScheme();
+  const colors = scheme === "dark" ? palette.dark : palette.light;
+  const [fontsLoaded] = useFonts({
+    Nunito_400Regular,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+  });
+  const token = useStore(tokenStore);
+  const ready = fontsLoaded && token !== undefined;
+
+  useEffect(() => {
+    void loadToken();
+    void loadPrivacy();
+  }, []);
+
+  useEffect(() => {
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
+  const base = scheme === "dark" ? DarkTheme : DefaultTheme;
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: "1" }}
+          onSuccess={() => void queryClient.resumePausedMutations()}
+        >
+          <ThemeProvider
+            value={{
+              ...base,
+              colors: {
+                ...base.colors,
+                background: colors.background,
+                card: colors.card,
+                text: colors.ink,
+                primary: colors.mango,
+                border: colors.line,
+              },
+            }}
+          >
+            <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background },
+              }}
+            >
+              <Stack.Protected guard={Boolean(token)}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="add" options={sheet} />
+              </Stack.Protected>
+              <Stack.Protected guard={!token}>
+                <Stack.Screen name="login" />
+              </Stack.Protected>
+            </Stack>
+            {token ? <AppLock /> : null}
+            <Snackbar />
+            <ConfettiLayer />
+          </ThemeProvider>
+        </PersistQueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+}

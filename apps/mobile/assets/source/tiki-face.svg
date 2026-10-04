@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img">
+  <title>Tiki</title>
+  <!-- Tiki: a round coin with a little clock face (happy). Source for the app icon and splash. -->
+  <circle cx="60" cy="62" r="50" fill="#FFB547" stroke="#E8962A" stroke-width="4"/>
+  <circle cx="60" cy="62" r="40" fill="#FFD48F"/>
+  <g stroke="#E8962A" stroke-width="2.5" stroke-linecap="round">
+    <line x1="60" y1="18" x2="60" y2="15"/><line x1="82" y1="23.9" x2="83.5" y2="21.3"/>
+    <line x1="98.1" y1="40" x2="100.7" y2="38.5"/><line x1="104" y1="62" x2="107" y2="62"/>
+    <line x1="98.1" y1="84" x2="100.7" y2="85.5"/><line x1="82" y1="100.1" x2="83.5" y2="102.7"/>
+    <line x1="60" y1="106" x2="60" y2="109"/><line x1="38" y1="100.1" x2="36.5" y2="102.7"/>
+    <line x1="21.9" y1="84" x2="19.3" y2="85.5"/><line x1="16" y1="62" x2="13" y2="62"/>
+    <line x1="21.9" y1="40" x2="19.3" y2="38.5"/><line x1="38" y1="23.9" x2="36.5" y2="21.3"/>
+  </g>
+  <g stroke="#E8962A" stroke-width="3.5" stroke-linecap="round">
+    <line x1="60" y1="36" x2="60" y2="25"/><line x1="60" y1="36" x2="68" y2="31"/>
+  </g>
+  <circle cx="60" cy="36" r="3" fill="#E8962A"/>
+  <g opacity="0.55"><circle cx="38" cy="68" r="5" fill="#FF9385"/><circle cx="82" cy="68" r="5" fill="#FF9385"/></g>
+  <circle cx="48" cy="57" r="5" fill="#3A2A1A"/><circle cx="72" cy="57" r="5" fill="#3A2A1A"/>
+  <circle cx="49.5" cy="55.5" r="1.6" fill="#fff"/><circle cx="73.5" cy="55.5" r="1.6" fill="#fff"/>
+  <path d="M49 70 Q60 80 71 70" stroke="#3A2A1A" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+</svg>

@@ -97,7 +97,7 @@ export function HabitChips({ data }: { data: TodayData }) {
     if (done && !habit.doneToday) awardSparks(SPARKS.habitChecked);
   };
   return (
-    <Section title="Habits" action="All habits" onAction={() => router.push("/plan/habits")}>
+    <Section title="Habits" action="All" onAction={() => router.push("/plan/habits")}>
       {data.habits.length === 0 ? (
         <Pressable onPress={() => router.push("/plan/habits")} className="px-1">
           <Text tone="muted">Add a small habit, like water or a walk.</Text>

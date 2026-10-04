@@ -1,10 +1,10 @@
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
-import { View } from "react-native";
 import { celebrate } from "@/components/ui/confetti";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Group } from "@/components/ui/group";
 import { Section } from "@/components/ui/section";
-import { TaskRow } from "@/features/tasks/task-row";
+import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import type { TodayData } from "@/lib/queries";
 
 export function TopThree({ data }: { data: TodayData }) {
@@ -15,24 +15,25 @@ export function TopThree({ data }: { data: TodayData }) {
     if (allDone && !wasDone.current) celebrate();
     wasDone.current = allDone;
   }, [allDone]);
+  const pick = () => router.push(`/pick-top-three?date=${data.date}`);
   return (
     <Section
       title="Top three"
       action={data.topThree.length < 3 ? "Pick" : "Change"}
-      onAction={() => router.push(`/pick-top-three?date=${data.date}`)}
+      onAction={pick}
     >
       {data.topThree.length === 0 ? (
         <EmptyState
           message="Pick the three things that matter most today."
           actionLabel="Pick top three"
-          onAction={() => router.push(`/pick-top-three?date=${data.date}`)}
+          onAction={pick}
         />
       ) : (
-        <View className="gap-2">
+        <Group inset={TASK_ROW_INSET}>
           {data.topThree.map((task) => (
             <TaskRow key={task.id} task={task} today={data.date} size="lg" />
           ))}
-        </View>
+        </Group>
       )}
     </Section>
   );

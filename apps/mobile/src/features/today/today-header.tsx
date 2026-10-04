@@ -15,15 +15,8 @@ import type { TodayData } from "@/lib/queries";
 import { sparkBurstStore } from "@/lib/sparks";
 import { useStore } from "@/lib/store";
 
-function SparkPill({
-  level,
-  sparks,
-  goal,
-}: {
-  level: number;
-  sparks: number;
-  goal: { doneToday: number; goal: number; isDayOff: boolean; onVacation: boolean };
-}) {
+/** Sparks and level, with the "+10" that floats up when something is finished. */
+function SparkPill({ level, sparks }: { level: number; sparks: number }) {
   const burst = useStore(sparkBurstStore);
   const rise = useSharedValue(0);
   useEffect(() => {
@@ -35,25 +28,21 @@ function SparkPill({
     opacity: rise.value === 0 ? 0 : 1 - rise.value * 0.6,
     transform: [{ translateY: -24 * rise.value }],
   }));
-  const goalText = goal.onVacation
-    ? "On vacation"
-    : goal.isDayOff
-      ? "Day off"
-      : `${goal.doneToday}/${goal.goal} today`;
   return (
-    <View className="items-end">
-      <View className="flex-row items-center gap-1 rounded-full bg-card px-3 py-1.5">
-        <Text>✨</Text>
-        <Text variant="caption" className="font-nunito-bold" numeric>
-          {sparks} · Lv {level}
-        </Text>
-      </View>
-      <Text variant="caption" tone="muted" className="mt-1">
-        {goalText}
+    <View
+      className="flex-row items-center gap-1.5 rounded-full bg-card px-3 py-2"
+      accessibilityLabel={`${sparks} sparks, level ${level}`}
+    >
+      <Text variant="callout">✨</Text>
+      <Text variant="callout" className="font-nunito-bold" numeric>
+        {sparks}
+      </Text>
+      <Text variant="caption" tone="muted">
+        Lv {level}
       </Text>
       {burst ? (
         <Animated.View
-          style={[{ position: "absolute", right: 12, top: -4 }, burstStyle]}
+          style={[{ position: "absolute", right: 10, top: -6 }, burstStyle]}
           pointerEvents="none"
         >
           <Text variant="strong" tone="mango">
@@ -65,36 +54,45 @@ function SparkPill({
   );
 }
 
+/** Date, greeting and Tiki's mood: the first thing the day says. */
 export function TodayHeader({ data, outfit }: { data: TodayData; outfit: TikiOutfit }) {
   const privacy = usePrivacy();
+  const goal = data.gamification.dailyGoal;
+  const goalText = goal.onVacation
+    ? "On vacation"
+    : goal.isDayOff
+      ? "Day off"
+      : `${goal.doneToday} of ${goal.goal} done`;
   return (
-    <View className="flex-row items-center gap-3">
-      <Tiki mood={data.tiki.mood} size={76} outfit={outfit} />
-      <View className="flex-1">
-        <Text variant="title" accessibilityRole="header">
-          {data.greeting}
+    <View className="gap-4">
+      <View className="flex-row items-center justify-between">
+        <Text variant="callout" tone="muted" numberOfLines={1} className="flex-1">
+          {formatLocalDate(data.date, "long")} · {goalText}
         </Text>
-        <Text tone="muted">{formatLocalDate(data.date, "long")}</Text>
-        <Text variant="caption" tone="muted" numberOfLines={2}>
-          {data.tiki.line}
-        </Text>
+        <View className="flex-row items-center gap-1">
+          <SparkPill level={data.gamification.level.level} sparks={data.gamification.sparks} />
+          <Pressable
+            onPress={togglePrivacy}
+            hitSlop={6}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: privacy }}
+            accessibilityLabel="Hide amounts"
+            className="h-12 w-12 items-center justify-center"
+          >
+            <Icon name={privacy ? "eye-off-outline" : "eye-outline"} color="muted" />
+          </Pressable>
+        </View>
       </View>
-      <View className="items-end gap-2">
-        <SparkPill
-          level={data.gamification.level.level}
-          sparks={data.gamification.sparks}
-          goal={data.gamification.dailyGoal}
-        />
-        <Pressable
-          onPress={togglePrivacy}
-          hitSlop={10}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: privacy }}
-          accessibilityLabel="Privacy mode"
-          className="h-10 w-10 items-center justify-center"
-        >
-          <Icon name={privacy ? "eye-off-outline" : "eye-outline"} color="muted" />
-        </Pressable>
+      <View className="flex-row items-center gap-4">
+        <View className="flex-1 gap-1">
+          <Text variant="largeTitle" accessibilityRole="header">
+            {data.greeting}
+          </Text>
+          <Text variant="callout" tone="muted" numberOfLines={2}>
+            {data.tiki.line}
+          </Text>
+        </View>
+        <Tiki mood={data.tiki.mood} size={72} outfit={outfit} />
       </View>
     </View>
   );

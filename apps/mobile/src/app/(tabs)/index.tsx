@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { View } from "react-native";
 import type { TikiOutfit } from "@/components/tiki/tiki";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -6,16 +5,15 @@ import { Screen } from "@/components/ui/screen";
 import { HabitChips } from "@/features/habits/habit-chips";
 import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { RunningTimerBar } from "@/features/timer/running-timer-bar";
-import { EveningSection } from "@/features/today/evening-section";
+import { LaterToday } from "@/features/today/later-today";
+import { NextUp } from "@/features/today/next-up";
 import { SafeToSpendCard } from "@/features/today/safe-to-spend-card";
-import { Timeline } from "@/features/today/timeline";
-import { OverdueBanner, SmsBanner, WeeklyRecapCard } from "@/features/today/today-banners";
 import { TodayHeader } from "@/features/today/today-header";
 import { TopThree } from "@/features/today/top-three";
 import { useAreas, useSettings, useToday } from "@/lib/queries";
 
+/** Today answers two questions first: what now, and can I afford it. */
 export default function TodayScreen() {
-  const router = useRouter();
   const today = useToday();
   const { data: areas } = useAreas();
   const { data: settings } = useSettings();
@@ -38,38 +36,28 @@ export default function TodayScreen() {
     );
   }
 
-  const timerLabel = data.runningTimer
+  const running = data.runningTimer;
+  const timerLabel = running
     ? ((
-        data.timeline.find((i) => i.kind === "task" && i.task.id === data.runningTimer?.taskId) as
+        data.timeline.find((i) => i.kind === "task" && i.task.id === running.taskId) as
           | { task?: { title: string } }
           | undefined
       )?.task?.title ??
-      data.runningTimer.note ??
-      (data.runningTimer.source === "focus" ? "Focus" : "Timer"))
+      running.note ??
+      (running.source === "focus" ? "Focus" : "Timer"))
     : "";
 
   return (
     <View className="flex-1">
       <Screen refreshing={today.isRefetching} onRefresh={() => void today.refetch()}>
         <TodayHeader data={data} outfit={(settings?.tikiOutfit ?? null) as TikiOutfit} />
-        <SmsBanner count={smsPending} />
         <SafeToSpendCard data={data} />
-        <WeeklyRecapCard date={data.date} />
-        <OverdueBanner data={data} />
         <TopThree data={data} />
-        <Timeline data={data} areaEmoji={areaEmoji} />
+        <NextUp data={data} areaEmoji={areaEmoji} />
         <HabitChips data={data} />
-        <EveningSection data={data} />
-        {data.counts.inbox > 0 ? (
-          <EmptyState
-            message={`${data.counts.inbox} in the inbox, waiting for the evening sort.`}
-            actionLabel="Open inbox"
-            onAction={() => router.push("/plan")}
-            mood="happy"
-          />
-        ) : null}
+        <LaterToday data={data} smsPending={smsPending} />
       </Screen>
-      {data.runningTimer ? <RunningTimerBar entry={data.runningTimer} label={timerLabel} /> : null}
+      {running ? <RunningTimerBar entry={running} label={timerLabel} /> : null}
     </View>
   );
 }

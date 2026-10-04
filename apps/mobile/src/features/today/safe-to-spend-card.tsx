@@ -6,51 +6,51 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { Text } from "@/components/ui/text";
 import type { TodayData } from "@/lib/queries";
 
+/** One number for the shop counter: what's safe to spend today. */
 export function SafeToSpendCard({ data }: { data: TodayData }) {
   const router = useRouter();
   const money = data.safeToSpend;
   if (!money.hasBudgets) {
     return (
-      <Card onPress={() => router.push("/money/budgets")}>
-        <Text variant="label" tone="muted">
+      <Card onPress={() => router.push("/money/budgets")} className="gap-1">
+        <Text variant="callout" tone="muted">
           Safe to spend today
         </Text>
-        <Text className="mt-1">
-          Set a flexible budget for food, rides and fun to see a daily number here.
-        </Text>
+        <Text variant="strong">Set a flexible budget to see a daily number.</Text>
       </Card>
     );
   }
   const over = money.leftTodayMinor < 0;
   return (
-    <Card onPress={() => router.push("/money/budgets")} accessibilityLabel="Safe to spend today">
-      <Text variant="label" tone="muted">
-        Safe to spend today
+    <Card
+      onPress={() => router.push("/money/budgets")}
+      accessibilityLabel="Safe to spend today"
+      className="gap-3"
+    >
+      <Text variant="callout" tone="muted">
+        {over ? "Over today's amount by" : "Safe to spend today"}
       </Text>
       <Amount
-        minor={Math.max(0, money.leftTodayMinor)}
-        variant="display"
+        minor={Math.abs(money.leftTodayMinor)}
+        variant="hero"
         tone={over ? "coral" : "mint"}
-        className="mt-1"
       />
       <ProgressBar
         value={money.dailyMinor > 0 ? money.spentTodayMinor / money.dailyMinor : over ? 1 : 0}
         tone={over ? "coral" : "mint"}
-        className="mt-3"
       />
-      <View className="mt-2 flex-row justify-between">
-        <Text variant="caption" tone="muted">
-          Spent today{" "}
-          <Amount minor={money.spentTodayMinor} variant="caption" tone="ink" animate={false} />
+      <View className="flex-row items-center justify-between">
+        <Text variant="callout" tone="muted">
+          <Amount minor={money.spentTodayMinor} variant="callout" tone="ink" animate={false} />{" "}
+          spent of <Amount minor={money.dailyMinor} variant="callout" tone="ink" animate={false} />
         </Text>
-        <Text variant="caption" tone="muted">
-          of <Amount minor={money.dailyMinor} variant="caption" tone="ink" animate={false} /> ·{" "}
+        <Text variant="callout" tone="muted">
           {money.daysLeft} days left
         </Text>
       </View>
       {data.paceAlert ? (
-        <Text variant="caption" tone="coral" className="mt-2">
-          Heads-up: {data.paceAlert.emoji} {data.paceAlert.name} is running ahead of the month.
+        <Text variant="callout" tone="coral">
+          {data.paceAlert.emoji} {data.paceAlert.name} is running ahead of the month
         </Text>
       ) : null}
     </Card>

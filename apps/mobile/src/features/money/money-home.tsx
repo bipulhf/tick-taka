@@ -1,28 +1,28 @@
+import { hasSmsPermission, isSmsReaderAvailable } from "@modules/sms-reader";
+import type { AccountType } from "@tick-taka/shared/schemas/money";
 import { useRouter } from "expo-router";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { Amount } from "@/components/ui/amount";
-import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Icon, type IconName } from "@/components/ui/icon";
+import { Group } from "@/components/ui/group";
+import type { IconName } from "@/components/ui/icon";
+import { ListRow } from "@/components/ui/list-row";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { ShortcutRow } from "@/components/ui/shortcut-row";
 import { Text } from "@/components/ui/text";
 import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
 import { useTransactions } from "./queries";
 import { TransactionRow, useLookup } from "./transaction-row";
 
-const LINKS: { href: string; label: string; icon: IconName; flag?: "shoppingList" }[] = [
-  { href: "/money/transactions", label: "Transactions", icon: "swap-vertical" },
-  { href: "/money/budgets", label: "Budgets", icon: "chart-pie" },
-  { href: "/money/bills", label: "Bills", icon: "receipt" },
-  { href: "/money/goals", label: "Goals", icon: "piggy-bank-outline" },
-  { href: "/money/debts", label: "Debts", icon: "handshake-outline" },
-  { href: "/money/events", label: "Events", icon: "airplane" },
-  { href: "/money/calendar", label: "Calendar", icon: "calendar-month" },
-  { href: "/money/shopping", label: "Shopping", icon: "cart-outline", flag: "shoppingList" },
-  { href: "/money/sms", label: "SMS", icon: "message-text-outline" },
-];
+const ACCOUNT_ICON: Record<AccountType, IconName> = {
+  cash: "cash",
+  bank: "bank-outline",
+  mobile_wallet: "cellphone",
+  card: "credit-card-outline",
+  savings: "piggy-bank-outline",
+};
 
 export function MoneyHome() {
   const router = useRouter();
@@ -37,76 +37,155 @@ export function MoneyHome() {
   const total = list
     .filter((a) => a.currency === currency)
     .reduce((sum, a) => sum + a.balanceMinor, 0);
-  const links = LINKS.filter((link) => !link.flag || settings?.advancedViews[link.flag]);
   const items = recent.data?.pages.flatMap((p) => p.items) ?? [];
+  const smsOff = isSmsReaderAvailable && !hasSmsPermission();
 
   return (
     <Screen
       title="Money"
-      subtitle="Where is it, and where is it going?"
       refreshing={accounts.isRefetching}
       onRefresh={() => void accounts.refetch()}
     >
-      <Card onPress={() => router.push("/money/accounts")}>
-        <Text variant="label" tone="muted">
+      <View className="gap-1">
+        <Text variant="callout" tone="muted">
           All accounts
         </Text>
-        <Amount minor={total} currency={currency} variant="display" />
-        <View className="mt-2 gap-1">
-          {list.map((account) => (
-            <View key={account.id} className="flex-row justify-between">
-              <Text tone="muted">{account.name}</Text>
-              <Amount
-                minor={account.balanceMinor}
-                currency={account.currency}
-                variant="body"
-                animate={false}
-                tone={account.balanceMinor < 0 ? "coral" : "ink"}
-              />
-            </View>
-          ))}
-        </View>
-      </Card>
+        <Amount minor={total} currency={currency} variant="hero" />
+      </View>
       {list.length === 0 ? (
         <EmptyState
           message="Add your accounts: cash, bKash, bank, cards."
           actionLabel="Add an account"
           onAction={() => router.push("/account/new")}
         />
-      ) : null}
-      <View className="flex-row flex-wrap gap-2">
-        {links.map((link) => (
-          <Pressable
-            key={link.href}
-            onPress={() => router.push(link.href as never)}
-            className="w-[31%] items-center gap-1 rounded-2xl bg-card py-3 active:opacity-70"
-            accessibilityRole="button"
-          >
-            <View>
-              <Icon name={link.icon} color="mint" />
-              {link.href === "/money/sms" && sms > 0 ? (
-                <View className="absolute -right-3 -top-1 rounded-full bg-coral px-1.5">
-                  <Text className="text-[10px] font-nunito-bold text-white">{sms}</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text variant="caption" className="font-nunito-bold">
-              {link.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      <Section title="Recent" action="All" onAction={() => router.push("/money/transactions")}>
-        <Card className="py-1">
-          {items.map((tx) => (
-            <TransactionRow key={tx.id} tx={tx} lookup={lookup} />
+      ) : (
+        <Group inset={60}>
+          {list.map((account) => (
+            <ListRow
+              key={account.id}
+              emoji={account.icon ?? undefined}
+              icon={ACCOUNT_ICON[account.type]}
+              iconColor="mint"
+              title={account.name}
+              onPress={() => router.push(`/money/transactions?accountId=${account.id}`)}
+              right={
+                <Amount
+                  minor={account.balanceMinor}
+                  currency={account.currency}
+                  variant="strong"
+                  animate={false}
+                  tone={account.balanceMinor < 0 ? "coral" : "ink"}
+                />
+              }
+            />
           ))}
-          {items.length === 0 ? (
-            <Text tone="muted" className="py-3">
-              No transactions yet. Try “lunch 250” in quick-add.
-            </Text>
+        </Group>
+      )}
+      <ShortcutRow
+        items={[
+          {
+            label: "Transactions",
+            icon: "swap-vertical",
+            color: "mint",
+            onPress: () => router.push("/money/transactions"),
+          },
+          {
+            label: "Budgets",
+            icon: "chart-pie",
+            color: "mint",
+            onPress: () => router.push("/money/budgets"),
+          },
+          {
+            label: "Bills",
+            icon: "receipt",
+            color: "coral",
+            onPress: () => router.push("/money/bills"),
+          },
+          {
+            label: "Goals",
+            icon: "piggy-bank-outline",
+            color: "grape",
+            onPress: () => router.push("/money/goals"),
+          },
+        ]}
+      />
+      {smsOff ? (
+        <Group>
+          <ListRow
+            icon="message-lock-outline"
+            iconColor="mango"
+            title="Log bank SMS automatically"
+            subtitle="Allow SMS access, nothing saves without you"
+            chevron
+            onPress={() => router.push("/settings/sms")}
+          />
+        </Group>
+      ) : null}
+      <Section title="Recent" action="All" onAction={() => router.push("/money/transactions")}>
+        {items.length === 0 ? (
+          <Text tone="muted">No transactions yet. Try “lunch 250” in quick-add.</Text>
+        ) : (
+          <Group inset={60}>
+            {items.map((tx) => (
+              <View key={tx.id} className="px-4">
+                <TransactionRow tx={tx} lookup={lookup} />
+              </View>
+            ))}
+          </Group>
+        )}
+      </Section>
+      <Section title="More">
+        <Group inset={60}>
+          <ListRow
+            icon="message-text-outline"
+            iconColor="mint"
+            title="SMS"
+            subtitle={sms ? `${sms} waiting for review` : "Bank and wallet messages"}
+            chevron
+            onPress={() => router.push("/money/sms")}
+          />
+          <ListRow
+            icon="handshake-outline"
+            iconColor="grape"
+            title="Debts"
+            subtitle="Who owes whom"
+            chevron
+            onPress={() => router.push("/money/debts")}
+          />
+          <ListRow
+            icon="airplane"
+            iconColor="sky"
+            title="Events"
+            subtitle="Trips and occasions"
+            chevron
+            onPress={() => router.push("/money/events")}
+          />
+          <ListRow
+            icon="calendar-month"
+            iconColor="sky"
+            title="Calendar"
+            subtitle="Spending by day"
+            chevron
+            onPress={() => router.push("/money/calendar")}
+          />
+          {settings?.advancedViews.shoppingList ? (
+            <ListRow
+              icon="cart-outline"
+              iconColor="coral"
+              title="Shopping"
+              chevron
+              onPress={() => router.push("/money/shopping")}
+            />
           ) : null}
-        </Card>
+          <ListRow
+            icon="wallet-outline"
+            iconColor="mint"
+            title="Accounts"
+            subtitle="Add, edit, reconcile"
+            chevron
+            onPress={() => router.push("/money/accounts")}
+          />
+        </Group>
       </Section>
     </Screen>
   );

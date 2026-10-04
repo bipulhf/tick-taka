@@ -1,9 +1,9 @@
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Group } from "@/components/ui/group";
+import { ListRow } from "@/components/ui/list-row";
 import { Screen } from "@/components/ui/screen";
-import { Text } from "@/components/ui/text";
 import { useOutbox } from "@/lib/outbox";
 import { useTasks } from "./queries";
 
@@ -22,25 +22,29 @@ export function SomedayList() {
           onAction={() => router.push("/add?text=someday%20")}
         />
       ) : (
-        list.map((task) => (
-          <Card key={task.id} className="flex-row items-center gap-3">
-            <Text className="flex-1" onPress={() => router.push(`/task/${task.id}`)}>
-              {task.title}
-            </Text>
-            <Button
-              label="Inbox"
-              size="sm"
-              variant="secondary"
-              onPress={() =>
-                send({
-                  method: "PATCH",
-                  path: `/tasks/${task.id}`,
-                  body: { status: "inbox", updatedAt: Date.now() },
-                })
+        <Group>
+          {list.map((task) => (
+            <ListRow
+              key={task.id}
+              title={task.title}
+              onPress={() => router.push(`/task/${task.id}`)}
+              right={
+                <Button
+                  label="Inbox"
+                  size="sm"
+                  variant="secondary"
+                  onPress={() =>
+                    send({
+                      method: "PATCH",
+                      path: `/tasks/${task.id}`,
+                      body: { status: "inbox", updatedAt: Date.now() },
+                    })
+                  }
+                />
               }
             />
-          </Card>
-        ))
+          ))}
+        </Group>
       )}
     </Screen>
   );

@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { DEFAULT_TIME_ZONE } from "../dates";
+import { addDays, DEFAULT_TIME_ZONE } from "../dates";
 import { DEFAULT_WORKDAYS } from "../recurrence";
-import { clockSchema, currencySchema, idSchema } from "./common";
+import { clockSchema, currencySchema, idSchema, localDateSchema } from "./common";
 
 export const AI_FEATURES = [
   "parse",
@@ -51,8 +51,10 @@ export const settingsSchema = z.object({
   dailyTaskGoal: z.number().int().min(0).max(50).default(5),
   daysOff: z.array(z.number().int().min(0).max(6)).default([5]),
   vacationMode: z.boolean().default(false),
-  vacationFrom: z.string().nullable().default(null),
-  vacationUntil: z.string().nullable().default(null),
+  /** Vacation periods, kept so past streaks stay intact; `to: null` is the current one. */
+  vacations: z
+    .array(z.object({ from: localDateSchema, to: localDateSchema.nullable() }))
+    .default([]),
   advancedViews: z
     .object({
       eisenhower: z.boolean().default(false),
@@ -111,4 +113,14 @@ export type SettingsPatch = z.infer<typeof settingsPatchSchema>;
 
 export function isAiFeatureEnabled(settings: Settings, feature: AiFeature): boolean {
   return settings.ai.enabled && settings.ai.features[feature] !== false;
+}
+
+/** Local dates covered by vacations, up to `today`. Streaks and goals skip them. */
+export function vacationDates(settings: Pick<Settings, "vacations">, today: string): Set<string> {
+  const dates = new Set<string>();
+  for (const period of settings.vacations) {
+    const end = period.to === null || period.to > today ? today : period.to;
+    for (let d = period.from; d <= end; d = addDays(d, 1)) dates.add(d);
+  }
+  return dates;
 }

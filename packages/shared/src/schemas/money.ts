@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   currencySchema,
+  editTimeShape,
   emojiSchema,
   epochMsSchema,
   idSchema,
@@ -46,7 +47,8 @@ export const accountUpdateSchema = z
     archived: z.boolean(),
     sort: z.number().int(),
   })
-  .partial();
+  .partial()
+  .extend(editTimeShape);
 export const balanceCheckSchema = z.object({
   actualMinor: minorSchema,
   occurredAt: epochMsSchema.optional(),
@@ -71,7 +73,8 @@ export const categoryUpdateSchema = z
     budgetType: z.enum(BUDGET_TYPES),
     sort: z.number().int(),
   })
-  .partial();
+  .partial()
+  .extend(editTimeShape);
 
 // Transactions --------------------------------------------------------------
 const transactionBase = z.object({
@@ -172,7 +175,8 @@ export const recurringCreateSchema = z.object({
 export const recurringUpdateSchema = recurringCreateSchema
   .omit({ id: true })
   .extend({ active: z.boolean() })
-  .partial();
+  .partial()
+  .extend(editTimeShape);
 export const recurringPaySchema = z.object({
   transactionId: idSchema.optional(),
   occurredAt: epochMsSchema.optional(),
@@ -199,7 +203,8 @@ export const goalCreateSchema = z.object({
 export const goalUpdateSchema = goalCreateSchema
   .omit({ id: true })
   .extend({ done: z.boolean() })
-  .partial();
+  .partial()
+  .extend(editTimeShape);
 export const goalContributeSchema = z.object({
   id: idSchema.optional(),
   amountMinor: positiveMinorSchema,
@@ -229,7 +234,8 @@ export const debtUpdateSchema = z
     note: noteSchema.nullable(),
     closed: z.boolean(),
   })
-  .partial();
+  .partial()
+  .extend(editTimeShape);
 export const debtRepaySchema = z.object({
   id: idSchema.optional(),
   amountMinor: positiveMinorSchema,
@@ -260,7 +266,8 @@ export const eventUpdateSchema = z
     startsOn: localDateSchema,
     endsOn: localDateSchema,
   })
-  .partial();
+  .partial()
+  .extend(editTimeShape);
 
 // Shopping lists ----------------------------------------------------------------
 export const shoppingItemCreateSchema = z.object({
@@ -278,7 +285,8 @@ export const shoppingItemUpdateSchema = z
     checked: z.boolean(),
     sort: z.number().int(),
   })
-  .partial();
+  .partial()
+  .extend(editTimeShape);
 export const shoppingCheckoutSchema = z.object({
   transactionId: idSchema.optional(),
   listName: z.string().trim().min(1).max(60),

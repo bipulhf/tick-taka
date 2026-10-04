@@ -39,3 +39,6 @@ export const errorBodySchema = z.object({
   error: z.object({ code: z.string(), message: z.string(), details: z.unknown().optional() }),
 });
 export type ErrorBody = z.infer<typeof errorBodySchema>;
+
+/** Every PATCH may carry the phone's edit time so stale offline edits lose (last write wins). */
+export const editTimeShape = { updatedAt: epochMsSchema.optional() };

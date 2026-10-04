@@ -1,13 +1,5 @@
 import { newId } from "@tick-taka/shared/ids";
-import {
-  and,
-  asc,
-  eq,
-  type InferInsertModel,
-  type InferSelectModel,
-  isNull,
-  type SQL,
-} from "drizzle-orm";
+import { and, asc, eq, type InferSelectModel, isNull, type SQL } from "drizzle-orm";
 import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 import type { Db } from "../db/client";
 import { conflict, notFound } from "./errors";
@@ -21,12 +13,15 @@ type SoftDeleteTable = SQLiteTable & {
 
 type SystemFields = "id" | "createdAt" | "updatedAt" | "deletedAt";
 
-export type CreateValues<T extends SoftDeleteTable> = Omit<InferInsertModel<T>, SystemFields> & {
+/** Omit that keeps optional modifiers on Drizzle's insert types (plain Omit drops them). */
+type WithoutSystemFields<I> = { [K in keyof I as K extends SystemFields ? never : K]: I[K] };
+
+export type CreateValues<T extends SoftDeleteTable> = WithoutSystemFields<T["$inferInsert"]> & {
   id?: string | undefined;
 };
 
 export type UpdateValues<T extends SoftDeleteTable> = Partial<
-  Omit<InferInsertModel<T>, SystemFields>
+  WithoutSystemFields<T["$inferInsert"]>
 > & {
   /** When the edit was made on the phone; older edits lose to newer rows (last write wins). */
   updatedAt?: number | undefined;

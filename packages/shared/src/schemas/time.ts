@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   clockSchema,
   colorSchema,
+  editTimeShape,
   emojiSchema,
   epochMsSchema,
   idSchema,
@@ -33,7 +34,7 @@ export const areaCreateSchema = z.object({
   color: colorSchema,
   sort: z.number().int().optional(),
 });
-export const areaUpdateSchema = areaCreateSchema.omit({ id: true }).partial();
+export const areaUpdateSchema = areaCreateSchema.omit({ id: true }).partial().extend(editTimeShape);
 export type AreaCreate = z.infer<typeof areaCreateSchema>;
 
 // Projects --------------------------------------------------------------------
@@ -44,7 +45,10 @@ export const projectCreateSchema = z.object({
   status: z.enum(PROJECT_STATUSES).default("active"),
   sort: z.number().int().optional(),
 });
-export const projectUpdateSchema = projectCreateSchema.omit({ id: true }).partial();
+export const projectUpdateSchema = projectCreateSchema
+  .omit({ id: true })
+  .partial()
+  .extend(editTimeShape);
 export const projectListQuerySchema = z.object({
   areaId: idSchema.optional(),
   status: z.enum(PROJECT_STATUSES).optional(),
@@ -149,7 +153,10 @@ export const routineCreateSchema = z.object({
   sort: z.number().int().optional(),
   steps: z.array(routineStepSchema).max(50).optional(),
 });
-export const routineUpdateSchema = routineCreateSchema.omit({ id: true }).partial();
+export const routineUpdateSchema = routineCreateSchema
+  .omit({ id: true })
+  .partial()
+  .extend(editTimeShape);
 
 // Time entries --------------------------------------------------------------
 export const timerStartSchema = z.object({
@@ -230,5 +237,6 @@ export const habitUpdateSchema = z
     archived: z.boolean(),
     sort: z.number().int(),
   })
-  .partial();
+  .partial()
+  .extend(editTimeShape);
 export const habitLogPutSchema = z.object({ count: z.number().int().min(0).max(1000) });

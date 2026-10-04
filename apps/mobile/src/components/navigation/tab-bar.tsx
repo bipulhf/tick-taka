@@ -1,13 +1,14 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import type { Tabs } from "expo-router/js-tabs";
 import type { ComponentProps } from "react";
 import { Pressable, View } from "react-native";
-import Animated, { LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { haptic } from "@/lib/haptics";
+import { useColors } from "@/theme/colors";
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>>[0];
 
@@ -22,8 +23,6 @@ const TABS: Record<string, { label: string; icon: IconName; activeIcon: IconName
   review: { label: "Review", icon: "chart-donut", activeIcon: "chart-donut-variant" },
 };
 
-const grow = LinearTransition.duration(220);
-
 /**
  * A floating capsule: the open tab grows into a labelled pill, the others stay
  * as calm icons, and quick-add sits in the middle within thumb reach.
@@ -32,6 +31,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const smsPending = useSmsPendingCount();
+  const colors = useColors();
   const routes = state.routes.filter((route) => TABS[route.name]);
   const renderTab = (route: (typeof routes)[number]) => {
     const tab = TABS[route.name]!;
@@ -54,9 +54,15 @@ export function TabBar({ state, navigation }: TabBarProps) {
           if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
         }}
       >
-        <Animated.View
-          layout={grow}
-          className={`h-12 flex-row items-center justify-center gap-2 rounded-full ${focused ? "bg-ink px-4" : "bg-transparent px-3"}`}
+        <View
+          // Remount on focus change: Android keeps square corners when only the fill changes.
+          key={focused ? "on" : "off"}
+          className="h-12 flex-row items-center justify-center gap-2"
+          style={{
+            borderRadius: 24,
+            paddingHorizontal: focused ? 16 : 12,
+            backgroundColor: focused ? colors.ink : "transparent",
+          }}
         >
           <Icon
             name={focused ? tab.activeIcon : tab.icon}
@@ -73,28 +79,43 @@ export function TabBar({ state, navigation }: TabBarProps) {
               <Text className="text-[11px] font-nunito-bold text-white">{badge}</Text>
             </View>
           ) : null}
-        </Animated.View>
+        </View>
       </Pressable>
     );
   };
   return (
-    <View
-      className="absolute left-4 right-4 flex-row items-center justify-between rounded-full border border-line bg-card px-2"
-      style={{ bottom: insets.bottom + TAB_BAR_GAP, height: TAB_BAR_HEIGHT, elevation: 10 }}
-    >
-      {routes.slice(0, 2).map(renderTab)}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Quick add"
-        onPress={() => {
-          haptic.tap();
-          router.push("/add");
+    <>
+      {/* Content fades out under the capsule instead of peeking out below it. */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={[`${colors.background}00`, colors.background]}
+        locations={[0, 0.55]}
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: insets.bottom + TAB_BAR_GAP + TAB_BAR_HEIGHT + 28,
         }}
-        className="h-12 w-12 items-center justify-center rounded-full bg-mango active:scale-95"
+      />
+      <View
+        className="absolute left-4 right-4 flex-row items-center justify-between rounded-full border border-line bg-card px-2"
+        style={{ bottom: insets.bottom + TAB_BAR_GAP, height: TAB_BAR_HEIGHT, elevation: 10 }}
       >
-        <Icon name="plus" size={30} color="onAccent" />
-      </Pressable>
-      {routes.slice(2).map(renderTab)}
-    </View>
+        {routes.slice(0, 2).map(renderTab)}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Quick add"
+          onPress={() => {
+            haptic.tap();
+            router.push("/add");
+          }}
+          className="h-12 w-12 items-center justify-center rounded-full bg-mango active:scale-95"
+        >
+          <Icon name="plus" size={30} color="onAccent" />
+        </Pressable>
+        {routes.slice(2).map(renderTab)}
+      </View>
+    </>
   );
 }

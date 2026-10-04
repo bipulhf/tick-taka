@@ -1,0 +1,46 @@
+import type { AiChatResult, AiClient, AiJsonRequest } from "../src/ai/client";
+
+/** Scripted AI client: returns queued responses and records every request. */
+export class FakeAi implements AiClient {
+  readonly jsonRequests: AiJsonRequest[] = [];
+  readonly chatRequests: Parameters<AiClient["chat"]>[0][] = [];
+  private readonly jsonQueue: unknown[] = [];
+  private readonly chatQueue: Partial<AiChatResult>[] = [];
+  failNext = false;
+
+  queueJson(...data: unknown[]) {
+    this.jsonQueue.push(...data);
+    return this;
+  }
+
+  queueChat(...results: Partial<AiChatResult>[]) {
+    this.chatQueue.push(...results);
+    return this;
+  }
+
+  async json(request: AiJsonRequest) {
+    this.jsonRequests.push(request);
+    if (this.failNext) {
+      this.failNext = false;
+      throw new Error("provider down");
+    }
+    if (this.jsonQueue.length === 0) throw new Error("FakeAi: no queued json response");
+    return {
+      data: this.jsonQueue.shift(),
+      usage: { inputTokens: 1000, outputTokens: 200 },
+      model: "fake-fast",
+    };
+  }
+
+  async chat(request: Parameters<AiClient["chat"]>[0]): Promise<AiChatResult> {
+    this.chatRequests.push(structuredClone(request));
+    const next = this.chatQueue.shift() ?? { content: "done" };
+    return {
+      content: null,
+      toolCalls: [],
+      usage: { inputTokens: 500, outputTokens: 50 },
+      model: "fake-fast",
+      ...next,
+    };
+  }
+}

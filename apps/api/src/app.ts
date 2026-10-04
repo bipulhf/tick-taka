@@ -3,6 +3,7 @@ import type { Deps } from "./lib/deps";
 import { requireAuth } from "./middleware/auth";
 import { onError, onNotFound } from "./middleware/error-handler";
 import { accountsRoutes } from "./modules/accounts/routes";
+import { aiRoutes } from "./modules/ai/routes";
 import { areasRoutes } from "./modules/areas/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { budgetsRoutes } from "./modules/budgets/routes";
@@ -58,7 +59,8 @@ export function createApp(deps: Deps) {
     .route("/reviews", reviewsRoutes(deps))
     .route("/gamification", gamificationRoutes(deps))
     .route("/sync", syncRoutes(deps))
-    .route("/export", exportRoutes(deps));
+    .route("/export", exportRoutes(deps))
+    .route("/ai", aiRoutes(deps));
 
   return new Hono()
     .onError(onError)

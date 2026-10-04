@@ -71,6 +71,20 @@ export interface TimeEntryDraft {
 
 export type QuickAddDraft = MoneyDraft | TaskDraft | TimeEntryDraft;
 
+/** Transfers only come from the AI parser (e.g. an SMS cash-out); quick-add never infers them. */
+export interface TransferDraft {
+  kind: "transfer";
+  amountMinor: number | null;
+  feeMinor: number;
+  accountId: string | null;
+  toAccountId: string | null;
+  note: string;
+  occurredAt: number;
+  confidence: Confidence;
+}
+
+export type AnyDraft = QuickAddDraft | TransferDraft;
+
 const normalize = (value: string) => value.trim().toLowerCase();
 
 const WALLET_ALIASES: Record<string, string[]> = {

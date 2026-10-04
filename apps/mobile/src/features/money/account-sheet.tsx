@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
+import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { notify } from "@/lib/notify";
@@ -25,6 +26,18 @@ const CURRENCIES = ["BDT", "USD", "EUR", "GBP"];
 
 /** Create or edit an account; the balance check logs an adjustment for any gap. */
 export function AccountSheet({ id }: { id: string | null }) {
+  const { data: accounts } = useAccounts();
+  // Wait for the record so the form's fields start filled, even with nothing cached.
+  if (id && !accounts?.some((a) => a.id === id))
+    return (
+      <Sheet title="Account">
+        <SkeletonForm fields={4} />
+      </Sheet>
+    );
+  return <AccountForm id={id} />;
+}
+
+function AccountForm({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
   const { data: accounts = [] } = useAccounts();
@@ -86,13 +99,6 @@ export function AccountSheet({ id }: { id: string | null }) {
     );
     setActual("");
   };
-
-  if (id && !account)
-    return (
-      <Sheet title="Account">
-        <Text tone="muted">Loading…</Text>
-      </Sheet>
-    );
 
   return (
     <Sheet

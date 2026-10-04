@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
+import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { useRecurring } from "@/features/plan/queries";
@@ -28,6 +29,18 @@ type Kind = "bill" | "income";
 
 /** Create or edit a bill or expected income; "Paid"/"Received" logs it and moves the date. */
 export function RecurringSheet({ id }: { id: string | null }) {
+  const { data: list } = useRecurring();
+  // Wait for the record so the form's fields start filled, even with nothing cached.
+  if (id && !list?.some((r) => r.id === id))
+    return (
+      <Sheet title="Bill">
+        <SkeletonForm fields={6} />
+      </Sheet>
+    );
+  return <RecurringForm id={id} />;
+}
+
+function RecurringForm({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
   const { data: list } = useRecurring();
@@ -54,13 +67,6 @@ export function RecurringSheet({ id }: { id: string | null }) {
   const rrule = parsed?.rrule ?? item?.rrule ?? "FREQ=MONTHLY";
   const account = accounts.find((a) => a.id === accountId);
   const foreign = account && account.currency !== currency;
-
-  if (id && !item)
-    return (
-      <Sheet title="Bill">
-        <Text tone="muted">Loading…</Text>
-      </Sheet>
-    );
 
   const save = () => {
     const amountMinor = parseAmountToMinor(amount, currency);

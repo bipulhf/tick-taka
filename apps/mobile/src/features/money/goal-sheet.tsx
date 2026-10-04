@@ -7,6 +7,7 @@ import { Switch, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
+import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatLocalDate } from "@/lib/format";
@@ -20,6 +21,18 @@ import { useGoals } from "./queries";
 const EMOJIS = ["🫙", "💻", "🏍️", "✈️", "🏠", "🎓", "💍", "🕋", "🚑"];
 
 export function GoalSheet({ id }: { id: string | null }) {
+  const { data: goals } = useGoals();
+  // Wait for the record so the form's fields start filled, even with nothing cached.
+  if (id && !goals?.some((g) => g.id === id))
+    return (
+      <Sheet title="Goal">
+        <SkeletonForm fields={5} />
+      </Sheet>
+    );
+  return <GoalForm id={id} />;
+}
+
+function GoalForm({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
   const colors = useColors();
@@ -32,12 +45,6 @@ export function GoalSheet({ id }: { id: string | null }) {
   const [deadline, setDeadline] = useState<string | null>(goal?.deadline ?? null);
   const [accountId, setAccountId] = useState<string | null>(goal?.accountId ?? null);
   const [createTasks, setCreateTasks] = useState(goal?.createTasks ?? true);
-  if (id && !goal)
-    return (
-      <Sheet title="Goal">
-        <Text tone="muted">Loading…</Text>
-      </Sheet>
-    );
   const save = () => {
     const targetMinor = parseAmountToMinor(target);
     if (!targetMinor || !name.trim()) return;

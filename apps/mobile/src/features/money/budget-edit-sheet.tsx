@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Switch, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
+import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatMonth } from "@/lib/format";
@@ -65,39 +66,46 @@ export function BudgetEditSheet({
   return (
     <Sheet
       title={`Budgets · ${formatMonth(month)}`}
-      footer={<Button label={`Save ${formatAmount(total)}`} onPress={save} />}
+      footer={
+        // Saving before the budgets load would replace them with an empty set.
+        <Button label={`Save ${formatAmount(total)}`} onPress={save} disabled={!budgets.data} />
+      }
     >
-      {parents.map((line) => (
-        <View key={line.categoryId} className="flex-row items-center gap-3">
-          <Text className="flex-1">
-            {line.emoji} {line.name}
-            <Text variant="caption" tone="muted">{`  ${line.budgetType.replace("_", "-")}`}</Text>
-          </Text>
-          <TextField
-            value={lines[line.categoryId]?.limit ?? ""}
-            onChangeText={(limit) =>
-              setLines((l) => ({
-                ...l,
-                [line.categoryId]: { rollover: l[line.categoryId]?.rollover ?? false, limit },
-              }))
-            }
-            keyboardType="decimal-pad"
-            placeholder="0"
-            className="w-28"
-          />
-          <Switch
-            value={lines[line.categoryId]?.rollover ?? false}
-            onValueChange={(rollover) =>
-              setLines((l) => ({
-                ...l,
-                [line.categoryId]: { limit: l[line.categoryId]?.limit ?? "", rollover },
-              }))
-            }
-            trackColor={{ true: colors.mint, false: colors.line }}
-            accessibilityLabel={`Roll over unspent ${line.name}`}
-          />
-        </View>
-      ))}
+      {budgets.data === undefined ? (
+        <SkeletonForm fields={5} />
+      ) : (
+        parents.map((line) => (
+          <View key={line.categoryId} className="flex-row items-center gap-3">
+            <Text className="flex-1">
+              {line.emoji} {line.name}
+              <Text variant="caption" tone="muted">{`  ${line.budgetType.replace("_", "-")}`}</Text>
+            </Text>
+            <TextField
+              value={lines[line.categoryId]?.limit ?? ""}
+              onChangeText={(limit) =>
+                setLines((l) => ({
+                  ...l,
+                  [line.categoryId]: { rollover: l[line.categoryId]?.rollover ?? false, limit },
+                }))
+              }
+              keyboardType="decimal-pad"
+              placeholder="0"
+              className="w-28"
+            />
+            <Switch
+              value={lines[line.categoryId]?.rollover ?? false}
+              onValueChange={(rollover) =>
+                setLines((l) => ({
+                  ...l,
+                  [line.categoryId]: { limit: l[line.categoryId]?.limit ?? "", rollover },
+                }))
+              }
+              trackColor={{ true: colors.mint, false: colors.line }}
+              accessibilityLabel={`Roll over unspent ${line.name}`}
+            />
+          </View>
+        ))
+      )}
       <Text variant="caption" tone="muted">
         The switch rolls unspent money into next month.
       </Text>

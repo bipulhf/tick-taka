@@ -266,22 +266,3 @@ export const DEFAULT_ROUTINES: DefaultRoutine[] = [
     ],
   },
 ];
-
-export const DEFAULT_HABITS = [
-  {
-    name: "Water",
-    emoji: "💧",
-    color: "#5B8CFF",
-    schedule: "daily" as const,
-    perWeek: null,
-    targetCount: 8,
-  },
-  {
-    name: "Exercise",
-    emoji: "🏃",
-    color: "#A57BFF",
-    schedule: "n_per_week" as const,
-    perWeek: 3,
-    targetCount: 1,
-  },
-];

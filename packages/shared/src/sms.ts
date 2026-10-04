@@ -170,7 +170,7 @@ const escapeRegex = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"
 const GROUP_FOR_KIND: Record<Span["kind"], string> = {
   money: String.raw`([\d,]+(?:\.\d{1,2})?)`,
   phone: String.raw`((?:\+?88)?01\d{9})`,
-  ref: String.raw`([A-Za-z0-9]+)`,
+  ref: "([A-Za-z0-9]+)",
   datetime: "(.+?)",
   account: String.raw`(\S+)`,
   party: "(.+?)",

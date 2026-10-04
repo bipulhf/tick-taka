@@ -14,11 +14,12 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { Card } from "@/components/ui/card";
+import { Group } from "@/components/ui/group";
 import { Icon } from "@/components/ui/icon";
 import { Screen } from "@/components/ui/screen";
 import { Segmented } from "@/components/ui/segmented";
 import { Text } from "@/components/ui/text";
-import { TaskRow } from "@/features/tasks/task-row";
+import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { formatLocalDate, formatMonth } from "@/lib/format";
 import { useSettings } from "@/lib/queries";
 import { useRecurring, useTasks } from "./queries";
@@ -168,11 +169,11 @@ export function CalendarView() {
           />
         </Card>
       ))}
-      <View className="gap-2">
+      <Group inset={TASK_ROW_INSET}>
         {dayTasks.map((task) => (
           <TaskRow key={task.id} task={task} today={today} />
         ))}
-      </View>
+      </Group>
       {dayTasks.length === 0 && dayBills.length === 0 ? (
         <Text tone="muted">A free day.</Text>
       ) : null}

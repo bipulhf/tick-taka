@@ -4,11 +4,12 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
+import { Group } from "@/components/ui/group";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
-import { TaskRow } from "@/features/tasks/task-row";
+import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { useOutbox } from "@/lib/outbox";
 import { useAreas } from "@/lib/queries";
 import { useProjects, useTasks } from "./queries";
@@ -66,26 +67,27 @@ export function AreaDetail({ areaId }: { areaId: string }) {
               })
             }
           >
-            <View className="gap-2">
-              {projectTasks.length === 0 ? (
-                <Text variant="caption" tone="muted">
-                  No open tasks.
-                </Text>
-              ) : null}
-              {projectTasks.map((task) => (
-                <TaskRow key={task.id} task={task} today={today} showWhen />
-              ))}
-            </View>
+            {projectTasks.length === 0 ? (
+              <Text variant="callout" tone="muted" className="px-1">
+                No open tasks.
+              </Text>
+            ) : (
+              <Group inset={TASK_ROW_INSET}>
+                {projectTasks.map((task) => (
+                  <TaskRow key={task.id} task={task} today={today} showWhen />
+                ))}
+              </Group>
+            )}
           </Section>
         );
       })}
       {loose.length > 0 ? (
         <Section title="No project">
-          <View className="gap-2">
+          <Group inset={TASK_ROW_INSET}>
             {loose.map((task) => (
               <TaskRow key={task.id} task={task} today={today} showWhen />
             ))}
-          </View>
+          </Group>
         </Section>
       ) : null}
       <Button

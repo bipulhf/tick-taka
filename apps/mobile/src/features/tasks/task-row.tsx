@@ -18,6 +18,9 @@ export interface TaskRowProps {
 
 const DEADLINE_WARN_MS = 3 * 86_400_000;
 
+/** Separator inset that lines up with the task title, past the checkbox. */
+export const TASK_ROW_INSET = 46;
+
 export function TaskRow({ task, today, size = "md", showWhen = false, areaEmoji }: TaskRowProps) {
   const router = useRouter();
   const actions = useTaskActions();
@@ -31,6 +34,7 @@ export function TaskRow({ task, today, size = "md", showWhen = false, areaEmoji 
   ].filter(Boolean);
   return (
     <SwipeRow
+      rounded={false}
       right={{
         icon: done ? "undo" : "check-bold",
         className: "bg-mint",
@@ -41,7 +45,7 @@ export function TaskRow({ task, today, size = "md", showWhen = false, areaEmoji 
       <Pressable
         onPress={() => router.push(`/task/${task.id}`)}
         onLongPress={() => router.push(`/task/${task.id}`)}
-        className="flex-row items-center gap-1 rounded-2xl bg-card pr-3"
+        className="min-h-[60px] flex-row items-center gap-1 bg-card pr-4"
         accessibilityHint="Swipe right to complete, left to snooze"
       >
         <Checkbox
@@ -52,7 +56,7 @@ export function TaskRow({ task, today, size = "md", showWhen = false, areaEmoji 
         />
         <View className="flex-1 py-3">
           <Text
-            variant={size === "lg" ? "strong" : "body"}
+            variant="strong"
             className={done ? "text-muted line-through" : ""}
             numberOfLines={2}
           >
@@ -60,7 +64,7 @@ export function TaskRow({ task, today, size = "md", showWhen = false, areaEmoji 
             {task.title}
           </Text>
           {meta.length || deadlineSoon ? (
-            <Text variant="caption" tone={deadlineSoon ? "coral" : "muted"}>
+            <Text variant="callout" tone={deadlineSoon ? "coral" : "muted"}>
               {[
                 ...meta,
                 deadlineSoon && task.deadlineAt
@@ -72,7 +76,7 @@ export function TaskRow({ task, today, size = "md", showWhen = false, areaEmoji 
             </Text>
           ) : null}
         </View>
-        {task.priority === "high" ? <Icon name="flag" size={18} color="coral" /> : null}
+        {task.priority === "high" ? <Icon name="flag" size={20} color="coral" /> : null}
       </Pressable>
     </SwipeRow>
   );

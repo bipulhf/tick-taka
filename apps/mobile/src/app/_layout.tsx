@@ -20,6 +20,7 @@ import { ConfettiLayer } from "@/components/ui/confetti";
 import { Snackbar } from "@/components/ui/snackbar";
 import { loadFocusSession } from "@/features/focus/focus-session";
 import { AppLock } from "@/features/security/app-lock";
+import { ThemedRoot } from "@/features/settings/themed-root";
 import { loadToken, tokenStore } from "@/lib/auth";
 import { loadPrivacy } from "@/lib/privacy";
 import { PERSIST_MAX_AGE, persister, queryClient } from "@/lib/query-client";
@@ -82,37 +83,39 @@ export default function RootLayout() {
             }}
           >
             <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.background },
-              }}
-            >
-              <Stack.Protected guard={Boolean(token)}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="add" options={sheet} />
-                <Stack.Screen name="task/[id]" options={sheet} />
-                <Stack.Screen name="pick-top-three" options={sheet} />
-                <Stack.Screen name="habit/[id]" options={sheet} />
-                <Stack.Screen name="time-entry" options={sheet} />
-                <Stack.Screen name="transaction/[id]" options={sheet} />
-                <Stack.Screen name="account/[id]" options={sheet} />
-                <Stack.Screen name="goal/[id]" options={sheet} />
-                <Stack.Screen name="debt/new" options={sheet} />
-                <Stack.Screen name="budget-edit" options={sheet} />
-                <Stack.Screen name="money/recurring/[id]" options={sheet} />
-                <Stack.Screen
-                  name="focus"
-                  options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
-                />
-              </Stack.Protected>
-              <Stack.Protected guard={!token}>
-                <Stack.Screen name="login" />
-              </Stack.Protected>
-            </Stack>
-            {token ? <AppLock /> : null}
-            <Snackbar />
-            <ConfettiLayer />
+            <ThemedRoot>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.background },
+                }}
+              >
+                <Stack.Protected guard={Boolean(token)}>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="add" options={sheet} />
+                  <Stack.Screen name="task/[id]" options={sheet} />
+                  <Stack.Screen name="pick-top-three" options={sheet} />
+                  <Stack.Screen name="habit/[id]" options={sheet} />
+                  <Stack.Screen name="time-entry" options={sheet} />
+                  <Stack.Screen name="transaction/[id]" options={sheet} />
+                  <Stack.Screen name="account/[id]" options={sheet} />
+                  <Stack.Screen name="goal/[id]" options={sheet} />
+                  <Stack.Screen name="debt/new" options={sheet} />
+                  <Stack.Screen name="budget-edit" options={sheet} />
+                  <Stack.Screen name="money/recurring/[id]" options={sheet} />
+                  <Stack.Screen
+                    name="focus"
+                    options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+                  />
+                </Stack.Protected>
+                <Stack.Protected guard={!token}>
+                  <Stack.Screen name="login" />
+                </Stack.Protected>
+              </Stack>
+              {token ? <AppLock /> : null}
+              <Snackbar />
+              <ConfettiLayer />
+            </ThemedRoot>
           </ThemeProvider>
         </PersistQueryClientProvider>
       </SafeAreaProvider>

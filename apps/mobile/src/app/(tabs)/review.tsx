@@ -1,10 +1,5 @@
-import { Screen } from "@/components/ui/screen";
-import { Text } from "@/components/ui/text";
+import { ReviewHome } from "@/features/review/review-home";
 
-export default function Placeholder() {
-  return (
-    <Screen title="review">
-      <Text tone="muted">Coming up.</Text>
-    </Screen>
-  );
+export default function ReviewTab() {
+  return <ReviewHome />;
 }

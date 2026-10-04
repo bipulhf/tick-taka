@@ -1,6 +1,6 @@
-import { useToday } from "@/lib/queries";
+import { useSmsCards } from "./sms-store";
 
-/** Cards waiting in the SMS review panel. The phone-side scanner adds to this in a later step. */
+/** Cards waiting in the SMS review panel. */
 export function useSmsPendingCount(): number {
-  return useToday().data?.counts.smsPending ?? 0;
+  return useSmsCards().filter((card) => card.status === "pending").length;
 }

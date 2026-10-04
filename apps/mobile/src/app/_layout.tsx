@@ -18,6 +18,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ConfettiLayer } from "@/components/ui/confetti";
 import { Snackbar } from "@/components/ui/snackbar";
+import { AppServices } from "@/features/app/app-services";
 import { loadFocusSession } from "@/features/focus/focus-session";
 import { AppLock } from "@/features/security/app-lock";
 import { ThemedRoot } from "@/features/settings/themed-root";
@@ -103,6 +104,7 @@ export default function RootLayout() {
                   <Stack.Screen name="debt/new" options={sheet} />
                   <Stack.Screen name="budget-edit" options={sheet} />
                   <Stack.Screen name="money/recurring/[id]" options={sheet} />
+                  <Stack.Screen name="money/sms" options={sheet} />
                   <Stack.Screen
                     name="focus"
                     options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
@@ -112,7 +114,12 @@ export default function RootLayout() {
                   <Stack.Screen name="login" />
                 </Stack.Protected>
               </Stack>
-              {token ? <AppLock /> : null}
+              {token ? (
+                <>
+                  <AppServices />
+                  <AppLock />
+                </>
+              ) : null}
               <Snackbar />
               <ConfettiLayer />
             </ThemedRoot>

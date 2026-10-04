@@ -11,7 +11,7 @@
     "android": {
       "package": "dev.bipulhf.ticktaka",
       "adaptiveIcon": {
-        "backgroundColor": "#FFB547",
+        "backgroundColor": "#FFF8EE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -56,7 +56,26 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-image"
+      "expo-image",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "SafeToSpend",
+              "label": "Tick & Taka",
+              "description": "Safe to spend today and one-tap logging",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ],
+      "expo-quick-actions"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -26,10 +26,10 @@ export function RunningTimerBar({
   const now = useNow();
   const focus = entry.source === "focus";
   return (
-    // Sits beside the floating chat bubble, just above the tab bar.
+    // Sits just above the floating tab bar.
     <View
-      className="absolute right-4"
-      style={{ left: 88, bottom: insets.bottom + TAB_BAR_GAP + TAB_BAR_HEIGHT + 12 }}
+      className="absolute left-4 right-4"
+      style={{ bottom: insets.bottom + TAB_BAR_GAP + TAB_BAR_HEIGHT + 8 }}
     >
       <Pressable
         onPress={() => router.push(focus ? "/focus" : "/plan/time")}

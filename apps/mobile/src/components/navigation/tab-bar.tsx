@@ -1,20 +1,23 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import type { Tabs } from "expo-router/js-tabs";
-import type { ComponentProps } from "react";
+import { type ComponentProps, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { AssistantButton, useAssistantAvailable } from "@/features/assistant/assistant-button";
 import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { haptic } from "@/lib/haptics";
 import { useColors } from "@/theme/colors";
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>>[0];
 
-/** The capsule floats this far above the safe area, and is this tall. */
+/** The bar floats this far above the safe area, and is this tall. */
 export const TAB_BAR_GAP = 12;
 export const TAB_BAR_HEIGHT = 64;
+/** Below this capsule width the open tab shows its icon only. */
+const COMPACT_WIDTH = 300;
 
 const TABS: Record<string, { label: string; icon: IconName; activeIcon: IconName }> = {
   index: { label: "Today", icon: "white-balance-sunny", activeIcon: "white-balance-sunny" },
@@ -25,13 +28,17 @@ const TABS: Record<string, { label: string; icon: IconName; activeIcon: IconName
 
 /**
  * A floating capsule: the open tab grows into a labelled pill, the others stay
- * as calm icons, and quick-add sits in the middle within thumb reach.
+ * as calm icons, and quick-add sits in the middle within thumb reach. Tiki's
+ * chat button sits beside it on the left, so it never covers the content.
  */
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const smsPending = useSmsPendingCount();
   const colors = useColors();
+  const chat = useAssistantAvailable();
+  const [capsuleWidth, setCapsuleWidth] = useState(0);
+  const compact = capsuleWidth > 0 && capsuleWidth < COMPACT_WIDTH;
   const routes = state.routes.filter((route) => TABS[route.name]);
   const renderTab = (route: (typeof routes)[number]) => {
     const tab = TABS[route.name]!;
@@ -60,7 +67,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
           className="h-12 flex-row items-center justify-center gap-2"
           style={{
             borderRadius: 24,
-            paddingHorizontal: focused ? 16 : 12,
+            paddingHorizontal: focused && !compact ? 16 : 10,
             backgroundColor: focused ? colors.ink : "transparent",
           }}
         >
@@ -69,7 +76,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
             color={focused ? "background" : "muted"}
             size={24}
           />
-          {focused ? (
+          {focused && !compact ? (
             <Text variant="callout" tone="background" className="font-nunito-bold">
               {tab.label}
             </Text>
@@ -99,22 +106,29 @@ export function TabBar({ state, navigation }: TabBarProps) {
         }}
       />
       <View
-        className="absolute left-4 right-4 flex-row items-center justify-between rounded-full border border-line bg-card px-2"
-        style={{ bottom: insets.bottom + TAB_BAR_GAP, height: TAB_BAR_HEIGHT, elevation: 10 }}
+        className="absolute left-4 right-4 flex-row items-center gap-2"
+        style={{ bottom: insets.bottom + TAB_BAR_GAP, height: TAB_BAR_HEIGHT }}
       >
-        {routes.slice(0, 2).map(renderTab)}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Quick add"
-          onPress={() => {
-            haptic.tap();
-            router.push("/add");
-          }}
-          className="h-12 w-12 items-center justify-center rounded-full bg-mango active:scale-95"
+        {chat ? <AssistantButton size={TAB_BAR_HEIGHT} /> : null}
+        <View
+          onLayout={(event) => setCapsuleWidth(event.nativeEvent.layout.width)}
+          className="h-full flex-1 flex-row items-center justify-between rounded-full border border-line bg-card px-2"
+          style={{ elevation: 10 }}
         >
-          <Icon name="plus" size={30} color="onAccent" />
-        </Pressable>
-        {routes.slice(2).map(renderTab)}
+          {routes.slice(0, 2).map(renderTab)}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Quick add"
+            onPress={() => {
+              haptic.tap();
+              router.push("/add");
+            }}
+            className="h-12 w-12 items-center justify-center rounded-full bg-mango active:scale-95"
+          >
+            <Icon name="plus" size={30} color="onAccent" />
+          </Pressable>
+          {routes.slice(2).map(renderTab)}
+        </View>
       </View>
     </>
   );

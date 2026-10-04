@@ -1,4 +1,4 @@
-import type { AiChatResult, AiClient, AiJsonRequest } from "../src/ai/client";
+import type { AiChatResult, AiClient, AiJsonRequest, AiTranscribeRequest } from "../src/ai/client";
 
 /** Scripted AI client: returns queued responses and records every request. */
 export class FakeAi implements AiClient {
@@ -6,6 +6,8 @@ export class FakeAi implements AiClient {
   readonly chatRequests: Parameters<AiClient["chat"]>[0][] = [];
   private readonly jsonQueue: unknown[] = [];
   private readonly chatQueue: Partial<AiChatResult>[] = [];
+  readonly transcribeRequests: AiTranscribeRequest[] = [];
+  transcript = "";
   failNext = false;
 
   queueJson(...data: unknown[]) {
@@ -41,6 +43,15 @@ export class FakeAi implements AiClient {
       usage: { inputTokens: 500, outputTokens: 50 },
       model: "fake-fast",
       ...next,
+    };
+  }
+
+  async transcribe(request: AiTranscribeRequest) {
+    this.transcribeRequests.push(request);
+    return {
+      text: this.transcript,
+      usage: { inputTokens: 100, outputTokens: 20 },
+      model: "fake-transcribe",
     };
   }
 }

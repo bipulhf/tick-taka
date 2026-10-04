@@ -3,6 +3,7 @@ import type { Deps } from "./lib/deps";
 import { requireAuth } from "./middleware/auth";
 import { onError, onNotFound } from "./middleware/error-handler";
 import { accountsRoutes } from "./modules/accounts/routes";
+import type { Dispatch } from "./modules/ai/assistant/dispatch";
 import { aiRoutes } from "./modules/ai/routes";
 import { areasRoutes } from "./modules/areas/routes";
 import { authRoutes } from "./modules/auth/routes";
@@ -32,6 +33,8 @@ import { uploadsRoutes } from "./modules/uploads/routes";
 const startedAt = Date.now();
 
 export function createApp(deps: Deps) {
+  // The chat assistant calls the app's own routes, so its writes get the same validation.
+  const dispatch: Dispatch = async (path, init) => app.request(path, init);
   const api = new Hono()
     .use(requireAuth(deps.env.JWT_SECRET))
     .route("/settings", settingsRoutes(deps))
@@ -60,14 +63,15 @@ export function createApp(deps: Deps) {
     .route("/gamification", gamificationRoutes(deps))
     .route("/sync", syncRoutes(deps))
     .route("/export", exportRoutes(deps))
-    .route("/ai", aiRoutes(deps));
+    .route("/ai", aiRoutes(deps, dispatch));
 
-  return new Hono()
+  const app = new Hono()
     .onError(onError)
     .notFound(onNotFound)
     .get("/health", (c) => c.json({ ok: true, uptimeMs: Date.now() - startedAt }))
     .route("/auth", authRoutes(deps))
     .route("/", api);
+  return app;
 }
 
 export type App = ReturnType<typeof createApp>;

@@ -108,3 +108,30 @@ export const aiBudgetSuggestionsOutputSchema = z.object({
   ),
 });
 export type AiBudgetSuggestionsOutput = z.infer<typeof aiBudgetSuggestionsOutputSchema>;
+
+// Assistant chat -----------------------------------------------------------------
+export const assistantMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().max(4000),
+  /** What the assistant changed in that turn, with ids, so follow-ups like "move it" work. */
+  memo: z.string().max(4000).optional(),
+});
+export const assistantRequestSchema = z.object({
+  messages: z.array(assistantMessageSchema).min(1).max(30),
+});
+export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
+
+export const VOICE_MIME_TYPES = [
+  "audio/mp4",
+  "audio/m4a",
+  "audio/aac",
+  "audio/mpeg",
+  "audio/wav",
+  "audio/webm",
+  "audio/3gpp",
+] as const;
+/** A voice note for the assistant, up to about two minutes of compressed audio. */
+export const aiTranscribeRequestSchema = z.object({
+  audio: z.string().min(100).max(8_000_000),
+  mimeType: z.enum(VOICE_MIME_TYPES),
+});

@@ -12,6 +12,7 @@ export const AI_FEATURES = [
   "weeklyReview",
   "ask",
   "budgetSuggestions",
+  "assistant",
 ] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 

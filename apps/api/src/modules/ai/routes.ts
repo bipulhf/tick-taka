@@ -6,7 +6,9 @@ import {
   aiParseRequestSchema,
   aiPlanDayRequestSchema,
   aiReceiptRequestSchema,
+  aiTranscribeRequestSchema,
   aiWeeklyReviewRequestSchema,
+  assistantRequestSchema,
 } from "@tick-taka/shared/schemas/ai";
 import { isAiFeatureEnabled } from "@tick-taka/shared/schemas/settings";
 import { Hono } from "hono";
@@ -15,12 +17,18 @@ import type { Deps } from "../../lib/deps";
 import { userTime } from "../../lib/user-time";
 import { validate } from "../../lib/validate";
 import { aiAsk } from "./ask";
+import { aiAssistant } from "./assistant/agent";
+import type { Dispatch } from "./assistant/dispatch";
 import { aiBudgetSuggestions, aiWeeklyCoach } from "./coach";
 import { aiCategorize, aiParse, aiReceipt } from "./parse";
 import { aiBreakdown, aiPlanDay } from "./planning";
+import { aiTranscribe } from "./voice";
 
-/** Every /ai/* route returns a draft or text and never writes a record. */
-export const aiRoutes = (deps: Deps) =>
+/**
+ * /ai/* routes return drafts or text and never write a record, except the chat
+ * assistant, which writes only through the app's own routes (via `dispatch`).
+ */
+export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
   new Hono()
     .get("/status", (c) => {
       const { settings } = userTime(deps);
@@ -40,6 +48,7 @@ export const aiRoutes = (deps: Deps) =>
           weeklyReview: isAiFeatureEnabled(settings, "weeklyReview"),
           ask: isAiFeatureEnabled(settings, "ask"),
           budgetSuggestions: isAiFeatureEnabled(settings, "budgetSuggestions"),
+          assistant: isAiFeatureEnabled(settings, "assistant"),
         },
       });
     })
@@ -63,6 +72,19 @@ export const aiRoutes = (deps: Deps) =>
     )
     .post("/ask", validate("json", aiAskRequestSchema), async (c) =>
       c.json(await aiAsk(deps, c.req.valid("json").question)),
+    )
+    .post("/assistant", validate("json", assistantRequestSchema), async (c) =>
+      c.json(
+        await aiAssistant(
+          deps,
+          dispatch,
+          c.req.header("authorization") ?? "",
+          c.req.valid("json").messages,
+        ),
+      ),
+    )
+    .post("/transcribe", validate("json", aiTranscribeRequestSchema), async (c) =>
+      c.json(await aiTranscribe(deps, c.req.valid("json"))),
     )
     .post("/budget-suggestions", validate("json", aiBudgetSuggestionsRequestSchema), async (c) =>
       c.json(await aiBudgetSuggestions(deps, c.req.valid("json").month)),

@@ -1,7 +1,18 @@
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { Env } from "../env";
 import type { AiChatMessage, AiClient } from "./client";
+
+/** OpenAI picks the decoder from the file name, so each type needs an extension it knows. */
+const EXTENSIONS: Record<string, string> = {
+  "audio/mp4": "m4a",
+  "audio/m4a": "m4a",
+  "audio/aac": "m4a",
+  "audio/mpeg": "mp3",
+  "audio/wav": "wav",
+  "audio/webm": "webm",
+  "audio/3gpp": "mp4",
+};
 
 /** OpenAI-backed AI client. The API key lives only in the server's environment. */
 export function createOpenAiClient(env: Env): AiClient | null {
@@ -100,6 +111,28 @@ export function createOpenAiClient(env: Env): AiClient | null {
         usage: {
           inputTokens: completion.usage?.prompt_tokens ?? 0,
           outputTokens: completion.usage?.completion_tokens ?? 0,
+        },
+      };
+    },
+
+    async transcribe(request) {
+      const extension = EXTENSIONS[request.mimeType] ?? "m4a";
+      const result = await openai.audio.transcriptions.create({
+        file: await toFile(Buffer.from(request.audioBase64, "base64"), `voice.${extension}`, {
+          type: request.mimeType,
+        }),
+        model: env.OPENAI_MODEL_TRANSCRIBE,
+        prompt: request.prompt,
+      });
+      const usage = (
+        result as { usage?: { type?: string; input_tokens?: number; output_tokens?: number } }
+      ).usage;
+      return {
+        text: result.text.trim(),
+        model: env.OPENAI_MODEL_TRANSCRIBE,
+        usage: {
+          inputTokens: usage?.type === "tokens" ? (usage.input_tokens ?? 0) : 0,
+          outputTokens: usage?.type === "tokens" ? (usage.output_tokens ?? 0) : 0,
         },
       };
     },

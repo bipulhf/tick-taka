@@ -43,6 +43,13 @@ export interface AiChatResult {
   model: string;
 }
 
+export interface AiTranscribeRequest {
+  audioBase64: string;
+  mimeType: string;
+  /** Vocabulary hint, e.g. the languages and app words to expect. */
+  prompt: string;
+}
+
 export interface AiClient {
   json(request: AiJsonRequest): Promise<{ data: unknown; usage: AiUsage; model: string }>;
   chat(request: {
@@ -50,4 +57,7 @@ export interface AiClient {
     messages: AiChatMessage[];
     tools: AiToolDefinition[];
   }): Promise<AiChatResult>;
+  transcribe(
+    request: AiTranscribeRequest,
+  ): Promise<{ text: string; usage: AiUsage; model: string }>;
 }

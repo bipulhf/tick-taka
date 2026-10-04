@@ -13,6 +13,8 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL_FAST: z.string().default("gpt-6-luna"),
   OPENAI_MODEL_SMART: z.string().default("gpt-6-luna"),
+  /** Speech to text for the assistant's microphone; handles Bangla and Bangla-English mix. */
+  OPENAI_MODEL_TRANSCRIBE: z.string().default("gpt-4o-mini-transcribe"),
   /** Price per million tokens in micro-dollars, for the monthly cost cap. */
   OPENAI_FAST_INPUT_MICROS_PER_MTOK: z.coerce.number().nonnegative().default(250_000),
   OPENAI_FAST_OUTPUT_MICROS_PER_MTOK: z.coerce.number().nonnegative().default(2_000_000),

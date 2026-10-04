@@ -80,7 +80,7 @@ export const ASK_TOOLS: AiToolDefinition[] = [
   },
 ];
 
-function runTool(deps: Deps, name: string, rawArgs: string): unknown {
+export function runAskTool(deps: Deps, name: string, rawArgs: string): unknown {
   const { timeZone } = userTime(deps);
   const vocab = vocabulary(deps);
   const args = JSON.parse(rawArgs || "{}") as { from?: string; to?: string; month?: string };
@@ -221,7 +221,7 @@ export async function aiAsk(deps: Deps, question: string) {
       toolsUsed.push(call.name);
       let content: string;
       try {
-        content = JSON.stringify(runTool(deps, call.name, call.arguments));
+        content = JSON.stringify(runAskTool(deps, call.name, call.arguments));
       } catch (error) {
         content = JSON.stringify({ error: (error as Error).message });
       }

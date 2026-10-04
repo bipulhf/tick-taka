@@ -1,3 +1,6 @@
+// The widget library walks this tree as plain functions; the React Compiler must not wrap it.
+"use no memo";
+
 import { formatAmount } from "@tick-taka/shared/money";
 import { FlexWidget, TextWidget } from "react-native-android-widget";
 import type { WidgetCache } from "./widget-cache";

@@ -25,10 +25,13 @@ export function SwipeRow({
   children,
   right,
   left,
+  rounded = true,
 }: {
   children: ReactNode;
   right?: SwipeAction;
   left?: SwipeAction;
+  /** Off inside a Group, which provides the rounding. */
+  rounded?: boolean;
 }) {
   const x = useSharedValue(0);
   const trigger = (action: SwipeAction | undefined) => {
@@ -59,11 +62,11 @@ export function SwipeRow({
     opacity: interpolate(x.value, [-THRESHOLD, 0], [1, 0]),
   }));
   return (
-    <View className="overflow-hidden rounded-2xl">
+    <View className={`overflow-hidden ${rounded ? "rounded-2xl" : ""}`}>
       {right ? (
         <Animated.View
           style={rightHint}
-          className={`absolute inset-0 justify-center rounded-2xl pl-5 ${right.className}`}
+          className={`absolute inset-0 justify-center pl-5 ${right.className}`}
         >
           <Icon name={right.icon} color="white" />
         </Animated.View>
@@ -71,7 +74,7 @@ export function SwipeRow({
       {left ? (
         <Animated.View
           style={leftHint}
-          className={`absolute inset-0 items-end justify-center rounded-2xl pr-5 ${left.className}`}
+          className={`absolute inset-0 items-end justify-center pr-5 ${left.className}`}
         >
           <Icon name={left.icon} color="white" />
         </Animated.View>

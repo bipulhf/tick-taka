@@ -42,14 +42,18 @@ export function Screen({
           accessibilityLabel="Back"
           className="-ml-2 h-12 w-10 items-center justify-center self-start"
         >
-          <Icon name="chevron-left" size={28} />
+          <Icon name="chevron-left" size={30} />
         </Pressable>
       ) : null}
       <View className="flex-1">
-        <Text variant="title" accessibilityRole="header" numberOfLines={2}>
+        <Text variant="largeTitle" accessibilityRole="header" numberOfLines={2}>
           {title}
         </Text>
-        {subtitle ? <Text tone="muted">{subtitle}</Text> : null}
+        {subtitle ? (
+          <Text variant="callout" tone="muted">
+            {subtitle}
+          </Text>
+        ) : null}
       </View>
       {right}
     </View>
@@ -68,7 +72,7 @@ export function Screen({
   );
   if (!scroll) {
     return (
-      <View className="flex-1 gap-4 bg-background px-4" style={padding}>
+      <View className="flex-1 gap-5 bg-background px-5" style={padding}>
         {header}
         {children}
       </View>
@@ -78,7 +82,7 @@ export function Screen({
     <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
-        contentContainerClassName="gap-5 px-4"
+        contentContainerClassName="gap-7 px-5"
         contentContainerStyle={padding}
         keyboardShouldPersistTaps="handled"
         refreshControl={

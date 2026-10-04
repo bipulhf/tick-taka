@@ -18,6 +18,8 @@ module.exports = {
         ink: token("ink"),
         muted: token("muted"),
         line: token("line"),
+        /** Text and icons on mango: always dark, in both themes. */
+        "on-mango": "#23202B",
       },
       fontFamily: {
         nunito: ["Nunito_400Regular"],

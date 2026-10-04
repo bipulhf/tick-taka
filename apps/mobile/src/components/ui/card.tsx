@@ -5,8 +5,9 @@ export interface CardProps extends ViewProps {
   onPress?: () => void;
 }
 
+/** A single raised surface. Use for heroes; lists of things belong in a Group. */
 export function Card({ className, onPress, children, ...props }: CardProps) {
-  const classes = `rounded-3xl bg-card p-4 ${className ?? ""}`;
+  const classes = `rounded-3xl bg-card p-5 ${className ?? ""}`;
   if (onPress) {
     return (
       <Pressable

@@ -17,13 +17,13 @@ export function Section({
 }) {
   return (
     <View className={`gap-3 ${className ?? ""}`}>
-      <View className="flex-row items-center justify-between px-1">
-        <Text variant="label" tone="muted">
+      <View className="min-h-8 flex-row items-end justify-between px-1">
+        <Text variant="heading" accessibilityRole="header">
           {title}
         </Text>
         {action && onAction ? (
-          <Pressable onPress={onAction} hitSlop={12} accessibilityRole="button">
-            <Text variant="caption" className="font-nunito-bold" tone="sky">
+          <Pressable onPress={onAction} hitSlop={14} accessibilityRole="button">
+            <Text variant="callout" className="font-nunito-bold" tone="sky">
               {action}
             </Text>
           </Pressable>

@@ -5,6 +5,7 @@ import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { haptic } from "@/lib/haptics";
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>>[0];
@@ -16,26 +17,23 @@ const TABS: Record<string, { label: string; icon: IconName; activeIcon: IconName
   review: { label: "Review", icon: "chart-donut", activeIcon: "chart-donut-variant" },
 };
 
-/** Five slots with quick-add in the centre, so capture is always one thumb-tap away. */
-export function TabBar({
-  state,
-  navigation,
-  badges = {},
-}: TabBarProps & { badges?: Record<string, number> }) {
+/** Four tabs with quick-add in the centre, so capture is always one thumb-tap away. */
+export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const smsPending = useSmsPendingCount();
   const routes = state.routes.filter((route) => TABS[route.name]);
   const renderTab = (route: (typeof routes)[number]) => {
     const tab = TABS[route.name]!;
     const focused = state.routes[state.index]?.key === route.key;
-    const badge = badges[route.name] ?? 0;
+    const badge = route.name === "money" ? smsPending : 0;
     return (
       <Pressable
         key={route.key}
         accessibilityRole="tab"
         accessibilityState={{ selected: focused }}
         accessibilityLabel={badge ? `${tab.label}, ${badge} new` : tab.label}
-        className="min-h-14 flex-1 items-center justify-center gap-0.5"
+        className="min-h-16 flex-1 items-center justify-center gap-1"
         onPress={() => {
           haptic.select();
           const event = navigation.emit({
@@ -46,21 +44,24 @@ export function TabBar({
           if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
         }}
       >
-        <View>
+        <View
+          className={`h-8 w-16 items-center justify-center ${focused ? "bg-mango/25" : "bg-transparent"}`}
+          style={{ borderRadius: 16 }}
+        >
           <Icon
             name={focused ? tab.activeIcon : tab.icon}
             color={focused ? "ink" : "muted"}
-            size={24}
+            size={26}
           />
           {badge > 0 ? (
-            <View className="absolute -right-2 -top-1 min-w-4 items-center rounded-full bg-coral px-1">
-              <Text className="text-[10px] font-nunito-bold text-white">{badge}</Text>
+            <View className="absolute right-2 top-0 min-w-5 items-center rounded-full bg-coral px-1">
+              <Text className="text-[11px] font-nunito-bold text-white">{badge}</Text>
             </View>
           ) : null}
         </View>
         <Text
           variant="caption"
-          className={`text-[11px] ${focused ? "font-nunito-bold" : ""}`}
+          className={focused ? "font-nunito-black" : ""}
           tone={focused ? "ink" : "muted"}
         >
           {tab.label}
@@ -71,7 +72,7 @@ export function TabBar({
   return (
     <View
       className="absolute bottom-0 left-0 right-0 flex-row items-center border-t border-line bg-card px-2"
-      style={{ paddingBottom: insets.bottom + 4, paddingTop: 6 }}
+      style={{ paddingBottom: insets.bottom + 6, paddingTop: 8 }}
     >
       {routes.slice(0, 2).map(renderTab)}
       <View className="flex-1 items-center">
@@ -82,10 +83,10 @@ export function TabBar({
             haptic.tap();
             router.push("/add");
           }}
-          className="-mt-6 h-16 w-16 items-center justify-center rounded-full bg-mango active:scale-95"
+          className="-mt-8 h-16 w-16 items-center justify-center rounded-full bg-mango active:scale-95"
           style={{ elevation: 6 }}
         >
-          <Icon name="plus" size={32} color="ink" />
+          <Icon name="plus" size={34} color="onAccent" />
         </Pressable>
       </View>
       {routes.slice(2).map(renderTab)}

@@ -37,10 +37,10 @@ export function Sheet({
         <View className="h-1.5 w-10 rounded-full bg-line" />
       </View>
       <ScrollView
-        contentContainerClassName="gap-4 px-5 pt-3 pb-6"
+        contentContainerClassName="gap-5 px-5 pt-3 pb-6"
         keyboardShouldPersistTaps="handled"
       >
-        <Text variant="heading" accessibilityRole="header">
+        <Text variant="title" accessibilityRole="header">
           {title}
         </Text>
         {children}

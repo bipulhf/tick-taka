@@ -63,10 +63,10 @@ const ENTRIES: Entry[] = [
     icon: "repeat-variant",
   },
   {
-    href: "/review/ask",
-    title: "Ask my data",
-    hint: "“How much on transport in September?”",
-    icon: "chat-question-outline",
+    href: "/assistant",
+    title: "Chat with Tiki",
+    hint: "Ask, add or change anything, by voice too",
+    icon: "chat-processing-outline",
     ai: true,
   },
   {

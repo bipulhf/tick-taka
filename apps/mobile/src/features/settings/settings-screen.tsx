@@ -23,7 +23,7 @@ const AI_LABELS = {
   planDay: "Plan my day",
   breakdown: "Break it down",
   weeklyReview: "Weekly coach",
-  ask: "Ask my data",
+  assistant: "Chat with Tiki (and voice)",
   budgetSuggestions: "Budget suggestions",
 } as const;
 const CAPS = [500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];

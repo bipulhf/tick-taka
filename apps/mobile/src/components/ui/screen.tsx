@@ -60,7 +60,8 @@ export function Screen({
   ) : null;
   const padding = {
     paddingTop: insets.top + 12,
-    paddingBottom: (tabBarPadding ? 110 : 32) + insets.bottom,
+    // Room for the tab bar and the floating chat bubble above it.
+    paddingBottom: (tabBarPadding ? 170 : 32) + insets.bottom,
   };
   // Content scrolls under a solid strip, so it never collides with the status bar.
   const statusBackdrop = (

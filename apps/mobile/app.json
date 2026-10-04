@@ -16,7 +16,14 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "permissions": ["READ_SMS", "RECEIVE_SMS", "POST_NOTIFICATIONS", "USE_BIOMETRIC", "VIBRATE"],
+      "permissions": [
+        "READ_SMS",
+        "RECEIVE_SMS",
+        "POST_NOTIFICATIONS",
+        "USE_BIOMETRIC",
+        "VIBRATE",
+        "RECORD_AUDIO"
+      ],
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false
     },
@@ -75,7 +82,13 @@
           ]
         }
       ],
-      "expo-quick-actions"
+      "expo-quick-actions",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Tick & Taka uses the microphone so you can talk to Tiki."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

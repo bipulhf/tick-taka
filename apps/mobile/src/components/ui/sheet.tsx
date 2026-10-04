@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "./text";
 
 /** Height of the on-screen keyboard; form sheets don't resize for it on their own. */
-function useKeyboardHeight(): number {
+export function useKeyboardHeight(): number {
   const [height, setHeight] = useState(0);
   useEffect(() => {
     const show = Keyboard.addListener("keyboardDidShow", (event) =>

@@ -11,6 +11,8 @@
     "test": "bun test"
   },
   "dependencies": {
+    "chrono-node": "^2.10",
+    "ulid": "^3",
     "zod": "^4.1"
   },
   "devDependencies": {

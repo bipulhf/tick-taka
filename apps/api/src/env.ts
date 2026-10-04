@@ -11,8 +11,8 @@ const envSchema = z.object({
   APP_PASSWORD_HASH: z.string().min(20, "APP_PASSWORD_HASH is required (see README)"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   OPENAI_API_KEY: z.string().optional(),
-  OPENAI_MODEL_FAST: z.string().default("gpt-5-mini"),
-  OPENAI_MODEL_SMART: z.string().default("gpt-5"),
+  OPENAI_MODEL_FAST: z.string().default("gpt-6-luna"),
+  OPENAI_MODEL_SMART: z.string().default("gpt-6-luna"),
   /** Price per million tokens in micro-dollars, for the monthly cost cap. */
   OPENAI_FAST_INPUT_MICROS_PER_MTOK: z.coerce.number().nonnegative().default(250_000),
   OPENAI_FAST_OUTPUT_MICROS_PER_MTOK: z.coerce.number().nonnegative().default(2_000_000),

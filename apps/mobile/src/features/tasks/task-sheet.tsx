@@ -3,7 +3,7 @@ import { endOfLocalDay, MINUTE_MS, startOfLocalDay, toLocalDate } from "@tick-ta
 import { newId } from "@tick-taka/shared/ids";
 import { describeRRule, parseRecurrence } from "@tick-taka/shared/recurrence";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -80,8 +80,12 @@ export function TaskSheet({ id }: { id: string | null }) {
   const [breaking, setBreaking] = useState(false);
   const task = query.data;
 
+  // Fill the form once per task; later refetches (after a subtask is added) must not
+  // overwrite edits that haven't been saved yet.
+  const loadedId = useRef<string | null>(null);
   useEffect(() => {
-    if (!task) return;
+    if (!task || loadedId.current === task.id) return;
+    loadedId.current = task.id;
     setForm({
       title: task.title,
       notes: task.notes ?? "",
@@ -181,12 +185,21 @@ export function TaskSheet({ id }: { id: string | null }) {
     router.back();
   };
 
+  const nextSort = useRef(0);
   const addSubtask = (title: string) => {
     if (!id || !title.trim()) return;
+    // New subtasks go to the end of the list.
+    nextSort.current = Math.max(nextSort.current, task?.subtasks.length ?? 0) + 1;
     send({
       method: "POST",
       path: "/tasks",
-      body: { id: newId(), title: title.trim(), parentId: id, status: "open" },
+      body: {
+        id: newId(),
+        title: title.trim(),
+        parentId: id,
+        status: "open",
+        sort: nextSort.current,
+      },
       label: "Couldn't add the subtask",
     });
   };

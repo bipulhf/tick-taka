@@ -88,6 +88,8 @@ export const settingsSchema = z.object({
   smsSources: z.array(smsSourceSchema).default([]),
   smsLastScanAt: z.number().int().nonnegative().default(0),
   billOverdueGraceDays: z.number().int().min(0).max(30).default(0),
+  /** "Next week's focus" picked at the end of the weekly review. */
+  weeklyFocus: z.string().max(200).nullable().default(null),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 export type SettingsKey = keyof Settings;

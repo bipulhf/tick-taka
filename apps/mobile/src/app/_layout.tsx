@@ -89,6 +89,8 @@ export default function RootLayout() {
               <Stack.Protected guard={Boolean(token)}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="add" options={sheet} />
+                <Stack.Screen name="task/[id]" options={sheet} />
+                <Stack.Screen name="pick-top-three" options={sheet} />
               </Stack.Protected>
               <Stack.Protected guard={!token}>
                 <Stack.Screen name="login" />

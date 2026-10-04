@@ -53,7 +53,7 @@ export interface TaskDraft {
   deadlineAt: number | null;
   rrule: string | null;
   whenSlot: "day" | "evening";
-  status: "inbox" | "someday";
+  status: "inbox" | "open" | "someday";
   priority: "low" | "normal" | "high";
   areaId: string | null;
   confidence: Confidence;

@@ -1,10 +1,11 @@
-import { Sheet } from "@/components/ui/sheet";
-import { Text } from "@/components/ui/text";
+import type { QuickAddKind } from "@tick-taka/shared/quick-add";
+import { useLocalSearchParams } from "expo-router";
+import { QuickAddSheet } from "@/features/quick-add/quick-add-sheet";
 
-export default function QuickAddSheet() {
-  return (
-    <Sheet title="Quick add">
-      <Text tone="muted">Coming up.</Text>
-    </Sheet>
-  );
+const KINDS: QuickAddKind[] = ["task", "expense", "income", "time_entry"];
+
+export default function QuickAddRoute() {
+  const params = useLocalSearchParams<{ text?: string; kind?: string }>();
+  const kind = KINDS.find((k) => k === params.kind) ?? null;
+  return <QuickAddSheet initialText={params.text ?? ""} initialKind={kind} />;
 }

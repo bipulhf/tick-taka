@@ -28,14 +28,34 @@
           "backgroundColor": "#FFF8EE",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 96,
-          "dark": { "backgroundColor": "#16151C" }
+          "dark": {
+            "backgroundColor": "#16151C"
+          }
         }
       ],
       "expo-secure-store",
       "expo-sharing",
-      ["expo-local-authentication", { "faceIDPermission": "Unlock Tick & Taka" }],
-      ["expo-notifications", { "color": "#FFB547" }],
-      ["expo-build-properties", { "android": { "usesCleartextTraffic": true } }]
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Unlock Tick & Taka"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#FFB547"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

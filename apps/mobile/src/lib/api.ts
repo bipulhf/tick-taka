@@ -1,5 +1,6 @@
 import type { AppType } from "@tick-taka/api/app-type";
 import { hc } from "hono/client";
+import type { SuccessStatusCode } from "hono/utils/http-status";
 import { signOut, tokenStore } from "./auth";
 import { API_URL } from "./config";
 
@@ -40,7 +41,12 @@ async function toError(response: JsonResponse): Promise<ApiError> {
   );
 }
 
-type SuccessBody<R> = R extends { json(): Promise<infer T> } ? T : never;
+/** Body type of the 2xx branches only; validation-error branches are dropped. */
+type SuccessBody<R> = R extends { status: infer S; json(): Promise<infer T> }
+  ? S extends SuccessStatusCode
+    ? T
+    : never
+  : never;
 
 /** Unwraps an RPC response: typed JSON of the success branch, ApiError otherwise. */
 export async function unwrap<R extends JsonResponse>(request: Promise<R>): Promise<SuccessBody<R>> {

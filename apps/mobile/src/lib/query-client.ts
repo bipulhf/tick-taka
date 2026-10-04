@@ -59,15 +59,17 @@ export const persister = createAsyncStoragePersister({
 });
 export const PERSIST_MAX_AGE = 14 * DAY_MS;
 
+// Online means "has a network": the API may be on a LAN or VPS that answers even when
+// Android's internet reachability check fails. Failed requests retry on their own.
 onlineManager.setEventListener((setOnline) =>
-  NetInfo.addEventListener((state) =>
-    setOnline(state.isConnected !== false && state.isInternetReachable !== false),
-  ),
+  NetInfo.addEventListener((state) => setOnline(state.isConnected !== false)),
 );
 
 focusManager.setEventListener((handleFocus) => {
-  const subscription = AppState.addEventListener("change", (status) =>
-    handleFocus(status === "active"),
-  );
+  const subscription = AppState.addEventListener("change", (status) => {
+    handleFocus(status === "active");
+    // Safety net: replay any writes still queued from an offline spell.
+    if (status === "active") void queryClient.resumePausedMutations();
+  });
   return () => subscription.remove();
 });

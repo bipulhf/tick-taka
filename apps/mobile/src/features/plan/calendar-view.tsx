@@ -1,0 +1,181 @@
+import {
+  addDays,
+  addMonths,
+  daysInMonth,
+  firstDayOfMonth,
+  lastDayOfMonth,
+  localMonthRange,
+  startOfWeek,
+  toLocalDate,
+  weekdayOf,
+} from "@tick-taka/shared/dates";
+import { nextOccurrence } from "@tick-taka/shared/recurrence";
+import { useState } from "react";
+import { Pressable, View } from "react-native";
+import { Amount } from "@/components/ui/amount";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { Screen } from "@/components/ui/screen";
+import { Segmented } from "@/components/ui/segmented";
+import { Text } from "@/components/ui/text";
+import { TaskRow } from "@/features/tasks/task-row";
+import { formatLocalDate, formatMonth } from "@/lib/format";
+import { useSettings } from "@/lib/queries";
+import { useRecurring, useTasks } from "./queries";
+
+const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
+
+/** Month and week views showing tasks, time blocks and bills together. */
+export function CalendarView() {
+  const { data: settings } = useSettings();
+  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const weekStartsOn = settings?.weekStartsOn ?? 6;
+  const today = toLocalDate(Date.now(), timeZone);
+  const [mode, setMode] = useState<"month" | "week">("month");
+  const [month, setMonth] = useState(today.slice(0, 7));
+  const [selected, setSelected] = useState(today);
+  const range = localMonthRange(month, timeZone);
+  const tasks = useTasks({
+    status: "inbox,open,done",
+    from: String(range.from - 7 * 86_400_000),
+    to: String(range.to + 7 * 86_400_000),
+  });
+  const recurring = useRecurring();
+
+  // Bill and payday occurrences inside the visible range, from each repeat rule.
+  const bills = new Map<
+    string,
+    { id: string; name: string; amountMinor: number; currency: string; kind: string }[]
+  >();
+  for (const item of recurring.data ?? []) {
+    let date: string | null = item.dueDate;
+    const end = addDays(lastDayOfMonth(month), 7);
+    for (let i = 0; date && date <= end && i < 62; i++) {
+      bills.set(date, [...(bills.get(date) ?? []), item]);
+      date = nextOccurrence(item.rrule, item.dueDate, date);
+    }
+  }
+  const tasksOn = (date: string) =>
+    (tasks.data ?? []).filter((t) => t.doAt !== null && toLocalDate(t.doAt, timeZone) === date);
+
+  const gridStart = startOfWeek(firstDayOfMonth(month), weekStartsOn);
+  const leading = (weekdayOf(firstDayOfMonth(month)) - weekStartsOn + 7) % 7;
+  const monthCells = Math.ceil((leading + daysInMonth(month)) / 7) * 7;
+  const cells = Array.from({ length: mode === "month" ? monthCells : 7 }, (_, i) =>
+    mode === "month" ? addDays(gridStart, i) : addDays(startOfWeek(selected, weekStartsOn), i),
+  );
+  const headers = Array.from({ length: 7 }, (_, i) => WEEKDAYS[(weekStartsOn + i) % 7]!);
+  const dayTasks = tasksOn(selected);
+  const dayBills = bills.get(selected) ?? [];
+
+  return (
+    <Screen
+      title={formatMonth(month)}
+      tabBarPadding={false}
+      right={
+        <View className="flex-row">
+          <Pressable
+            className="h-12 w-12 items-center justify-center"
+            onPress={() => setMonth(addMonths(month, -1))}
+            accessibilityLabel="Previous month"
+          >
+            <Icon name="chevron-left" />
+          </Pressable>
+          <Pressable
+            className="h-12 w-12 items-center justify-center"
+            onPress={() => setMonth(addMonths(month, 1))}
+            accessibilityLabel="Next month"
+          >
+            <Icon name="chevron-right" />
+          </Pressable>
+        </View>
+      }
+    >
+      <Segmented
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: "month", label: "Month" },
+          { value: "week", label: "Week" },
+        ]}
+      />
+      <Card className="p-2">
+        <View className="flex-row">
+          {headers.map((label, i) => (
+            <Text
+              key={`${label}-${i.toString()}`}
+              variant="caption"
+              tone="muted"
+              className="flex-1 text-center"
+            >
+              {label}
+            </Text>
+          ))}
+        </View>
+        <View className="flex-row flex-wrap">
+          {cells.map((date) => {
+            const inMonth = date.slice(0, 7) === month;
+            const count = tasksOn(date).filter((t) => t.status !== "done").length;
+            const timed = tasksOn(date).some((t) => t.hasTime);
+            const hasBills = (bills.get(date) ?? []).length > 0;
+            const isSelected = date === selected;
+            return (
+              <Pressable
+                key={date}
+                onPress={() => setSelected(date)}
+                accessibilityLabel={`${formatLocalDate(date)}, ${count} tasks${hasBills ? ", bills due" : ""}`}
+                className={`h-14 w-[14.28%] items-center justify-center rounded-xl ${isSelected ? "bg-sky" : date === today ? "bg-sky/15" : ""}`}
+              >
+                <Text
+                  variant="strong"
+                  tone={isSelected ? "inverse" : inMonth ? "ink" : "muted"}
+                  numeric
+                >
+                  {Number(date.slice(8))}
+                </Text>
+                <View className="mt-0.5 h-1.5 flex-row gap-0.5">
+                  {count > 0 ? (
+                    <View
+                      className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-white" : "bg-sky"}`}
+                    />
+                  ) : null}
+                  {timed ? <View className="h-1.5 w-1.5 rounded-full bg-grape" /> : null}
+                  {hasBills ? <View className="h-1.5 w-1.5 rounded-full bg-coral" /> : null}
+                </View>
+                {count > 2 ? (
+                  <Text className="text-[9px]" tone={isSelected ? "inverse" : "muted"}>
+                    {count}
+                  </Text>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+      <Text variant="heading">{formatLocalDate(selected, "long")}</Text>
+      {dayBills.map((bill) => (
+        <Card key={bill.id} className="flex-row items-center gap-3 py-3">
+          <Icon
+            name={bill.kind === "bill" ? "receipt" : "cash-plus"}
+            color={bill.kind === "bill" ? "coral" : "mint"}
+          />
+          <Text className="flex-1">{bill.name}</Text>
+          <Amount
+            minor={bill.amountMinor}
+            currency={bill.currency}
+            variant="strong"
+            animate={false}
+          />
+        </Card>
+      ))}
+      <View className="gap-2">
+        {dayTasks.map((task) => (
+          <TaskRow key={task.id} task={task} today={today} />
+        ))}
+      </View>
+      {dayTasks.length === 0 && dayBills.length === 0 ? (
+        <Text tone="muted">A free day.</Text>
+      ) : null}
+    </Screen>
+  );
+}

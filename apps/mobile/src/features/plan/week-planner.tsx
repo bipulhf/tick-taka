@@ -1,0 +1,121 @@
+import {
+  addDays,
+  endOfLocalDay,
+  startOfLocalDay,
+  startOfWeek,
+  toLocalDate,
+} from "@tick-taka/shared/dates";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Pressable, View } from "react-native";
+import { Draggable, DragProvider, DropZone } from "@/components/ui/drag";
+import { Icon } from "@/components/ui/icon";
+import { Screen } from "@/components/ui/screen";
+import { Text } from "@/components/ui/text";
+import { formatLocalDate, formatMinutes } from "@/lib/format";
+import { useSettings } from "@/lib/queries";
+import { CompactTask } from "./compact-task";
+import { type PlanTask, useTasks } from "./queries";
+import { useMoveTask } from "./use-move-task";
+
+/** Drag tasks onto days; tap a day to place them into time blocks. */
+export function WeekPlanner() {
+  const router = useRouter();
+  const { data: settings } = useSettings();
+  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const today = toLocalDate(Date.now(), timeZone);
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(today, settings?.weekStartsOn ?? 6));
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const week = useTasks({
+    status: "inbox,open,done",
+    from: String(startOfLocalDay(weekStart, timeZone)),
+    to: String(endOfLocalDay(addDays(weekStart, 6), timeZone)),
+  });
+  const unscheduled = useTasks({ status: "inbox,open" });
+  const tray = (unscheduled.data ?? []).filter((t) => t.doAt === null);
+  const move = useMoveTask(timeZone);
+  const all = new Map<string, PlanTask>([...(week.data ?? []), ...tray].map((t) => [t.id, t]));
+  const capacity = settings?.dayCapacityMinutes ?? 360;
+
+  const onDrop = (taskId: string, zoneId: string) => {
+    const task = all.get(taskId);
+    if (!task) return;
+    if (zoneId === "tray") move.unschedule(task);
+    else move.toDay(task, zoneId);
+  };
+
+  return (
+    <DragProvider onDrop={onDrop}>
+      <Screen
+        title="Week"
+        subtitle={`${formatLocalDate(weekStart)} – ${formatLocalDate(addDays(weekStart, 6))}`}
+        tabBarPadding={false}
+        right={
+          <View className="flex-row">
+            <Pressable
+              className="h-12 w-12 items-center justify-center"
+              onPress={() => setWeekStart(addDays(weekStart, -7))}
+              accessibilityLabel="Previous week"
+            >
+              <Icon name="chevron-left" />
+            </Pressable>
+            <Pressable
+              className="h-12 w-12 items-center justify-center"
+              onPress={() => setWeekStart(addDays(weekStart, 7))}
+              accessibilityLabel="Next week"
+            >
+              <Icon name="chevron-right" />
+            </Pressable>
+          </View>
+        }
+      >
+        <DropZone id="tray" className="gap-2 rounded-2xl border border-dashed border-line p-3">
+          <Text variant="label" tone="muted">
+            Unscheduled · long-press to drag
+          </Text>
+          {tray.length === 0 ? (
+            <Text variant="caption" tone="muted">
+              Nothing waiting.
+            </Text>
+          ) : null}
+          {tray.map((task) => (
+            <Draggable key={task.id} id={task.id}>
+              <CompactTask task={task} tone="grape" />
+            </Draggable>
+          ))}
+        </DropZone>
+        {days.map((day) => {
+          const tasks = (week.data ?? []).filter(
+            (t) => t.doAt !== null && toLocalDate(t.doAt, timeZone) === day,
+          );
+          const planned = tasks
+            .filter((t) => t.status !== "done")
+            .reduce((sum, t) => sum + (t.estimateMin ?? 30), 0);
+          return (
+            <DropZone
+              key={day}
+              id={day}
+              className={`gap-2 rounded-2xl p-3 ${day === today ? "bg-sky/10" : "bg-card/60"}`}
+            >
+              <Pressable
+                onPress={() => router.push(`/plan/day?date=${day}`)}
+                className="flex-row items-center justify-between"
+                accessibilityRole="button"
+              >
+                <Text variant="strong">{formatLocalDate(day, "long")}</Text>
+                <Text variant="caption" tone={planned > capacity ? "coral" : "muted"} numeric>
+                  {formatMinutes(planned)} planned ›
+                </Text>
+              </Pressable>
+              {tasks.map((task) => (
+                <Draggable key={task.id} id={task.id}>
+                  <CompactTask task={task} />
+                </Draggable>
+              ))}
+            </DropZone>
+          );
+        })}
+      </Screen>
+    </DragProvider>
+  );
+}

@@ -18,6 +18,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ConfettiLayer } from "@/components/ui/confetti";
 import { Snackbar } from "@/components/ui/snackbar";
+import { loadFocusSession } from "@/features/focus/focus-session";
 import { AppLock } from "@/features/security/app-lock";
 import { loadToken, tokenStore } from "@/lib/auth";
 import { loadPrivacy } from "@/lib/privacy";
@@ -49,6 +50,7 @@ export default function RootLayout() {
   useEffect(() => {
     void loadToken();
     void loadPrivacy();
+    void loadFocusSession();
   }, []);
 
   useEffect(() => {
@@ -91,6 +93,12 @@ export default function RootLayout() {
                 <Stack.Screen name="add" options={sheet} />
                 <Stack.Screen name="task/[id]" options={sheet} />
                 <Stack.Screen name="pick-top-three" options={sheet} />
+                <Stack.Screen name="habit/[id]" options={sheet} />
+                <Stack.Screen name="time-entry" options={sheet} />
+                <Stack.Screen
+                  name="focus"
+                  options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+                />
               </Stack.Protected>
               <Stack.Protected guard={!token}>
                 <Stack.Screen name="login" />

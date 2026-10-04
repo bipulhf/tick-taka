@@ -27,7 +27,7 @@ export function RunningTimerBar({
   return (
     <View className="absolute left-3 right-3" style={{ bottom: insets.bottom + 84 }}>
       <Pressable
-        onPress={() => router.push("/focus")}
+        onPress={() => router.push(focus ? "/focus" : "/plan/time")}
         accessibilityRole="button"
         accessibilityLabel={`${label} running, ${formatTimer(now - entry.startedAt)}`}
         className={`flex-row items-center gap-3 rounded-2xl px-4 py-3 ${focus ? "bg-sky" : "bg-ink"}`}

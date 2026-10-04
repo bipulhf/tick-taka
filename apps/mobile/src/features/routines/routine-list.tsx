@@ -1,0 +1,72 @@
+import { newId } from "@tick-taka/shared/ids";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { View } from "react-native";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Screen } from "@/components/ui/screen";
+import { Text } from "@/components/ui/text";
+import { TextField } from "@/components/ui/text-field";
+import { formatMinutes } from "@/lib/format";
+import { useOutbox } from "@/lib/outbox";
+import { useRoutines } from "./queries";
+
+/** Ordered checklists such as Morning or Shutdown. */
+export function RoutineList() {
+  const router = useRouter();
+  const send = useOutbox();
+  const routines = useRoutines();
+  const [name, setName] = useState("");
+  return (
+    <Screen
+      title="Routines"
+      subtitle="Fewer decisions at the edges of the day"
+      tabBarPadding={false}
+    >
+      {(routines.data ?? []).map((routine) => {
+        const minutes = routine.steps.reduce((sum, s) => sum + (s.minutes ?? 0), 0);
+        return (
+          <Card
+            key={routine.id}
+            onPress={() => router.push(`/routine/${routine.id}`)}
+            className="flex-row items-center gap-3"
+          >
+            <Text className="text-3xl">{routine.emoji}</Text>
+            <View className="flex-1">
+              <Text variant="strong">{routine.name}</Text>
+              <Text variant="caption" tone="muted">
+                {routine.steps.length} steps{minutes ? ` · ${formatMinutes(minutes)}` : ""}
+              </Text>
+            </View>
+            <Text tone="sky" variant="strong">
+              Start
+            </Text>
+          </Card>
+        );
+      })}
+      <View className="flex-row gap-2">
+        <TextField
+          value={name}
+          onChangeText={setName}
+          placeholder="New routine"
+          className="flex-1"
+        />
+        <Button
+          label="Add"
+          disabled={!name.trim()}
+          onPress={() => {
+            const id = newId();
+            send({
+              method: "POST",
+              path: "/routines",
+              body: { id, name: name.trim(), emoji: "✨", steps: [] },
+              label: "Couldn't add the routine",
+            });
+            setName("");
+            router.push(`/routine/${id}?edit=1`);
+          }}
+        />
+      </View>
+    </Screen>
+  );
+}

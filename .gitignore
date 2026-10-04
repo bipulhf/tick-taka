@@ -1,0 +1,19 @@
+node_modules
+.env
+.env.*
+!.env.example
+apps/api/data
+apps/api/uploads
+apps/api/backups
+*.log
+.DS_Store
+coverage
+dist
+
+# Expo
+apps/mobile/.expo
+apps/mobile/dist
+apps/mobile/android
+apps/mobile/ios
+apps/mobile/expo-env.d.ts
+apps/mobile/*.apk

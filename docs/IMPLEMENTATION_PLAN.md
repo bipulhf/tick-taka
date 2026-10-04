@@ -132,3 +132,13 @@ plus pure logic and schemas from `packages/shared`.
 
 ### Phase 13 — Docs and deploy
 - README with setup, VPS deploy (pm2 + Nginx + Certbot), backup restore check.
+
+## Verification per phase
+
+- `bun run check` — Biome lint/format, TypeScript in every workspace, and all test
+  suites (shared domain logic, API with in-memory SQLite and a scripted AI client,
+  mobile pure logic).
+- `bunx expo export --platform android` in `apps/mobile` — the whole app bundles with
+  Metro for Android.
+- `./gradlew :sms-reader:compileDebugKotlin` after `expo prebuild` — the Kotlin module
+  compiles against the Expo modules core.

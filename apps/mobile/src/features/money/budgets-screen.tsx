@@ -1,0 +1,158 @@
+import { addMonths, toLocalMonth } from "@tick-taka/shared/dates";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Pressable, View } from "react-native";
+import { Amount } from "@/components/ui/amount";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { Screen } from "@/components/ui/screen";
+import { Section } from "@/components/ui/section";
+import { Text } from "@/components/ui/text";
+import { formatMonth } from "@/lib/format";
+import { useBudgets } from "./queries";
+
+const BUCKETS = [
+  { key: "flexible", title: "Flexible", hint: "Food, rides, fun. Drives safe to spend." },
+  { key: "fixed", title: "Fixed", hint: "Rent, bills: already planned." },
+  { key: "non_monthly", title: "Non-monthly", hint: "Yearly renewals, Eid: a slice each month." },
+] as const;
+
+/** Monthly limits in three buckets, with rollover and a calm pace heads-up. */
+export function BudgetsScreen() {
+  const router = useRouter();
+  const [month, setMonth] = useState(() => toLocalMonth(Date.now()));
+  const budgets = useBudgets(month);
+  const data = budgets.data;
+  return (
+    <Screen
+      title="Budgets"
+      subtitle={formatMonth(month)}
+      tabBarPadding={false}
+      right={
+        <View className="flex-row">
+          <Pressable
+            className="h-12 w-12 items-center justify-center"
+            onPress={() => setMonth(addMonths(month, -1))}
+            accessibilityLabel="Previous month"
+          >
+            <Icon name="chevron-left" />
+          </Pressable>
+          <Pressable
+            className="h-12 w-12 items-center justify-center"
+            onPress={() => setMonth(addMonths(month, 1))}
+            accessibilityLabel="Next month"
+          >
+            <Icon name="chevron-right" />
+          </Pressable>
+        </View>
+      }
+    >
+      {data?.inherited ? (
+        <Text tone="muted">
+          Showing last month's limits. Save to keep them for {formatMonth(month)}.
+        </Text>
+      ) : null}
+      <Button
+        label="Edit budgets"
+        variant="secondary"
+        icon="pencil"
+        onPress={() => router.push(`/budget-edit?month=${month}`)}
+      />
+      {data
+        ? BUCKETS.map((bucket) => {
+            const totals = data.buckets[bucket.key];
+            const lines = data.lines.filter(
+              (l) =>
+                l.budgetType === bucket.key &&
+                (l.hasBudget || l.spentMinor > 0) &&
+                (l.parentId === null || l.hasBudget),
+            );
+            return (
+              <Section key={bucket.key} title={bucket.title}>
+                <Card className="gap-3">
+                  <View className="flex-row items-baseline justify-between">
+                    <Amount minor={totals.spentMinor} variant="heading" />
+                    <Text variant="caption" tone="muted">
+                      of{" "}
+                      <Amount
+                        minor={totals.limitMinor}
+                        variant="caption"
+                        tone="muted"
+                        animate={false}
+                      />
+                    </Text>
+                  </View>
+                  <ProgressBar
+                    value={totals.limitMinor ? totals.spentMinor / totals.limitMinor : 0}
+                    tone={totals.availableMinor < 0 ? "coral" : "mint"}
+                  />
+                  <Text variant="caption" tone="muted">
+                    {bucket.hint}
+                  </Text>
+                  {lines.map((line) => (
+                    <View key={line.categoryId} className="gap-1">
+                      <View className="flex-row justify-between">
+                        <Text>
+                          {line.emoji} {line.name}
+                          {line.pace === "ahead" ? "  · running ahead" : ""}
+                        </Text>
+                        <Text variant="caption" tone={line.availableMinor < 0 ? "coral" : "muted"}>
+                          <Amount
+                            minor={line.spentMinor}
+                            variant="caption"
+                            tone="ink"
+                            animate={false}
+                          />
+                          {line.hasBudget ? (
+                            <>
+                              {" / "}
+                              <Amount
+                                minor={line.limitMinor + line.carriedMinor}
+                                variant="caption"
+                                tone="muted"
+                                animate={false}
+                              />
+                            </>
+                          ) : null}
+                        </Text>
+                      </View>
+                      {line.hasBudget ? (
+                        <ProgressBar
+                          value={
+                            line.limitMinor + line.carriedMinor > 0
+                              ? line.spentMinor / (line.limitMinor + line.carriedMinor)
+                              : 1
+                          }
+                          tone={
+                            line.availableMinor < 0
+                              ? "coral"
+                              : line.pace === "ahead"
+                                ? "mango"
+                                : "mint"
+                          }
+                        />
+                      ) : null}
+                      {line.carriedMinor > 0 ? (
+                        <Text variant="caption" tone="mint">
+                          +{" "}
+                          <Amount
+                            minor={line.carriedMinor}
+                            variant="caption"
+                            tone="mint"
+                            animate={false}
+                          />{" "}
+                          rolled over
+                        </Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </Card>
+              </Section>
+            );
+          })
+        : null}
+    </Screen>
+  );
+}

@@ -1,10 +1,5 @@
-import { Screen } from "@/components/ui/screen";
-import { Text } from "@/components/ui/text";
+import { MoneyHome } from "@/features/money/money-home";
 
-export default function Placeholder() {
-  return (
-    <Screen title="money">
-      <Text tone="muted">Coming up.</Text>
-    </Screen>
-  );
+export default function MoneyTab() {
+  return <MoneyHome />;
 }

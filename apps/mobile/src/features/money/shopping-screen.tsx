@@ -1,0 +1,176 @@
+import { newId } from "@tick-taka/shared/ids";
+import { formatAmount, parseAmountToMinor } from "@tick-taka/shared/money";
+import { useState } from "react";
+import { Pressable, View } from "react-native";
+import { Amount } from "@/components/ui/amount";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Chip } from "@/components/ui/chip";
+import { Icon } from "@/components/ui/icon";
+import { Screen } from "@/components/ui/screen";
+import { Text } from "@/components/ui/text";
+import { TextField } from "@/components/ui/text-field";
+import { notify } from "@/lib/notify";
+import { useOutbox } from "@/lib/outbox";
+import { useAccounts, useCategories } from "@/lib/queries";
+import { useShopping, useShoppingLists } from "./queries";
+
+/** Priced shopping list: tick items at checkout and the list becomes one expense. */
+export function ShoppingScreen() {
+  const send = useOutbox();
+  const lists = useShoppingLists();
+  const [listName, setListName] = useState("Bazar");
+  const items = useShopping(listName);
+  const { data: accounts = [] } = useAccounts();
+  const { data: categories = [] } = useCategories();
+  const [title, setTitle] = useState("");
+  const [price, setPrice] = useState("");
+  const [paid, setPaid] = useState("");
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const [newList, setNewList] = useState("");
+  const list = items.data ?? [];
+  const checked = list.filter((i) => i.checkedAt);
+  const estimate = list.reduce((sum, i) => sum + (i.estMinor ?? 0), 0);
+  const checkedTotal = checked.reduce((sum, i) => sum + (i.estMinor ?? 0), 0);
+  const groceries = categories.find((c) => c.name === "Groceries")?.id ?? null;
+
+  const add = () => {
+    if (!title.trim()) return;
+    send({
+      method: "POST",
+      path: "/shopping",
+      body: {
+        id: newId(),
+        listName,
+        title: title.trim(),
+        estMinor: parseAmountToMinor(price || "0") || null,
+      },
+    });
+    setTitle("");
+    setPrice("");
+  };
+  const checkout = () => {
+    const account = accountId ?? accounts[0]?.id;
+    if (!account) return notify("Add an account first");
+    const amountMinor = paid ? parseAmountToMinor(paid) : undefined;
+    send({
+      method: "POST",
+      path: "/shopping/checkout",
+      body: {
+        transactionId: newId(),
+        listName,
+        accountId: account,
+        categoryId: groceries,
+        ...(amountMinor ? { amountMinor } : {}),
+      },
+      label: "Couldn't check out",
+    });
+    notify(`Logged ${formatAmount(amountMinor ?? checkedTotal)} for ${listName}`);
+    setPaid("");
+  };
+  const addList = () => {
+    if (!newList.trim()) return;
+    setListName(newList.trim());
+    setNewList("");
+  };
+  const names = [...new Set(["Bazar", ...(lists.data ?? []).map((l) => l.listName)])];
+
+  return (
+    <Screen title="Shopping" subtitle={`Estimated ${formatAmount(estimate)}`} tabBarPadding={false}>
+      <View className="flex-row flex-wrap gap-2">
+        {names.map((name) => (
+          <Chip
+            key={name}
+            label={name}
+            tone="mint"
+            selected={listName === name}
+            onPress={() => setListName(name)}
+          />
+        ))}
+        <TextField
+          value={newList}
+          onChangeText={setNewList}
+          placeholder="+ list"
+          onSubmitEditing={addList}
+          className="w-28"
+        />
+      </View>
+      <View className="flex-row gap-2">
+        <TextField
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Rice 5kg"
+          className="flex-1"
+          onSubmitEditing={add}
+        />
+        <TextField
+          value={price}
+          onChangeText={setPrice}
+          placeholder="৳"
+          keyboardType="decimal-pad"
+          className="w-24"
+          onSubmitEditing={add}
+        />
+      </View>
+      <Card className="py-1">
+        {list.map((item) => (
+          <View key={item.id} className="flex-row items-center">
+            <Checkbox
+              tone="mint"
+              checked={Boolean(item.checkedAt)}
+              label={item.title}
+              onChange={(on) =>
+                send({ method: "PATCH", path: `/shopping/${item.id}`, body: { checked: on } })
+              }
+            />
+            <Text className={`flex-1 ${item.checkedAt ? "text-muted line-through" : ""}`}>
+              {item.title}
+            </Text>
+            {item.estMinor ? (
+              <Amount minor={item.estMinor} variant="caption" tone="muted" animate={false} />
+            ) : null}
+            <Pressable
+              onPress={() => send({ method: "DELETE", path: `/shopping/${item.id}` })}
+              className="h-12 w-10 items-center justify-center"
+              accessibilityLabel={`Remove ${item.title}`}
+            >
+              <Icon name="close" size={18} color="muted" />
+            </Pressable>
+          </View>
+        ))}
+        {list.length === 0 ? (
+          <Text tone="muted" className="py-3">
+            List the bazar before you go.
+          </Text>
+        ) : null}
+      </Card>
+      {checked.length > 0 ? (
+        <Card className="gap-2">
+          <Text variant="strong">
+            Checkout · {checked.length} item{checked.length === 1 ? "" : "s"} · est.{" "}
+            {formatAmount(checkedTotal)}
+          </Text>
+          <TextField
+            value={paid}
+            onChangeText={setPaid}
+            keyboardType="decimal-pad"
+            placeholder={`Paid (default ${formatAmount(checkedTotal)})`}
+          />
+          <View className="flex-row flex-wrap gap-2">
+            {accounts.map((a) => (
+              <Chip
+                key={a.id}
+                label={a.name}
+                tone="mint"
+                selected={(accountId ?? accounts[0]?.id) === a.id}
+                onPress={() => setAccountId(a.id)}
+              />
+            ))}
+          </View>
+          <Button label="Log as one expense" variant="money" onPress={checkout} />
+        </Card>
+      ) : null}
+    </Screen>
+  );
+}

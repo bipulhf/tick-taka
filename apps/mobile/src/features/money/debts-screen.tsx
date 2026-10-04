@@ -1,0 +1,158 @@
+import { useQuery } from "@tanstack/react-query";
+import { newId } from "@tick-taka/shared/ids";
+import { formatAmount, parseAmountToMinor } from "@tick-taka/shared/money";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { View } from "react-native";
+import { Amount } from "@/components/ui/amount";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Chip } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { Screen } from "@/components/ui/screen";
+import { Section } from "@/components/ui/section";
+import { Text } from "@/components/ui/text";
+import { TextField } from "@/components/ui/text-field";
+import { api, unwrap } from "@/lib/api";
+import { formatMonth } from "@/lib/format";
+import { notify } from "@/lib/notify";
+import { useOutbox } from "@/lib/outbox";
+import { useAccounts } from "@/lib/queries";
+import { useDebts } from "./queries";
+
+type Debt = NonNullable<ReturnType<typeof useDebts>["data"]>[number];
+
+function Forecast({ debt }: { debt: Debt }) {
+  const [monthly, setMonthly] = useState("");
+  const monthlyMinor = parseAmountToMinor(monthly) ?? 0;
+  const forecast = useQuery({
+    queryKey: ["debt-forecast", debt.id, monthlyMinor],
+    queryFn: () =>
+      unwrap(
+        api.debts[":id"].forecast.$get({
+          param: { id: debt.id },
+          query: { monthly: String(monthlyMinor) },
+        }),
+      ),
+    enabled: monthlyMinor > 0,
+  });
+  return (
+    <View className="gap-1">
+      <TextField
+        value={monthly}
+        onChangeText={setMonthly}
+        keyboardType="decimal-pad"
+        placeholder="Monthly payment for a forecast"
+      />
+      {forecast.data ? (
+        <Text variant="caption" tone="sky">
+          Cleared in {formatMonth(forecast.data.clearedIn)} · {forecast.data.months} payment
+          {forecast.data.months === 1 ? "" : "s"}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** Who owes me and whom I owe, with partial repayments and a payoff forecast. */
+export function DebtsScreen() {
+  const router = useRouter();
+  const send = useOutbox();
+  const debts = useDebts();
+  const { data: accounts = [] } = useAccounts();
+  const [repaying, setRepaying] = useState<string | null>(null);
+  const [amount, setAmount] = useState("");
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const open = (debts.data ?? []).filter((d) => d.closedAt === null);
+  const groups = [
+    { title: "Owed to me", items: open.filter((d) => d.direction === "owed_to_me") },
+    { title: "I owe", items: open.filter((d) => d.direction === "i_owe") },
+  ];
+  const repay = (debt: Debt) => {
+    const amountMinor = parseAmountToMinor(amount);
+    const account = accountId ?? accounts[0]?.id;
+    if (!amountMinor || !account) return;
+    send({
+      method: "POST",
+      path: `/debts/${debt.id}/repay`,
+      body: { id: newId(), amountMinor, accountId: account },
+      label: "Couldn't log the repayment",
+    });
+    notify(`Logged ${formatAmount(amountMinor)} from ${debt.person}`);
+    setRepaying(null);
+    setAmount("");
+  };
+  return (
+    <Screen
+      title="Debts"
+      tabBarPadding={false}
+      right={<Button label="New" size="sm" icon="plus" onPress={() => router.push("/debt/new")} />}
+    >
+      {open.length === 0 ? (
+        <EmptyState
+          message="All square. No loans to track."
+          actionLabel="Add a loan"
+          onAction={() => router.push("/debt/new")}
+          mood="relaxed"
+        />
+      ) : null}
+      {groups.map((group) =>
+        group.items.length ? (
+          <Section key={group.title} title={group.title}>
+            {group.items.map((debt) => (
+              <Card key={debt.id} className="gap-2">
+                <View className="flex-row items-center justify-between">
+                  <Text variant="strong">{debt.person}</Text>
+                  <Amount
+                    minor={debt.outstandingMinor}
+                    currency={debt.currency}
+                    variant="heading"
+                    tone={debt.direction === "owed_to_me" ? "mint" : "coral"}
+                  />
+                </View>
+                <ProgressBar value={debt.repaidMinor / debt.principalMinor} tone="grape" />
+                <Text variant="caption" tone="muted">
+                  {formatAmount(debt.repaidMinor, { currency: debt.currency })} of{" "}
+                  {formatAmount(debt.principalMinor, { currency: debt.currency })} repaid
+                  {debt.note ? ` · ${debt.note}` : ""}
+                </Text>
+                <Forecast debt={debt} />
+                {repaying === debt.id ? (
+                  <View className="gap-2">
+                    <TextField
+                      value={amount}
+                      onChangeText={setAmount}
+                      keyboardType="decimal-pad"
+                      placeholder="Amount repaid"
+                      autoFocus
+                    />
+                    <View className="flex-row flex-wrap gap-2">
+                      {accounts.map((a) => (
+                        <Chip
+                          key={a.id}
+                          label={a.name}
+                          tone="mint"
+                          selected={(accountId ?? accounts[0]?.id) === a.id}
+                          onPress={() => setAccountId(a.id)}
+                        />
+                      ))}
+                    </View>
+                    <Button label="Log repayment" variant="money" onPress={() => repay(debt)} />
+                  </View>
+                ) : (
+                  <Button
+                    label="Log a repayment"
+                    size="sm"
+                    variant="secondary"
+                    onPress={() => setRepaying(debt.id)}
+                  />
+                )}
+              </Card>
+            ))}
+          </Section>
+        ) : null,
+      )}
+    </Screen>
+  );
+}

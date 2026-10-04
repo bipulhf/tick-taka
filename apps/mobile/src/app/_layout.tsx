@@ -95,6 +95,12 @@ export default function RootLayout() {
                 <Stack.Screen name="pick-top-three" options={sheet} />
                 <Stack.Screen name="habit/[id]" options={sheet} />
                 <Stack.Screen name="time-entry" options={sheet} />
+                <Stack.Screen name="transaction/[id]" options={sheet} />
+                <Stack.Screen name="account/[id]" options={sheet} />
+                <Stack.Screen name="goal/[id]" options={sheet} />
+                <Stack.Screen name="debt/new" options={sheet} />
+                <Stack.Screen name="budget-edit" options={sheet} />
+                <Stack.Screen name="money/recurring/[id]" options={sheet} />
                 <Stack.Screen
                   name="focus"
                   options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}

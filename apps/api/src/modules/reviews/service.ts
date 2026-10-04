@@ -90,7 +90,8 @@ export function weeklyReview(deps: Deps, weekStartInput?: LocalDate) {
   // Spending vs. this week's share of the month's flexible budget.
   const month = monthOf(weekStart);
   const budgets = budgetMonth(deps, month, { today });
-  const weeklyShare = Math.round((budgets.buckets.flexible.limitMinor * 7) / daysInMonth(month));
+  const weeklyShare =
+    Math.round((budgets.buckets.flexible.limitMinor * 7) / daysInMonth(month) / 100) * 100;
   const spending = spendingRows(db, range);
   const spentMinor = spending.reduce((sum, row) => sum + row.amountMinor, 0);
 

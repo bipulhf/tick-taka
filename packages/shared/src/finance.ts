@@ -15,11 +15,12 @@ import {
 
 /**
  * Safe to spend today = flexible budget left this month ÷ days left in the month,
- * including today. Never negative.
+ * including today, in whole taka. Never negative.
  */
 export function safeToSpendToday(flexibleLeftMinor: number, today: LocalDate): number {
   if (flexibleLeftMinor <= 0) return 0;
-  return Math.floor(flexibleLeftMinor / daysLeftInMonth(today));
+  // A daily guide, shown in whole taka and rounded down so it never overstates.
+  return Math.floor(flexibleLeftMinor / daysLeftInMonth(today) / 100) * 100;
 }
 
 export type PaceStatus = "on_track" | "ahead" | "over";
@@ -73,7 +74,8 @@ export function suggestedMonthlySaving(
   if (!deadline) return null;
   const remaining = targetMinor - savedMinor;
   if (remaining <= 0) return 0;
-  return Math.ceil(remaining / monthsUntil(monthOf(today), monthOf(deadline)));
+  // Rounded up to whole taka so following the suggestion always reaches the goal.
+  return Math.ceil(remaining / monthsUntil(monthOf(today), monthOf(deadline)) / 100) * 100;
 }
 
 export interface PayoffForecast {

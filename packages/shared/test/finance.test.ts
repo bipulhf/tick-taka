@@ -14,7 +14,7 @@ describe("finance", () => {
     // ৳17,920 left on 4 Oct (28 days left) → ৳640
     expect(safeToSpendToday(1_792_000, "2026-10-04")).toBe(64_000);
     expect(safeToSpendToday(-500, "2026-10-04")).toBe(0);
-    expect(safeToSpendToday(10_000, "2026-10-31")).toBe(10_000);
+    expect(safeToSpendToday(10_050, "2026-10-31")).toBe(10_000);
   });
 
   test("pace alert", () => {
@@ -24,7 +24,7 @@ describe("finance", () => {
   });
 
   test("savings goal suggestion", () => {
-    expect(suggestedMonthlySaving(1_200_000, 200_000, "2026-10-04", "2027-03-31")).toBe(166_667);
+    expect(suggestedMonthlySaving(1_200_000, 200_000, "2026-10-04", "2027-03-31")).toBe(166_700);
     expect(suggestedMonthlySaving(100, 200, "2026-10-04", "2027-03-31")).toBe(0);
     expect(suggestedMonthlySaving(100, 0, "2026-10-04", null)).toBeNull();
   });

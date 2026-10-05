@@ -2,13 +2,19 @@ import { zonedTimeToUtc } from "@tick-taka/shared/dates";
 import { sign } from "hono/jwt";
 import type { AiClient } from "../src/ai/client";
 import { createApp } from "../src/app";
-import { openDatabase } from "../src/db/client";
-import { seedDefaults } from "../src/db/seed";
+import { createUserRegistry, type GoogleProfile } from "../src/db/user-registry";
 import { loadEnv } from "../src/env";
-import type { Deps } from "../src/lib/deps";
+import { createDeps, type Deps, type GoogleVerifier } from "../src/lib/deps";
+import { unauthorized } from "../src/lib/errors";
 
-export const TEST_PASSWORD = "correct horse battery staple";
-const passwordHash = btoa(await Bun.password.hash(TEST_PASSWORD, { algorithm: "bcrypt", cost: 4 }));
+export const TEST_CLIENT_ID = "test-client.apps.googleusercontent.com";
+/** The fake Google verifier accepts `google-test-token:<sub>:<email>` as an ID token. */
+export const googleToken = (sub: string, email: string) => `google-test-token:${sub}:${email}`;
+const fakeGoogle: GoogleVerifier = async (idToken): Promise<GoogleProfile> => {
+  const [prefix, sub, email] = idToken.split(":");
+  if (prefix !== "google-test-token" || !sub || !email) throw unauthorized("Bad Google token");
+  return { sub, email, name: "Test User", picture: null };
+};
 export const JWT_SECRET = "test-secret-test-secret-test-secret-123";
 
 /** Sunday 4 October 2026, 10:00 in Dhaka */
@@ -22,6 +28,8 @@ export interface TestContext {
   app: ReturnType<typeof createApp>;
   clock: { now: number; advance(ms: number): void; set(ms: number): void };
   token: string;
+  /** Signs a token for another (new or existing) Google account, for isolation tests. */
+  tokenFor: (sub: string, email: string) => Promise<string>;
   request: <T = unknown>(
     method: string,
     path: string,
@@ -49,23 +57,34 @@ export async function createTestContext(
   };
   const env = loadEnv({
     DB_PATH: ":memory:",
-    APP_PASSWORD_HASH: passwordHash,
+    GOOGLE_CLIENT_IDS: TEST_CLIENT_ID,
     JWT_SECRET,
     JOBS_ENABLED: "false",
     UPLOADS_DIR: `/tmp/tick-taka-test-uploads-${process.pid}`,
     BACKUPS_DIR: `/tmp/tick-taka-test-backups-${process.pid}`,
     ...options.env,
   });
-  const { db, sqlite } = openDatabase(":memory:");
-  if (options.seed !== false) seedDefaults(db, clock.now);
-  const deps: Deps = { db, sqlite, env, now: () => clock.now, ai: options.ai ?? null };
-  const app = createApp(deps);
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const token = await sign(
-    { sub: "me", iat: nowSeconds, exp: nowSeconds + 3600 },
-    JWT_SECRET,
-    "HS256",
+  const users = createUserRegistry(env, () => clock.now, { seed: options.seed !== false });
+  const tokenFor = async (sub: string, email: string) => {
+    const { user } = users.signIn({ sub, email, name: null, picture: null });
+    users.data(user);
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    return sign({ sub: user.id, iat: nowSeconds, exp: nowSeconds + 3600 }, JWT_SECRET, "HS256");
+  };
+  const token = await tokenFor("test-user", "test@example.com");
+  const testUser = users.list()[0]!;
+  // Services called directly from a test (outside a request) act as the test user.
+  const deps: Deps = createDeps(
+    {
+      env,
+      now: () => clock.now,
+      ai: options.ai ?? null,
+      users,
+      verifyGoogle: fakeGoogle,
+    },
+    () => ({ user: testUser, data: users.data(testUser) }),
   );
+  const app = createApp(deps);
 
   const request: TestContext["request"] = async (method, path, body, headers = {}) => {
     const response = await app.request(path, {
@@ -81,5 +100,5 @@ export async function createTestContext(
     return { status: response.status, body: (text ? JSON.parse(text) : null) as never };
   };
 
-  return { deps, app, clock, token, request };
+  return { deps, app, clock, token, tokenFor, request };
 }

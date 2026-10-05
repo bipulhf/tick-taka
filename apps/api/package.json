@@ -10,7 +10,6 @@
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
     "db:generate": "drizzle-kit generate",
-    "hash-password": "bun scripts/hash-password.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "bun test"
   },

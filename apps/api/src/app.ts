@@ -6,7 +6,7 @@ import { accountsRoutes } from "./modules/accounts/routes";
 import type { Dispatch } from "./modules/ai/assistant/dispatch";
 import { aiRoutes } from "./modules/ai/routes";
 import { areasRoutes } from "./modules/areas/routes";
-import { authRoutes } from "./modules/auth/routes";
+import { authRoutes, meRoutes } from "./modules/auth/routes";
 import { budgetsRoutes } from "./modules/budgets/routes";
 import { categoriesRoutes } from "./modules/categories/routes";
 import { categoryRulesRoutes } from "./modules/category-rules/routes";
@@ -36,7 +36,8 @@ export function createApp(deps: Deps) {
   // The chat assistant calls the app's own routes, so its writes get the same validation.
   const dispatch: Dispatch = async (path, init) => app.request(path, init);
   const api = new Hono()
-    .use(requireAuth(deps.env.JWT_SECRET))
+    .use(requireAuth(deps))
+    .route("/me", meRoutes())
     .route("/settings", settingsRoutes(deps))
     .route("/areas", areasRoutes(deps))
     .route("/projects", projectsRoutes(deps))

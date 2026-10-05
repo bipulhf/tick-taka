@@ -12,7 +12,7 @@ import {
 } from "@tick-taka/shared/schemas/ai";
 import { isAiFeatureEnabled } from "@tick-taka/shared/schemas/settings";
 import { Hono } from "hono";
-import { monthSpendMicros } from "../../ai/usage";
+import { monthlyCapMicros, monthSpendMicros } from "../../ai/usage";
 import type { Deps } from "../../lib/deps";
 import { userTime } from "../../lib/user-time";
 import { validate } from "../../lib/validate";
@@ -33,12 +33,15 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
     .get("/status", (c) => {
       const { settings } = userTime(deps);
       const spent = monthSpendMicros(deps);
+      const cap = monthlyCapMicros(deps, settings);
       return c.json({
         configured: deps.ai !== null,
         enabled: settings.ai.enabled,
         monthSpendMicros: spent,
-        monthlyCapMicros: settings.ai.monthlyCapMicros,
-        capReached: spent >= settings.ai.monthlyCapMicros,
+        monthlyCapMicros: cap,
+        /** The highest cap this user may choose. */
+        maxCapMicros: deps.env.AI_USER_MONTHLY_CAP_MICROS,
+        capReached: spent >= cap,
         features: {
           parse: isAiFeatureEnabled(settings, "parse"),
           receipt: isAiFeatureEnabled(settings, "receipt"),

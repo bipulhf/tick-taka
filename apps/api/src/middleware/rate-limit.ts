@@ -1,5 +1,5 @@
 /**
- * Fixed-window-free sliding limiter kept in memory. One process serves one user,
+ * Fixed-window-free sliding limiter kept in memory. pm2 runs exactly one process,
  * so there is nothing to share across instances.
  */
 export class SlidingWindowLimiter {

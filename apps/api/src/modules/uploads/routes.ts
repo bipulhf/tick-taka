@@ -15,7 +15,7 @@ const EXTENSIONS: Record<string, string> = {
 };
 const nameParam = z.object({ name: z.string().regex(/^[0-9A-HJKMNP-TV-Z]{26}\.(jpg|png|webp)$/) });
 
-/** Receipt photos live next to the database and are served only to signed-in requests. */
+/** Receipt photos live in the user's own folder and are served only to that user. */
 export const uploadsRoutes = (deps: Deps) =>
   new Hono()
     .post("/", async (c) => {
@@ -25,13 +25,13 @@ export const uploadsRoutes = (deps: Deps) =>
       const extension = EXTENSIONS[file.type];
       if (!extension) throw badRequest("Receipts must be JPEG, PNG or WebP");
       if (file.size > MAX_BYTES) throw badRequest("Receipt images must be under 10 MB");
-      mkdirSync(deps.env.UPLOADS_DIR, { recursive: true });
+      mkdirSync(deps.uploadsDir, { recursive: true });
       const name = `${newId(deps.now())}.${extension}`;
-      await Bun.write(join(deps.env.UPLOADS_DIR, name), file);
+      await Bun.write(join(deps.uploadsDir, name), file);
       return c.json({ path: name }, 201);
     })
     .get("/:name", validate("param", nameParam), async (c) => {
-      const file = Bun.file(join(deps.env.UPLOADS_DIR, c.req.valid("param").name));
+      const file = Bun.file(join(deps.uploadsDir, c.req.valid("param").name));
       if (!(await file.exists())) throw notFound("Receipt");
       return new Response(file, {
         headers: { "content-type": file.type, "cache-control": "private, max-age=86400" },

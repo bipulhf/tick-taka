@@ -1,6 +1,7 @@
 # Tick & Taka
 
-A private, single-user Android app that runs my days and my money from one screen.
+An Android app that runs your days and your money from one screen. Anyone signs in
+with Google; each account's data lives in its own SQLite file on the server.
 "Tick" is time, "Taka" is money. The full product and technical spec is in
 `tick_taka_spec.pdf`; the build order is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
 
@@ -33,19 +34,39 @@ bun run check                    # Biome, TypeScript and every test suite
 
 ```bash
 cd apps/api
-cp .env.example .env
-bun run hash-password -- "your password"     # paste into APP_PASSWORD_HASH
+cp .env.example .env                          # GOOGLE_CLIENT_IDS, OWNER_EMAIL (see below)
 bun -e 'console.log(crypto.randomUUID() + crypto.randomUUID())'   # JWT_SECRET
 bun run dev                                   # http://localhost:3000/health
 ```
+
+Each user gets `users/<id>.db` next to `DB_PATH`, listed in `users.db`; migrations run
+when a user's database is first opened, and a new account is seeded with areas,
+categories and routines. The database at `DB_PATH` from the single-user days goes to
+`OWNER_EMAIL` on that account's first Google sign-in, with its uploads and backups.
 
 Migrations run automatically on start. After changing `src/db/schema/*`, run
 `bun run db:generate` and commit the new file in `drizzle/`. The first start seeds areas,
 categories (with budget buckets) and the Morning and Shutdown routines.
 
-Set `OPENAI_API_KEY` to enable AI features. Model names (`OPENAI_MODEL_FAST`,
+Set `OPENAI_API_KEY` to enable AI features. Each user has their own monthly AI budget,
+never above `AI_USER_MONTHLY_CAP_MICROS` (default $2). Model names (`OPENAI_MODEL_FAST`,
 `OPENAI_MODEL_SMART`) and per-million-token prices for the monthly cost cap are
 environment variables, so models change without a code change.
+
+### Google sign-in
+
+Sign-in is native (Android's Google account picker, no browser). In Google Cloud
+Console › APIs & Services › Credentials, in one project:
+
+1. Configure the OAuth consent screen (External, publish it so anyone can sign in).
+2. Create an OAuth client of type **Web application**. Its client ID goes in the API's
+   `GOOGLE_CLIENT_IDS` and the app's `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (and the `env` of
+   each profile in `apps/mobile/eas.json`).
+3. Create an OAuth client of type **Android** for package `dev.bipulhf.ticktaka` for each
+   signing key: the SHA-1 of `apps/mobile/android/app/debug.keystore` for local builds
+   (`keytool -list -v -keystore apps/mobile/android/app/debug.keystore -storepass android`)
+   and the one from `bunx eas-cli credentials` for EAS builds. Nothing from this client
+   goes into the code; Google matches the app by package and signature.
 
 ### Mobile
 
@@ -54,7 +75,7 @@ SMS capture uses a custom native module, so the app runs in a development build
 
 ```bash
 cd apps/mobile
-cp .env.example .env              # EXPO_PUBLIC_API_URL=http://<your LAN IP>:3000
+cp .env.example .env              # EXPO_PUBLIC_API_URL, EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 bunx eas-cli build -p android --profile development   # install the APK it prints
 bun run start                     # expo start --dev-client
 ```
@@ -83,8 +104,8 @@ Updating: `git pull && bun install && pm2 restart tick-taka-api`.
 
 ### Backups
 
-Every night at 3 am (Asia/Dhaka) the API writes `VACUUM INTO` copies to the backups
-folder and keeps the newest 14. Once a month, restore one locally to make sure it works:
+Every night at 3 am in each user's time zone the API writes a `VACUUM INTO` copy of
+their database to the backups folder (`users/<id>/` inside it) and keeps the newest 14. Once a month, restore one locally to make sure it works:
 
 ```bash
 sqlite3 ~/tick-taka-data/backups/app-2026-10-04.db "pragma integrity_check; select count(*) from transactions;"

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createTestContext, TEST_PASSWORD } from "./helpers";
+import { createTestContext, googleToken } from "./helpers";
 
 describe("foundation", () => {
   test("health needs no auth", async () => {
@@ -27,37 +27,45 @@ describe("foundation", () => {
     expect(res.body).toEqual({ error: { code: "not_found", message: "No such endpoint" } });
   });
 
-  test("login returns a 30-day token that works", async () => {
-    const { app } = await createTestContext();
-    const res = await app.request("/auth/login", {
+  test("Google sign-in returns a 30-day token that works", async () => {
+    const { app, clock } = await createTestContext();
+    const res = await app.request("/auth/google", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ password: TEST_PASSWORD }),
+      body: JSON.stringify({ idToken: googleToken("sub-1", "Asha@Example.com") }),
     });
     expect(res.status).toBe(200);
-    const { token, expiresAt } = (await res.json()) as { token: string; expiresAt: number };
-    expect(expiresAt - Date.now()).toBeGreaterThan(29 * 86_400_000);
+    const { token, expiresAt, user, created } = (await res.json()) as {
+      token: string;
+      expiresAt: number;
+      user: { email: string };
+      created: boolean;
+    };
+    expect(expiresAt - clock.now).toBeGreaterThan(29 * 86_400_000);
+    expect(user.email).toBe("asha@example.com");
+    expect(created).toBe(true);
     const settings = await app.request("/settings", {
       headers: { authorization: `Bearer ${token}` },
     });
     expect(settings.status).toBe(200);
   });
 
-  test("login is limited to 5 attempts per 15 minutes per IP", async () => {
+  test("Google sign-in is limited to 10 attempts per 15 minutes per IP", async () => {
     const ctx = await createTestContext();
-    const attempt = (ip: string, password = "wrong") =>
-      ctx.app.request("/auth/login", {
+    const attempt = (ip: string, idToken = "not-a-google-token-at-all") =>
+      ctx.app.request("/auth/google", {
         method: "POST",
         headers: { "content-type": "application/json", "x-real-ip": ip },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ idToken }),
       });
-    for (let i = 0; i < 5; i++) expect((await attempt("1.1.1.1")).status).toBe(401);
-    const blocked = await attempt("1.1.1.1", TEST_PASSWORD);
+    const good = googleToken("sub-1", "a@example.com");
+    for (let i = 0; i < 10; i++) expect((await attempt("1.1.1.1")).status).toBe(401);
+    const blocked = await attempt("1.1.1.1", good);
     expect(blocked.status).toBe(429);
     expect(blocked.headers.get("retry-after")).toBeTruthy();
-    expect((await attempt("2.2.2.2", TEST_PASSWORD)).status).toBe(200);
+    expect((await attempt("2.2.2.2", good)).status).toBe(200);
     ctx.clock.advance(15 * 60 * 1000 + 1);
-    expect((await attempt("1.1.1.1", TEST_PASSWORD)).status).toBe(200);
+    expect((await attempt("1.1.1.1", good)).status).toBe(200);
   });
 
   test("validation errors use the error envelope", async () => {

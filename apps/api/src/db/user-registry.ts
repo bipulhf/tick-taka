@@ -1,0 +1,159 @@
+import { Database } from "bun:sqlite";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { newId } from "@tick-taka/shared/ids";
+import type { Env } from "../env";
+import { type DbHandle, openDatabase } from "./client";
+import { seedDefaults } from "./seed";
+
+export interface User {
+  id: string;
+  googleSub: string;
+  email: string;
+  name: string | null;
+  pictureUrl: string | null;
+  /** Owns the single-user database at DB_PATH (and the uploads and backups beside it). */
+  legacy: boolean;
+  createdAt: number;
+  lastSeenAt: number;
+}
+
+/** What Google vouches for about the person signing in. */
+export interface GoogleProfile {
+  sub: string;
+  email: string;
+  name: string | null;
+  picture: string | null;
+}
+
+/** One user's own database and folders. Nothing in here is shared with anyone else. */
+export interface UserData extends DbHandle {
+  uploadsDir: string;
+  backupsDir: string;
+}
+
+interface UserRow {
+  id: string;
+  google_sub: string;
+  email: string;
+  name: string | null;
+  picture_url: string | null;
+  legacy: number;
+  created_at: number;
+  last_seen_at: number;
+}
+
+const toUser = (row: UserRow): User => ({
+  id: row.id,
+  googleSub: row.google_sub,
+  email: row.email,
+  name: row.name,
+  pictureUrl: row.picture_url,
+  legacy: row.legacy === 1,
+  createdAt: row.created_at,
+  lastSeenAt: row.last_seen_at,
+});
+
+export type UserRegistry = ReturnType<typeof createUserRegistry>;
+
+/**
+ * Who can sign in, and where each person's data lives: a small users.db listing
+ * Google accounts, and one SQLite file per user, so no query can ever reach
+ * someone else's rows. Sign-up is open: a new Google account gets a fresh,
+ * seeded database on first sign-in.
+ */
+export function createUserRegistry(env: Env, now: () => number, options: { seed?: boolean } = {}) {
+  if (env.USERS_DB_PATH !== ":memory:") mkdirSync(dirname(env.USERS_DB_PATH), { recursive: true });
+  const registry = new Database(env.USERS_DB_PATH, { create: true });
+  registry.exec("PRAGMA journal_mode = WAL;");
+  registry.exec("PRAGMA busy_timeout = 5000;");
+  registry.exec(`CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    google_sub TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL,
+    name TEXT,
+    picture_url TEXT,
+    legacy INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    last_seen_at INTEGER NOT NULL
+  )`);
+
+  const byId = registry.query<UserRow, [string]>("SELECT * FROM users WHERE id = ?");
+  const bySub = registry.query<UserRow, [string]>("SELECT * FROM users WHERE google_sub = ?");
+  const all = registry.query<UserRow, []>("SELECT * FROM users ORDER BY created_at");
+  const legacyTaken = registry.query<{ n: number }, []>(
+    "SELECT count(*) AS n FROM users WHERE legacy = 1",
+  );
+  const open = new Map<string, UserData>();
+
+  /** The owner inherits the single-user data once, on their first sign-in. */
+  const claimsLegacy = (email: string) =>
+    env.OWNER_EMAIL === email &&
+    env.DB_PATH !== ":memory:" &&
+    existsSync(env.DB_PATH) &&
+    (legacyTaken.get()?.n ?? 0) === 0;
+
+  function dataPaths(user: User) {
+    if (user.legacy) return { db: env.DB_PATH, uploads: env.UPLOADS_DIR, backups: env.BACKUPS_DIR };
+    return {
+      db: env.USER_DATA_DIR === ":memory:" ? ":memory:" : join(env.USER_DATA_DIR, `${user.id}.db`),
+      uploads: join(env.UPLOADS_DIR, "users", user.id),
+      backups: join(env.BACKUPS_DIR, "users", user.id),
+    };
+  }
+
+  return {
+    find(id: string): User | undefined {
+      const row = byId.get(id);
+      return row ? toUser(row) : undefined;
+    },
+
+    list(): User[] {
+      return all.all().map(toUser);
+    },
+
+    /** Finds the user for this Google account, creating them on first sign-in. */
+    signIn(profile: GoogleProfile): { user: User; created: boolean } {
+      const at = now();
+      const email = profile.email.toLowerCase();
+      const existing = bySub.get(profile.sub);
+      if (existing) {
+        registry
+          .query(
+            "UPDATE users SET email = ?, name = ?, picture_url = ?, last_seen_at = ? WHERE id = ?",
+          )
+          .run(email, profile.name, profile.picture, at, existing.id);
+        return { user: toUser(byId.get(existing.id)!), created: false };
+      }
+      const id = newId(at);
+      registry
+        .query(
+          `INSERT INTO users (id, google_sub, email, name, picture_url, legacy, created_at, last_seen_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          id,
+          profile.sub,
+          email,
+          profile.name,
+          profile.picture,
+          claimsLegacy(email) ? 1 : 0,
+          at,
+          at,
+        );
+      return { user: toUser(byId.get(id)!), created: true };
+    },
+
+    /** Opens (once) and returns this user's database, seeding defaults on first use. */
+    data(user: User): UserData {
+      const cached = open.get(user.id);
+      if (cached) return cached;
+      const paths = dataPaths(user);
+      const handle = openDatabase(paths.db);
+      if (options.seed !== false) seedDefaults(handle.db, now());
+      const data = { ...handle, uploadsDir: paths.uploads, backupsDir: paths.backups };
+      open.set(user.id, data);
+      return data;
+    },
+  };
+}

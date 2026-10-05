@@ -59,6 +59,11 @@ export function logUsage(
     .run();
 }
 
+/** The user's own cap, never above the per-user limit the server allows. */
+export function monthlyCapMicros(deps: Deps, settings: { ai: { monthlyCapMicros: number } }) {
+  return Math.min(settings.ai.monthlyCapMicros, deps.env.AI_USER_MONTHLY_CAP_MICROS);
+}
+
 /**
  * Guardrails before any AI call: the off switch, per-feature opt-in, a configured
  * key and the monthly cost cap. Each failure has its own code so the app can fall
@@ -69,7 +74,7 @@ export function requireAi(deps: Deps, feature: AiFeature): AiClient {
   if (!isAiFeatureEnabled(settings, feature))
     throw new AppError(403, "ai_disabled", "AI is switched off for this");
   if (!deps.ai) throw new AppError(503, "ai_unavailable", "AI isn't set up on the server");
-  if (monthSpendMicros(deps) >= settings.ai.monthlyCapMicros) {
+  if (monthSpendMicros(deps) >= monthlyCapMicros(deps, settings)) {
     throw new AppError(429, "ai_cap_reached", "This month's AI budget is used up");
   }
   return deps.ai;

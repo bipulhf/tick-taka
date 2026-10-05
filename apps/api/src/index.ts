@@ -1,15 +1,19 @@
 import { createOpenAiClient } from "./ai/openai-client";
 import { createApp } from "./app";
-import { openDatabase } from "./db/client";
-import { seedDefaults } from "./db/seed";
+import { createUserRegistry } from "./db/user-registry";
 import { loadEnv } from "./env";
 import { startJobs } from "./jobs/scheduler";
+import { createDeps } from "./lib/deps";
+import { createGoogleVerifier } from "./lib/google";
 
 const env = loadEnv();
-const { db, sqlite } = openDatabase(env.DB_PATH);
-seedDefaults(db, Date.now());
-
-const deps = { db, sqlite, env, now: Date.now, ai: createOpenAiClient(env) };
+const deps = createDeps({
+  env,
+  now: Date.now,
+  ai: createOpenAiClient(env),
+  users: createUserRegistry(env, Date.now),
+  verifyGoogle: createGoogleVerifier(env.GOOGLE_CLIENT_IDS),
+});
 const app = createApp(deps);
 if (env.JOBS_ENABLED) startJobs(deps);
 

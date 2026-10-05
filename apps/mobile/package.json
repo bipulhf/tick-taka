@@ -37,6 +37,7 @@
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
     "hono": "^4.13.13",
+    "ky": "^2.1.0",
     "nativewind": "^4.2.7",
     "react": "19.2.3",
     "react-hook-form": "^7.89.0",

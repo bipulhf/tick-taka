@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
-import { apiUrl } from "./api";
 import { tokenStore } from "./auth";
+import { apiUrl, request } from "./http";
 
 export interface PickedImage {
   uri: string;
@@ -41,10 +41,10 @@ export async function uploadReceipt(image: PickedImage): Promise<string> {
     name: `receipt.${image.mimeType.split("/")[1]}`,
     type: image.mimeType,
   } as unknown as Blob);
-  const response = await fetch(apiUrl("/uploads"), {
+  const response = await request(apiUrl("/uploads"), {
     method: "POST",
-    headers: { authorization: `Bearer ${tokenStore.get() ?? ""}` },
     body: form,
+    timeout: 60_000,
   });
   if (!response.ok) throw new Error("Couldn't upload the receipt");
   return ((await response.json()) as { path: string }).path;

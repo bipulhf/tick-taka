@@ -1,8 +1,8 @@
 import type { AppType } from "@tick-taka/api/app-type";
 import { hc } from "hono/client";
 import type { SuccessStatusCode } from "hono/utils/http-status";
-import { signOut, tokenStore } from "./auth";
 import { API_URL } from "./config";
+import { apiUrl, kyFetch, request } from "./http";
 
 export class ApiError extends Error {
   constructor(
@@ -15,13 +15,8 @@ export class ApiError extends Error {
   }
 }
 
-const authHeaders = (): Record<string, string> => {
-  const token = tokenStore.get();
-  return token ? { authorization: `Bearer ${token}` } : {};
-};
-
-/** Typed Hono RPC client: every route and response type comes from the server. */
-export const api = hc<AppType>(API_URL, { headers: authHeaders });
+/** Typed Hono RPC client: every route and response type comes from the server; requests go through ky. */
+export const api = hc<AppType>(API_URL, { fetch: kyFetch });
 
 interface JsonResponse {
   ok: boolean;
@@ -33,7 +28,6 @@ async function toError(response: JsonResponse): Promise<ApiError> {
   const body = (await response.json().catch(() => null)) as {
     error?: { code: string; message: string };
   } | null;
-  if (response.status === 401) void signOut();
   return new ApiError(
     response.status,
     body?.error?.code ?? "http_error",
@@ -63,19 +57,11 @@ export async function send<T = unknown>(
   path: string,
   body?: unknown,
 ): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await request(apiUrl(path), {
     method,
-    headers: {
-      ...authHeaders(),
-      ...(body === undefined ? {} : { "content-type": "application/json" }),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    ...(body === undefined ? {} : { json: body }),
   });
   if (!response.ok) throw await toError(response);
   const text = await response.text();
   return (text ? JSON.parse(text) : null) as T;
-}
-
-export function apiUrl(path: string): string {
-  return `${API_URL}${path}`;
 }

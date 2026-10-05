@@ -2,7 +2,7 @@ import "@/lib/polyfills";
 import { newId } from "@tick-taka/shared/ids";
 import * as SecureStore from "expo-secure-store";
 import type { WidgetTaskHandlerProps } from "react-native-android-widget";
-import { API_URL } from "@/lib/config";
+import { apiUrl, request } from "@/lib/http";
 import { SafeToSpendWidget } from "./safe-to-spend-widget";
 import {
   readPendingLogs,
@@ -30,10 +30,10 @@ async function logQuickEntry(index: number) {
   const token = await SecureStore.getItemAsync("tt.token");
   let status = `Logged ${entry.label} ✓`;
   try {
-    const response = await fetch(`${API_URL}/transactions`, {
+    const response = await request(apiUrl("/transactions"), {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${token ?? ""}` },
-      body: JSON.stringify({ ...log, type: "expense" }),
+      headers: { authorization: `Bearer ${token ?? ""}` },
+      json: { ...log, type: "expense" },
     });
     if (!response.ok) throw new Error(String(response.status));
   } catch {

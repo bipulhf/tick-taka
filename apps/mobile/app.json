@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "platforms": ["android"],
     "android": {
-      "package": "dev.bipulhf.ticktaka",
+      "package": "com.mehedismathacademy.ticktaka",
       "adaptiveIcon": {
         "backgroundColor": "#FFF8EE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

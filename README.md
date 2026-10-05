@@ -182,7 +182,7 @@ In Google Cloud Console › APIs & Services, in one project:
 2. Create an OAuth client of type **Web application**. Its client ID goes in the API's
    `GOOGLE_CLIENT_IDS` and the app's `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (and in the `env`
    of each profile in `apps/mobile/eas.json`).
-3. Create an OAuth client of type **Android** for package `dev.bipulhf.ticktaka`, once
+3. Create an OAuth client of type **Android** for package `com.mehedismathacademy.ticktaka`, once
    for each signing key: the SHA-1 of `apps/mobile/android/app/debug.keystore` for local
    builds and the one from `bunx eas-cli credentials` for EAS builds. Nothing from this
    client goes into the code; Google matches the app by package name and signature.

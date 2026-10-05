@@ -10,18 +10,20 @@ import {
   pickQuickEntries,
   readPendingLogs,
   readWidgetCache,
+  type WidgetCache,
   writePendingLogs,
   writeWidgetCache,
 } from "./widget-cache";
+import { widgetSnapshot } from "./widget-snapshot";
 import { WIDGET_NAME } from "./widget-task-handler";
 
 // The widget shows nothing of a signed-out user.
 resetOnSignOut(() => {
   void requestWidgetUpdate({
     widgetName: WIDGET_NAME,
-    renderWidget: () => ({
-      light: <SafeToSpendWidget cache={EMPTY_CACHE} scheme="light" />,
-      dark: <SafeToSpendWidget cache={EMPTY_CACHE} scheme="dark" />,
+    renderWidget: (info) => ({
+      light: <SafeToSpendWidget cache={EMPTY_CACHE} scheme="light" height={info.height} />,
+      dark: <SafeToSpendWidget cache={EMPTY_CACHE} scheme="dark" height={info.height} />,
     }),
   }).catch(() => {});
 });
@@ -44,13 +46,14 @@ export function useWidgetSync() {
   }, [send]);
 
   useEffect(() => {
-    if (!today.data) return;
-    const money = today.data.safeToSpend;
+    const data = today.data;
+    if (!data) return;
     const transactions = recent.data?.pages.flatMap((p) => p.items) ?? [];
     void (async () => {
       const previous = await readWidgetCache();
-      const cache = {
-        leftTodayMinor: money.hasBudgets ? money.leftTodayMinor : null,
+      const cache: WidgetCache = {
+        signedIn: true,
+        ...widgetSnapshot(data, Date.now(), settings?.timeZone ?? "Asia/Dhaka"),
         accountId: settings?.defaultAccountId ?? null,
         quick: transactions.length ? pickQuickEntries(transactions) : previous.quick,
         status: null,
@@ -59,11 +62,11 @@ export function useWidgetSync() {
       await writeWidgetCache(cache);
       await requestWidgetUpdate({
         widgetName: WIDGET_NAME,
-        renderWidget: () => ({
-          light: <SafeToSpendWidget cache={cache} scheme="light" />,
-          dark: <SafeToSpendWidget cache={cache} scheme="dark" />,
+        renderWidget: (info) => ({
+          light: <SafeToSpendWidget cache={cache} scheme="light" height={info.height} />,
+          dark: <SafeToSpendWidget cache={cache} scheme="dark" height={info.height} />,
         }),
       }).catch(() => {});
     })();
-  }, [today.data, recent.data, settings?.defaultAccountId]);
+  }, [today.data, recent.data, settings?.defaultAccountId, settings?.timeZone]);
 }

@@ -7,8 +7,16 @@ export interface QuickEntry {
   categoryId: string | null;
 }
 
+/** Today in a few numbers, for the home-screen widget (see widget-snapshot.ts). */
 export interface WidgetCache {
+  /** False until a signed-in app has written today's numbers. */
+  signedIn: boolean;
   leftTodayMinor: number | null;
+  spentTodayMinor: number;
+  dailyMinor: number;
+  nextUp: { title: string; when: string } | null;
+  topThree: { done: number; total: number };
+  habits: { done: number; total: number };
   accountId: string | null;
   quick: QuickEntry[];
   status: string | null;
@@ -28,7 +36,13 @@ const CACHE_KEY = "tt.widget";
 const PENDING_KEY = "tt.widget-pending";
 
 export const EMPTY_CACHE: WidgetCache = {
+  signedIn: false,
   leftTodayMinor: null,
+  spentTodayMinor: 0,
+  dailyMinor: 0,
+  nextUp: null,
+  topThree: { done: 0, total: 0 },
+  habits: { done: 0, total: 0 },
   accountId: null,
   quick: [],
   status: null,

@@ -65,9 +65,9 @@
             {
               "name": "SafeToSpend",
               "label": "Tick & Taka",
-              "description": "Safe to spend today and one-tap logging",
+              "description": "Today at a glance: safe to spend, next up, and quick add",
               "minWidth": "250dp",
-              "minHeight": "110dp",
+              "minHeight": "130dp",
               "targetCellWidth": 4,
               "targetCellHeight": 2,
               "resizeMode": "horizontal|vertical",

@@ -43,6 +43,7 @@ async function logQuickEntry(index: number) {
   const next = {
     ...cache,
     leftTodayMinor: cache.leftTodayMinor === null ? null : cache.leftTodayMinor - entry.amountMinor,
+    spentTodayMinor: cache.spentTodayMinor + entry.amountMinor,
     status,
   };
   await writeWidgetCache(next);
@@ -56,8 +57,9 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
   if (props.widgetAction === "WIDGET_CLICK" && props.clickAction === "LOG") {
     cache = await logQuickEntry(Number(props.clickActionData?.index ?? -1));
   }
+  const height = props.widgetInfo.height;
   props.renderWidget({
-    light: <SafeToSpendWidget cache={cache} scheme="light" />,
-    dark: <SafeToSpendWidget cache={cache} scheme="dark" />,
+    light: <SafeToSpendWidget cache={cache} scheme="light" height={height} />,
+    dark: <SafeToSpendWidget cache={cache} scheme="dark" height={height} />,
   });
 }

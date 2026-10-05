@@ -15,6 +15,7 @@ import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { useAccounts } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 import { useColors } from "@/theme/colors";
 import { useGoals } from "./queries";
 
@@ -53,7 +54,7 @@ function GoalForm({ id }: { id: string | null }) {
       send({
         method: "PATCH",
         path: `/goals/${goal.id}`,
-        body: { ...body, updatedAt: Date.now() },
+        body: { ...body, updatedAt: editTime() },
         label: "Couldn't save",
       });
     else

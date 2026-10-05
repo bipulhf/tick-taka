@@ -13,6 +13,7 @@ import { TextField } from "@/components/ui/text-field";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAccounts, useSettings } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 
 type AccountType = "cash" | "bank" | "mobile_wallet" | "card" | "savings";
 const TYPES: { value: AccountType; label: string }[] = [
@@ -57,7 +58,7 @@ function AccountForm({ id }: { id: string | null }) {
       send({
         method: "PATCH",
         path: `/accounts/${account.id}`,
-        body: { name: name.trim(), type, openingMinor, updatedAt: Date.now() },
+        body: { name: name.trim(), type, openingMinor, updatedAt: editTime() },
         label: "Couldn't save",
       });
     else {

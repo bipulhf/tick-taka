@@ -32,6 +32,7 @@ import {
   useSettings,
 } from "@/lib/queries";
 import { pickReceipt, receiptUrl, uploadReceipt } from "@/lib/receipts";
+import { editTime } from "@/lib/server-clock";
 import { playSound } from "@/lib/sounds";
 import { useEvents, useTransaction } from "./queries";
 
@@ -145,7 +146,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
       send({
         method: "PATCH",
         path: `/transactions/${id}`,
-        body: { ...body, updatedAt: Date.now() },
+        body: { ...body, updatedAt: editTime() },
         label: "Couldn't save",
       });
       if (existing.data && body.categoryId !== existing.data.categoryId && body.note)

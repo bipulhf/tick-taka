@@ -12,6 +12,7 @@ import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
+import { editTime } from "@/lib/server-clock";
 import { type HabitWithProgress, useHabits } from "./queries";
 
 type Schedule = "daily" | "weekly" | "n_per_week";
@@ -45,7 +46,7 @@ function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
       send({
         method: "PATCH",
         path: `/habits/${habit.id}`,
-        body: { ...body, updatedAt: Date.now() },
+        body: { ...body, updatedAt: editTime() },
         label: "Couldn't save the habit",
       });
     else

@@ -20,6 +20,7 @@ import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate, pickTime } from "@/lib/pick-date";
 import { useAiStatus, useAreas, useSettings } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 import { useTaskActions } from "./use-task-actions";
 
 type Priority = "low" | "normal" | "high";
@@ -174,7 +175,7 @@ export function TaskSheet({ id }: { id: string | null }) {
       send({
         method: "PATCH",
         path: `/tasks/${id}`,
-        body: { ...body, updatedAt: Date.now() },
+        body: { ...body, updatedAt: editTime() },
         label: "Couldn't save the task",
       });
     else

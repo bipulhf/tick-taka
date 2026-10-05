@@ -1,5 +1,6 @@
 import ky, { isNetworkError, isTimeoutError } from "ky";
 import { API_URL } from "./config";
+import { noteServerTime } from "./server-clock";
 
 /** Most calls are quick; the chat assistant's tool loop and voice notes get longer. */
 const TIMEOUT_MS = 20_000;
@@ -57,10 +58,13 @@ export async function request(
   options: Parameters<typeof http>[1] = {},
 ): Promise<Response> {
   try {
-    return await http(input, {
+    const sentAt = Date.now();
+    const response = await http(input, {
       timeout: input.includes("/ai/") ? AI_TIMEOUT_MS : TIMEOUT_MS,
       ...options,
     });
+    noteServerTime(Number(response.headers.get("x-server-time")), sentAt, Date.now());
+    return response;
   } catch (error) {
     if (isNetworkError(error) || isTimeoutError(error)) throw new ServerUnreachableError();
     throw error;

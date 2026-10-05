@@ -3,6 +3,7 @@ import { requestWidgetUpdate } from "react-native-android-widget";
 import { useTransactions } from "@/features/money/queries";
 import { useOutbox } from "@/lib/outbox";
 import { useSettings, useToday } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 import { resetOnSignOut } from "@/lib/user-data";
 import { SafeToSpendWidget } from "./safe-to-spend-widget";
 import {
@@ -57,7 +58,7 @@ export function useWidgetSync() {
         accountId: settings?.defaultAccountId ?? null,
         quick: transactions.length ? pickQuickEntries(transactions) : previous.quick,
         status: null,
-        updatedAt: Date.now(),
+        updatedAt: editTime(),
       };
       await writeWidgetCache(cache);
       await requestWidgetUpdate({

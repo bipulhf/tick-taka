@@ -9,6 +9,12 @@ describe("foundation", () => {
     expect(await res.json()).toMatchObject({ ok: true });
   });
 
+  test("every response carries the server time", async () => {
+    const { app, clock } = await createTestContext();
+    const res = await app.request("/health");
+    expect(res.headers.get("x-server-time")).toBe(String(clock.now));
+  });
+
   test("protected routes need a token", async () => {
     const { app } = await createTestContext();
     const res = await app.request("/settings");

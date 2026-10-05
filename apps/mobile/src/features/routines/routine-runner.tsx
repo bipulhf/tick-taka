@@ -15,6 +15,7 @@ import { TextField } from "@/components/ui/text-field";
 import { useNow } from "@/features/timer/use-now";
 import { formatTimer } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
+import { editTime } from "@/lib/server-clock";
 import { playSound } from "@/lib/sounds";
 import { type Routine, useRoutines } from "./queries";
 
@@ -122,7 +123,7 @@ function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
                   minutes: s.minutes,
                   sort,
                 })),
-              updatedAt: Date.now(),
+              updatedAt: editTime(),
             },
             label: "Couldn't save the routine",
           });

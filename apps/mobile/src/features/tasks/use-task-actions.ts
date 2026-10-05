@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import type { TaskRow } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 import { playSound } from "@/lib/sounds";
 import { patchTaskEverywhere, updateToday } from "@/lib/today-cache";
 
@@ -19,7 +20,7 @@ export function useTaskActions() {
     send({
       method: "PATCH",
       path: `/tasks/${task.id}`,
-      body: { ...changes, updatedAt: Date.now() },
+      body: { ...changes, updatedAt: editTime() },
       label,
     });
   };

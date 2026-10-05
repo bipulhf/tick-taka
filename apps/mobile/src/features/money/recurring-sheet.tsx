@@ -24,6 +24,7 @@ import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 
 type Kind = "bill" | "income";
 
@@ -87,7 +88,7 @@ function RecurringForm({ id }: { id: string | null }) {
       send({
         method: "PATCH",
         path: `/recurring/${item.id}`,
-        body: { ...body, updatedAt: Date.now() },
+        body: { ...body, updatedAt: editTime() },
         label: "Couldn't save",
       });
     else

@@ -5,6 +5,7 @@ import {
   zonedTimeToUtc,
 } from "@tick-taka/shared/dates";
 import { useOutbox } from "@/lib/outbox";
+import { editTime } from "@/lib/server-clock";
 import type { PlanTask } from "./queries";
 
 /** Moves a task to another day (keeping its time) or to a specific minute of a day. */
@@ -14,7 +15,7 @@ export function useMoveTask(timeZone: string) {
     send({
       method: "PATCH",
       path: `/tasks/${task.id}`,
-      body: { ...body, updatedAt: Date.now() },
+      body: { ...body, updatedAt: editTime() },
       label: "Couldn't move the task",
     });
 

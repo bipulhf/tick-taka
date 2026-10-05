@@ -14,6 +14,7 @@ import { TextField } from "@/components/ui/text-field";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { useOutbox } from "@/lib/outbox";
 import { useAreas } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 import { useProjects, useTasks } from "./queries";
 
 /** Areas hold projects; projects hold tasks. */
@@ -83,7 +84,7 @@ export function AreaDetail({ areaId }: { areaId: string }) {
                         send({
                           method: "PATCH",
                           path: `/projects/${project.id}`,
-                          body: { status: nextStatus, updatedAt: Date.now() },
+                          body: { status: nextStatus, updatedAt: editTime() },
                         })
                       }
                     >

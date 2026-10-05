@@ -65,6 +65,12 @@ export function createApp(deps: Deps) {
     .route("/ai", aiRoutes(deps, dispatch));
 
   const app = new Hono()
+    // The phone reads this to send edit times in server time, so last-write-wins
+    // isn't fooled by a phone clock that runs fast or slow.
+    .use(async (c, next) => {
+      await next();
+      c.header("x-server-time", String(deps.now()));
+    })
     .onError(onError)
     .notFound(onNotFound)
     .get("/health", (c) => c.json({ ok: true, uptimeMs: Date.now() - startedAt }))

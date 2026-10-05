@@ -7,6 +7,7 @@ import { Screen } from "@/components/ui/screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useOutbox } from "@/lib/outbox";
+import { editTime } from "@/lib/server-clock";
 import { CompactTask } from "./compact-task";
 import { useTasks } from "./queries";
 
@@ -61,7 +62,7 @@ export function EisenhowerGrid() {
       body: {
         urgent: quadrant.urgent,
         priority: quadrant.important ? "high" : task.priority === "high" ? "normal" : task.priority,
-        updatedAt: Date.now(),
+        updatedAt: editTime(),
       },
       label: "Couldn't move the task",
     });

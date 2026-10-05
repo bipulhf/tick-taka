@@ -4,6 +4,7 @@ import { ApiError, api, unwrap } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
 import { useOutbox } from "@/lib/outbox";
 import { queryClient } from "@/lib/query-client";
+import { editTime } from "@/lib/server-clock";
 import { useStore } from "@/lib/store";
 import {
   appendMessage,
@@ -77,7 +78,7 @@ export function useAssistant() {
     send({
       method,
       path,
-      body: method === "PATCH" ? { ...body, updatedAt: Date.now() } : body,
+      body: method === "PATCH" ? { ...body, updatedAt: editTime() } : body,
       label: "Couldn't undo that",
     });
     markUndone(messageId, index);

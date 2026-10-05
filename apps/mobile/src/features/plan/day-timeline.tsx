@@ -15,6 +15,7 @@ import { formatLocalDate } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAiStatus, useSettings } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 import { CompactTask } from "./compact-task";
 import { type PlanTask, useTasks } from "./queries";
 import { useMoveTask } from "./use-move-task";
@@ -76,7 +77,7 @@ export function DayTimeline({ date }: { date: string }) {
           reminderAt: block.startAt,
           estimateMin: Math.round((block.endAt - block.startAt) / 60_000),
           status: "open",
-          updatedAt: Date.now(),
+          updatedAt: editTime(),
         },
         label: "Couldn't apply the plan",
       });

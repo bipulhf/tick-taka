@@ -7,6 +7,7 @@ import { ListRow } from "@/components/ui/list-row";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { useOutbox } from "@/lib/outbox";
+import { editTime } from "@/lib/server-clock";
 import { useTasks } from "./queries";
 
 /** Ideas parked for later. They never show on Today; the monthly review checks them. */
@@ -46,7 +47,7 @@ export function SomedayList() {
                       send({
                         method: "PATCH",
                         path: `/tasks/${task.id}`,
-                        body: { status: "inbox", updatedAt: Date.now() },
+                        body: { status: "inbox", updatedAt: editTime() },
                       })
                     }
                   />

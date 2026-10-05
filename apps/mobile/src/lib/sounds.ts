@@ -18,8 +18,20 @@ const SOURCES = {
 } as const;
 export type SoundName = keyof typeof SOURCES;
 
+/**
+ * How cues play: alongside other audio (music never pauses for a chime) and not at
+ * all when the phone is on silent. Anything that changes the audio mode, like voice
+ * input, comes back to this.
+ */
+export const CUE_AUDIO_MODE = {
+  playsInSilentMode: false,
+  interruptionMode: "mixWithOthers",
+} as const;
+
 const players = new Map<SoundName, AudioPlayer>();
-let modeSet = false;
+// Set on the first cue rather than at launch: on Android it also resets the
+// speakerphone route, which shouldn't happen just because the app opened.
+let modeReady: Promise<void> | null = null;
 
 function player(name: SoundName): AudioPlayer {
   let existing = players.get(name);
@@ -34,23 +46,21 @@ function player(name: SoundName): AudioPlayer {
 /** Plays a cue unless sounds are off; silent or vibrate mode on the phone also mutes it. */
 export function playSound(name: SoundName): void {
   if (!feedbackPrefsStore.get().sounds) return;
-  try {
-    if (!modeSet) {
-      modeSet = true;
-      // Never pause someone's music for a chime, and stay quiet when the phone is on silent.
-      void setAudioModeAsync({ playsInSilentMode: false, interruptionMode: "mixWithOthers" });
-    }
-    // A big win drowns out the smaller cue it arrived with.
-    if (name === "celebrate")
-      for (const other of ["done", "pop"] as const) players.get(other)?.pause();
-    const cue = player(name);
-    void cue.seekTo(0).then(() => cue.play());
-  } catch {
+  modeReady ??= setAudioModeAsync(CUE_AUDIO_MODE).catch(() => {});
+  void modeReady
+    .then(async () => {
+      // A big win drowns out the smaller cue it arrived with.
+      if (name === "celebrate")
+        for (const other of ["done", "pop"] as const) players.get(other)?.pause();
+      const cue = player(name);
+      await cue.seekTo(0);
+      cue.play();
+    })
     // A missing cue is never worth an error on screen.
-  }
+    .catch(() => {});
 }
 
-/** Loads the cues ahead of the first win so the first one isn't late. */
+/** Loads the cues at startup so the first win isn't late. */
 export function preloadSounds(): void {
   for (const name of Object.keys(SOURCES) as SoundName[]) player(name);
 }

@@ -11,6 +11,7 @@ import { Linking } from "react-native";
 import { api, unwrap } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
 import { notify } from "@/lib/notify";
+import { CUE_AUDIO_MODE } from "@/lib/sounds";
 
 const MAX_MS = 120_000;
 /** Mono AAC at 64 kbps: clear speech, about 0.5 MB a minute. */
@@ -56,8 +57,8 @@ export function useVoiceInput(onText: (text: string) => void) {
   const finish = async (keep: boolean) => {
     if (state !== "recording") return;
     await recorder.stop();
-    // Back to cue mode: win sounds stay quiet while the phone is on silent.
-    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: false });
+    // Back to cue mode, so win sounds mix with music and respect silent mode again.
+    await setAudioModeAsync({ ...CUE_AUDIO_MODE, allowsRecording: false });
     const uri = recorder.uri;
     const heardNothing =
       durationMillis < MIN_MS || (peak.current !== null && peak.current < SILENCE_DB);

@@ -66,6 +66,7 @@
               "name": "SafeToSpend",
               "label": "Tick & Taka",
               "description": "Today at a glance: safe to spend, next up, and quick add",
+              "previewImage": "./assets/images/widget-preview.png",
               "minWidth": "250dp",
               "minHeight": "130dp",
               "targetCellWidth": 4,

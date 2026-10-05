@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import type { Tabs } from "expo-router/js-tabs";
-import { type ComponentProps, useState } from "react";
+import type { ComponentProps } from "react";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -15,8 +15,6 @@ type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>
 /** The bar floats this far above the safe area, and is this tall. */
 export const TAB_BAR_GAP = 12;
 export const TAB_BAR_HEIGHT = 64;
-/** Below this capsule width the open tab shows its icon only. */
-const COMPACT_WIDTH = 300;
 
 const TABS: Record<string, { label: string; icon: IconName; activeIcon: IconName }> = {
   index: { label: "Today", icon: "white-balance-sunny", activeIcon: "white-balance-sunny" },
@@ -26,17 +24,16 @@ const TABS: Record<string, { label: string; icon: IconName; activeIcon: IconName
 };
 
 /**
- * A floating capsule: the open tab grows into a labelled pill, the others stay
- * as calm icons, and quick-add sits in the middle within thumb reach. Tiki's
- * chat button sits beside it on the left, so it never covers the content.
+ * A floating capsule of four equal tabs, each an icon over its name; the open tab
+ * is marked by colour and a soft pill, never by growing, so the row never crowds.
+ * Quick-add sits in the middle within thumb reach. Tiki's chat button sits beside
+ * it on the left, so it never covers the content.
  */
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const colors = useColors();
   const chat = useAssistantAvailable();
-  const [capsuleWidth, setCapsuleWidth] = useState(0);
-  const compact = capsuleWidth > 0 && capsuleWidth < COMPACT_WIDTH;
   const routes = state.routes.filter((route) => TABS[route.name]);
   const renderTab = (route: (typeof routes)[number]) => {
     const tab = TABS[route.name]!;
@@ -47,7 +44,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
         accessibilityRole="tab"
         accessibilityState={{ selected: focused }}
         accessibilityLabel={tab.label}
-        className="h-12 min-w-12 items-center justify-center"
+        className="h-12 flex-1 items-center justify-center gap-0.5"
         onPress={() => {
           haptic.select();
           const event = navigation.emit({
@@ -58,33 +55,24 @@ export function TabBar({ state, navigation }: TabBarProps) {
           if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
         }}
       >
-        {focused ? (
-          <View
-            // Remount on focus change: Android keeps square corners when only the fill changes.
-            key="on"
-            className="h-12 flex-row items-center justify-center gap-2"
-            style={{
-              borderRadius: 24,
-              paddingHorizontal: compact ? 10 : 16,
-              backgroundColor: colors.ink,
-            }}
-          >
-            <Icon name={tab.activeIcon} color="background" size={24} />
-            {compact ? null : (
-              <Text variant="callout" tone="background" className="font-nunito-bold">
-                {tab.label}
-              </Text>
-            )}
-          </View>
-        ) : (
-          // Other tabs keep a small label, so an icon never has to be guessed.
-          <View key="off" className="h-12 items-center justify-center px-1">
-            <Icon name={tab.icon} color="muted" size={22} />
-            <Text className="font-nunito-semibold text-[11px] leading-[14px] text-muted">
-              {tab.label}
-            </Text>
-          </View>
-        )}
+        <View
+          // Remount on focus change: Android keeps square corners when only the fill changes.
+          key={focused ? "on" : "off"}
+          className="h-7 w-12 items-center justify-center"
+          style={{ borderRadius: 14, backgroundColor: focused ? colors.line : "transparent" }}
+        >
+          <Icon
+            name={focused ? tab.activeIcon : tab.icon}
+            color={focused ? "ink" : "muted"}
+            size={22}
+          />
+        </View>
+        <Text
+          tone={focused ? "ink" : "muted"}
+          className={`${focused ? "font-nunito-bold" : "font-nunito-semibold"} text-[11px] leading-[14px]`}
+        >
+          {tab.label}
+        </Text>
       </Pressable>
     );
   };
@@ -109,8 +97,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
       >
         {chat ? <AssistantButton size={TAB_BAR_HEIGHT} /> : null}
         <View
-          onLayout={(event) => setCapsuleWidth(event.nativeEvent.layout.width)}
-          className="h-full flex-1 flex-row items-center justify-between rounded-full border border-line bg-card px-2"
+          className="h-full flex-1 flex-row items-center rounded-full border border-line bg-card px-1"
           style={{ elevation: 10 }}
         >
           {routes.slice(0, 2).map(renderTab)}

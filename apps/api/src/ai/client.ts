@@ -55,7 +55,10 @@ export interface AiClient {
   chat(request: {
     model: "fast" | "smart";
     messages: AiChatMessage[];
+    /** Empty means the model must answer in text. */
     tools: AiToolDefinition[];
+    /** When given, the reply streams: called with each piece of text as it arrives. */
+    onText?: (delta: string) => void;
   }): Promise<AiChatResult>;
   transcribe(
     request: AiTranscribeRequest,

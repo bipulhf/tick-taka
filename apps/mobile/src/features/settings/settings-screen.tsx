@@ -1,5 +1,6 @@
 import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
+import { Pressable } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { ErrorState } from "@/components/ui/empty-state";
@@ -329,10 +330,19 @@ export function SettingsScreen() {
             onChange={(on) => update({ ai: { ...s.ai, enabled: on } })}
           />
           {ai.data ? (
-            <Text variant="caption" tone="muted">
-              This month: ${(ai.data.monthSpendMicros / 1_000_000).toFixed(2)} of $
-              {(ai.data.monthlyCapMicros / 1_000_000).toFixed(2)}
-            </Text>
+            <Pressable
+              onPress={() => router.push("/review/ai-usage")}
+              accessibilityRole="link"
+              className="min-h-11 justify-center"
+            >
+              <Text variant="caption" tone="muted">
+                This month: ${(ai.data.monthSpendMicros / 1_000_000).toFixed(2)} of $
+                {(ai.data.monthlyCapMicros / 1_000_000).toFixed(2)} ·{" "}
+                <Text variant="caption" tone="sky">
+                  See details
+                </Text>
+              </Text>
+            </Pressable>
           ) : null}
           <ChoiceRow label="Monthly cap">
             {CAPS.filter((cap) => cap <= (ai.data?.maxCapMicros ?? Number.POSITIVE_INFINITY)).map(

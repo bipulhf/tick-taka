@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
 import type { AiToolCall } from "../src/ai/client";
 import { FakeAi } from "./fake-ai";
-import { createTestContext } from "./helpers";
+import { createTestContext, type TestContext } from "./helpers";
 
 let callId = 0;
 const call = (name: string, args: Record<string, unknown>): AiToolCall => ({
@@ -18,14 +18,42 @@ interface Reply {
     summary: string;
     undo?: { method: string; path: string; body?: Record<string, unknown> };
   }[];
+  deletions: { summary: string; path: string }[];
   memo: string;
 }
 
-async function setup() {
+type Event = { type: string; text?: string; ok?: boolean } & Partial<Reply>;
+
+/** Posts to the streaming assistant and reads back every server-sent event. */
+async function chat(
+  ctx: TestContext,
+  messages: { role: "user" | "assistant"; content: string; memo?: string }[],
+  token = ctx.token,
+) {
+  const response = await ctx.app.request("/ai/assistant", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ messages }),
+  });
+  const text = await response.text();
+  if (!response.headers.get("content-type")?.includes("text/event-stream"))
+    return { status: response.status, events: [] as Event[], body: JSON.parse(text) as Reply };
+  const events = text.split("\n\n").flatMap((block): Event[] => {
+    const data = block
+      .split("\n")
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trimStart())
+      .join("\n");
+    return data ? [JSON.parse(data) as Event] : [];
+  });
+  const done = events.find((event) => event.type === "done") as Reply | undefined;
+  return { status: response.status, events, body: done as Reply };
+}
+
+async function setup(options: { env?: Record<string, string> } = {}) {
   const ai = new FakeAi();
-  const ctx = await createTestContext({ ai });
-  const say = (content: string) =>
-    ctx.request<Reply>("POST", "/ai/assistant", { messages: [{ role: "user", content }] });
+  const ctx = await createTestContext({ ai, ...options });
+  const say = (content: string) => chat(ctx, [{ role: "user", content }]);
   const undo = (action: Reply["actions"][number]) =>
     ctx.request(
       action.undo!.method,
@@ -113,21 +141,114 @@ describe("chat assistant", () => {
     ).toBe(25_000);
   });
 
-  test("deletes with a restore undo", async () => {
-    const { ai, ctx, say, undo } = await setup();
+  test("only asks to delete; the user's own DELETE does it, and restore undoes it", async () => {
+    const { ai, ctx, say } = await setup();
     const goal = await ctx.request<{ id: string }>("POST", "/goals", {
       name: "Laptop",
       targetMinor: 1_000_000,
     });
     ai.queueChat(
-      { toolCalls: [call("delete", { entity: "goal", id: goal.body.id })] },
-      { content: "Deleted." },
+      { toolCalls: [call("delete", { entity: "goal", ids: [goal.body.id] })] },
+      { content: "Tap Delete to remove the Laptop goal." },
     );
     const res = await say("delete the laptop goal");
-    expect(res.body.actions[0]?.summary).toBe("Deleted goal “Laptop”");
-    expect((await ctx.request<unknown[]>("GET", "/goals")).body).toHaveLength(0);
-    await undo(res.body.actions[0]!);
+    expect(res.body.actions).toHaveLength(0);
+    expect(res.body.deletions).toEqual([
+      { summary: "Goal “Laptop”", path: `/goals/${goal.body.id}` },
+    ]);
+    expect(res.body.memo).toContain(`asked to delete /goals/${goal.body.id}`);
     expect((await ctx.request<unknown[]>("GET", "/goals")).body).toHaveLength(1);
+
+    // What the phone sends when the user taps Delete, then Undo.
+    const path = res.body.deletions[0]!.path;
+    expect((await ctx.request("DELETE", path)).status).toBe(200);
+    expect((await ctx.request<unknown[]>("GET", "/goals")).body).toHaveLength(0);
+    await ctx.request("POST", `${path}/restore`);
+    expect((await ctx.request<unknown[]>("GET", "/goals")).body).toHaveLength(1);
+  });
+
+  test("asks for many deletions in one call, including routes without GET /:id", async () => {
+    const { ai, ctx, say } = await setup();
+    const routines = await ctx.request<{ id: string; name: string }[]>("GET", "/routines");
+    const habit = await ctx.request<{ id: string }>("POST", "/habits", {
+      name: "Water",
+      emoji: "💧",
+      targetCount: 8,
+    });
+    ai.queueChat(
+      {
+        toolCalls: [
+          call("delete", { entity: "routine", ids: routines.body.map((r) => r.id) }),
+          call("delete", { entity: "habit", ids: [habit.body.id] }),
+        ],
+      },
+      { content: "Confirm to delete them." },
+    );
+    const res = await say("delete all my routines and the water habit");
+    expect(res.body.deletions.map((d) => d.summary).sort()).toEqual(
+      [...routines.body.map((r) => `Routine “${r.name}”`), "Habit “Water”"].sort(),
+    );
+    expect((await ctx.request<unknown[]>("GET", "/routines")).body).toHaveLength(
+      routines.body.length,
+    );
+  });
+
+  test("can't reach another user's records, even with their ids", async () => {
+    const { ai, ctx, say, lastTool } = await setup();
+    const other = await ctx.tokenFor("other-user", "other@example.com");
+    const theirs = await ctx.request<{ id: string }>(
+      "POST",
+      "/goals",
+      { name: "Their goal", targetMinor: 5_000 },
+      { authorization: `Bearer ${other}` },
+    );
+    ai.queueChat(
+      { toolCalls: [call("delete", { entity: "goal", ids: [theirs.body.id] })] },
+      { content: "I couldn't find that goal." },
+    );
+    const res = await say("delete goal");
+    expect(res.body.deletions).toHaveLength(0);
+    expect(lastTool().notFound).toEqual([theirs.body.id]);
+    expect((await ctx.request("DELETE", `/goals/${theirs.body.id}`)).status).toBe(404);
+    const still = await ctx.request<unknown[]>("GET", "/goals", undefined, {
+      authorization: `Bearer ${other}`,
+    });
+    expect(still.body).toHaveLength(1);
+  });
+
+  test("streams each step, each change and the reply text as it goes", async () => {
+    const { ai, ctx } = await setup();
+    ai.queueChat(
+      {
+        content: "Let me add that.",
+        toolCalls: [call("create", { entity: "task", fields: fields({ title: "Pay rent" }) })],
+      },
+      { content: "Added “Pay rent” to your inbox." },
+    );
+    const res = await chat(ctx, [{ role: "user", content: "add pay rent" }]);
+    const types = res.events.map((e) => e.type);
+    expect(types.indexOf("reset")).toBeLessThan(types.indexOf("status"));
+    expect(res.events.find((e) => e.type === "status")?.text).toBe("Adding task “Pay rent”");
+    expect(res.events.find((e) => e.type === "result")).toEqual({ type: "result", ok: true });
+    expect(types.indexOf("action")).toBeLessThan(types.indexOf("done"));
+    const afterReset = res.events.slice(types.indexOf("reset"));
+    const streamed = afterReset
+      .filter((e) => e.type === "delta")
+      .map((e) => e.text)
+      .join("");
+    expect(streamed).toBe(res.body.reply);
+  });
+
+  test("when out of steps, wraps up in words instead of giving up", async () => {
+    const { ai, say } = await setup();
+    const find = () =>
+      call("find", { entity: "task", query: null, status: null, from: null, to: null });
+    ai.queueChat(...Array.from({ length: 12 }, () => ({ toolCalls: [find()] })), {
+      content: "I looked through your tasks; ask me again to finish.",
+    });
+    const res = await say("do a lot");
+    expect(res.body.reply).toBe("I looked through your tasks; ask me again to finish.");
+    expect(ai.chatRequests.at(-1)!.tools).toHaveLength(0);
   });
 
   test("an unknown name goes back to the model with the real options and writes nothing", async () => {
@@ -164,6 +285,7 @@ describe("chat assistant", () => {
     );
     const res = await say("trip from the 10th to the 1st");
     expect(res.body.actions).toHaveLength(0);
+    expect(res.events.find((e) => e.type === "result")).toEqual({ type: "result", ok: false });
     expect(String(lastTool().error)).toContain("End date");
   });
 
@@ -228,13 +350,11 @@ describe("chat assistant", () => {
   test("passes earlier actions back as context and respects the feature switch", async () => {
     const { ai, ctx } = await setup();
     ai.queueChat({ content: "Moved it." });
-    await ctx.request("POST", "/ai/assistant", {
-      messages: [
-        { role: "user", content: "add call bank" },
-        { role: "assistant", content: "Added it.", memo: "create task -> id 01ABC" },
-        { role: "user", content: "move it to friday" },
-      ],
-    });
+    await chat(ctx, [
+      { role: "user", content: "add call bank" },
+      { role: "assistant", content: "Added it.", memo: "create task -> id 01ABC" },
+      { role: "user", content: "move it to friday" },
+    ]);
     const sent = ai.chatRequests.at(-1)!.messages;
     expect(sent.some((m) => m.role === "assistant" && String(m.content).includes("01ABC"))).toBe(
       true,

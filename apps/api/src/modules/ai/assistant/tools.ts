@@ -23,6 +23,19 @@ export interface Action {
   undo?: Undo;
 }
 
+/**
+ * A deletion the assistant asked for. Nothing is deleted on the server's side:
+ * the phone shows these and sends the DELETEs only when the user taps Delete.
+ */
+export interface PendingDelete {
+  summary: string;
+  /** The record's route; DELETE removes it and POST `${path}/restore` brings it back. */
+  path: string;
+}
+
+/** Most deletions one message may ask for. */
+const MAX_PENDING_DELETES = 100;
+
 export const ACTIONS = [
   "log_habit",
   "pay_bill",
@@ -88,11 +101,15 @@ export const WRITE_TOOLS: AiToolDefinition[] = [
   },
   {
     name: "delete",
-    description: "Delete one record found with find. The user can undo it.",
+    description:
+      "Ask to delete records found with find, several of one entity at a time. Nothing is deleted yet: the app shows the list and the user taps Delete to confirm.",
     parameters: {
       type: "object",
-      properties: { entity: entityParam, id: { type: "string" } },
-      required: ["entity", "id"],
+      properties: {
+        entity: entityParam,
+        ids: { type: "array", items: { type: "string" }, description: "Ids from find" },
+      },
+      required: ["entity", "ids"],
       additionalProperties: false,
     },
   },
@@ -165,6 +182,7 @@ export function createToolRunner(
   const { timeZone, now, today } = options;
   const convert = createFieldConverter(caller, timeZone, now);
   const actions: Action[] = [];
+  const pending: PendingDelete[] = [];
   const fail = (error: string | undefined) => ({ error: error ?? "That didn't work" });
 
   const dayStart = (value: unknown) =>
@@ -253,19 +271,46 @@ export function createToolRunner(
     return { ok: true, record: project(record, timeZone) };
   }
 
+  /** Checks each record exists for this user, then queues it for the user to confirm. */
   async function remove(args: Record<string, unknown>) {
     const entity = entityOf(args.entity);
     const def = ENTITIES[entity];
-    const id = String(args.id);
-    const before = def.canGet ? await caller.call("GET", `${def.path}/${id}`) : null;
-    const result = await caller.call("DELETE", `${def.path}/${id}`);
-    if (!result.ok) return fail(result.error);
-    const record = (before?.ok ? before.data : result.data) as Record<string, unknown> | null;
-    actions.push({
-      summary: `Deleted ${entity.replace("_", " ")} ${label(record, "")}`.trim(),
-      undo: { method: "POST", path: `${def.path}/${id}/restore` },
-    });
-    return { ok: true };
+    const ids = Array.isArray(args.ids)
+      ? [...new Set(args.ids.filter((id): id is string => typeof id === "string" && id !== ""))]
+      : [];
+    if (!ids.length) throw new FieldError("ids must list at least one id from find");
+    // Some routes have no GET /:id; their list holds every record the user can delete.
+    const list = def.canGet ? null : listOf((await caller.call("GET", def.path)).data);
+    const notFound: string[] = [];
+    let proposed = 0;
+    for (const id of ids) {
+      const path = `${def.path}/${id}`;
+      if (pending.some((item) => item.path === path)) continue;
+      if (pending.length >= MAX_PENDING_DELETES)
+        return { error: `At most ${MAX_PENDING_DELETES} deletions per message`, proposed };
+      const found = def.canGet
+        ? await caller.call("GET", path)
+        : {
+            ok: list?.some((item) => item.id === id) ?? false,
+            data: list?.find((item) => item.id === id),
+          };
+      if (!found.ok) {
+        notFound.push(id);
+        continue;
+      }
+      const name = entity.replace("_", " ");
+      pending.push({
+        summary:
+          `${name[0]!.toUpperCase()}${name.slice(1)} ${label(found.data as Record<string, unknown>, "")}`.trim(),
+        path,
+      });
+      proposed++;
+    }
+    return {
+      proposed,
+      ...(notFound.length ? { notFound } : {}),
+      note: "Not deleted yet. The user sees the list and confirms on screen; tell them what you are asking them to delete.",
+    };
   }
 
   async function act(args: Record<string, unknown>) {
@@ -414,6 +459,7 @@ export function createToolRunner(
 
   return {
     actions,
+    pending,
     async run(name: string, rawArgs: string): Promise<unknown> {
       try {
         const args = JSON.parse(rawArgs || "{}") as Record<string, unknown>;

@@ -9,6 +9,19 @@ export interface ChatAction {
   undone?: boolean;
 }
 
+/** One thing Tiki did while working on a message; ok is unset while it's running. */
+export interface ChatStep {
+  text: string;
+  ok?: boolean;
+}
+
+/** A record Tiki asked to delete. Nothing happens until the user taps Delete. */
+export interface ChatDeletion {
+  summary: string;
+  /** DELETE removes it; POST `${path}/restore` brings it back. */
+  path: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -16,6 +29,11 @@ export interface ChatMessage {
   /** What the assistant changed, with ids, sent back so follow-ups like "move it" work. */
   memo?: string;
   actions?: ChatAction[];
+  /** The steps Tiki took to get there, shown folded under the reply. */
+  steps?: ChatStep[];
+  /** Deletions waiting for the user's yes or no, and what they chose. */
+  deletions?: ChatDeletion[];
+  deletionChoice?: "pending" | "deleted" | "kept";
   /** The request failed; kept on screen but never sent back as context. */
   failed?: boolean;
   at: number;
@@ -55,6 +73,10 @@ export function markUndone(messageId: string, index: number) {
         : message,
     ),
   );
+}
+
+export function updateMessage(messageId: string, change: (message: ChatMessage) => ChatMessage) {
+  save(chatStore.get().map((message) => (message.id === messageId ? change(message) : message)));
 }
 
 export function clearChat() {

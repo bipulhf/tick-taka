@@ -79,3 +79,13 @@ export const kyFetch = (input: RequestInfo | URL, init?: RequestInit): Promise<R
   );
 
 export const apiUrl = (path: string): string => `${API_URL}${path}`;
+
+/** For requests that can't go through ky, such as the assistant's event stream. */
+export function authHeaders(): Record<string, string> {
+  const token = auth.token();
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
+export function reportUnauthorized(): void {
+  auth.onUnauthorized();
+}

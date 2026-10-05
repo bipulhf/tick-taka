@@ -82,36 +82,81 @@ export function createOpenAiClient(env: Env): AiClient | null {
     },
 
     async chat(request) {
-      const completion = await openai.chat.completions.create({
+      const params = {
         model: modelName(request.model),
         messages: request.messages.map(toOpenAi),
         // Function tools on Chat Completions require reasoning to be off for newer models.
-        reasoning_effort: "none",
-        tools: request.tools.map((tool) => ({
-          type: "function" as const,
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.parameters,
-            strict: true,
+        reasoning_effort: "none" as const,
+        ...(request.tools.length
+          ? {
+              tools: request.tools.map((tool) => ({
+                type: "function" as const,
+                function: {
+                  name: tool.name,
+                  description: tool.description,
+                  parameters: tool.parameters,
+                  strict: true,
+                },
+              })),
+            }
+          : {}),
+      };
+      if (!request.onText) {
+        const completion = await openai.chat.completions.create(params);
+        const message = completion.choices[0]?.message;
+        return {
+          content: message?.content ?? null,
+          toolCalls: (message?.tool_calls ?? [])
+            .filter((call) => call.type === "function")
+            .map((call) => ({
+              id: call.id,
+              name: call.function.name,
+              arguments: call.function.arguments,
+            })),
+          model: completion.model,
+          usage: {
+            inputTokens: completion.usage?.prompt_tokens ?? 0,
+            outputTokens: completion.usage?.completion_tokens ?? 0,
           },
-        })),
+        };
+      }
+
+      const stream = await openai.chat.completions.create({
+        ...params,
+        stream: true,
+        stream_options: { include_usage: true },
       });
-      const message = completion.choices[0]?.message;
+      let content = "";
+      let model = params.model;
+      let usage = { inputTokens: 0, outputTokens: 0 };
+      // Tool calls arrive in pieces, keyed by their position in the reply.
+      const calls: { id: string; name: string; arguments: string }[] = [];
+      for await (const chunk of stream) {
+        model = chunk.model || model;
+        if (chunk.usage) {
+          usage = {
+            inputTokens: chunk.usage.prompt_tokens ?? 0,
+            outputTokens: chunk.usage.completion_tokens ?? 0,
+          };
+        }
+        const delta = chunk.choices[0]?.delta;
+        if (delta?.content) {
+          content += delta.content;
+          request.onText(delta.content);
+        }
+        for (const part of delta?.tool_calls ?? []) {
+          calls[part.index] ??= { id: "", name: "", arguments: "" };
+          const call = calls[part.index]!;
+          if (part.id) call.id = part.id;
+          if (part.function?.name) call.name += part.function.name;
+          if (part.function?.arguments) call.arguments += part.function.arguments;
+        }
+      }
       return {
-        content: message?.content ?? null,
-        toolCalls: (message?.tool_calls ?? [])
-          .filter((call) => call.type === "function")
-          .map((call) => ({
-            id: call.id,
-            name: call.function.name,
-            arguments: call.function.arguments,
-          })),
-        model: completion.model,
-        usage: {
-          inputTokens: completion.usage?.prompt_tokens ?? 0,
-          outputTokens: completion.usage?.completion_tokens ?? 0,
-        },
+        content: content || null,
+        toolCalls: calls.filter((call) => call.name),
+        model,
+        usage,
       };
     },
 

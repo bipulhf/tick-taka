@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { useKeyboardHeight } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
 import { ChatComposer } from "./chat-composer";
-import { MessageBubble } from "./message-bubble";
+import { LiveBubble, MessageBubble } from "./message-bubble";
 import { useAssistant } from "./use-assistant";
 
 const SUGGESTIONS = [
@@ -23,7 +23,7 @@ export function AssistantSheet() {
   const insets = useSafeAreaInsets();
   const keyboard = useKeyboardHeight();
   const scroll = useRef<ScrollView>(null);
-  const { messages, ask, undo, clear, thinking } = useAssistant();
+  const { messages, live, ask, undo, confirmDeletions, keepAll, clear, thinking } = useAssistant();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingBottom: keyboard }}>
@@ -40,7 +40,7 @@ export function AssistantSheet() {
             Type or talk, in Bangla or English
           </Text>
         </View>
-        {messages.length ? (
+        {messages.length && !thinking ? (
           <Pressable
             onPress={clear}
             accessibilityRole="button"
@@ -76,13 +76,11 @@ export function AssistantSheet() {
             key={message.id}
             message={message}
             onUndo={(index) => undo(message.id, index)}
+            onConfirmDeletions={() => confirmDeletions(message.id)}
+            onKeep={() => keepAll(message.id)}
           />
         ))}
-        {thinking ? (
-          <View className="self-start rounded-3xl rounded-bl-lg bg-card px-4 py-3">
-            <Text tone="muted">Thinking…</Text>
-          </View>
-        ) : null}
+        {live ? <LiveBubble turn={live} /> : null}
       </ScrollView>
       <View
         className="border-t border-line px-4 pt-3"

@@ -45,3 +45,9 @@ export const useSubscriptions = () =>
 
 export const useGamification = () =>
   useQuery({ queryKey: ["gamification"], queryFn: () => unwrap(api.gamification.$get()) });
+
+export const useAiUsage = (month?: string) =>
+  useQuery({
+    queryKey: ["ai-usage", month ?? "current"],
+    queryFn: () => unwrap(api.ai.usage.$get({ query: month ? { month } : {} })),
+  });

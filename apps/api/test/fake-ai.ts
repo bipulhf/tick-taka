@@ -35,8 +35,11 @@ export class FakeAi implements AiClient {
   }
 
   async chat(request: Parameters<AiClient["chat"]>[0]): Promise<AiChatResult> {
-    this.chatRequests.push(structuredClone(request));
+    const { onText, ...recorded } = request;
+    this.chatRequests.push(structuredClone(recorded));
     const next = this.chatQueue.shift() ?? { content: "done" };
+    // Streams the reply word by word, like the real client.
+    if (onText && next.content) for (const word of next.content.split(/(?<= )/)) onText(word);
     return {
       content: null,
       toolCalls: [],

@@ -10,19 +10,27 @@ import {
   aiWeeklyReviewRequestSchema,
   assistantRequestSchema,
 } from "@tick-taka/shared/schemas/ai";
+import { localMonthSchema } from "@tick-taka/shared/schemas/common";
 import { isAiFeatureEnabled } from "@tick-taka/shared/schemas/settings";
 import { Hono } from "hono";
-import { monthlyCapMicros, monthSpendMicros } from "../../ai/usage";
+import { streamSSE } from "hono/streaming";
+import { z } from "zod";
+import { monthlyCapMicros, monthSpendMicros, requireAi } from "../../ai/usage";
 import type { Deps } from "../../lib/deps";
+import { AppError } from "../../lib/errors";
 import { userTime } from "../../lib/user-time";
 import { validate } from "../../lib/validate";
 import { aiAsk } from "./ask";
-import { aiAssistant } from "./assistant/agent";
+import { type AssistantEvent, aiAssistant } from "./assistant/agent";
 import type { Dispatch } from "./assistant/dispatch";
 import { aiBudgetSuggestions, aiWeeklyCoach } from "./coach";
 import { aiCategorize, aiParse, aiReceipt } from "./parse";
 import { aiBreakdown, aiPlanDay } from "./planning";
+import { aiUsageReport } from "./usage-report";
 import { aiTranscribe } from "./voice";
+
+/** Proxies drop a connection that stays quiet too long while the model thinks. */
+const KEEPALIVE_MS = 15_000;
 
 /**
  * /ai/* routes return drafts or text and never write a record, except the chat
@@ -55,6 +63,9 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
         },
       });
     })
+    .get("/usage", validate("query", z.object({ month: localMonthSchema.optional() })), (c) =>
+      c.json(aiUsageReport(deps, c.req.valid("query").month)),
+    )
     .post("/parse", validate("json", aiParseRequestSchema), async (c) =>
       c.json(await aiParse(deps, c.req.valid("json"))),
     )
@@ -76,16 +87,43 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
     .post("/ask", validate("json", aiAskRequestSchema), async (c) =>
       c.json(await aiAsk(deps, c.req.valid("json").question)),
     )
-    .post("/assistant", validate("json", assistantRequestSchema), async (c) =>
-      c.json(
-        await aiAssistant(
-          deps,
-          dispatch,
-          c.req.header("authorization") ?? "",
-          c.req.valid("json").messages,
-        ),
-      ),
-    )
+    /**
+     * Server-sent events, in order: status (a step), delta (reply text), reset,
+     * action (a change made), then done with the whole answer, or error.
+     */
+    .post("/assistant", validate("json", assistantRequestSchema), (c) => {
+      // Off switch, missing key and cap answer as plain JSON errors, before streaming.
+      const ai = requireAi(deps, "assistant");
+      const authorization = c.req.header("authorization") ?? "";
+      const { messages } = c.req.valid("json");
+      c.header("cache-control", "no-cache");
+      c.header("x-accel-buffering", "no");
+      return streamSSE(c, async (stream) => {
+        let queue = Promise.resolve();
+        const emit = (event: AssistantEvent | { type: "error"; code: string; message: string }) => {
+          queue = queue.then(() =>
+            stream.writeSSE({ event: event.type, data: JSON.stringify(event) }),
+          );
+        };
+        const keepalive = setInterval(() => {
+          queue = queue.then(() => stream.write(": keepalive\n\n").then(() => {}));
+        }, KEEPALIVE_MS);
+        try {
+          await aiAssistant(deps, ai, dispatch, authorization, messages, emit);
+        } catch (error) {
+          const known = error instanceof AppError;
+          if (!known) console.error("[ai] assistant failed", error);
+          emit({
+            type: "error",
+            code: known ? error.code : "ai_error",
+            message: known ? error.message : "Something went wrong. Try again.",
+          });
+        } finally {
+          clearInterval(keepalive);
+          await queue;
+        }
+      });
+    })
     .post("/transcribe", validate("json", aiTranscribeRequestSchema), async (c) =>
       c.json(await aiTranscribe(deps, c.req.valid("json"))),
     )

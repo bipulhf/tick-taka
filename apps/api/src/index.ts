@@ -23,4 +23,6 @@ Bun.serve({
   port: env.PORT,
   hostname: env.HOST,
   fetch: app.fetch,
+  // Bun closes a connection after 10 quiet seconds by default; AI calls can take longer.
+  idleTimeout: 120,
 });

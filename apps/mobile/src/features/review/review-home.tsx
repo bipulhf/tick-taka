@@ -55,6 +55,13 @@ const ENTRIES: Entry[] = [
     ai: true,
   },
   {
+    href: "/review/ai-usage",
+    title: "AI cost",
+    hint: "What AI cost this month, day by day",
+    icon: "currency-usd",
+    ai: true,
+  },
+  {
     href: "/settings",
     title: "Settings",
     hint: "Views, goals, AI, sounds, export",

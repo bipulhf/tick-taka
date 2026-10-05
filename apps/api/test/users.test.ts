@@ -174,6 +174,40 @@ describe("AI budget", () => {
     expect(mine.body.capReached).toBe(true);
     expect(theirs.body).toMatchObject({ capReached: false, monthSpendMicros: 0 });
   });
+
+  test("the usage report splits a user's own cost by day and feature; only the owner sees everyone", async () => {
+    const ai = new FakeAi();
+    const ctx = await createTestContext({ ai, env: { OWNER_EMAIL: "test@example.com" } });
+    const other = await ctx.tokenFor("sub-other", "other@example.com");
+    ai.queueJson({ subtasks: [] }, { subtasks: [] });
+    await ctx.request("POST", "/ai/breakdown", { title: "x" });
+    await ctx.request("POST", "/ai/breakdown", { title: "y" }, as(other));
+
+    type Report = {
+      month: string;
+      calls: number;
+      costMicros: number;
+      byDay: { date: string; calls: number }[];
+      byFeature: { feature: string; calls: number; inputTokens: number }[];
+      users: { email: string; me: boolean; calls: number }[] | null;
+    };
+    const mine = await ctx.request<Report>("GET", "/ai/usage");
+    expect(mine.body).toMatchObject({ month: "2026-10", calls: 1 });
+    expect(mine.body.costMicros).toBeGreaterThan(0);
+    expect(mine.body.byDay).toEqual([expect.objectContaining({ date: "2026-10-04", calls: 1 })]);
+    expect(mine.body.byFeature).toEqual([
+      expect.objectContaining({ feature: "breakdown", calls: 1, inputTokens: 1000 }),
+    ]);
+    expect(mine.body.users?.map((u) => [u.email, u.me, u.calls])).toEqual([
+      ["test@example.com", true, 1],
+      ["other@example.com", false, 1],
+    ]);
+
+    const theirs = await ctx.request<Report>("GET", "/ai/usage", undefined, as(other));
+    expect(theirs.body.users).toBeNull();
+    const before = await ctx.request<Report>("GET", "/ai/usage?month=2026-09");
+    expect(before.body).toMatchObject({ month: "2026-09", calls: 0, byDay: [] });
+  });
 });
 
 describe("nightly jobs", () => {

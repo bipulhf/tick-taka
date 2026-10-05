@@ -1,0 +1,78 @@
+import { fetch } from "expo/fetch";
+import { ApiError } from "./api";
+import { apiUrl, authHeaders, reportUnauthorized, ServerUnreachableError } from "./http";
+import { noteServerTime } from "./server-clock";
+
+const TIMEOUT_MS = 180_000;
+
+/**
+ * POSTs JSON and reads the server-sent events in the reply as they arrive, calling
+ * `onEvent` with each event's JSON. React Native's own fetch can't stream, so this
+ * uses Expo's. Errors before the stream starts come back as ApiError, like `unwrap`.
+ */
+export async function postEventStream(
+  path: string,
+  body: unknown,
+  onEvent: (data: unknown) => void,
+): Promise<void> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const sentAt = Date.now();
+    let response: Awaited<ReturnType<typeof fetch>>;
+    try {
+      response = await fetch(apiUrl(path), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          accept: "text/event-stream",
+          ...authHeaders(),
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch {
+      throw new ServerUnreachableError();
+    }
+    noteServerTime(Number(response.headers.get("x-server-time")), sentAt, Date.now());
+    if (!response.ok || !response.body) {
+      if (response.status === 401) reportUnauthorized();
+      const error = (await response.json().catch(() => null)) as {
+        error?: { code: string; message: string };
+      } | null;
+      throw new ApiError(
+        response.status,
+        error?.error?.code ?? "http_error",
+        error?.error?.message ?? `Request failed (${response.status})`,
+      );
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      let chunk: Awaited<ReturnType<typeof reader.read>>;
+      try {
+        chunk = await reader.read();
+      } catch {
+        throw new ServerUnreachableError();
+      }
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true }).replaceAll("\r\n", "\n");
+      // Events end with a blank line; keep a partial one for the next chunk.
+      let end = buffer.indexOf("\n\n");
+      while (end !== -1) {
+        const data = buffer
+          .slice(0, end)
+          .split("\n")
+          .filter((line) => line.startsWith("data:"))
+          .map((line) => line.slice(5).trimStart())
+          .join("\n");
+        buffer = buffer.slice(end + 2);
+        if (data) onEvent(JSON.parse(data));
+        end = buffer.indexOf("\n\n");
+      }
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}

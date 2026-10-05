@@ -8,7 +8,7 @@ export function TodaySkeleton() {
       <View className="gap-4">
         <View className="flex-row items-center justify-between">
           <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-7 w-7" />
         </View>
         <View className="flex-row items-center gap-4">
           <View className="flex-1 gap-3">

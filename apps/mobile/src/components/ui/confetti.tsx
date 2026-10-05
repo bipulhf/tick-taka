@@ -12,7 +12,7 @@ import { haptic } from "@/lib/haptics";
 import { playSound } from "@/lib/sounds";
 import { createStore, useStore } from "@/lib/store";
 
-/** Big wins only: all top three done, a routine finished, a savings goal reached, a new level. */
+/** Big wins only: all top three done, a routine finished, a savings goal reached. */
 export const confettiStore = createStore(0);
 export const celebrate = () => {
   confettiStore.set(confettiStore.get() + 1);

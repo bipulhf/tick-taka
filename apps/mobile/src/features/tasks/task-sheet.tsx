@@ -457,7 +457,7 @@ export function TaskSheet({ id }: { id: string | null }) {
             <View key={sub.id} className="flex-row items-center">
               <Checkbox
                 checked={sub.status === "done"}
-                onChange={() => actions.toggleDone(sub, today)}
+                onChange={() => actions.toggleDone(sub)}
                 label={sub.title}
               />
               <Text className={`flex-1 ${sub.status === "done" ? "text-muted line-through" : ""}`}>

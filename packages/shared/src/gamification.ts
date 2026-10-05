@@ -1,70 +1,11 @@
 /**
- * Light gamification: sparks, levels and streaks with freeze days. Rewards are
- * cosmetic only; a missed day costs a freeze, never a penalty.
+ * Streaks with freeze days for habits, the daily task goal and logging: a missed
+ * day costs a freeze, never a penalty.
  */
 
 import { addDays, type LocalDate, monthOf, startOfWeek } from "./dates";
 
-export const SPARKS = {
-  taskDone: 10,
-  topThreeTaskDone: 15,
-  focusSession: 15,
-  expenseLoggedSameDay: 5,
-  habitChecked: 5,
-} as const;
-
 export const FREEZES_PER_MONTH = 2;
-
-/** Total sparks needed to reach `level` (level 1 needs 0). */
-export function sparksForLevel(level: number): number {
-  return 50 * level * (level - 1);
-}
-
-export interface LevelProgress {
-  level: number;
-  sparks: number;
-  currentLevelSparks: number;
-  nextLevelSparks: number;
-  /** 0–1 progress towards the next level */
-  progress: number;
-}
-
-export function levelFromSparks(sparks: number): LevelProgress {
-  let level = 1;
-  while (sparksForLevel(level + 1) <= sparks) level++;
-  const currentLevelSparks = sparksForLevel(level);
-  const nextLevelSparks = sparksForLevel(level + 1);
-  return {
-    level,
-    sparks,
-    currentLevelSparks,
-    nextLevelSparks,
-    progress: (sparks - currentLevelSparks) / (nextLevelSparks - currentLevelSparks),
-  };
-}
-
-export type RewardKind = "theme" | "outfit" | "icon";
-
-export interface Reward {
-  level: number;
-  kind: RewardKind;
-  id: string;
-  name: string;
-}
-
-export const REWARDS: Reward[] = [
-  { level: 2, kind: "outfit", id: "cap", name: "Tiki's cap" },
-  { level: 3, kind: "theme", id: "mint-breeze", name: "Mint breeze theme" },
-  { level: 4, kind: "icon", id: "night", name: "Night app icon" },
-  { level: 5, kind: "outfit", id: "scarf", name: "Cosy scarf" },
-  { level: 6, kind: "theme", id: "grape-dusk", name: "Grape dusk theme" },
-  { level: 8, kind: "outfit", id: "crown", name: "Tiny crown" },
-  { level: 10, kind: "icon", id: "gold", name: "Gold coin icon" },
-];
-
-export function unlockedRewards(level: number): Reward[] {
-  return REWARDS.filter((reward) => reward.level <= level);
-}
 
 export type StreakSchedule = "daily" | "weekly" | "n_per_week";
 

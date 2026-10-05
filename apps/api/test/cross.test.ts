@@ -3,13 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  DAY_MS,
-  HOUR_MS,
-  MINUTE_MS,
-  startOfLocalDay,
-  zonedTimeToUtc,
-} from "@tick-taka/shared/dates";
+import { DAY_MS, HOUR_MS, startOfLocalDay, zonedTimeToUtc } from "@tick-taka/shared/dates";
 import { runBackup } from "../src/jobs/backup";
 import { createTestContext, DEFAULT_NOW } from "./helpers";
 import { type Row, setupMoney } from "./money-helpers";
@@ -282,37 +276,27 @@ describe("reviews", () => {
   });
 });
 
-describe("gamification", () => {
-  test("sparks from tasks, focus, same-day expenses and habits", async () => {
+describe("progress", () => {
+  test("daily goal and same-day logging streak", async () => {
     const ctx = await createTestContext();
     const { cash } = await setupMoney(ctx);
-    const top = await ctx.request<Row>("POST", "/tasks", { title: "A", top3Date: "2026-10-04" });
-    await ctx.request("PATCH", `/tasks/${top.body.id}`, { status: "done" });
-    const plain = await ctx.request<Row>("POST", "/tasks", { title: "B" });
-    await ctx.request("PATCH", `/tasks/${plain.body.id}`, { status: "done" });
-    await ctx.request("POST", "/time-entries", {
-      source: "focus",
-      startedAt: DEFAULT_NOW - 25 * MINUTE_MS,
-      endedAt: DEFAULT_NOW,
-    });
+    for (const title of ["A", "B"]) {
+      const task = await ctx.request<Row>("POST", "/tasks", { title });
+      await ctx.request("PATCH", `/tasks/${task.body.id}`, { status: "done" });
+    }
     await ctx.request("POST", "/transactions", {
       type: "expense",
       accountId: cash.id,
       amountMinor: 100,
       occurredAt: DEFAULT_NOW,
     });
-    const habit = await ctx.request<Row>("POST", "/habits", { name: "H", emoji: "h" });
-    await ctx.request("PUT", `/habits/${habit.body.id}/logs/2026-10-04`, { count: 1 });
-    const res = await ctx.request<{
-      sparks: number;
-      level: { level: number };
-      dailyGoal: { doneToday: number };
-      loggingStreak: { current: number };
-    }>("GET", "/gamification");
-    expect(res.body.sparks).toBe(15 + 10 + 15 + 5 + 5);
-    expect(res.body.level.level).toBe(1);
-    expect(res.body.dailyGoal.doneToday).toBe(2);
-    expect(res.body.loggingStreak.current).toBe(1);
+    const res = await ctx.request<Record<string, unknown>>("GET", "/gamification");
+    expect(res.body).toMatchObject({
+      dailyGoal: { doneToday: 2 },
+      loggingStreak: { current: 1 },
+    });
+    expect(res.body).not.toHaveProperty("sparks");
+    expect(res.body).not.toHaveProperty("level");
   });
 });
 

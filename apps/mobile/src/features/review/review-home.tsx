@@ -1,15 +1,13 @@
 import { toLocalDate, weekdayOf } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
-import { View } from "react-native";
-import { Card } from "@/components/ui/card";
 import { Group } from "@/components/ui/group";
 import type { IconName } from "@/components/ui/icon";
 import { ListRow } from "@/components/ui/list-row";
-import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
+import { Section } from "@/components/ui/section";
 import { ShortcutRow } from "@/components/ui/shortcut-row";
 import { SkeletonCard } from "@/components/ui/skeleton";
-import { Text } from "@/components/ui/text";
+import { plural } from "@/lib/format";
 import { useAiStatus } from "@/lib/queries";
 import type { ColorName } from "@/theme/colors";
 import { useGamification } from "./queries";
@@ -69,7 +67,7 @@ export function ReviewHome() {
   const game = useGamification();
   const ai = useAiStatus();
   const sunday = weekdayOf(toLocalDate(Date.now())) === 0;
-  const level = game.data?.level;
+  const progress = game.data;
   const entries = ENTRIES.filter((e) => !e.ai || ai.data?.configured);
   const settings = entries.filter((e) => e.href === "/settings");
   return (
@@ -82,20 +80,25 @@ export function ReviewHome() {
           onPress: () => router.push(ritual.href as never),
         }))}
       />
-      {level ? (
-        <Card onPress={() => router.push("/review/rewards")} className="gap-3">
-          <View className="flex-row items-center justify-between">
-            <Text variant="title">Level {level.level}</Text>
-            <Text variant="callout" tone="muted" numeric>
-              ✨ {game.data?.sparks} sparks
-            </Text>
-          </View>
-          <ProgressBar value={level.progress} tone="mango" />
-          <Text variant="callout" tone="muted">
-            {level.nextLevelSparks - level.sparks} to level {level.level + 1} ·{" "}
-            {game.data?.rewards.length} rewards unlocked
-          </Text>
-        </Card>
+      {progress ? (
+        <Section title="Streaks">
+          <Group inset={60}>
+            {progress.dailyGoal.goal > 0 ? (
+              <ListRow
+                icon="fire"
+                iconColor="mango"
+                title={`Daily goal: ${plural(progress.dailyGoal.streak.current, "day")}`}
+                subtitle={`${progress.dailyGoal.goal} tasks a day · best ${plural(progress.dailyGoal.streak.best, "day")}`}
+              />
+            ) : null}
+            <ListRow
+              icon="notebook-check-outline"
+              iconColor="mint"
+              title={`Logging: ${plural(progress.loggingStreak.current, "day")}`}
+              subtitle="Spending logged on the day it happened"
+            />
+          </Group>
+        </Section>
       ) : game.isPending ? (
         <SkeletonCard lines={1} />
       ) : null}

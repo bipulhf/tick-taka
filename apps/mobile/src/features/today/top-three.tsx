@@ -33,7 +33,7 @@ export function TopThree({ data }: { data: TodayData }) {
       ) : (
         <Group inset={TASK_ROW_INSET}>
           {data.topThree.map((task) => (
-            <TaskRow key={task.id} task={task} today={data.date} size="lg" />
+            <TaskRow key={task.id} task={task} size="lg" />
           ))}
         </Group>
       )}

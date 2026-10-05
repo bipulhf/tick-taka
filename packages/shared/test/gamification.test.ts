@@ -1,22 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { addDays, eachDay } from "../src/dates";
-import {
-  computeStreak,
-  levelFromSparks,
-  sparksForLevel,
-  unlockedRewards,
-} from "../src/gamification";
-
-describe("levels", () => {
-  test("thresholds grow", () => {
-    expect(sparksForLevel(1)).toBe(0);
-    expect(sparksForLevel(2)).toBe(100);
-    expect(levelFromSparks(99).level).toBe(1);
-    expect(levelFromSparks(100).level).toBe(2);
-    expect(levelFromSparks(350)).toMatchObject({ level: 3, progress: 50 / 300 });
-    expect(unlockedRewards(3).map((r) => r.id)).toEqual(["cap", "mint-breeze"]);
-  });
-});
+import { computeStreak } from "../src/gamification";
 
 describe("streaks", () => {
   const today = "2026-10-20";

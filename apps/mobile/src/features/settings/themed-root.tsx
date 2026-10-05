@@ -14,7 +14,7 @@ export async function loadThemeChoice() {
   if (saved) colorScheme.set(saved);
 }
 
-/** Pins the colour scheme from settings and applies any unlocked reward theme. */
+/** Pins the colour scheme from settings and applies the chosen accent theme. */
 export function ThemedRoot({ children }: { children: ReactNode }) {
   const { data: settings } = useSettings();
   const choice = settings?.theme;

@@ -1,4 +1,3 @@
-import { toLocalDate } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -26,7 +25,6 @@ export function AreaDetail({ areaId }: { areaId: string }) {
   const projects = useProjects(areaId);
   const tasks = useTasks({ areaId, status: "inbox,open" });
   const [name, setName] = useState("");
-  const today = toLocalDate(Date.now());
   const projectList = projects.data ?? [];
   const loose = (tasks.data ?? []).filter((t) => !t.projectId);
 
@@ -96,7 +94,7 @@ export function AreaDetail({ areaId }: { areaId: string }) {
                       ) : (
                         <Group inset={TASK_ROW_INSET}>
                           {projectTasks.map((task) => (
-                            <TaskRow key={task.id} task={task} today={today} showWhen />
+                            <TaskRow key={task.id} task={task} showWhen />
                           ))}
                         </Group>
                       )}
@@ -107,7 +105,7 @@ export function AreaDetail({ areaId }: { areaId: string }) {
                   <Section title="No project">
                     <Group inset={TASK_ROW_INSET}>
                       {loose.map((task) => (
-                        <TaskRow key={task.id} task={task} today={today} showWhen />
+                        <TaskRow key={task.id} task={task} showWhen />
                       ))}
                     </Group>
                   </Section>

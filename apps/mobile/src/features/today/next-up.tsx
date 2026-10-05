@@ -100,7 +100,6 @@ export function NextUp({
                 <TaskRow
                   key={item.task.id}
                   task={item.task}
-                  today={data.date}
                   showWhen
                   areaEmoji={areaEmoji(item.task.areaId)}
                 />

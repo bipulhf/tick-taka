@@ -10,7 +10,6 @@ import { useTaskActions } from "./use-task-actions";
 
 export interface TaskRowProps {
   task: Task;
-  today: string;
   size?: "md" | "lg";
   showWhen?: boolean;
   areaEmoji?: string;
@@ -21,7 +20,7 @@ const DEADLINE_WARN_MS = 3 * 86_400_000;
 /** Separator inset that lines up with the task title, past the checkbox. */
 export const TASK_ROW_INSET = 46;
 
-export function TaskRow({ task, today, size = "md", showWhen = false, areaEmoji }: TaskRowProps) {
+export function TaskRow({ task, size = "md", showWhen = false, areaEmoji }: TaskRowProps) {
   const router = useRouter();
   const actions = useTaskActions();
   const done = task.status === "done";
@@ -38,7 +37,7 @@ export function TaskRow({ task, today, size = "md", showWhen = false, areaEmoji 
       right={{
         icon: done ? "undo" : "check-bold",
         className: "bg-mint",
-        onTrigger: () => actions.toggleDone(task, today),
+        onTrigger: () => actions.toggleDone(task),
       }}
       left={{ icon: "clock-fast", className: "bg-sky", onTrigger: () => actions.snooze(task) }}
     >
@@ -50,7 +49,7 @@ export function TaskRow({ task, today, size = "md", showWhen = false, areaEmoji 
       >
         <Checkbox
           checked={done}
-          onChange={() => actions.toggleDone(task, today)}
+          onChange={() => actions.toggleDone(task)}
           size={size}
           label={task.title}
         />

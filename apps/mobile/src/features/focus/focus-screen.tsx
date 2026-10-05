@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { SPARKS } from "@tick-taka/shared/gamification";
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -17,7 +16,6 @@ import { cancelFocusEnd, scheduleFocusEnd } from "@/lib/notifications";
 import { useOutbox } from "@/lib/outbox";
 import { useSettings } from "@/lib/queries";
 import { playSound } from "@/lib/sounds";
-import { awardSparks } from "@/lib/sparks";
 import { useStore } from "@/lib/store";
 import { focusStore, REVIVE_WINDOW_MS, setFocusSession } from "./focus-session";
 import { Plant } from "./plant";
@@ -67,7 +65,6 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
       body: { endedAt },
       label: "Couldn't stop the timer",
     });
-    awardSparks(SPARKS.focusSession);
     haptic.success();
     playSound("focus");
     const current = focusStore.get();

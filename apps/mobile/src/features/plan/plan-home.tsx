@@ -96,7 +96,7 @@ export function PlanHome() {
           {() => (
             <Group inset={TASK_ROW_INSET}>
               {inboxTasks.map((task) => (
-                <TaskRow key={task.id} task={task} today={today} areaEmoji={emoji(task.areaId)} />
+                <TaskRow key={task.id} task={task} areaEmoji={emoji(task.areaId)} />
               ))}
             </Group>
           )}
@@ -121,12 +121,7 @@ export function PlanHome() {
               <Section key={day} title={formatLocalDate(day, "long")}>
                 <Group inset={TASK_ROW_INSET}>
                   {tasks.map((task) => (
-                    <TaskRow
-                      key={task.id}
-                      task={task}
-                      today={today}
-                      areaEmoji={emoji(task.areaId)}
-                    />
+                    <TaskRow key={task.id} task={task} areaEmoji={emoji(task.areaId)} />
                   ))}
                 </Group>
               </Section>

@@ -188,7 +188,7 @@ export function CalendarView() {
             ))}
             <Group inset={TASK_ROW_INSET}>
               {dayTasks.map((task) => (
-                <TaskRow key={task.id} task={task} today={today} />
+                <TaskRow key={task.id} task={task} />
               ))}
             </Group>
           </>

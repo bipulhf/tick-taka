@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { SPARKS } from "@tick-taka/shared/gamification";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
@@ -10,7 +9,6 @@ import { haptic } from "@/lib/haptics";
 import { useOutbox } from "@/lib/outbox";
 import type { TodayData } from "@/lib/queries";
 import { playSound } from "@/lib/sounds";
-import { awardSparks } from "@/lib/sparks";
 import { updateToday } from "@/lib/today-cache";
 
 type Habit = TodayData["habits"][number];
@@ -97,7 +95,6 @@ export function HabitChips({ data }: { data: TodayData }) {
       label: `Couldn't update ${habit.name}`,
     });
     if (done && !habit.doneToday) {
-      awardSparks(SPARKS.habitChecked);
       haptic.success();
       playSound("done");
     } else haptic.tap();

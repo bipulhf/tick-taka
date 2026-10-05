@@ -1,10 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { SPARKS } from "@tick-taka/shared/gamification";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import type { TaskRow } from "@/lib/queries";
 import { playSound } from "@/lib/sounds";
-import { awardSparks } from "@/lib/sparks";
 import { patchTaskEverywhere, updateToday } from "@/lib/today-cache";
 
 type TaskLike = Pick<TaskRow, "id" | "title" | "status" | "top3Date" | "doAt"> & {
@@ -27,18 +25,15 @@ export function useTaskActions() {
   };
 
   return {
-    toggleDone(task: TaskLike, today: string) {
+    toggleDone(task: TaskLike) {
       const done = task.status !== "done";
       patch(
         task,
         { status: done ? "done" : "open", doneAt: done ? Date.now() : null },
         "Couldn't update the task",
       );
-      if (done) {
-        awardSparks(task.top3Date === today ? SPARKS.topThreeTaskDone : SPARKS.taskDone);
-        // A subtask is a small step; finishing a task gets the full chime.
-        playSound(task.parentId ? "pop" : "done");
-      }
+      // A subtask is a small step; finishing a task gets the full chime.
+      if (done) playSound(task.parentId ? "pop" : "done");
     },
     snooze(task: TaskLike) {
       const doAt = (task.doAt ?? Date.now()) + 86_400_000;

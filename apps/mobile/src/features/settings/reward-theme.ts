@@ -1,6 +1,6 @@
 import { vars } from "nativewind";
 
-/** Cosmetic themes unlocked by levels: they only tint the surfaces. */
+/** Accent themes picked in Settings: they only tint the surfaces. */
 export const REWARD_THEMES = {
   "mint-breeze": {
     light: vars({ "--background": "236 250 245", "--line": "214 238 229" }),

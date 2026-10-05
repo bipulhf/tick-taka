@@ -31,6 +31,17 @@ const AI_LABELS = {
   budgetSuggestions: "Budget suggestions",
 } as const;
 const CAPS = [500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];
+const ACCENTS = [
+  { id: null, label: "Classic" },
+  { id: "mint-breeze", label: "Mint breeze" },
+  { id: "grape-dusk", label: "Grape dusk" },
+];
+const OUTFITS = [
+  { id: null, label: "None" },
+  { id: "cap", label: "🧢 Cap" },
+  { id: "scarf", label: "🧣 Scarf" },
+  { id: "crown", label: "👑 Crown" },
+];
 
 export function SettingsScreen() {
   const router = useRouter();
@@ -76,6 +87,28 @@ export function SettingsScreen() {
             { value: "dark", label: "Dark" },
           ]}
         />
+        <Card className="gap-1">
+          <ChoiceRow label="Accent">
+            {ACCENTS.map((accent) => (
+              <Chip
+                key={accent.label}
+                label={accent.label}
+                selected={(s.rewardTheme ?? null) === accent.id}
+                onPress={() => update({ rewardTheme: accent.id })}
+              />
+            ))}
+          </ChoiceRow>
+          <ChoiceRow label="Tiki's outfit">
+            {OUTFITS.map((outfit) => (
+              <Chip
+                key={outfit.label}
+                label={outfit.label}
+                selected={(s.tikiOutfit ?? null) === outfit.id}
+                onPress={() => update({ tikiOutfit: outfit.id })}
+              />
+            ))}
+          </ChoiceRow>
+        </Card>
       </Section>
       <Section title="Today">
         <Card className="gap-1">

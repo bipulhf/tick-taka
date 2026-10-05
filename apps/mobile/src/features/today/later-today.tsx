@@ -91,9 +91,7 @@ export function LaterToday({ data }: { data: TodayData }) {
       />
     ) : null,
     ...(eveningOpen
-      ? data.evening.map((task) => (
-          <TaskRow key={`evening-${task.id}`} task={task} today={data.date} />
-        ))
+      ? data.evening.map((task) => <TaskRow key={`evening-${task.id}`} task={task} />)
       : []),
     nextBill ? (
       <ListRow

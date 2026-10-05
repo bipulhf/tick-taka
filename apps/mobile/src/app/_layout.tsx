@@ -122,7 +122,11 @@ export default function RootLayout() {
                   <Stack.Screen name="transaction/[id]" options={sheet} />
                   <Stack.Screen name="account/[id]" options={sheet} />
                   <Stack.Screen name="goal/[id]" options={sheet} />
-                  <Stack.Screen name="debt/new" options={sheet} />
+                  <Stack.Screen name="debt/[id]" options={sheet} />
+                  <Stack.Screen name="project/[id]" options={sheet} />
+                  <Stack.Screen name="category/[id]" options={sheet} />
+                  <Stack.Screen name="event/[id]" options={sheet} />
+                  <Stack.Screen name="shopping-item/[id]" options={sheet} />
                   <Stack.Screen name="budget-edit" options={sheet} />
                   <Stack.Screen name="money/recurring/[id]" options={sheet} />
                   <Stack.Screen

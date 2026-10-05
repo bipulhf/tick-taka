@@ -1,5 +1,6 @@
 import { newId } from "@tick-taka/shared/ids";
 import { formatAmount, parseAmountToMinor } from "@tick-taka/shared/money";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
@@ -12,16 +13,20 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonList } from "@/components/ui/skeleton";
+import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAccounts, useCategories } from "@/lib/queries";
+import { useRemove } from "@/lib/use-remove";
 import { useShopping, useShoppingLists } from "./queries";
 
 /** Priced shopping list: tick items at checkout and the list becomes one expense. */
 export function ShoppingScreen() {
+  const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
   const lists = useShoppingLists();
   const [listName, setListName] = useState("Bazar");
   const items = useShopping(listName);
@@ -129,31 +134,54 @@ export function ShoppingScreen() {
       >
         {() => (
           <Card className="py-1">
-            {list.map((item) => (
-              <View key={item.id} className="flex-row items-center">
-                <Checkbox
-                  tone="mint"
-                  checked={Boolean(item.checkedAt)}
-                  label={item.title}
-                  onChange={(on) =>
-                    send({ method: "PATCH", path: `/shopping/${item.id}`, body: { checked: on } })
-                  }
-                />
-                <Text className={`flex-1 ${item.checkedAt ? "text-muted line-through" : ""}`}>
-                  {item.title}
-                </Text>
-                {item.estMinor ? (
-                  <Amount minor={item.estMinor} variant="caption" tone="muted" animate={false} />
-                ) : null}
-                <Pressable
-                  onPress={() => send({ method: "DELETE", path: `/shopping/${item.id}` })}
-                  className="h-12 w-10 items-center justify-center"
-                  accessibilityLabel={`Remove ${item.title}`}
-                >
-                  <Icon name="close" size={18} color="muted" />
-                </Pressable>
-              </View>
-            ))}
+            {list.map((item) => {
+              const edit = () =>
+                router.push(`/shopping-item/${item.id}?list=${encodeURIComponent(listName)}`);
+              const drop = () => remove(`/shopping/${item.id}`, `“${item.title}”`);
+              return (
+                <SwipeRow key={item.id} rounded={false} actions={editDelete(edit, drop)}>
+                  <View className="flex-row items-center bg-card">
+                    <Checkbox
+                      tone="mint"
+                      checked={Boolean(item.checkedAt)}
+                      label={item.title}
+                      onChange={(on) =>
+                        send({
+                          method: "PATCH",
+                          path: `/shopping/${item.id}`,
+                          body: { checked: on },
+                        })
+                      }
+                    />
+                    <Pressable
+                      onPress={edit}
+                      className="min-h-12 flex-1 flex-row items-center gap-2 active:opacity-80"
+                      accessibilityRole="button"
+                      accessibilityHint="Swipe left for edit and delete"
+                    >
+                      <Text className={`flex-1 ${item.checkedAt ? "text-muted line-through" : ""}`}>
+                        {item.title}
+                      </Text>
+                      {item.estMinor ? (
+                        <Amount
+                          minor={item.estMinor}
+                          variant="caption"
+                          tone="muted"
+                          animate={false}
+                        />
+                      ) : null}
+                    </Pressable>
+                    <Pressable
+                      onPress={drop}
+                      className="h-12 w-10 items-center justify-center"
+                      accessibilityLabel={`Remove ${item.title}`}
+                    >
+                      <Icon name="close" size={18} color="muted" />
+                    </Pressable>
+                  </View>
+                </SwipeRow>
+              );
+            })}
           </Card>
         )}
       </AsyncContent>

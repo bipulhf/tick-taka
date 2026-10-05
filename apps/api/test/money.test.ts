@@ -284,6 +284,24 @@ describe("budgets and safe to spend", () => {
       availableMinor: 500_000,
     });
   });
+
+  test("a month whose last budget was removed stays empty instead of inheriting", async () => {
+    const ctx = await createTestContext();
+    const { category } = await setupMoney(ctx);
+    const fun = category("Fun");
+    for (const month of ["2026-10", "2026-11"])
+      await ctx.request("PUT", "/budgets", {
+        month,
+        budgets: [{ categoryId: fun.id, limitMinor: 300_000, rollover: false }],
+      });
+    await ctx.request("PUT", "/budgets", { month: "2026-11", budgets: [] });
+    const november = await ctx.request<{ inherited: boolean; lines: Row[] }>(
+      "GET",
+      "/budgets?month=2026-11",
+    );
+    expect(november.body.inherited).toBe(false);
+    expect(november.body.lines.find((l) => l.categoryId === fun.id)?.hasBudget).toBe(false);
+  });
 });
 
 describe("recurring bills and income", () => {

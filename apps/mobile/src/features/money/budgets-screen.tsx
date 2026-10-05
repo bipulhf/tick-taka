@@ -12,8 +12,12 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonCard } from "@/components/ui/skeleton";
+import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { formatMonth } from "@/lib/format";
+import { haptic } from "@/lib/haptics";
+import { notify } from "@/lib/notify";
+import { useOutbox } from "@/lib/outbox";
 import { useBudgets } from "./queries";
 
 const BUCKETS = [
@@ -26,8 +30,28 @@ const BUCKETS = [
 export function BudgetsScreen() {
   const router = useRouter();
   const [month, setMonth] = useState(() => toLocalMonth(Date.now()));
+  const send = useOutbox();
   const budgets = useBudgets(month);
   const data = budgets.data;
+  const edit = () => router.push(`/budget-edit?month=${month}`);
+  /** The API sets a whole month at once, so dropping one line re-sends the others. */
+  const removeLine = (line: { categoryId: string; name: string }) => {
+    if (!data) return;
+    const before = data.lines
+      .filter((l) => l.hasBudget)
+      .map(({ categoryId, limitMinor, rollover }) => ({ categoryId, limitMinor, rollover }));
+    const put = (lines: typeof before, label: string) =>
+      send({ method: "PUT", path: "/budgets", body: { month, budgets: lines }, label });
+    put(
+      before.filter((l) => l.categoryId !== line.categoryId),
+      "Couldn't delete",
+    );
+    haptic.tap();
+    notify(`Deleted the ${line.name} budget`, {
+      label: "Undo",
+      onPress: () => put(before, "Couldn't undo"),
+    });
+  };
   return (
     <Screen
       title="Budgets"
@@ -117,61 +141,78 @@ export function BudgetsScreen() {
                     {bucket.hint}
                   </Text>
                   {lines.map((line) => (
-                    <View key={line.categoryId} className="gap-1">
-                      <View className="flex-row justify-between">
-                        <Text>
-                          {line.emoji} {line.name}
-                          {line.pace === "ahead" ? "  · running ahead" : ""}
-                        </Text>
-                        <Text variant="caption" tone={line.availableMinor < 0 ? "coral" : "muted"}>
-                          <Amount
-                            minor={line.spentMinor}
+                    <SwipeRow
+                      key={line.categoryId}
+                      actions={
+                        line.hasBudget
+                          ? editDelete(edit, () => removeLine(line))
+                          : [{ label: "Edit", icon: "pencil-outline", tone: "sky", onPress: edit }]
+                      }
+                    >
+                      <Pressable
+                        onPress={edit}
+                        className="gap-1 bg-card active:opacity-70"
+                        accessibilityRole="button"
+                        accessibilityHint="Opens the month's budgets. Swipe left for more."
+                      >
+                        <View className="flex-row justify-between">
+                          <Text>
+                            {line.emoji} {line.name}
+                            {line.pace === "ahead" ? "  · running ahead" : ""}
+                          </Text>
+                          <Text
                             variant="caption"
-                            tone="ink"
-                            animate={false}
+                            tone={line.availableMinor < 0 ? "coral" : "muted"}
+                          >
+                            <Amount
+                              minor={line.spentMinor}
+                              variant="caption"
+                              tone="ink"
+                              animate={false}
+                            />
+                            {line.hasBudget ? (
+                              <>
+                                {" / "}
+                                <Amount
+                                  minor={line.limitMinor + line.carriedMinor}
+                                  variant="caption"
+                                  tone="muted"
+                                  animate={false}
+                                />
+                              </>
+                            ) : null}
+                          </Text>
+                        </View>
+                        {line.hasBudget ? (
+                          <ProgressBar
+                            value={
+                              line.limitMinor + line.carriedMinor > 0
+                                ? line.spentMinor / (line.limitMinor + line.carriedMinor)
+                                : 1
+                            }
+                            tone={
+                              line.availableMinor < 0
+                                ? "coral"
+                                : line.pace === "ahead"
+                                  ? "mango"
+                                  : "mint"
+                            }
                           />
-                          {line.hasBudget ? (
-                            <>
-                              {" / "}
-                              <Amount
-                                minor={line.limitMinor + line.carriedMinor}
-                                variant="caption"
-                                tone="muted"
-                                animate={false}
-                              />
-                            </>
-                          ) : null}
-                        </Text>
-                      </View>
-                      {line.hasBudget ? (
-                        <ProgressBar
-                          value={
-                            line.limitMinor + line.carriedMinor > 0
-                              ? line.spentMinor / (line.limitMinor + line.carriedMinor)
-                              : 1
-                          }
-                          tone={
-                            line.availableMinor < 0
-                              ? "coral"
-                              : line.pace === "ahead"
-                                ? "mango"
-                                : "mint"
-                          }
-                        />
-                      ) : null}
-                      {line.carriedMinor > 0 ? (
-                        <Text variant="caption" tone="mint">
-                          +{" "}
-                          <Amount
-                            minor={line.carriedMinor}
-                            variant="caption"
-                            tone="mint"
-                            animate={false}
-                          />{" "}
-                          rolled over
-                        </Text>
-                      ) : null}
-                    </View>
+                        ) : null}
+                        {line.carriedMinor > 0 ? (
+                          <Text variant="caption" tone="mint">
+                            +{" "}
+                            <Amount
+                              minor={line.carriedMinor}
+                              variant="caption"
+                              tone="mint"
+                              animate={false}
+                            />{" "}
+                            rolled over
+                          </Text>
+                        ) : null}
+                      </Pressable>
+                    </SwipeRow>
                   ))}
                 </Card>
               </Section>

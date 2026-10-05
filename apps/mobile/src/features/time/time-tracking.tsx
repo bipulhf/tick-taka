@@ -2,7 +2,7 @@ import { addDays, startOfLocalDay, startOfWeek, toLocalDate } from "@tick-taka/s
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,18 +11,21 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
+import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { useNow } from "@/features/timer/use-now";
 import { formatClock, formatLocalDate, formatMinutes, formatTimer } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAreas, useSettings } from "@/lib/queries";
+import { useRemove } from "@/lib/use-remove";
 import { useRunningTimer, useTimeEntries } from "./queries";
 
 /** Start/stop timer or manual entry, per area, with a billable flag. */
 export function TimeTracking() {
   const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
   const timeZone = settings?.timeZone ?? "Asia/Dhaka";
@@ -166,18 +169,34 @@ export function TimeTracking() {
       {[...byDay.entries()].map(([day, dayEntries]) => (
         <Section key={day} title={formatLocalDate(day, "long")}>
           <Card className="gap-2">
-            {dayEntries.map((entry) => (
-              <View key={entry.id} className="flex-row items-center justify-between gap-2">
-                <Text className="flex-1" numberOfLines={1}>
-                  {entry.source === "focus" ? "🌱 " : ""}
-                  {entry.note || areas.find((a) => a.id === entry.areaId)?.name || "Time"}
-                  {entry.billable ? " · 💵" : ""}
-                </Text>
-                <Text variant="caption" tone="muted" numeric>
-                  {formatClock(entry.startedAt, timeZone)} · {formatMinutes(minutesOf(entry))}
-                </Text>
-              </View>
-            ))}
+            {dayEntries.map((entry) => {
+              const title = entry.note || areas.find((a) => a.id === entry.areaId)?.name || "Time";
+              const edit = () => router.push(`/time-entry?id=${entry.id}`);
+              return (
+                <SwipeRow
+                  key={entry.id}
+                  actions={editDelete(edit, () =>
+                    remove(`/time-entries/${entry.id}`, `“${title}”`),
+                  )}
+                >
+                  <Pressable
+                    onPress={edit}
+                    accessibilityRole="button"
+                    accessibilityHint="Opens the entry. Swipe left for edit and delete"
+                    className="min-h-12 flex-row items-center justify-between gap-2 bg-card"
+                  >
+                    <Text className="flex-1" numberOfLines={1}>
+                      {entry.source === "focus" ? "🌱 " : ""}
+                      {title}
+                      {entry.billable ? " · 💵" : ""}
+                    </Text>
+                    <Text variant="caption" tone="muted" numeric>
+                      {formatClock(entry.startedAt, timeZone)} · {formatMinutes(minutesOf(entry))}
+                    </Text>
+                  </Pressable>
+                </SwipeRow>
+              );
+            })}
           </Card>
         </Section>
       ))}

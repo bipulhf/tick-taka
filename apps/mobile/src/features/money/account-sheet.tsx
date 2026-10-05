@@ -6,6 +6,7 @@ import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -14,6 +15,7 @@ import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAccounts, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
+import { useAccountActions } from "./use-account-actions";
 
 type AccountType = "cash" | "bank" | "mobile_wallet" | "card" | "savings";
 const TYPES: { value: AccountType; label: string }[] = [
@@ -41,6 +43,7 @@ export function AccountSheet({ id }: { id: string | null }) {
 function AccountForm({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
+  const actions = useAccountActions();
   const { data: accounts = [] } = useAccounts();
   const { data: settings } = useSettings();
   const account = id ? accounts.find((a) => a.id === id) : undefined;
@@ -107,27 +110,21 @@ function AccountForm({ id }: { id: string | null }) {
       footer={
         <View className="flex-row gap-2">
           {account ? (
-            <Button
-              label="Archive"
-              variant="secondary"
-              onPress={() => {
-                send({
-                  method: "PATCH",
-                  path: `/accounts/${account.id}`,
-                  body: { archived: true },
-                });
-                notify(`Archived ${account.name}`, {
-                  label: "Undo",
-                  onPress: () =>
-                    send({
-                      method: "PATCH",
-                      path: `/accounts/${account.id}`,
-                      body: { archived: false },
-                    }),
-                });
-                router.back();
-              }}
-            />
+            <>
+              <DeleteButton
+                onPress={async () => {
+                  if (await actions.remove(account)) router.back();
+                }}
+              />
+              <Button
+                label="Archive"
+                variant="secondary"
+                onPress={() => {
+                  actions.archive(account);
+                  router.back();
+                }}
+              />
+            </>
           ) : null}
           <Button label="Save" onPress={save} disabled={!name.trim()} className="flex-1" />
         </View>

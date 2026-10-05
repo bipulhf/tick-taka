@@ -13,17 +13,20 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonCard } from "@/components/ui/skeleton";
+import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatLocalDate } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
+import { useRemove } from "@/lib/use-remove";
 import { useEvents } from "./queries";
 
 /** A trip or celebration with its own budget, collecting spending from every account. */
 export function EventsScreen() {
   const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
   const events = useEvents();
   const today = toLocalDate(Date.now());
   const [adding, setAdding] = useState(false);
@@ -101,45 +104,53 @@ export function EventsScreen() {
       >
         {(data) =>
           data.map((event) => (
-            <Card
+            <SwipeRow
               key={event.id}
-              className="gap-2"
-              onPress={() => router.push(`/money/transactions?eventId=${event.id}`)}
+              actions={editDelete(
+                () => router.push(`/event/${event.id}`),
+                () => remove(`/events/${event.id}`, `“${event.name}”`),
+              )}
             >
-              <View className="flex-row items-center justify-between">
-                <Text variant="strong">
-                  {event.emoji} {event.name}
-                </Text>
-                <Amount minor={event.spentMinor} variant="heading" tone="coral" />
-              </View>
-              <Text variant="caption" tone="muted">
-                {formatLocalDate(event.startsOn)} – {formatLocalDate(event.endsOn)} ·{" "}
-                {event.transactionCount} transactions
-              </Text>
-              {event.budgetMinor ? (
-                <>
-                  <ProgressBar
-                    value={event.spentMinor / event.budgetMinor}
-                    tone={event.leftMinor !== null && event.leftMinor < 0 ? "coral" : "mint"}
-                  />
-                  <Text variant="caption" tone="muted">
-                    <Amount
-                      minor={event.leftMinor ?? 0}
-                      variant="caption"
-                      tone="ink"
-                      animate={false}
-                    />{" "}
-                    left of{" "}
-                    <Amount
-                      minor={event.budgetMinor}
-                      variant="caption"
-                      tone="muted"
-                      animate={false}
-                    />
+              <Card
+                className="gap-2"
+                accessibilityHint="Swipe left for edit and delete"
+                onPress={() => router.push(`/money/transactions?eventId=${event.id}`)}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Text variant="strong">
+                    {event.emoji} {event.name}
                   </Text>
-                </>
-              ) : null}
-            </Card>
+                  <Amount minor={event.spentMinor} variant="heading" tone="coral" />
+                </View>
+                <Text variant="caption" tone="muted">
+                  {formatLocalDate(event.startsOn)} – {formatLocalDate(event.endsOn)} ·{" "}
+                  {event.transactionCount} transactions
+                </Text>
+                {event.budgetMinor ? (
+                  <>
+                    <ProgressBar
+                      value={event.spentMinor / event.budgetMinor}
+                      tone={event.leftMinor !== null && event.leftMinor < 0 ? "coral" : "mint"}
+                    />
+                    <Text variant="caption" tone="muted">
+                      <Amount
+                        minor={event.leftMinor ?? 0}
+                        variant="caption"
+                        tone="ink"
+                        animate={false}
+                      />{" "}
+                      left of{" "}
+                      <Amount
+                        minor={event.budgetMinor}
+                        variant="caption"
+                        tone="muted"
+                        animate={false}
+                      />
+                    </Text>
+                  </>
+                ) : null}
+              </Card>
+            </SwipeRow>
           ))
         }
       </AsyncContent>

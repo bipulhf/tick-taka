@@ -1,7 +1,7 @@
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -9,18 +9,21 @@ import { Group } from "@/components/ui/group";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonList } from "@/components/ui/skeleton";
+import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { useOutbox } from "@/lib/outbox";
 import { useAreas } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
+import { useRemove } from "@/lib/use-remove";
 import { useProjects, useTasks } from "./queries";
 
 /** Areas hold projects; projects hold tasks. */
 export function AreaDetail({ areaId }: { areaId: string }) {
   const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
   const { data: areas = [] } = useAreas();
   const area = areas.find((a) => a.id === areaId);
   const projects = useProjects(areaId);
@@ -75,19 +78,42 @@ export function AreaDetail({ areaId }: { areaId: string }) {
                       : project.status === "paused"
                         ? "done"
                         : "active";
+                  const edit = () => router.push(`/project/${project.id}`);
                   return (
-                    <Section
-                      key={project.id}
-                      title={project.name}
-                      action={project.status}
-                      onAction={() =>
-                        send({
-                          method: "PATCH",
-                          path: `/projects/${project.id}`,
-                          body: { status: nextStatus, updatedAt: editTime() },
-                        })
-                      }
-                    >
+                    <View key={project.id} className="gap-3">
+                      <SwipeRow
+                        actions={editDelete(edit, () =>
+                          remove(`/projects/${project.id}`, `“${project.name}”`),
+                        )}
+                      >
+                        <View className="min-h-12 flex-row items-center justify-between gap-3 bg-background px-1">
+                          <Pressable
+                            onPress={edit}
+                            accessibilityRole="button"
+                            accessibilityHint="Opens the project. Swipe left for edit and delete"
+                            className="flex-1"
+                          >
+                            <Text variant="heading" accessibilityRole="header" numberOfLines={1}>
+                              {project.name}
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() =>
+                              send({
+                                method: "PATCH",
+                                path: `/projects/${project.id}`,
+                                body: { status: nextStatus, updatedAt: editTime() },
+                              })
+                            }
+                            hitSlop={14}
+                            accessibilityRole="button"
+                          >
+                            <Text variant="callout" className="font-nunito-bold" tone="sky">
+                              {project.status}
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </SwipeRow>
                       {projectTasks.length === 0 ? (
                         <Text variant="callout" tone="muted" className="px-1">
                           No open tasks.
@@ -99,7 +125,7 @@ export function AreaDetail({ areaId }: { areaId: string }) {
                           ))}
                         </Group>
                       )}
-                    </Section>
+                    </View>
                   );
                 })}
                 {loose.length > 0 ? (

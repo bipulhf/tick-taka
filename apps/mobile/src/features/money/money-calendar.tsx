@@ -151,7 +151,7 @@ export function MoneyCalendar() {
             {data.pages
               .flatMap((p) => p.items)
               .map((tx) => (
-                <TransactionRow key={tx.id} tx={tx} lookup={lookup} />
+                <TransactionRow key={tx.id} tx={tx} lookup={lookup} placement="card" />
               ))}
           </Card>
         )}

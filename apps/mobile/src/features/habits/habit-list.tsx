@@ -7,8 +7,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonCard } from "@/components/ui/skeleton";
+import { SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
+import { useRemove } from "@/lib/use-remove";
 import { useHabits } from "./queries";
+import { useArchiveHabit } from "./use-archive-habit";
 
 const SCHEDULE_LABEL = {
   daily: "Every day",
@@ -19,6 +22,8 @@ const SCHEDULE_LABEL = {
 /** Habits with streaks; two freeze days a month keep one bad day from breaking a run. */
 export function HabitList() {
   const router = useRouter();
+  const remove = useRemove();
+  const archive = useArchiveHabit();
   const habits = useHabits();
   const list = habits.data ?? [];
   return (
@@ -55,37 +60,58 @@ export function HabitList() {
                   ? 1
                   : (habit.perWeek ?? 1);
             return (
-              <Card
+              <SwipeRow
                 key={habit.id}
-                onPress={() => router.push(`/habit/${habit.id}`)}
-                className="gap-2"
+                actions={[
+                  {
+                    label: "Edit",
+                    icon: "pencil-outline",
+                    tone: "sky",
+                    onPress: () => router.push(`/habit/${habit.id}`),
+                  },
+                  {
+                    label: "Archive",
+                    icon: "archive-outline",
+                    tone: "muted",
+                    onPress: () => archive(habit),
+                  },
+                  {
+                    label: "Delete",
+                    icon: "trash-can-outline",
+                    tone: "coral",
+                    onPress: () => remove(`/habits/${habit.id}`, `“${habit.name}”`),
+                  },
+                ]}
               >
-                <View className="flex-row items-center gap-3">
-                  <Text className="text-3xl">{habit.emoji}</Text>
-                  <View className="flex-1">
-                    <Text variant="strong">{habit.name}</Text>
-                    <Text variant="caption" tone="muted">
-                      {habit.schedule === "n_per_week"
-                        ? `${habit.perWeek} ${SCHEDULE_LABEL.n_per_week}`
-                        : SCHEDULE_LABEL[habit.schedule]}
-                      {habit.targetCount > 1 ? ` · ${habit.targetCount} a day` : ""}
-                    </Text>
+                <Card onPress={() => router.push(`/habit/${habit.id}`)} className="gap-2">
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-3xl">{habit.emoji}</Text>
+                    <View className="flex-1">
+                      <Text variant="strong">{habit.name}</Text>
+                      <Text variant="caption" tone="muted">
+                        {habit.schedule === "n_per_week"
+                          ? `${habit.perWeek} ${SCHEDULE_LABEL.n_per_week}`
+                          : SCHEDULE_LABEL[habit.schedule]}
+                        {habit.targetCount > 1 ? ` · ${habit.targetCount} a day` : ""}
+                      </Text>
+                    </View>
+                    <View className="items-end">
+                      <Text variant="heading" tone="grape" numeric>
+                        🔥 {habit.streak.current}
+                      </Text>
+                      <Text variant="caption" tone="muted">
+                        best {habit.streak.best} {habit.streak.unit}s
+                      </Text>
+                    </View>
                   </View>
-                  <View className="items-end">
-                    <Text variant="heading" tone="grape" numeric>
-                      🔥 {habit.streak.current}
-                    </Text>
-                    <Text variant="caption" tone="muted">
-                      best {habit.streak.best} {habit.streak.unit}s
-                    </Text>
-                  </View>
-                </View>
-                <ProgressBar value={habit.weekDoneDays / weekTarget} tone="grape" />
-                <Text variant="caption" tone="muted">
-                  {habit.weekDoneDays}/{weekTarget} this week · {habit.streak.freezesLeftThisMonth}{" "}
-                  freeze day{habit.streak.freezesLeftThisMonth === 1 ? "" : "s"} left this month
-                </Text>
-              </Card>
+                  <ProgressBar value={habit.weekDoneDays / weekTarget} tone="grape" />
+                  <Text variant="caption" tone="muted">
+                    {habit.weekDoneDays}/{weekTarget} this week ·{" "}
+                    {habit.streak.freezesLeftThisMonth} freeze day
+                    {habit.streak.freezesLeftThisMonth === 1 ? "" : "s"} left this month
+                  </Text>
+                </Card>
+              </SwipeRow>
             );
           })
         }

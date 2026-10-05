@@ -6,16 +6,17 @@ import { useState } from "react";
 import { Switch, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatLocalDate } from "@/lib/format";
-import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { useAccounts } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
+import { useRemove } from "@/lib/use-remove";
 import { useColors } from "@/theme/colors";
 import { useGoals } from "./queries";
 
@@ -36,6 +37,7 @@ export function GoalSheet({ id }: { id: string | null }) {
 function GoalForm({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
   const colors = useColors();
   const { data: goals } = useGoals();
   const { data: accounts = [] } = useAccounts();
@@ -72,15 +74,9 @@ function GoalForm({ id }: { id: string | null }) {
       footer={
         <View className="flex-row gap-2">
           {goal ? (
-            <Button
-              label="Delete"
-              variant="secondary"
+            <DeleteButton
               onPress={() => {
-                send({ method: "DELETE", path: `/goals/${goal.id}` });
-                notify(`Deleted ${goal.name}`, {
-                  label: "Undo",
-                  onPress: () => send({ method: "POST", path: `/goals/${goal.id}/restore` }),
-                });
+                remove(`/goals/${goal.id}`, `“${goal.name}”`);
                 router.back();
               }}
             />

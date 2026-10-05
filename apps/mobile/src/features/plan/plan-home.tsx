@@ -1,6 +1,7 @@
 import { addDays, endOfLocalDay, startOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { View } from "react-native";
 import { AsyncContent } from "@/components/ui/async-content";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
@@ -10,15 +11,18 @@ import { Section } from "@/components/ui/section";
 import { Segmented } from "@/components/ui/segmented";
 import { ShortcutRow } from "@/components/ui/shortcut-row";
 import { SkeletonList } from "@/components/ui/skeleton";
+import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { formatLocalDate, plural } from "@/lib/format";
 import { useAreas, useSettings } from "@/lib/queries";
+import { useRemove } from "@/lib/use-remove";
 import { useProjects, useTasks } from "./queries";
 
 type Tab = "inbox" | "upcoming" | "projects";
 
 export function PlanHome() {
   const router = useRouter();
+  const remove = useRemove();
   const [tab, setTab] = useState<Tab>("inbox");
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
@@ -137,14 +141,24 @@ export function PlanHome() {
               (p) => p.areaId === area.id && p.status !== "done",
             ).length;
             return (
-              <ListRow
+              <SwipeRow
                 key={area.id}
-                emoji={area.emoji}
-                title={area.name}
-                subtitle={count ? plural(count, "active project") : "No projects yet"}
-                chevron
-                onPress={() => router.push(`/plan/area/${area.id}`)}
-              />
+                rounded={false}
+                actions={editDelete(
+                  () => router.push("/settings/areas"),
+                  () => remove(`/areas/${area.id}`, `“${area.name}”`),
+                )}
+              >
+                <View className="bg-card">
+                  <ListRow
+                    emoji={area.emoji}
+                    title={area.name}
+                    subtitle={count ? plural(count, "active project") : "No projects yet"}
+                    chevron
+                    onPress={() => router.push(`/plan/area/${area.id}`)}
+                  />
+                </View>
+              </SwipeRow>
             );
           })}
         </Group>

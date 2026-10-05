@@ -66,10 +66,19 @@ function budgetsFor(deps: Deps, month: LocalMonth): Budget[] {
     .all();
 }
 
-/** The month's budgets, or the latest earlier month's when none are set yet. */
+/**
+ * The month's budgets, or the latest earlier month's when none were ever set for
+ * it. A month whose budgets were all removed stays empty instead of inheriting.
+ */
 function effectiveBudgets(deps: Deps, month: LocalMonth): { rows: Budget[]; inherited: boolean } {
   const own = budgetsFor(deps, month);
   if (own.length > 0) return { rows: own, inherited: false };
+  const touched = deps.db
+    .select({ id: budgets.id })
+    .from(budgets)
+    .where(eq(budgets.month, month))
+    .get();
+  if (touched) return { rows: [], inherited: false };
   const latest = deps.db
     .select({ month: budgets.month })
     .from(budgets)

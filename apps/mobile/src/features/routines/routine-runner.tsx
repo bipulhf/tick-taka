@@ -1,10 +1,12 @@
 import { newId } from "@tick-taka/shared/ids";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { celebrate } from "@/components/ui/confetti";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -17,6 +19,7 @@ import { formatTimer } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { editTime } from "@/lib/server-clock";
 import { playSound } from "@/lib/sounds";
+import { useRemove } from "@/lib/use-remove";
 import { type Routine, useRoutines } from "./queries";
 
 interface DraftStep {
@@ -46,7 +49,9 @@ function StepTimer({ minutes }: { minutes: number }) {
 }
 
 function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
+  const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
   const [name, setName] = useState(routine.name);
   const [emoji, setEmoji] = useState(routine.emoji);
   const [steps, setSteps] = useState<DraftStep[]>(
@@ -128,6 +133,13 @@ function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
             label: "Couldn't save the routine",
           });
           onDone();
+        }}
+      />
+      <DeleteButton
+        label="Delete routine"
+        onPress={() => {
+          remove(`/routines/${routine.id}`, `“${routine.name}”`);
+          router.back();
         }}
       />
     </>

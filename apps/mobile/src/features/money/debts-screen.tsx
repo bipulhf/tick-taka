@@ -3,7 +3,7 @@ import { newId } from "@tick-taka/shared/ids";
 import { formatAmount, parseAmountToMinor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonCard } from "@/components/ui/skeleton";
+import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
@@ -21,6 +22,7 @@ import { formatMonth } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAccounts } from "@/lib/queries";
+import { useRemove } from "@/lib/use-remove";
 import { useDebts } from "./queries";
 
 type Debt = NonNullable<ReturnType<typeof useDebts>["data"]>[number];
@@ -61,6 +63,7 @@ function Forecast({ debt }: { debt: Debt }) {
 export function DebtsScreen() {
   const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
   const debts = useDebts();
   const { data: accounts = [] } = useAccounts();
   const [repaying, setRepaying] = useState<string | null>(null);
@@ -115,54 +118,75 @@ export function DebtsScreen() {
             group.items.length ? (
               <Section key={group.title} title={group.title}>
                 {group.items.map((debt) => (
-                  <Card key={debt.id} className="gap-2">
-                    <View className="flex-row items-center justify-between">
-                      <Text variant="strong">{debt.person}</Text>
-                      <Amount
-                        minor={debt.outstandingMinor}
-                        currency={debt.currency}
-                        variant="heading"
-                        tone={debt.direction === "owed_to_me" ? "mint" : "coral"}
-                      />
-                    </View>
-                    <ProgressBar value={debt.repaidMinor / debt.principalMinor} tone="grape" />
-                    <Text variant="caption" tone="muted">
-                      {formatAmount(debt.repaidMinor, { currency: debt.currency })} of{" "}
-                      {formatAmount(debt.principalMinor, { currency: debt.currency })} repaid
-                      {debt.note ? ` · ${debt.note}` : ""}
-                    </Text>
-                    <Forecast debt={debt} />
-                    {repaying === debt.id ? (
-                      <View className="gap-2">
-                        <TextField
-                          value={amount}
-                          onChangeText={setAmount}
-                          keyboardType="decimal-pad"
-                          placeholder="Amount repaid"
-                          autoFocus
-                        />
-                        <View className="flex-row flex-wrap gap-2">
-                          {accounts.map((a) => (
-                            <Chip
-                              key={a.id}
-                              label={a.name}
-                              tone="mint"
-                              selected={(accountId ?? accounts[0]?.id) === a.id}
-                              onPress={() => setAccountId(a.id)}
-                            />
-                          ))}
-                        </View>
-                        <Button label="Log repayment" variant="money" onPress={() => repay(debt)} />
-                      </View>
-                    ) : (
-                      <Button
-                        label="Log a repayment"
-                        size="sm"
-                        variant="secondary"
-                        onPress={() => setRepaying(debt.id)}
-                      />
+                  <SwipeRow
+                    key={debt.id}
+                    actions={editDelete(
+                      () => router.push(`/debt/${debt.id}`),
+                      () => remove(`/debts/${debt.id}`, `“${debt.person}”`),
                     )}
-                  </Card>
+                  >
+                    <Card className="gap-2">
+                      {/* Only the summary opens the loan; the forecast and repayment below stay inline. */}
+                      <Pressable
+                        onPress={() => router.push(`/debt/${debt.id}`)}
+                        className="gap-2 active:opacity-80"
+                        accessibilityRole="button"
+                        accessibilityLabel={`Edit loan with ${debt.person}`}
+                        accessibilityHint="Swipe left for edit and delete"
+                      >
+                        <View className="flex-row items-center justify-between">
+                          <Text variant="strong">{debt.person}</Text>
+                          <Amount
+                            minor={debt.outstandingMinor}
+                            currency={debt.currency}
+                            variant="heading"
+                            tone={debt.direction === "owed_to_me" ? "mint" : "coral"}
+                          />
+                        </View>
+                        <ProgressBar value={debt.repaidMinor / debt.principalMinor} tone="grape" />
+                        <Text variant="caption" tone="muted">
+                          {formatAmount(debt.repaidMinor, { currency: debt.currency })} of{" "}
+                          {formatAmount(debt.principalMinor, { currency: debt.currency })} repaid
+                          {debt.note ? ` · ${debt.note}` : ""}
+                        </Text>
+                      </Pressable>
+                      <Forecast debt={debt} />
+                      {repaying === debt.id ? (
+                        <View className="gap-2">
+                          <TextField
+                            value={amount}
+                            onChangeText={setAmount}
+                            keyboardType="decimal-pad"
+                            placeholder="Amount repaid"
+                            autoFocus
+                          />
+                          <View className="flex-row flex-wrap gap-2">
+                            {accounts.map((a) => (
+                              <Chip
+                                key={a.id}
+                                label={a.name}
+                                tone="mint"
+                                selected={(accountId ?? accounts[0]?.id) === a.id}
+                                onPress={() => setAccountId(a.id)}
+                              />
+                            ))}
+                          </View>
+                          <Button
+                            label="Log repayment"
+                            variant="money"
+                            onPress={() => repay(debt)}
+                          />
+                        </View>
+                      ) : (
+                        <Button
+                          label="Log a repayment"
+                          size="sm"
+                          variant="secondary"
+                          onPress={() => setRepaying(debt.id)}
+                        />
+                      )}
+                    </Card>
+                  </SwipeRow>
                 ))}
               </Section>
             ) : null,

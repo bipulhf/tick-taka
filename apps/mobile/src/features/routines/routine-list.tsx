@@ -8,16 +8,19 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonList } from "@/components/ui/skeleton";
+import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatMinutes } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
+import { useRemove } from "@/lib/use-remove";
 import { useRoutines } from "./queries";
 
 /** Ordered checklists such as Morning or Shutdown. */
 export function RoutineList() {
   const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
   const routines = useRoutines();
   const [name, setName] = useState("");
   return (
@@ -41,22 +44,29 @@ export function RoutineList() {
           (routines.data ?? []).map((routine) => {
             const minutes = routine.steps.reduce((sum, s) => sum + (s.minutes ?? 0), 0);
             return (
-              <Card
+              <SwipeRow
                 key={routine.id}
-                onPress={() => router.push(`/routine/${routine.id}`)}
-                className="flex-row items-center gap-3"
+                actions={editDelete(
+                  () => router.push(`/routine/${routine.id}?edit=1`),
+                  () => remove(`/routines/${routine.id}`, `“${routine.name}”`),
+                )}
               >
-                <Text className="text-3xl">{routine.emoji}</Text>
-                <View className="flex-1">
-                  <Text variant="strong">{routine.name}</Text>
-                  <Text variant="caption" tone="muted">
-                    {routine.steps.length} steps{minutes ? ` · ${formatMinutes(minutes)}` : ""}
+                <Card
+                  onPress={() => router.push(`/routine/${routine.id}`)}
+                  className="flex-row items-center gap-3"
+                >
+                  <Text className="text-3xl">{routine.emoji}</Text>
+                  <View className="flex-1">
+                    <Text variant="strong">{routine.name}</Text>
+                    <Text variant="caption" tone="muted">
+                      {routine.steps.length} steps{minutes ? ` · ${formatMinutes(minutes)}` : ""}
+                    </Text>
+                  </View>
+                  <Text tone="sky" variant="strong">
+                    Start
                   </Text>
-                </View>
-                <Text tone="sky" variant="strong">
-                  Start
-                </Text>
-              </Card>
+                </Card>
+              </SwipeRow>
             );
           })
         }

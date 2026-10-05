@@ -39,13 +39,21 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji }: Task
         className: "bg-mint",
         onTrigger: () => actions.toggleDone(task),
       }}
-      left={{ icon: "clock-fast", className: "bg-sky", onTrigger: () => actions.snooze(task) }}
+      actions={[
+        { label: "Snooze", icon: "clock-fast", tone: "sky", onPress: () => actions.snooze(task) },
+        {
+          label: "Delete",
+          icon: "trash-can-outline",
+          tone: "coral",
+          onPress: () => actions.remove(task),
+        },
+      ]}
     >
       <Pressable
         onPress={() => router.push(`/task/${task.id}`)}
         onLongPress={() => router.push(`/task/${task.id}`)}
         className="min-h-[60px] flex-row items-center gap-1 bg-card pr-4"
-        accessibilityHint="Swipe right to complete, left to snooze"
+        accessibilityHint="Swipe right to complete, left for snooze and delete"
       >
         <Checkbox
           checked={done}

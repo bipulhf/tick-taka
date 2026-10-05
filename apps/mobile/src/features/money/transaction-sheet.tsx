@@ -12,6 +12,7 @@ import { z } from "zod";
 import { AmountKeypad } from "@/components/ui/amount-keypad";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
@@ -34,6 +35,7 @@ import {
 import { pickReceipt, receiptUrl, uploadReceipt } from "@/lib/receipts";
 import { editTime } from "@/lib/server-clock";
 import { playSound } from "@/lib/sounds";
+import { useRemove } from "@/lib/use-remove";
 import { useEvents, useTransaction } from "./queries";
 
 type TxType = "expense" | "income" | "transfer";
@@ -63,6 +65,7 @@ type Form = z.infer<typeof formSchema>;
 export function TransactionSheet({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
+  const removeRecord = useRemove();
   const existing = useTransaction(id);
   const { data: settings } = useSettings();
   const { data: accounts = [] } = useAccounts();
@@ -194,11 +197,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
 
   const remove = () => {
     if (!id) return;
-    send({ method: "DELETE", path: `/transactions/${id}`, label: "Couldn't delete" });
-    notify("Transaction deleted", {
-      label: "Undo",
-      onPress: () => send({ method: "POST", path: `/transactions/${id}/restore` }),
-    });
+    removeRecord(`/transactions/${id}`, "the transaction");
     router.back();
   };
 
@@ -220,9 +219,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
       title={id ? "Transaction" : "New transaction"}
       footer={
         <View className="flex-row gap-2">
-          {id ? (
-            <Button label="Delete" variant="secondary" icon="trash-can-outline" onPress={remove} />
-          ) : null}
+          {id ? <DeleteButton onPress={remove} /> : null}
           <Button label="Save" onPress={submit} className="flex-1" />
         </View>
       }

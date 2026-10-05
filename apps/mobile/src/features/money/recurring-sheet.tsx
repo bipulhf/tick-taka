@@ -13,6 +13,7 @@ import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
@@ -25,6 +26,7 @@ import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
+import { useRemove } from "@/lib/use-remove";
 
 type Kind = "bill" | "income";
 
@@ -44,6 +46,7 @@ export function RecurringSheet({ id }: { id: string | null }) {
 function RecurringForm({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
   const { data: list } = useRecurring();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
@@ -144,12 +147,23 @@ function RecurringForm({ id }: { id: string | null }) {
               />
             </View>
           ) : null}
-          <Button
-            label="Save"
-            variant={item ? "secondary" : "primary"}
-            onPress={save}
-            disabled={!name.trim() || !amount}
-          />
+          <View className="flex-row gap-2">
+            {item ? (
+              <DeleteButton
+                onPress={() => {
+                  remove(`/recurring/${item.id}`, `“${item.name}”`);
+                  router.back();
+                }}
+              />
+            ) : null}
+            <Button
+              label="Save"
+              variant={item ? "secondary" : "primary"}
+              onPress={save}
+              disabled={!name.trim() || !amount}
+              className="flex-1"
+            />
+          </View>
         </View>
       }
     >
@@ -264,20 +278,6 @@ function RecurringForm({ id }: { id: string | null }) {
             />
           ))}
       </View>
-      {item ? (
-        <Button
-          label="Delete"
-          variant="ghost"
-          onPress={() => {
-            send({ method: "DELETE", path: `/recurring/${item.id}` });
-            notify(`Deleted ${item.name}`, {
-              label: "Undo",
-              onPress: () => send({ method: "POST", path: `/recurring/${item.id}/restore` }),
-            });
-            router.back();
-          }}
-        />
-      ) : null}
     </Sheet>
   );
 }

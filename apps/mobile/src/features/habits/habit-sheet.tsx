@@ -4,16 +4,18 @@ import { useState } from "react";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { ErrorState } from "@/components/ui/empty-state";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
-import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { editTime } from "@/lib/server-clock";
+import { useRemove } from "@/lib/use-remove";
 import { type HabitWithProgress, useHabits } from "./queries";
+import { useArchiveHabit } from "./use-archive-habit";
 
 type Schedule = "daily" | "weekly" | "n_per_week";
 const COLORS = ["#A57BFF", "#5B8CFF", "#2EC4A0", "#FFB547", "#FF7A6B"];
@@ -23,6 +25,8 @@ const REMIND = [null, "07:00", "09:00", "13:00", "18:00", "21:00"];
 function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
   const router = useRouter();
   const send = useOutbox();
+  const remove = useRemove();
+  const archive = useArchiveHabit();
   const [name, setName] = useState(habit?.name ?? "");
   const [emoji, setEmoji] = useState(habit?.emoji ?? "💧");
   const [color, setColor] = useState(habit?.color ?? "#A57BFF");
@@ -65,23 +69,22 @@ function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
       footer={
         <View className="flex-row gap-2">
           {habit ? (
-            <Button
-              label="Archive"
-              variant="secondary"
-              onPress={() => {
-                send({ method: "PATCH", path: `/habits/${habit.id}`, body: { archived: true } });
-                notify(`Archived ${habit.name}`, {
-                  label: "Undo",
-                  onPress: () =>
-                    send({
-                      method: "PATCH",
-                      path: `/habits/${habit.id}`,
-                      body: { archived: false },
-                    }),
-                });
-                router.back();
-              }}
-            />
+            <>
+              <Button
+                label="Archive"
+                variant="secondary"
+                onPress={() => {
+                  archive(habit);
+                  router.back();
+                }}
+              />
+              <DeleteButton
+                onPress={() => {
+                  remove(`/habits/${habit.id}`, `“${habit.name}”`);
+                  router.back();
+                }}
+              />
+            </>
           ) : null}
           <Button label="Save" onPress={save} disabled={!name.trim()} className="flex-1" />
         </View>

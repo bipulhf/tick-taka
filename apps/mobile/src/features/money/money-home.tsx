@@ -12,10 +12,12 @@ import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { ShortcutRow } from "@/components/ui/shortcut-row";
 import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
+import { SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
 import { useTransactions } from "./queries";
 import { TransactionRow, useLookup } from "./transaction-row";
+import { useAccountActions } from "./use-account-actions";
 
 const ACCOUNT_ICON: Record<AccountType, IconName> = {
   cash: "cash",
@@ -29,6 +31,7 @@ export function MoneyHome() {
   const router = useRouter();
   const { data: settings } = useSettings();
   const accounts = useAccounts();
+  const accountActions = useAccountActions();
   const { data: categories = [] } = useCategories();
   const recent = useTransactions({ limit: "6" });
   const list = accounts.data ?? [];
@@ -115,23 +118,32 @@ export function MoneyHome() {
         {() => (
           <Group inset={60}>
             {list.map((account) => (
-              <ListRow
+              <SwipeRow
                 key={account.id}
-                emoji={account.icon ?? undefined}
-                icon={ACCOUNT_ICON[account.type]}
-                iconColor="mint"
-                title={account.name}
-                onPress={() => router.push(`/money/transactions?accountId=${account.id}`)}
-                right={
-                  <Amount
-                    minor={account.balanceMinor}
-                    currency={account.currency}
-                    variant="strong"
-                    animate={false}
-                    tone={account.balanceMinor < 0 ? "coral" : "ink"}
+                rounded={false}
+                actions={accountActions.rowActions(account, () =>
+                  router.push(`/account/${account.id}`),
+                )}
+              >
+                <View className="bg-card">
+                  <ListRow
+                    emoji={account.icon ?? undefined}
+                    icon={ACCOUNT_ICON[account.type]}
+                    iconColor="mint"
+                    title={account.name}
+                    onPress={() => router.push(`/money/transactions?accountId=${account.id}`)}
+                    right={
+                      <Amount
+                        minor={account.balanceMinor}
+                        currency={account.currency}
+                        variant="strong"
+                        animate={false}
+                        tone={account.balanceMinor < 0 ? "coral" : "ink"}
+                      />
+                    }
                   />
-                }
-              />
+                </View>
+              </SwipeRow>
             ))}
           </Group>
         )}
@@ -153,9 +165,7 @@ export function MoneyHome() {
           {() => (
             <Group inset={60}>
               {items.map((tx) => (
-                <View key={tx.id} className="px-4">
-                  <TransactionRow tx={tx} lookup={lookup} />
-                </View>
+                <TransactionRow key={tx.id} tx={tx} lookup={lookup} placement="group" />
               ))}
             </Group>
           )}

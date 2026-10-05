@@ -8,6 +8,7 @@ import { Pressable, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Chip } from "@/components/ui/chip";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { ErrorState } from "@/components/ui/empty-state";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
@@ -243,10 +244,7 @@ export function TaskSheet({ id }: { id: string | null }) {
       footer={
         <View className="flex-row gap-2">
           {id && task ? (
-            <Button
-              label="Delete"
-              variant="secondary"
-              icon="trash-can-outline"
+            <DeleteButton
               onPress={() => {
                 actions.remove(task);
                 router.back();

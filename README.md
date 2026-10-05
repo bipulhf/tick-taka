@@ -61,11 +61,21 @@ your top three and what's next. Quick-add reads plain text such as "biryani with
 |:-:|:-:|:-:|:-:|
 | <img src="docs/screenshots/review.png" width="200" alt="Review home" /> | <img src="docs/screenshots/weekly.png" width="200" alt="Weekly review" /> | <img src="docs/screenshots/reports.png" width="200" alt="Reports" /> | <img src="docs/screenshots/chat.png" width="200" alt="Chat with Tiki" /> |
 
-### Sign-in, settings, widget and dark mode
+### Home-screen widget
 
-| Sign in | Settings | Home-screen widget | Dark mode |
-|:-:|:-:|:-:|:-:|
-| <img src="docs/screenshots/login.png" width="200" alt="Sign in with Google" /> | <img src="docs/screenshots/settings.png" width="200" alt="Settings" /> | <img src="docs/screenshots/widget.png" width="200" alt="Safe-to-spend widget" /> | <img src="docs/screenshots/money-dark.png" width="200" alt="Money in dark mode" /> |
+Today at a glance without opening the app: safe to spend with a bar for how much of the
+day's share is gone, the next task, top-three and habit progress, one-tap logging for
+things you buy often, and buttons to add a task, log an expense or start focusing.
+
+| Light | Dark |
+|:-:|:-:|
+| <img src="docs/screenshots/widget.png" width="380" alt="Home-screen widget, light" /> | <img src="docs/screenshots/widget-dark.png" width="380" alt="Home-screen widget, dark" /> |
+
+### Sign-in, settings and dark mode
+
+| Sign in | Settings | Dark mode |
+|:-:|:-:|:-:|
+| <img src="docs/screenshots/login.png" width="200" alt="Sign in with Google" /> | <img src="docs/screenshots/settings.png" width="200" alt="Settings" /> | <img src="docs/screenshots/money-dark.png" width="200" alt="Money in dark mode" /> |
 
 ## Features
 
@@ -82,7 +92,7 @@ your top three and what's next. Quick-add reads plain text such as "biryani with
   "+45000 salary", "2h thesis", "call bank tomorrow 5pm"). AI fills in when the text is
   unclear.
 - Receipt photos, scanned by AI.
-- App shortcuts on the launcher icon, and a home-screen widget with safe to spend and
+- App shortcuts on the launcher icon, and a home-screen widget with today at a glance and
   one-tap logging.
 
 **Plan and time**
@@ -104,6 +114,10 @@ your top three and what's next. Quick-add reads plain text such as "biryani with
 - Daily shutdown, weekly and monthly reviews, reports, a dashboard per area of life, a
   payday plan and a subscription spotter.
 - Sparks, levels and unlockable rewards (Tiki outfits) for finishing things.
+- Soft sounds and vibration when you finish something: a chime for a task or habit, a
+  bell when focus ends, and confetti with a celebration for all three top tasks, a
+  finished routine, a reached goal or a new level. They mix with your music, stay quiet
+  on silent, and each can be switched off in Settings.
 
 **Tiki, the assistant** (needs an OpenAI key on the server)
 - Chat or talk, in Bangla or English, to add, change, delete or ask about anything, with

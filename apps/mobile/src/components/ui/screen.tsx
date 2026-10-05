@@ -4,6 +4,7 @@ import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/theme/colors";
 import { Icon } from "./icon";
+import { SyncStatus } from "./sync-status";
 import { Text } from "./text";
 
 export interface ScreenProps {
@@ -74,6 +75,7 @@ export function Screen({
   if (!scroll) {
     return (
       <View className="flex-1 gap-5 bg-background px-5" style={padding}>
+        <SyncStatus />
         {header}
         {children}
       </View>
@@ -97,6 +99,7 @@ export function Screen({
           ) : undefined
         }
       >
+        <SyncStatus />
         {header}
         {children}
       </ScrollView>

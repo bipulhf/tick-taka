@@ -5,6 +5,9 @@ import { focusManager, MutationCache, onlineManager, QueryClient } from "@tansta
 import { AppState } from "react-native";
 import { ApiError, type HttpMethod, send } from "./api";
 import { notify } from "./notify";
+import { type NewExpense, withNewExpense } from "./optimistic-spend";
+import { keys, type TodayData } from "./queries";
+import { updateToday } from "./today-cache";
 
 export interface OutboxRequest {
   method: HttpMethod;
@@ -29,7 +32,10 @@ export const queryClient = new QueryClient({
       staleTime: 30_000,
       gcTime: 7 * DAY_MS,
       networkMode: "offlineFirst",
-      retry: (count, error) => !(error instanceof ApiError && error.status < 500) && count < 2,
+      // Offline with nothing cached, fail at once so the screen says so instead of
+      // waiting forever; reconnecting refetches.
+      retry: (count, error) =>
+        onlineManager.isOnline() && !(error instanceof ApiError && error.status < 500) && count < 2,
     },
   },
   mutationCache: new MutationCache({
@@ -50,6 +56,19 @@ queryClient.setMutationDefaults(["outbox"], {
   mutationFn: (request: OutboxRequest) => send(request.method, request.path, request.body),
   scope: { id: "outbox" },
   retry: (count, error) => !(error instanceof ApiError) && count < 3,
+  onMutate: (request: OutboxRequest) => {
+    const body = request.body as (NewExpense & { type?: string }) | undefined;
+    if (request.method !== "POST" || request.path !== "/transactions" || body?.type !== "expense")
+      return;
+    const categories = queryClient.getQueryData<
+      { id: string; parentId: string | null; budgetType: string }[]
+    >(keys.categories);
+    const timeZone =
+      queryClient.getQueryData<{ timeZone: string }>(keys.settings)?.timeZone ?? "Asia/Dhaka";
+    updateToday(queryClient, (data: TodayData) =>
+      withNewExpense(data, body, categories ?? [], timeZone),
+    );
+  },
 });
 
 export const persister = createAsyncStoragePersister({

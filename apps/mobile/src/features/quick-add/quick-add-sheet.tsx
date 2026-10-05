@@ -224,7 +224,7 @@ export function QuickAddSheet({
         )
       ) : null}
 
-      {moneyKind && reference.accounts.length === 0 ? (
+      {moneyKind && reference.accountsLoaded && reference.accounts.length === 0 ? (
         <Button
           label="Add your first account"
           variant="secondary"

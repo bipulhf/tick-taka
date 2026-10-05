@@ -75,6 +75,8 @@ export function useReference() {
     categories: categories.data ?? [],
     areas: areas.data ?? [],
     rules: rules.data ?? [],
+    /** False until the account list has loaded once (it may just be offline). */
+    accountsLoaded: accounts.data !== undefined,
     ready: Boolean(settings.data && accounts.data && categories.data && areas.data),
   };
 }

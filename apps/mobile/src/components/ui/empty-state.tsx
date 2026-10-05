@@ -1,6 +1,7 @@
 import type { TikiMood } from "@tick-taka/shared/tiki";
 import { Pressable, View } from "react-native";
 import { Tiki } from "@/components/tiki/tiki";
+import { useIsOnline } from "@/lib/connection";
 import { Button } from "./button";
 import { Icon, type IconName } from "./icon";
 import { Text } from "./text";
@@ -76,6 +77,15 @@ export function EmptyState({
 
 /** Loading failed and there is nothing cached to show. */
 export function ErrorState({ onRetry, message }: { onRetry: () => void; message?: string }) {
+  const online = useIsOnline();
+  if (!online)
+    return (
+      <EmptyState
+        title="You're offline"
+        message="This hasn't been opened on this phone yet. It loads by itself once you're back online."
+        mood="calm"
+      />
+    );
   return (
     <EmptyState
       title="Couldn't load this"

@@ -91,6 +91,9 @@ export function BudgetsScreen() {
                 (l.hasBudget || l.spentMinor > 0) &&
                 (l.parentId === null || l.hasBudget),
             );
+            // A group with nothing budgeted or spent is just noise ("৳0 of ৳0").
+            if (totals.limitMinor === 0 && totals.spentMinor === 0 && lines.length === 0)
+              return null;
             return (
               <Section key={bucket.key} title={bucket.title}>
                 <Card className="gap-3">

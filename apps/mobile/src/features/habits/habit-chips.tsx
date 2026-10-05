@@ -62,7 +62,7 @@ function HabitChip({
         </Svg>
         <Text className="text-2xl">{habit.emoji}</Text>
       </View>
-      <Text variant="caption" numberOfLines={1} className="max-w-16">
+      <Text variant="caption" numberOfLines={2} className="w-20 text-center">
         {habit.name}
       </Text>
       <Text variant="caption" tone="grape" numeric>

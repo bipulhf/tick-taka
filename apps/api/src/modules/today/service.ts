@@ -7,7 +7,7 @@ import {
   weekdayOf,
 } from "@tick-taka/shared/dates";
 import { greeting, tikiLine, tikiMood } from "@tick-taka/shared/tiki";
-import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { debts } from "../../db/schema/money";
 import { tasks } from "../../db/schema/time";
 import type { Deps } from "../../lib/deps";
@@ -155,6 +155,23 @@ export function todayView(deps: Deps, date?: LocalDate) {
         ),
       )
       .get()?.n ?? 0;
+  // The latest one is named on Today, so "from earlier" is never a mystery.
+  const latestOverdue =
+    overdueCount > 0
+      ? (db
+          .select({ title: tasks.title })
+          .from(tasks)
+          .where(
+            and(
+              isNull(tasks.deletedAt),
+              isNull(tasks.parentId),
+              inArray(tasks.status, OPEN),
+              lt(tasks.doAt, startOfLocalDay(today, timeZone)),
+            ),
+          )
+          .orderBy(desc(tasks.doAt))
+          .get()?.title ?? null)
+      : null;
   const inboxCount =
     db
       .select({ n: sql<number>`count(*)` })
@@ -209,7 +226,7 @@ export function todayView(deps: Deps, date?: LocalDate) {
     runningTimer: running,
     evening,
     upcoming,
-    counts: { overdue: overdueCount, inbox: inboxCount },
+    counts: { overdue: overdueCount, latestOverdue, inbox: inboxCount },
     gamification: gamificationSummary(deps),
     tomorrow: addDays(day, 1),
   };

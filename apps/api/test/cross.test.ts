@@ -71,7 +71,7 @@ describe("GET /today", () => {
       upcoming: Row[];
       habits: Row[];
       safeToSpend: { dailyMinor: number };
-      counts: { overdue: number; inbox: number };
+      counts: { overdue: number; latestOverdue: string | null; inbox: number };
       tiki: { mood: string };
     }>("GET", "/today");
     expect(res.status).toBe(200);
@@ -84,7 +84,7 @@ describe("GET /today", () => {
     expect(res.body.upcoming.map((t) => t.name)).toEqual(["Rent"]);
     expect(res.body.habits).toHaveLength(1);
     expect(res.body.safeToSpend.dailyMinor).toBe(64_000);
-    expect(res.body.counts.overdue).toBe(1);
+    expect(res.body.counts).toMatchObject({ overdue: 1, latestOverdue: "Old" });
     expect(res.body.tiki.mood).toBe("relaxed");
   });
 

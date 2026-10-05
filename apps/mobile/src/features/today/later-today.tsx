@@ -59,8 +59,18 @@ export function LaterToday({ data }: { data: TodayData }) {
         key="overdue"
         icon="history"
         iconColor="sky"
-        title={overdue === 1 ? "1 task from earlier" : `${overdue} tasks from earlier`}
-        subtitle="No rush. Bring it into today?"
+        title={
+          overdue === 1 && data.counts.latestOverdue
+            ? data.counts.latestOverdue
+            : `${overdue} tasks from earlier`
+        }
+        subtitle={
+          overdue === 1
+            ? "From earlier. Bring it into today?"
+            : data.counts.latestOverdue
+              ? `Like “${data.counts.latestOverdue}”. Bring them into today?`
+              : "No rush. Bring them into today?"
+        }
         right={
           <Button
             label="Today"

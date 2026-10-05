@@ -58,27 +58,33 @@ export function TabBar({ state, navigation }: TabBarProps) {
           if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
         }}
       >
-        <View
-          // Remount on focus change: Android keeps square corners when only the fill changes.
-          key={focused ? "on" : "off"}
-          className="h-12 flex-row items-center justify-center gap-2"
-          style={{
-            borderRadius: 24,
-            paddingHorizontal: focused && !compact ? 16 : 10,
-            backgroundColor: focused ? colors.ink : "transparent",
-          }}
-        >
-          <Icon
-            name={focused ? tab.activeIcon : tab.icon}
-            color={focused ? "background" : "muted"}
-            size={24}
-          />
-          {focused && !compact ? (
-            <Text variant="callout" tone="background" className="font-nunito-bold">
+        {focused ? (
+          <View
+            // Remount on focus change: Android keeps square corners when only the fill changes.
+            key="on"
+            className="h-12 flex-row items-center justify-center gap-2"
+            style={{
+              borderRadius: 24,
+              paddingHorizontal: compact ? 10 : 16,
+              backgroundColor: colors.ink,
+            }}
+          >
+            <Icon name={tab.activeIcon} color="background" size={24} />
+            {compact ? null : (
+              <Text variant="callout" tone="background" className="font-nunito-bold">
+                {tab.label}
+              </Text>
+            )}
+          </View>
+        ) : (
+          // Other tabs keep a small label, so an icon never has to be guessed.
+          <View key="off" className="h-12 items-center justify-center px-1">
+            <Icon name={tab.icon} color="muted" size={22} />
+            <Text className="font-nunito-semibold text-[11px] leading-[14px] text-muted">
               {tab.label}
             </Text>
-          ) : null}
-        </View>
+          </View>
+        )}
       </Pressable>
     );
   };

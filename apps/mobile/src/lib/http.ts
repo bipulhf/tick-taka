@@ -44,7 +44,8 @@ export const http = ky.create({
     ],
     afterResponse: [
       ({ request, response }) => {
-        if (response.status === 401 && !request.url.endsWith("/auth/login")) auth.onUnauthorized();
+        // A refused sign-in is not an expired session: nothing to sign out of.
+        if (response.status === 401 && !request.url.includes("/auth/")) auth.onUnauthorized();
       },
     ],
   },

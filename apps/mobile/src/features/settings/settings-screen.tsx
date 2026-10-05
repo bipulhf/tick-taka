@@ -13,6 +13,7 @@ import { formatMinutes } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { togglePrivacy, usePrivacy } from "@/lib/privacy";
 import { useAccounts, useAiStatus, useSettings } from "@/lib/queries";
+import { AccountSection } from "./account-section";
 import { DataSection } from "./data-section";
 import { ChoiceRow, ToggleRow } from "./setting-row";
 import { useUpdateSettings } from "./use-update-settings";
@@ -60,6 +61,9 @@ export function SettingsScreen() {
 
   return (
     <Screen title="Settings" tabBarPadding={false}>
+      <Section title="Account">
+        <AccountSection />
+      </Section>
       <Section title="Appearance">
         <Segmented<"system" | "light" | "dark">
           value={s.theme}
@@ -283,18 +287,20 @@ export function SettingsScreen() {
           {ai.data ? (
             <Text variant="caption" tone="muted">
               This month: ${(ai.data.monthSpendMicros / 1_000_000).toFixed(2)} of $
-              {(s.ai.monthlyCapMicros / 1_000_000).toFixed(2)}
+              {(ai.data.monthlyCapMicros / 1_000_000).toFixed(2)}
             </Text>
           ) : null}
           <ChoiceRow label="Monthly cap">
-            {CAPS.map((cap) => (
-              <Chip
-                key={cap}
-                label={`$${cap / 1_000_000}`}
-                selected={s.ai.monthlyCapMicros === cap}
-                onPress={() => update({ ai: { ...s.ai, monthlyCapMicros: cap } })}
-              />
-            ))}
+            {CAPS.filter((cap) => cap <= (ai.data?.maxCapMicros ?? Number.POSITIVE_INFINITY)).map(
+              (cap) => (
+                <Chip
+                  key={cap}
+                  label={`$${cap / 1_000_000}`}
+                  selected={(ai.data?.monthlyCapMicros ?? s.ai.monthlyCapMicros) === cap}
+                  onPress={() => update({ ai: { ...s.ai, monthlyCapMicros: cap } })}
+                />
+              ),
+            )}
           </ChoiceRow>
           {s.ai.enabled
             ? (Object.keys(AI_LABELS) as (keyof typeof AI_LABELS)[]).map((feature) => (

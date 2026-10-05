@@ -1,15 +1,15 @@
 import type { TikiMood } from "@tick-taka/shared/tiki";
 import { useState } from "react";
-import { KeyboardAvoidingView, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tiki } from "@/components/tiki/tiki";
-import { Button } from "@/components/ui/button";
+import { GoogleLogo } from "@/components/ui/google-logo";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
-import { TextField } from "@/components/ui/text-field";
-import { signIn } from "@/lib/auth";
+import { SignInCancelled, signInWithGoogle } from "@/lib/auth";
 import { API_URL } from "@/lib/config";
-import type { ColorName } from "@/theme/colors";
+import { haptic } from "@/lib/haptics";
+import { type ColorName, useColors } from "@/theme/colors";
 
 const HIGHLIGHTS: { label: string; icon: IconName; color: ColorName }[] = [
   { label: "Tasks", icon: "checkbox-marked-circle-outline", color: "sky" },
@@ -25,34 +25,34 @@ const TINT: Partial<Record<ColorName, string>> = {
 
 const SERVER_HOST = API_URL.replace(/^https?:\/\//, "");
 
-/** One password between you and your day: Tiki up top, the field and button in thumb reach. */
+/** One tap between you and your day: Tiki up top, Google sign-in in thumb reach. */
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
-  const [password, setPassword] = useState("");
+  const colors = useColors();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const mood: TikiMood = busy ? "focused" : error ? "calm" : password ? "curious" : "happy";
+  const mood: TikiMood = busy ? "focused" : error ? "calm" : "happy";
 
   const submit = async () => {
-    if (!password || busy) return;
+    if (busy) return;
+    haptic.tap();
     setBusy(true);
     setError(null);
     try {
-      await signIn(password);
+      await signInWithGoogle();
     } catch (e) {
-      setError((e as Error).message);
+      if (!(e instanceof SignInCancelled)) setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView behavior="padding" className="flex-1 bg-background">
+    <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
         contentContainerClassName="flex-grow justify-between gap-8 px-5"
         contentContainerStyle={{ paddingTop: insets.top + 32, paddingBottom: insets.bottom + 20 }}
-        keyboardShouldPersistTaps="handled"
       >
         <View className="items-center gap-5 pt-6">
           <View className="h-48 w-48 items-center justify-center rounded-full bg-mango/20">
@@ -85,26 +85,11 @@ export default function LoginScreen() {
 
         <View className="gap-4 rounded-4xl bg-card p-5">
           <View className="gap-1">
-            <Text variant="heading">Welcome back</Text>
+            <Text variant="heading">Welcome</Text>
             <Text variant="callout" tone="muted">
-              Enter your password to unlock.
+              Sign in with your Google account. New here? This sets up your own space.
             </Text>
           </View>
-          <TextField
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (error) setError(null);
-            }}
-            placeholder="Password"
-            accessibilityLabel="Password"
-            secureTextEntry
-            autoFocus
-            autoComplete="current-password"
-            textContentType="password"
-            returnKeyType="go"
-            onSubmitEditing={submit}
-          />
           {error ? (
             <View
               accessibilityLiveRegion="polite"
@@ -116,13 +101,26 @@ export default function LoginScreen() {
               </Text>
             </View>
           ) : null}
-          <Button
-            label="Unlock"
-            icon="lock-open-variant-outline"
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Continue with Google"
+            accessibilityState={{ disabled: busy, busy }}
+            disabled={busy}
             onPress={submit}
-            loading={busy}
-            disabled={!password}
-          />
+            className="min-h-[52px] flex-row items-center justify-center gap-3 rounded-2xl border border-line bg-background px-6 active:opacity-80"
+          >
+            {busy ? (
+              <ActivityIndicator color={colors.ink} />
+            ) : (
+              <>
+                <GoogleLogo size={22} />
+                <Text variant="strong">Continue with Google</Text>
+              </>
+            )}
+          </Pressable>
+          <Text variant="caption" tone="muted" className="text-center">
+            Your tasks and money stay private to your account.
+          </Text>
         </View>
 
         <View className="flex-row items-center justify-center gap-1.5">
@@ -132,6 +130,6 @@ export default function LoginScreen() {
           </Text>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

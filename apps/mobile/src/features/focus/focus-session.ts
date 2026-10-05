@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createStore } from "@/lib/store";
+import { resetOnSignOut } from "@/lib/user-data";
 
 export type FocusPhase = "work" | "break";
 
@@ -18,6 +19,7 @@ const KEY = "tt.focus-session";
 
 /** The running Pomodoro, persisted so it survives the app being closed. */
 export const focusStore = createStore<FocusSession | null>(null);
+resetOnSignOut(() => focusStore.set(null));
 
 export async function loadFocusSession() {
   const raw = await AsyncStorage.getItem(KEY);

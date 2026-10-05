@@ -5,9 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { send } from "@/lib/api";
-import { signOut } from "@/lib/auth";
 import { notify } from "@/lib/notify";
-import { queryClient } from "@/lib/query-client";
 
 /** Export downloads the full JSON to the phone: the only copy outside the server. */
 export function DataSection() {
@@ -32,21 +30,15 @@ export function DataSection() {
   };
   return (
     <Card className="gap-3">
-      <Text tone="muted">Your data lives on your server. Export a copy now and then.</Text>
+      <Text tone="muted">
+        Your data lives on the server, apart from everyone else's. Export a copy now and then.
+      </Text>
       <Button
         label="Export all data"
         icon="download"
         variant="secondary"
         loading={busy}
         onPress={exportData}
-      />
-      <Button
-        label="Sign out"
-        variant="ghost"
-        onPress={async () => {
-          await signOut();
-          queryClient.clear();
-        }}
       />
     </Card>
   );

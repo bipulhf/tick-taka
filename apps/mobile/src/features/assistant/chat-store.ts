@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { HttpMethod } from "@/lib/api";
 import { createStore } from "@/lib/store";
+import { resetOnSignOut } from "@/lib/user-data";
 
 export interface ChatAction {
   summary: string;
@@ -24,6 +25,7 @@ const KEY = "tt.assistant-chat";
 const KEEP = 60;
 
 export const chatStore = createStore<ChatMessage[]>([]);
+resetOnSignOut(() => chatStore.set([]));
 
 export async function loadChat() {
   const raw = await AsyncStorage.getItem(KEY);

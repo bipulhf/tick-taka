@@ -3,8 +3,10 @@ import { requestWidgetUpdate } from "react-native-android-widget";
 import { useTransactions } from "@/features/money/queries";
 import { useOutbox } from "@/lib/outbox";
 import { useSettings, useToday } from "@/lib/queries";
+import { resetOnSignOut } from "@/lib/user-data";
 import { SafeToSpendWidget } from "./safe-to-spend-widget";
 import {
+  EMPTY_CACHE,
   pickQuickEntries,
   readPendingLogs,
   readWidgetCache,
@@ -12,6 +14,17 @@ import {
   writeWidgetCache,
 } from "./widget-cache";
 import { WIDGET_NAME } from "./widget-task-handler";
+
+// The widget shows nothing of a signed-out user.
+resetOnSignOut(() => {
+  void requestWidgetUpdate({
+    widgetName: WIDGET_NAME,
+    renderWidget: () => ({
+      light: <SafeToSpendWidget cache={EMPTY_CACHE} scheme="light" />,
+      dark: <SafeToSpendWidget cache={EMPTY_CACHE} scheme="dark" />,
+    }),
+  }).catch(() => {});
+});
 
 /** Keeps the widget's cached numbers fresh and sends any logs tapped while offline. */
 export function useWidgetSync() {

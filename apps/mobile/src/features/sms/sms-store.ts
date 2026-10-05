@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { ParsedSms } from "@tick-taka/shared/sms";
 import { createStore, useStore } from "@/lib/store";
+import { resetOnSignOut } from "@/lib/user-data";
 
 export type CardKind = "expense" | "income" | "transfer";
 
@@ -28,6 +29,7 @@ const KEY = "tt.sms-cards";
 const IGNORED_KEEP_MS = 30 * 86_400_000;
 
 export const smsCardsStore = createStore<SmsCard[]>([]);
+resetOnSignOut(() => smsCardsStore.set([]));
 
 export async function loadSmsCards() {
   const raw = await AsyncStorage.getItem(KEY);

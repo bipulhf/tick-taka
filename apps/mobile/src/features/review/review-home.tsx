@@ -7,9 +7,11 @@ import type { IconName } from "@/components/ui/icon";
 import { ListRow } from "@/components/ui/list-row";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
+import { ShortcutRow } from "@/components/ui/shortcut-row";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useAiStatus } from "@/lib/queries";
+import type { ColorName } from "@/theme/colors";
 import { useGamification } from "./queries";
 
 interface Entry {
@@ -20,19 +22,15 @@ interface Entry {
   ai?: boolean;
 }
 
+/** The rituals used most, as big shortcuts at the top. */
+const RITUALS: { href: string; label: string; icon: IconName; color: ColorName }[] = [
+  { href: "/review/shutdown", label: "Shutdown", icon: "weather-night", color: "grape" },
+  { href: "/review/weekly", label: "Weekly", icon: "calendar-week", color: "sky" },
+  { href: "/review/insights", label: "Reports", icon: "chart-bar", color: "mint" },
+  { href: "/review/payday", label: "Payday", icon: "cash-multiple", color: "mango" },
+];
+
 const ENTRIES: Entry[] = [
-  {
-    href: "/review/shutdown",
-    title: "Daily shutdown",
-    hint: "Two minutes to close the day",
-    icon: "weather-night",
-  },
-  {
-    href: "/review/weekly",
-    title: "Weekly review",
-    hint: "Hours, spending, habits, wins, next focus",
-    icon: "calendar-week",
-  },
   {
     href: "/review/monthly",
     title: "Monthly review",
@@ -40,22 +38,10 @@ const ENTRIES: Entry[] = [
     icon: "calendar-month",
   },
   {
-    href: "/review/insights",
-    title: "Reports",
-    hint: "Where the money and the hours went",
-    icon: "chart-bar",
-  },
-  {
     href: "/review/areas",
     title: "Areas",
     hint: "Each part of life at a glance",
     icon: "view-dashboard-outline",
-  },
-  {
-    href: "/review/payday",
-    title: "Payday plan",
-    hint: "Give every taka a job",
-    icon: "cash-multiple",
   },
   {
     href: "/review/subscriptions",
@@ -88,6 +74,14 @@ export function ReviewHome() {
   const settings = entries.filter((e) => e.href === "/settings");
   return (
     <Screen title="Review">
+      <ShortcutRow
+        items={RITUALS.map((ritual) => ({
+          label: ritual.label,
+          icon: ritual.icon,
+          color: ritual.color,
+          onPress: () => router.push(ritual.href as never),
+        }))}
+      />
       {level ? (
         <Card onPress={() => router.push("/review/rewards")} className="gap-3">
           <View className="flex-row items-center justify-between">
@@ -105,6 +99,18 @@ export function ReviewHome() {
       ) : game.isPending ? (
         <SkeletonCard lines={1} />
       ) : null}
+      {sunday ? (
+        <Group>
+          <ListRow
+            icon="calendar-week"
+            iconColor="mango"
+            title="Weekly review"
+            subtitle="It's Sunday, a good day for it"
+            chevron
+            onPress={() => router.push("/review/weekly")}
+          />
+        </Group>
+      ) : null}
       <Group inset={60}>
         {entries
           .filter((e) => e.href !== "/settings")
@@ -112,13 +118,9 @@ export function ReviewHome() {
             <ListRow
               key={entry.href}
               icon={entry.icon}
-              iconColor={sunday && entry.href === "/review/weekly" ? "mango" : "grape"}
+              iconColor="grape"
               title={entry.title}
-              subtitle={
-                sunday && entry.href === "/review/weekly"
-                  ? "It's Sunday, a good day for it"
-                  : entry.hint
-              }
+              subtitle={entry.hint}
               chevron
               onPress={() => router.push(entry.href as never)}
             />

@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
 import type { IconName } from "@/components/ui/icon";
@@ -58,6 +59,50 @@ export function MoneyHome() {
           <Skeleton className="mt-1 h-11 w-1/2 rounded-2xl" />
         )}
       </View>
+      <View className="flex-row gap-3">
+        <Button
+          label="Expense"
+          icon="minus"
+          variant="secondary"
+          className="flex-1"
+          onPress={() => router.push("/add?kind=expense")}
+        />
+        <Button
+          label="Income"
+          icon="plus"
+          variant="secondary"
+          className="flex-1"
+          onPress={() => router.push("/add?kind=income")}
+        />
+      </View>
+      <ShortcutRow
+        items={[
+          {
+            label: "Transactions",
+            icon: "swap-vertical",
+            color: "mint",
+            onPress: () => router.push("/money/transactions"),
+          },
+          {
+            label: "Budgets",
+            icon: "chart-pie",
+            color: "mint",
+            onPress: () => router.push("/money/budgets"),
+          },
+          {
+            label: "Bills",
+            icon: "receipt",
+            color: "coral",
+            onPress: () => router.push("/money/bills"),
+          },
+          {
+            label: "Goals",
+            icon: "piggy-bank-outline",
+            color: "grape",
+            onPress: () => router.push("/money/goals"),
+          },
+        ]}
+      />
       <AsyncContent
         query={accounts}
         skeleton={<SkeletonList rows={3} trailing />}
@@ -95,34 +140,6 @@ export function MoneyHome() {
           </Group>
         )}
       </AsyncContent>
-      <ShortcutRow
-        items={[
-          {
-            label: "Transactions",
-            icon: "swap-vertical",
-            color: "mint",
-            onPress: () => router.push("/money/transactions"),
-          },
-          {
-            label: "Budgets",
-            icon: "chart-pie",
-            color: "mint",
-            onPress: () => router.push("/money/budgets"),
-          },
-          {
-            label: "Bills",
-            icon: "receipt",
-            color: "coral",
-            onPress: () => router.push("/money/bills"),
-          },
-          {
-            label: "Goals",
-            icon: "piggy-bank-outline",
-            color: "grape",
-            onPress: () => router.push("/money/goals"),
-          },
-        ]}
-      />
       {smsOff ? (
         <Group>
           <ListRow

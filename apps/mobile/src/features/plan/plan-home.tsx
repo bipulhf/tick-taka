@@ -44,6 +44,12 @@ export function PlanHome() {
       <ShortcutRow
         items={[
           {
+            label: "Day",
+            icon: "timeline-clock-outline",
+            color: "sky",
+            onPress: () => router.push(`/plan/day?date=${today}`),
+          },
+          {
             label: "Week",
             icon: "calendar-week",
             color: "sky",
@@ -61,7 +67,6 @@ export function PlanHome() {
             color: "grape",
             onPress: () => router.push("/plan/habits"),
           },
-          { label: "Focus", icon: "sprout", color: "mint", onPress: () => router.push("/focus") },
         ]}
       />
       <Segmented<Tab>

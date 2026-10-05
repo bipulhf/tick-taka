@@ -18,6 +18,14 @@ export function TodaySkeleton() {
           <Skeleton className="h-[72px] w-[72px]" />
         </View>
       </View>
+      <View className="flex-row justify-between">
+        {["task", "expense", "income", "focus"].map((key) => (
+          <View key={key} className="w-[23%] items-center gap-2">
+            <Skeleton className="h-16 w-16 rounded-3xl" />
+            <Skeleton className="h-3 w-12" />
+          </View>
+        ))}
+      </View>
       <SkeletonCard hero lines={1} />
       <View className="gap-3">
         <Skeleton className="h-5 w-28" />

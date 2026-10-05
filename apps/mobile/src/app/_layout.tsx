@@ -8,7 +8,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/nunito";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -38,6 +38,19 @@ const sheet = {
   sheetAllowedDetents: [0.92],
   sheetCornerRadius: 28,
 };
+
+/**
+ * Stack.Protected only guards the screens listed under it; a pushed screen like
+ * Settings would stay on top after sign-out. This sends any signed-out view to login.
+ */
+function SignedOutRedirect({ signedIn }: { signedIn: boolean }) {
+  const router = useRouter();
+  const segments = useSegments();
+  useEffect(() => {
+    if (!signedIn && segments[0] !== "login") router.replace("/login");
+  }, [signedIn, segments, router]);
+  return null;
+}
 
 export default function RootLayout() {
   const scheme = useColorScheme();
@@ -118,6 +131,7 @@ export default function RootLayout() {
                   <Stack.Screen name="login" />
                 </Stack.Protected>
               </Stack>
+              <SignedOutRedirect signedIn={Boolean(token)} />
               {token ? (
                 <>
                   <AppServices />

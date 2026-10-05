@@ -110,13 +110,14 @@ things you buy often, and buttons to add a task, log an expense or start focusin
   a shopping list and a spending calendar.
 - Foreign-currency income converted at the rate you received it.
 
-**Review and rewards**
+**Review**
 - Daily shutdown, weekly and monthly reviews, reports, a dashboard per area of life, a
   payday plan and a subscription spotter.
-- Sparks, levels and unlockable rewards (Tiki outfits) for finishing things.
+- Streaks for your daily task goal and for logging spending the same day, with freeze
+  days so one missed day doesn't reset them.
 - Soft sounds and vibration when you finish something: a chime for a task or habit, a
   bell when focus ends, and confetti with a celebration for all three top tasks, a
-  finished routine, a reached goal or a new level. They mix with your music, stay quiet
+  finished routine or a reached goal. They mix with your music, stay quiet
   on silent, and each can be switched off in Settings.
 
 **Tiki, the assistant** (needs an OpenAI key on the server)
@@ -129,6 +130,7 @@ things you buy often, and buttons to add a task, log an expense or start focusin
 - Google sign-in; one database per user, so nobody can reach anyone else's data.
 - Fingerprint or face lock, a one-tap "hide amounts" switch, and a full JSON export.
 - Signing out wipes that user's data from the phone.
+- Light, dark or system theme, an accent tint, and an outfit for Tiki.
 
 ## How it works
 

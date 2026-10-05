@@ -33,8 +33,14 @@ export function useTaskActions() {
         { status: done ? "done" : "open", doneAt: done ? Date.now() : null },
         "Couldn't update the task",
       );
+      if (!done) return;
       // A subtask is a small step; finishing a task gets the full chime.
-      if (done) playSound(task.parentId ? "pop" : "done");
+      playSound(task.parentId ? "pop" : "done");
+      // A stray tap or swipe can tick the wrong task, so finishing is undoable too.
+      notify(`Done: “${task.title}”`, {
+        label: "Undo",
+        onPress: () => patch(task, { status: task.status, doneAt: null }, "Couldn't undo"),
+      });
     },
     snooze(task: TaskLike) {
       const doAt = (task.doAt ?? Date.now()) + 86_400_000;

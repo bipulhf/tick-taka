@@ -7,15 +7,20 @@ import { useStore } from "@/lib/store";
 import { Text } from "./text";
 
 const VISIBLE_MS = 5000;
+/** An Undo needs time to notice and reach for. */
+const WITH_ACTION_MS = 8000;
 
 export function Snackbar() {
   const snack = useStore(snackStore);
   const insets = useSafeAreaInsets();
   useEffect(() => {
     if (!snack) return;
-    const timer = setTimeout(() => {
-      if (snackStore.get()?.id === snack.id) snackStore.set(null);
-    }, VISIBLE_MS);
+    const timer = setTimeout(
+      () => {
+        if (snackStore.get()?.id === snack.id) snackStore.set(null);
+      },
+      snack.onAction ? WITH_ACTION_MS : VISIBLE_MS,
+    );
     return () => clearTimeout(timer);
   }, [snack]);
   if (!snack) return null;

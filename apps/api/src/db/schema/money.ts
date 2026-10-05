@@ -156,6 +156,7 @@ export const categoryRules = sqliteTable(
   (t) => [uniqueIndex("category_rules_match_uq").on(t.matchText)],
 );
 
+/** From the SMS capture that was removed; kept so earlier rows stay in exports. */
 export const smsImports = sqliteTable(
   "sms_imports",
   {

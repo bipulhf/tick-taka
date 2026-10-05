@@ -8,12 +8,6 @@ Resolve relative dates ("tomorrow", "next Sunday") against the given local date.
 For tasks, remove date, time and repeat words from the title. Never invent an amount.
 The user confirms everything you return; nothing is saved automatically.`;
 
-export const SMS_PROMPT = `You read one bank or mobile-wallet SMS (private details already masked) and return a draft.
-"Received", "cash in" or "credited" is income. "Payment", "send money", "purchase" or "debited" is an expense.
-"Cash out" is a transfer from the wallet to cash, with any fee in "fee".
-Copy the stated balance after the transaction into balanceAfter and the transaction ID into transactionRef.
-Use only the provided account and category names; otherwise null.`;
-
 export const RECEIPT_PROMPT = `You read a photo of a shop receipt and return the merchant, the grand total in major units,
 the date (YYYY-MM-DD) if printed, line items, and the best matching category from the provided list.
 If a value is unreadable, return null rather than guessing.`;

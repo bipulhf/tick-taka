@@ -8,7 +8,7 @@ import {
 } from "@tick-taka/shared/dates";
 import { greeting, tikiLine, tikiMood } from "@tick-taka/shared/tiki";
 import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
-import { debts, smsImports } from "../../db/schema/money";
+import { debts } from "../../db/schema/money";
 import { tasks } from "../../db/schema/time";
 import type { Deps } from "../../lib/deps";
 import { userTime } from "../../lib/user-time";
@@ -168,12 +168,6 @@ export function todayView(deps: Deps, date?: LocalDate) {
         ),
       )
       .get()?.n ?? 0;
-  const smsPendingCount =
-    db
-      .select({ n: sql<number>`count(*)` })
-      .from(smsImports)
-      .where(and(isNull(smsImports.deletedAt), eq(smsImports.status, "pending")))
-      .get()?.n ?? 0;
 
   const money = safeToSpend(deps, day);
   // Pace alert: the one flexible category running furthest ahead of the month.
@@ -215,7 +209,7 @@ export function todayView(deps: Deps, date?: LocalDate) {
     runningTimer: running,
     evening,
     upcoming,
-    counts: { overdue: overdueCount, inbox: inboxCount, smsPending: smsPendingCount },
+    counts: { overdue: overdueCount, inbox: inboxCount },
     gamification: gamificationSummary(deps),
     tomorrow: addDays(day, 1),
   };

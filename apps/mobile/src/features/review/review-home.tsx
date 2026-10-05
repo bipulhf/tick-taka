@@ -59,7 +59,7 @@ const ENTRIES: Entry[] = [
   {
     href: "/settings",
     title: "Settings",
-    hint: "Views, goals, AI, SMS, export",
+    hint: "Views, goals, AI, sounds, export",
     icon: "cog-outline",
   },
 ];

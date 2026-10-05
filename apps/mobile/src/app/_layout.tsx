@@ -121,7 +121,6 @@ export default function RootLayout() {
                   <Stack.Screen name="debt/new" options={sheet} />
                   <Stack.Screen name="budget-edit" options={sheet} />
                   <Stack.Screen name="money/recurring/[id]" options={sheet} />
-                  <Stack.Screen name="money/sms" options={sheet} />
                   <Stack.Screen
                     name="focus"
                     options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}

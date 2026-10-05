@@ -18,7 +18,3 @@ apps/mobile/ios
 apps/mobile/expo-env.d.ts
 apps/mobile/*.apk
 
-# Gradle output of local native modules
-apps/mobile/modules/*/android/build
-apps/mobile/modules/*/android/.cxx
-apps/mobile/modules/*/android/.gradle

@@ -500,41 +500,6 @@ describe("events and shopping", () => {
   });
 });
 
-describe("sms imports", () => {
-  test("server remembers fingerprints across reinstalls", async () => {
-    const ctx = await createTestContext();
-    const item = {
-      fingerprint: "bkash:ref:ABC123",
-      sender: "bKash",
-      receivedAt: DEFAULT_NOW,
-      amountMinor: 50_000,
-      direction: "out",
-    };
-    const first = await ctx.request<{ known: unknown[]; created: string[] }>(
-      "POST",
-      "/sms-imports",
-      {
-        items: [item],
-      },
-    );
-    expect(first.body).toEqual({ known: [], created: ["bkash:ref:ABC123"] });
-    await ctx.request("PATCH", "/sms-imports/bkash:ref:ABC123", { status: "ignored" });
-    const second = await ctx.request<{ known: unknown[]; created: string[] }>(
-      "POST",
-      "/sms-imports",
-      {
-        items: [item],
-      },
-    );
-    expect(second.body.created).toEqual([]);
-    expect(second.body.known).toEqual([
-      { fingerprint: "bkash:ref:ABC123", status: "ignored", transactionId: null },
-    ]);
-    const ignored = await ctx.request<Row[]>("GET", "/sms-imports?status=ignored");
-    expect(ignored.body).toHaveLength(1);
-  });
-});
-
 describe("receipt uploads", () => {
   test("upload and fetch with auth only", async () => {
     const ctx = await createTestContext();

@@ -18,7 +18,7 @@ import type { TodayData } from "@/lib/queries";
  * Everything that isn't "now": one quiet line each, opening into detail. Keeps the
  * top of Today down to the essentials.
  */
-export function LaterToday({ data, smsPending }: { data: TodayData; smsPending: number }) {
+export function LaterToday({ data }: { data: TodayData }) {
   const router = useRouter();
   const send = useOutbox();
   const hidden = usePrivacy();
@@ -29,16 +29,6 @@ export function LaterToday({ data, smsPending }: { data: TodayData; smsPending: 
   const friday = weekdayOf(data.date) === 5;
 
   const rows = [
-    smsPending > 0 ? (
-      <ListRow
-        key="sms"
-        icon="message-text-outline"
-        iconColor="mint"
-        title={`${plural(smsPending, "new card")} from SMS`}
-        chevron
-        onPress={() => router.push("/money/sms")}
-      />
-    ) : null,
     overflow > 0 ? (
       <ListRow
         key="fit"

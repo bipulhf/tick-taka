@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { AssistantButton, useAssistantAvailable } from "@/features/assistant/assistant-button";
-import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { haptic } from "@/lib/haptics";
 import { useColors } from "@/theme/colors";
 
@@ -34,7 +33,6 @@ const TABS: Record<string, { label: string; icon: IconName; activeIcon: IconName
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const smsPending = useSmsPendingCount();
   const colors = useColors();
   const chat = useAssistantAvailable();
   const [capsuleWidth, setCapsuleWidth] = useState(0);
@@ -43,13 +41,12 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const renderTab = (route: (typeof routes)[number]) => {
     const tab = TABS[route.name]!;
     const focused = state.routes[state.index]?.key === route.key;
-    const badge = route.name === "money" ? smsPending : 0;
     return (
       <Pressable
         key={route.key}
         accessibilityRole="tab"
         accessibilityState={{ selected: focused }}
-        accessibilityLabel={badge ? `${tab.label}, ${badge} new` : tab.label}
+        accessibilityLabel={tab.label}
         className="h-12 min-w-12 items-center justify-center"
         onPress={() => {
           haptic.select();
@@ -80,11 +77,6 @@ export function TabBar({ state, navigation }: TabBarProps) {
             <Text variant="callout" tone="background" className="font-nunito-bold">
               {tab.label}
             </Text>
-          ) : null}
-          {badge > 0 ? (
-            <View className="absolute right-0.5 top-1 min-w-5 items-center rounded-full bg-coral px-1">
-              <Text className="text-[11px] font-nunito-bold text-white">{badge}</Text>
-            </View>
           ) : null}
         </View>
       </Pressable>

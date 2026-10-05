@@ -22,8 +22,6 @@ const blankParse = {
   recurrence: null,
   priority: null,
   whenSlot: null,
-  balanceAfter: null,
-  transactionRef: null,
 };
 
 describe("guardrails", () => {
@@ -132,7 +130,7 @@ describe("smart quick-add", () => {
     });
   });
 
-  test("SMS fallback is masked again on the server", async () => {
+  test("AI reads a transfer between the user's own accounts", async () => {
     const ai = new FakeAi();
     const ctx = await createTestContext({ ai });
     await setupMoney(ctx);
@@ -143,21 +141,15 @@ describe("smart quick-add", () => {
       fee: 18.5,
       accountName: "bKash",
       toAccountName: "Cash",
-      balanceAfter: 216,
-      transactionRef: "ZX98",
     });
-    const res = await ctx.request<{ draft: Row; sms: unknown }>("POST", "/ai/parse", {
-      text: "Cash Out Tk 1,000.00 to 01812345678 successful. Fee Tk 18.50.",
-      sms: true,
-      sender: "bKash",
+    const res = await ctx.request<{ draft: Row }>("POST", "/ai/parse", {
+      text: "cashed out 1000 from bkash, 18.50 fee",
     });
-    expect(String(ai.jsonRequests[0]!.user)).not.toContain("01812345678");
     expect(res.body.draft).toMatchObject({
       kind: "transfer",
       amountMinor: 100_000,
       feeMinor: 1_850,
     });
-    expect(res.body.sms).toEqual({ balanceAfterMinor: 21_600, transactionRef: "ZX98" });
   });
 });
 

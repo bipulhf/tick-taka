@@ -1,7 +1,0 @@
-{
-  "name": "sms-reader",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Reads allowed bank and wallet SMS for Tick & Taka (Android only)",
-  "main": "index.ts"
-}

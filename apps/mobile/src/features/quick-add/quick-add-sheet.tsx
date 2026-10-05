@@ -9,7 +9,6 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
-import { updateCard } from "@/features/sms/sms-store";
 import { formatAmount, formatWhen } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { notify } from "@/lib/notify";
@@ -59,12 +58,9 @@ function ChipRow({ children }: { children: React.ReactNode }) {
 export function QuickAddSheet({
   initialText,
   initialKind,
-  smsFingerprint,
 }: {
   initialText?: string;
   initialKind?: QuickAddKind | null;
-  /** Set when editing an SMS card; saving marks the card as added. */
-  smsFingerprint?: string;
 }) {
   const router = useRouter();
   const colors = useColors();
@@ -101,15 +97,6 @@ export function QuickAddSheet({
   const save = () => {
     if (!requests) return;
     for (const request of requests) send(request);
-    const transactionId = (requests[0]?.body as { id?: string } | undefined)?.id;
-    if (smsFingerprint && transactionId) {
-      updateCard(smsFingerprint, { status: "added", transactionId });
-      send({
-        method: "PATCH",
-        path: `/sms-imports/${encodeURIComponent(smsFingerprint)}`,
-        body: { status: "added", transactionId },
-      });
-    }
     haptic.success();
     notify("Saved");
     router.back();

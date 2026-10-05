@@ -14,7 +14,7 @@ export function resetOnSignOut(reset: () => void): void {
 
 /**
  * Leaves nothing of the signed-out user on the phone for the next person: cached
- * screens, queued offline writes, chat, SMS cards, focus session, widget numbers
+ * screens, queued offline writes, chat, focus session, widget numbers
  * and scheduled reminders.
  */
 export async function clearUserData(): Promise<void> {

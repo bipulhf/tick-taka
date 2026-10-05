@@ -3,7 +3,6 @@ import type { TikiOutfit } from "@/components/tiki/tiki";
 import { ErrorState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { HabitChips } from "@/features/habits/habit-chips";
-import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { RunningTimerBar } from "@/features/timer/running-timer-bar";
 import { LaterToday } from "@/features/today/later-today";
 import { NextUp } from "@/features/today/next-up";
@@ -19,7 +18,6 @@ export default function TodayScreen() {
   const today = useToday();
   const { data: areas } = useAreas();
   const { data: settings } = useSettings();
-  const smsPending = useSmsPendingCount();
   const data = today.data;
   const areaEmoji = (areaId: string | null) => areas?.find((a) => a.id === areaId)?.emoji;
 
@@ -51,7 +49,7 @@ export default function TodayScreen() {
         <TopThree data={data} />
         <NextUp data={data} areaEmoji={areaEmoji} />
         <HabitChips data={data} />
-        <LaterToday data={data} smsPending={smsPending} />
+        <LaterToday data={data} />
       </Screen>
       {running ? <RunningTimerBar entry={running} label={timerLabel} /> : null}
     </View>

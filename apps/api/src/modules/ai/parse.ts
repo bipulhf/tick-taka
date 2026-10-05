@@ -17,7 +17,6 @@ import {
   aiParseOutputSchema,
   aiReceiptOutputSchema,
 } from "@tick-taka/shared/schemas/ai";
-import { maskSms } from "@tick-taka/shared/sms";
 import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { toStrictJsonSchema } from "../../ai/json-schema";
 import { callAi, logUsage, requireAi } from "../../ai/usage";
@@ -32,7 +31,7 @@ import {
   type Vocabulary,
   vocabulary,
 } from "./context";
-import { CATEGORIZE_PROMPT, PARSE_PROMPT, RECEIPT_PROMPT, SMS_PROMPT } from "./prompts";
+import { CATEGORIZE_PROMPT, PARSE_PROMPT, RECEIPT_PROMPT } from "./prompts";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -145,28 +144,22 @@ export function toDraft(output: AiParseOutput, vocab: Vocabulary, deps: Deps): A
   }
 }
 
-/** Smart quick-add and the SMS fallback. */
-export async function aiParse(
-  deps: Deps,
-  input: { text: string; kind?: string | undefined; sms: boolean; sender?: string | undefined },
-) {
+/** Smart quick-add: the AI read for text the phone's parser can't settle. */
+export async function aiParse(deps: Deps, input: { text: string; kind?: string | undefined }) {
   const ai = requireAi(deps, "parse");
   const vocab = vocabulary(deps);
-  // Defence in depth: the phone masks SMS before sending, the server masks again.
-  const text = input.sms ? maskSms(input.text) : input.text;
   const user = [
     whenLine(deps),
     describeVocabulary(vocab),
-    input.sender ? `SMS sender: ${input.sender}` : "",
     input.kind ? `The user marked this as: ${input.kind}` : "",
-    `Input: ${JSON.stringify(text)}`,
+    `Input: ${JSON.stringify(input.text)}`,
   ]
     .filter(Boolean)
     .join("\n");
   const result = await callAi(() =>
     ai.json({
       model: "fast",
-      system: input.sms ? SMS_PROMPT : PARSE_PROMPT,
+      system: PARSE_PROMPT,
       user,
       schemaName: "draft",
       jsonSchema: toStrictJsonSchema(aiParseOutputSchema),
@@ -174,17 +167,7 @@ export async function aiParse(
   );
   logUsage(deps, "parse", "fast", result.model, result.usage);
   const output = aiParseOutputSchema.parse(result.data);
-  const account = findByName(vocab.accounts, output.accountName);
-  return {
-    draft: toDraft(output, vocab, deps),
-    sms: input.sms
-      ? {
-          balanceAfterMinor:
-            output.balanceAfter === null ? null : toMinor(output.balanceAfter, account?.currency),
-          transactionRef: output.transactionRef,
-        }
-      : null,
-  };
+  return { draft: toDraft(output, vocab, deps) };
 }
 
 /** Receipt photo → expense draft. */
@@ -223,8 +206,6 @@ export async function aiReceipt(deps: Deps, input: { imageBase64: string; mimeTy
       recurrence: null,
       priority: null,
       whenSlot: null,
-      balanceAfter: null,
-      transactionRef: null,
     },
     vocab,
     deps,

@@ -71,7 +71,7 @@ export interface TimeEntryDraft {
 
 export type QuickAddDraft = MoneyDraft | TaskDraft | TimeEntryDraft;
 
-/** Transfers only come from the AI parser (e.g. an SMS cash-out); quick-add never infers them. */
+/** Transfers only come from the AI parser; quick-add never infers them. */
 export interface TransferDraft {
   kind: "transfer";
   amountMinor: number | null;

@@ -81,8 +81,6 @@ your top three and what's next. Quick-add reads plain text such as "biryani with
 - Quick-add parses plain text into a task, expense, income or time entry ("cha 20",
   "+45000 salary", "2h thesis", "call bank tomorrow 5pm"). AI fills in when the text is
   unclear.
-- Bank and mobile-wallet SMS (bKash, cards, banks) turn into cards you confirm. Nothing
-  saves without you.
 - Receipt photos, scanned by AI.
 - App shortcuts on the launcher icon, and a home-screen widget with safe to spend and
   one-tap logging.
@@ -127,7 +125,7 @@ your top three and what's next. Quick-add reads plain text such as "biryani with
 │  Google account picker ──────┼─ ID token ─▶  verifies with Google, issues JWT   │
 │  TanStack Query cache        │  JWT       │  users.db: who can sign in          │
 │  offline write queue         ◀────────────┤  users/<id>.db: one SQLite per user │
-│  SMS reader (Kotlin module)  │            │  croner: nightly jobs per time zone │
+│  home-screen widget          │            │  croner: nightly jobs per time zone │
 └──────────────────────────────┘            │  OpenAI (optional) for AI features  │
                                             └─────────────────────────────────────┘
 ```
@@ -196,7 +194,7 @@ first sign-in takes over the database at `DB_PATH`, with its receipts and backup
 
 ### 3. Mobile
 
-SMS capture and Google sign-in use native code, so the app runs in a development build
+Google sign-in uses native code, so the app runs in a development build
 (`expo-dev-client`), not Expo Go.
 
 ```bash
@@ -273,9 +271,8 @@ cd apps/mobile
 bunx eas-cli build -p android --profile preview    # APK pointing at the HTTPS API
 ```
 
-The app is a sideloaded APK: Google Play only allows SMS permissions for default SMS
-apps. If the SMS permission is greyed out, open phone Settings › Apps › Tick & Taka, tap
-⋮, choose *Allow restricted settings*, then grant SMS again.
+The app is installed as an APK. It never asks to read your messages: SMS permissions are
+blocked in the build, so the phone can't grant them even by accident.
 
 ## Project layout
 
@@ -289,7 +286,6 @@ tick-taka/
     src/app/             screens (file-based routes)
     src/features/        feature components and hooks
     src/components/ui/   the shared UI kit
-    modules/sms-reader/  local Expo module in Kotlin for SMS capture
   packages/shared/       Zod schemas and pure domain logic used by both
   deploy/                Nginx site config
   docs/                  implementation plan and these screenshots

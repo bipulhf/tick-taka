@@ -16,14 +16,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "permissions": [
-        "READ_SMS",
-        "RECEIVE_SMS",
-        "POST_NOTIFICATIONS",
-        "USE_BIOMETRIC",
-        "VIBRATE",
-        "RECORD_AUDIO"
-      ],
+      "permissions": ["POST_NOTIFICATIONS", "USE_BIOMETRIC", "VIBRATE", "RECORD_AUDIO"],
+      "blockedPermissions": ["android.permission.READ_SMS", "android.permission.RECEIVE_SMS"],
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false
     },

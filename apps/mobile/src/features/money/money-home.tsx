@@ -1,4 +1,3 @@
-import { hasSmsPermission, isSmsReaderAvailable } from "@modules/sms-reader";
 import type { AccountType } from "@tick-taka/shared/schemas/money";
 import { useRouter } from "expo-router";
 import { View } from "react-native";
@@ -14,7 +13,6 @@ import { Section } from "@/components/ui/section";
 import { ShortcutRow } from "@/components/ui/shortcut-row";
 import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
-import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
 import { useTransactions } from "./queries";
 import { TransactionRow, useLookup } from "./transaction-row";
@@ -33,7 +31,6 @@ export function MoneyHome() {
   const accounts = useAccounts();
   const { data: categories = [] } = useCategories();
   const recent = useTransactions({ limit: "6" });
-  const sms = useSmsPendingCount();
   const list = accounts.data ?? [];
   const lookup = useLookup(list, categories);
   const currency = settings?.defaultCurrency ?? "BDT";
@@ -41,7 +38,6 @@ export function MoneyHome() {
     .filter((a) => a.currency === currency)
     .reduce((sum, a) => sum + a.balanceMinor, 0);
   const items = recent.data?.pages.flatMap((p) => p.items) ?? [];
-  const smsOff = isSmsReaderAvailable && !hasSmsPermission();
 
   return (
     <Screen
@@ -140,18 +136,6 @@ export function MoneyHome() {
           </Group>
         )}
       </AsyncContent>
-      {smsOff ? (
-        <Group>
-          <ListRow
-            icon="message-lock-outline"
-            iconColor="mango"
-            title="Log bank SMS automatically"
-            subtitle="Allow SMS access, nothing saves without you"
-            chevron
-            onPress={() => router.push("/settings/sms")}
-          />
-        </Group>
-      ) : null}
       <Section title="Recent" action="All" onAction={() => router.push("/money/transactions")}>
         <AsyncContent
           query={recent}
@@ -179,14 +163,6 @@ export function MoneyHome() {
       </Section>
       <Section title="More">
         <Group inset={60}>
-          <ListRow
-            icon="message-text-outline"
-            iconColor="mint"
-            title="SMS"
-            subtitle={sms ? `${sms} waiting for review` : "Bank and wallet messages"}
-            chevron
-            onPress={() => router.push("/money/sms")}
-          />
           <ListRow
             icon="handshake-outline"
             iconColor="grape"

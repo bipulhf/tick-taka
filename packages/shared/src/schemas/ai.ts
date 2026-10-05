@@ -11,9 +11,6 @@ import { idSchema, localDateSchema, localMonthSchema } from "./common";
 export const aiParseRequestSchema = z.object({
   text: z.string().trim().min(1).max(1000),
   kind: z.enum(["expense", "income", "task", "time_entry"]).optional(),
-  /** True when `text` is a masked SMS from the fallback path. */
-  sms: z.boolean().default(false),
-  sender: z.string().max(40).optional(),
 });
 export const aiReceiptRequestSchema = z.object({
   imageBase64: z.string().min(100).max(8_000_000),
@@ -55,8 +52,6 @@ export const aiParseOutputSchema = z.object({
   ),
   priority: z.enum(["low", "normal", "high"]).nullable(),
   whenSlot: z.enum(["day", "evening"]).nullable(),
-  balanceAfter: z.number().nullable().describe("Balance after the transaction stated in an SMS"),
-  transactionRef: nullableString.describe("Transaction ID stated in an SMS"),
 });
 export type AiParseOutput = z.infer<typeof aiParseOutputSchema>;
 

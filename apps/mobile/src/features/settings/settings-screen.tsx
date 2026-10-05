@@ -20,7 +20,7 @@ import { useUpdateSettings } from "./use-update-settings";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const AI_LABELS = {
-  parse: "Smart quick-add and SMS",
+  parse: "Smart quick-add",
   receipt: "Receipt scan",
   categorize: "Auto-categorise",
   planDay: "Plan my day",
@@ -188,13 +188,6 @@ export function SettingsScreen() {
             hint="Show big expenses as hours of work"
             value={s.costInHours}
             onChange={(on) => update({ costInHours: on })}
-          />
-          <ListRow
-            title="SMS sources"
-            subtitle={`${s.smsSources.length} sender${s.smsSources.length === 1 ? "" : "s"} mapped`}
-            icon="message-text-outline"
-            chevron
-            onPress={() => router.push("/settings/sms")}
           />
           <ListRow
             title="Areas and categories"

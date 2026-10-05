@@ -9,20 +9,18 @@ import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
-import { useSmsPendingCount } from "@/features/sms/use-sms-pending";
 import { useTaskActions } from "@/features/tasks/use-task-actions";
 import { plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useShutdown } from "./queries";
 
-/** A 2-minute evening routine: SMS cards, missed spending, habits, tomorrow's top three. */
+/** A 2-minute evening routine: missed spending, habits, tomorrow's top three. */
 export function ShutdownFlow() {
   const router = useRouter();
   const send = useOutbox();
   const actions = useTaskActions();
   const shutdown = useShutdown();
-  const sms = useSmsPendingCount();
   const data = shutdown.data;
   if (!data)
     return (
@@ -45,17 +43,6 @@ export function ShutdownFlow() {
       subtitle={`${plural(data.tasksDone, "task")} done today`}
       tabBarPadding={false}
     >
-      {sms > 0 ? (
-        <Card onPress={() => router.push("/money/sms")} className="flex-row items-center gap-3">
-          <Text className="text-xl">✉️</Text>
-          <Text className="flex-1">
-            {sms} SMS card{sms === 1 ? "" : "s"} still waiting
-          </Text>
-          <Text tone="sky" variant="strong">
-            Review
-          </Text>
-        </Card>
-      ) : null}
       <Section title="1 · Missed spending?">
         <Card className="gap-2">
           <Text tone="muted">

@@ -21,8 +21,6 @@ export const BUDGET_TYPES = ["fixed", "non_monthly", "flexible"] as const;
 export const TRANSACTION_TYPES = ["expense", "income", "transfer", "adjustment"] as const;
 export const RECURRING_KINDS = ["bill", "income"] as const;
 export const DEBT_DIRECTIONS = ["owed_to_me", "i_owe"] as const;
-export const SMS_STATUSES = ["pending", "added", "ignored"] as const;
-export const SMS_DIRECTIONS = ["in", "out", "cash_out"] as const;
 
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
 export type TransactionType = (typeof TRANSACTION_TYPES)[number];
@@ -305,20 +303,6 @@ export const categoryRuleCreateSchema = z.object({
   matchText: z.string().trim().min(2).max(80),
   categoryId: idSchema.nullable(),
   areaId: idSchema.nullable().optional(),
-});
-
-// SMS imports -------------------------------------------------------------------
-export const smsImportItemSchema = z.object({
-  fingerprint: z.string().min(3).max(120),
-  sender: z.string().min(1).max(40),
-  receivedAt: epochMsSchema,
-  amountMinor: z.number().int().nonnegative(),
-  direction: z.enum(SMS_DIRECTIONS),
-});
-export const smsImportBatchSchema = z.object({ items: z.array(smsImportItemSchema).max(500) });
-export const smsImportPatchSchema = z.object({
-  status: z.enum(SMS_STATUSES),
-  transactionId: idSchema.nullable().optional(),
 });
 
 // Reports -----------------------------------------------------------------------

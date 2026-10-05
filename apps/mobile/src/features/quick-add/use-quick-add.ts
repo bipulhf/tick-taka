@@ -99,7 +99,7 @@ export function useQuickAdd(initialText = "", initialKind: QuickAddKind | null =
       setAiBusy(true);
       try {
         const result = await unwrap(
-          api.ai.parse.$post({ json: { text, sms: false, ...(kind ? { kind } : {}) } }),
+          api.ai.parse.$post({ json: { text, ...(kind ? { kind } : {}) } }),
         );
         if (seq === requestSeq.current) setAiDraft(result.draft as AnyDraft);
       } catch {

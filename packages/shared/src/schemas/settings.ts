@@ -16,18 +16,6 @@ export const AI_FEATURES = [
 ] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 
-export const smsTemplateSchema = z.object({
-  pattern: z.string().max(2000),
-  roles: z.array(z.enum(["amount", "fee", "balance", "ref", "party", "skip"])),
-  direction: z.enum(["in", "out", "cash_out"]),
-});
-
-export const smsSourceSchema = z.object({
-  sender: z.string().trim().min(1).max(40),
-  accountId: idSchema,
-  templates: z.array(smsTemplateSchema).max(10).default([]),
-});
-
 /**
  * Every setting with its default. Stored as one row per key with a JSON value;
  * reads merge stored values over these defaults.
@@ -86,8 +74,6 @@ export const settingsSchema = z.object({
       features: z.partialRecord(z.enum(AI_FEATURES), z.boolean()).default({}),
     })
     .default({ enabled: true, monthlyCapMicros: 2_000_000, features: {} }),
-  smsSources: z.array(smsSourceSchema).default([]),
-  smsLastScanAt: z.number().int().nonnegative().default(0),
   billOverdueGraceDays: z.number().int().min(0).max(30).default(0),
   /** "Next week's focus" picked at the end of the weekly review. */
   weeklyFocus: z.string().max(200).nullable().default(null),

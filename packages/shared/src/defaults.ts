@@ -259,7 +259,6 @@ export const DEFAULT_ROUTINES: DefaultRoutine[] = [
     name: "Shutdown",
     emoji: "🌙",
     steps: [
-      { title: "Review SMS cards waiting", minutes: null },
       { title: "Log missed spending", minutes: 1 },
       { title: "Check off habits", minutes: null },
       { title: "Pick tomorrow's top three", minutes: 1 },

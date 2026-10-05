@@ -4,7 +4,7 @@ import {
   type SettingsPatch,
   settingsSchema,
 } from "@tick-taka/shared/schemas/settings";
-import { inArray, isNull } from "drizzle-orm";
+import { inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "../../db/client";
 import { settings } from "../../db/schema/system";
 
@@ -27,7 +27,9 @@ export function writeSettings(db: Db, patch: SettingsPatch, now: number): Settin
   const entries = Object.entries(patch).filter(([, value]) => value !== undefined);
   if (entries.length > 0) {
     db.transaction((tx) => {
-      for (const [key, value] of entries) {
+      for (const [key, raw] of entries) {
+        // The column is NOT NULL JSON; a cleared setting is stored as the JSON text `null`.
+        const value = raw === null ? sql`'null'` : raw;
         tx.insert(settings)
           .values({ key, value, createdAt: now, updatedAt: now, deletedAt: null })
           .onConflictDoUpdate({

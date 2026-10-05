@@ -88,6 +88,20 @@ describe("foundation", () => {
     expect(after.body).toMatchObject({ vacationMode: true, dailyTaskGoal: 3 });
   });
 
+  test("a nullable setting can be cleared again", async () => {
+    const { request } = await createTestContext();
+    await request("PATCH", "/settings", { tikiOutfit: "cap", rewardTheme: "mint-breeze" });
+    const cleared = await request<{ tikiOutfit: string | null; rewardTheme: string | null }>(
+      "PATCH",
+      "/settings",
+      { tikiOutfit: null, rewardTheme: null },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.body).toMatchObject({ tikiOutfit: null, rewardTheme: null });
+    const again = await request<{ tikiOutfit: string | null }>("GET", "/settings");
+    expect(again.body.tikiOutfit).toBeNull();
+  });
+
   test("seed runs once", async () => {
     const { deps } = await createTestContext();
     const { seedDefaults } = await import("../src/db/seed");

@@ -17,8 +17,10 @@ const deps = createDeps({
 const app = createApp(deps);
 if (env.JOBS_ENABLED) startJobs(deps);
 
-export default {
+// Started explicitly: pm2 imports this file from its own wrapper, and Bun only
+// serves a default-exported fetch when the file is the entry point.
+Bun.serve({
   port: env.PORT,
   hostname: env.HOST,
   fetch: app.fetch,
-};
+});

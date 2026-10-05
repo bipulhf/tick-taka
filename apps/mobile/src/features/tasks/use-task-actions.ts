@@ -3,10 +3,13 @@ import { SPARKS } from "@tick-taka/shared/gamification";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import type { TaskRow } from "@/lib/queries";
+import { playSound } from "@/lib/sounds";
 import { awardSparks } from "@/lib/sparks";
 import { patchTaskEverywhere, updateToday } from "@/lib/today-cache";
 
-type TaskLike = Pick<TaskRow, "id" | "title" | "status" | "top3Date" | "doAt">;
+type TaskLike = Pick<TaskRow, "id" | "title" | "status" | "top3Date" | "doAt"> & {
+  parentId?: string | null;
+};
 
 /** Task writes with optimistic Today updates; every change is queued in the offline outbox. */
 export function useTaskActions() {
@@ -31,7 +34,11 @@ export function useTaskActions() {
         { status: done ? "done" : "open", doneAt: done ? Date.now() : null },
         "Couldn't update the task",
       );
-      if (done) awardSparks(task.top3Date === today ? SPARKS.topThreeTaskDone : SPARKS.taskDone);
+      if (done) {
+        awardSparks(task.top3Date === today ? SPARKS.topThreeTaskDone : SPARKS.taskDone);
+        // A subtask is a small step; finishing a task gets the full chime.
+        playSound(task.parentId ? "pop" : "done");
+      }
     },
     snooze(task: TaskLike) {
       const doAt = (task.doAt ?? Date.now()) + 86_400_000;

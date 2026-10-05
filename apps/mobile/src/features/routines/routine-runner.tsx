@@ -15,6 +15,7 @@ import { TextField } from "@/components/ui/text-field";
 import { useNow } from "@/features/timer/use-now";
 import { formatTimer } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
+import { playSound } from "@/lib/sounds";
 import { type Routine, useRoutines } from "./queries";
 
 interface DraftStep {
@@ -188,14 +189,15 @@ export function RoutineRunner({ id, startInEdit }: { id: string; startInEdit: bo
                 tone="grape"
                 checked={checked.has(step.id)}
                 label={step.title}
-                onChange={(on) =>
+                onChange={(on) => {
+                  if (on) playSound("pop");
                   setChecked((set) => {
                     const next = new Set(set);
                     if (on) next.add(step.id);
                     else next.delete(step.id);
                     return next;
-                  })
-                }
+                  });
+                }}
               />
               <Text className={`flex-1 ${checked.has(step.id) ? "text-muted line-through" : ""}`}>
                 {step.title}

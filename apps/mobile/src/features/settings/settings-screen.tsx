@@ -9,6 +9,7 @@ import { Section } from "@/components/ui/section";
 import { Segmented } from "@/components/ui/segmented";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
+import { setFeedbackPrefs, useFeedbackPrefs } from "@/lib/feedback-prefs";
 import { formatMinutes } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { togglePrivacy, usePrivacy } from "@/lib/privacy";
@@ -37,6 +38,7 @@ export function SettingsScreen() {
   const { data: accounts = [] } = useAccounts();
   const ai = useAiStatus();
   const privacy = usePrivacy();
+  const feedback = useFeedbackPrefs();
   const update = useUpdateSettings();
   if (!s)
     return (
@@ -248,6 +250,22 @@ export function SettingsScreen() {
               />
             ))}
           </ChoiceRow>
+        </Card>
+      </Section>
+      <Section title="Sounds and vibration">
+        <Card className="gap-1">
+          <ToggleRow
+            label="Sounds"
+            hint="A soft chime when you finish something; quiet when the phone is on silent"
+            value={feedback.sounds}
+            onChange={(on) => setFeedbackPrefs({ sounds: on })}
+          />
+          <ToggleRow
+            label="Vibration"
+            hint="A tap you can feel for checks, saves and wins"
+            value={feedback.haptics}
+            onChange={(on) => setFeedbackPrefs({ haptics: on })}
+          />
         </Card>
       </Section>
       <Section title="Privacy and security">

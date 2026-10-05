@@ -8,11 +8,17 @@ import Animated, {
   withDelay,
   withTiming,
 } from "react-native-reanimated";
+import { haptic } from "@/lib/haptics";
+import { playSound } from "@/lib/sounds";
 import { createStore, useStore } from "@/lib/store";
 
-/** Big wins only: all top three done, a savings goal reached, a 30-day streak. */
+/** Big wins only: all top three done, a routine finished, a savings goal reached, a new level. */
 export const confettiStore = createStore(0);
-export const celebrate = () => confettiStore.set(confettiStore.get() + 1);
+export const celebrate = () => {
+  confettiStore.set(confettiStore.get() + 1);
+  playSound("celebrate");
+  haptic.celebrate();
+};
 
 const COLORS = ["#FFB547", "#5B8CFF", "#2EC4A0", "#FF7A6B", "#A57BFF"];
 const PIECE_IDS = Array.from({ length: 36 }, (_, i) => i);

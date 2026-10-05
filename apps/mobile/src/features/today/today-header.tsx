@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Pressable, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -7,9 +7,11 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Tiki, type TikiOutfit } from "@/components/tiki/tiki";
+import { celebrate } from "@/components/ui/confetti";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { formatLocalDate } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { togglePrivacy, usePrivacy } from "@/lib/privacy";
 import type { TodayData } from "@/lib/queries";
 import { sparkBurstStore } from "@/lib/sparks";
@@ -54,9 +56,22 @@ function SparkPill({ level, sparks }: { level: number; sparks: number }) {
   );
 }
 
+/** Confetti, a chime and a note the moment the level goes up. */
+function useLevelUp(level: number) {
+  const seen = useRef(level);
+  useEffect(() => {
+    if (level > seen.current) {
+      celebrate();
+      notify(`Level ${level}! ✨ Keep it going.`);
+    }
+    seen.current = level;
+  }, [level]);
+}
+
 /** Date, greeting and Tiki's mood: the first thing the day says. */
 export function TodayHeader({ data, outfit }: { data: TodayData; outfit: TikiOutfit }) {
   const privacy = usePrivacy();
+  useLevelUp(data.gamification.level.level);
   const goal = data.gamification.dailyGoal;
   const goalText = goal.onVacation
     ? "On vacation"

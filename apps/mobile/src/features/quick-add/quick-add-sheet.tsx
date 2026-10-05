@@ -13,6 +13,7 @@ import { formatAmount, formatWhen } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
+import { playSound } from "@/lib/sounds";
 import type { ColorName } from "@/theme/colors";
 import { useColors } from "@/theme/colors";
 import { type DayChoice, useQuickAdd } from "./use-quick-add";
@@ -98,6 +99,7 @@ export function QuickAddSheet({
     if (!requests) return;
     for (const request of requests) send(request);
     haptic.success();
+    playSound("pop");
     notify("Saved");
     router.back();
   };

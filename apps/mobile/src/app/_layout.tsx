@@ -23,8 +23,10 @@ import { loadFocusSession } from "@/features/focus/focus-session";
 import { AppLock } from "@/features/security/app-lock";
 import { loadThemeChoice, ThemedRoot } from "@/features/settings/themed-root";
 import { loadToken, tokenStore } from "@/lib/auth";
+import { loadFeedbackPrefs } from "@/lib/feedback-prefs";
 import { loadPrivacy } from "@/lib/privacy";
 import { PERSIST_MAX_AGE, persister, queryClient } from "@/lib/query-client";
+import { preloadSounds } from "@/lib/sounds";
 import { useStore } from "@/lib/store";
 import { palette } from "@/theme/colors";
 
@@ -67,6 +69,8 @@ export default function RootLayout() {
   useEffect(() => {
     void loadToken();
     void loadPrivacy();
+    void loadFeedbackPrefs();
+    preloadSounds();
     void loadFocusSession();
     void loadThemeChoice();
   }, []);

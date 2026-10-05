@@ -56,7 +56,8 @@ export function useVoiceInput(onText: (text: string) => void) {
   const finish = async (keep: boolean) => {
     if (state !== "recording") return;
     await recorder.stop();
-    await setAudioModeAsync({ allowsRecording: false });
+    // Back to cue mode: win sounds stay quiet while the phone is on silent.
+    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: false });
     const uri = recorder.uri;
     const heardNothing =
       durationMillis < MIN_MS || (peak.current !== null && peak.current < SILENCE_DB);

@@ -16,6 +16,7 @@ import { haptic } from "@/lib/haptics";
 import { cancelFocusEnd, scheduleFocusEnd } from "@/lib/notifications";
 import { useOutbox } from "@/lib/outbox";
 import { useSettings } from "@/lib/queries";
+import { playSound } from "@/lib/sounds";
 import { awardSparks } from "@/lib/sparks";
 import { useStore } from "@/lib/store";
 import { focusStore, REVIVE_WINDOW_MS, setFocusSession } from "./focus-session";
@@ -68,6 +69,7 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
     });
     awardSparks(SPARKS.focusSession);
     haptic.success();
+    playSound("focus");
     const current = focusStore.get();
     setFocusSession({
       phase: "break",

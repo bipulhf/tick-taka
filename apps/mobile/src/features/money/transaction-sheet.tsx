@@ -19,6 +19,7 @@ import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
 import { formatWhen } from "@/lib/format";
+import { haptic } from "@/lib/haptics";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate, pickTime } from "@/lib/pick-date";
@@ -31,6 +32,7 @@ import {
   useSettings,
 } from "@/lib/queries";
 import { pickReceipt, receiptUrl, uploadReceipt } from "@/lib/receipts";
+import { playSound } from "@/lib/sounds";
 import { useEvents, useTransaction } from "./queries";
 
 type TxType = "expense" | "income" | "transfer";
@@ -148,13 +150,16 @@ export function TransactionSheet({ id }: { id: string | null }) {
       });
       if (existing.data && body.categoryId !== existing.data.categoryId && body.note)
         notify("Got it. Next time this goes to the same category.");
-    } else
+    } else {
       send({
         method: "POST",
         path: "/transactions",
         body: { id: newId(), ...body },
         label: "Couldn't save",
       });
+      haptic.success();
+      playSound("pop");
+    }
     router.back();
   });
 

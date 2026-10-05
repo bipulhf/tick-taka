@@ -9,6 +9,7 @@ import { Text } from "@/components/ui/text";
 import { haptic } from "@/lib/haptics";
 import { useOutbox } from "@/lib/outbox";
 import type { TodayData } from "@/lib/queries";
+import { playSound } from "@/lib/sounds";
 import { awardSparks } from "@/lib/sparks";
 import { updateToday } from "@/lib/today-cache";
 
@@ -95,7 +96,11 @@ export function HabitChips({ data }: { data: TodayData }) {
       body: { count },
       label: `Couldn't update ${habit.name}`,
     });
-    if (done && !habit.doneToday) awardSparks(SPARKS.habitChecked);
+    if (done && !habit.doneToday) {
+      awardSparks(SPARKS.habitChecked);
+      haptic.success();
+      playSound("done");
+    } else haptic.tap();
   };
   return (
     <Section title="Habits" action="All" onAction={() => router.push("/plan/habits")}>

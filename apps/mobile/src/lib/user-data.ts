@@ -3,7 +3,7 @@ import * as Notifications from "expo-notifications";
 import { persister, queryClient } from "./query-client";
 
 /** Phone preferences, not anyone's data: they stay when someone signs out. */
-const DEVICE_KEYS = new Set(["tt.theme", "tt.privacy"]);
+const DEVICE_KEYS = new Set(["tt.theme", "tt.privacy", "tt.feedback"]);
 
 const resets = new Set<() => void>();
 

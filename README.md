@@ -262,7 +262,7 @@ pm2 install pm2-logrotate
 sudo cp ~/tick-taka/deploy/nginx-tick-taka.conf /etc/nginx/sites-available/tick-taka
 sudo ln -s /etc/nginx/sites-available/tick-taka /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d tt-api.bipulhf.dev
+sudo certbot --nginx -d tick.mehedismathacademy.com
 ```
 
 Updating: `git pull && bun install && pm2 restart tick-taka-api`.

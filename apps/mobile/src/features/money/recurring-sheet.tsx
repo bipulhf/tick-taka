@@ -21,6 +21,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { payRecurring } from "@/features/money/recurring-pay";
 import { useRecurring } from "@/features/plan/queries";
 import { formatAmount, formatLocalDate } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -121,13 +122,14 @@ function RecurringForm({ id }: { id: string | null }) {
       if (!(value > 0)) return notify(`Enter the ${currency} → ${account?.currency} rate`);
       body.rate = value;
     }
-    send({
-      method: "POST",
-      path: `/recurring/${item.id}/pay`,
-      body,
-      label: `Couldn't log ${item.name}`,
+    const undo = payRecurring(send, item, body);
+    notify(skip ? "Skipped this one" : `${item.name} logged`, {
+      label: "Undo",
+      onPress: () => {
+        undo();
+        notify(`Took back ${item.name}`);
+      },
     });
-    notify(skip ? "Skipped this one" : `${item.name} logged`);
     router.back();
   };
 

@@ -21,7 +21,7 @@ async function internetBill(ctx: TestContext) {
   return bill.body;
 }
 
-type PayResult = { transaction: Row | null; recurring: Row };
+type PayResult = { transaction: Row | null; recurring: Row; previousDueAt: number | null };
 
 describe("repeat rules that never occur are refused", () => {
   test("bills and tasks", async () => {
@@ -84,5 +84,32 @@ describe("paying a bill is safe to replay", () => {
     });
     expect(november.body.transaction).not.toBeNull();
     expect(november.body.recurring.nextDueAt).toBe(due(12));
+  });
+});
+
+describe("paying a bill can be undone", () => {
+  test("the reply names the due date it moved from; delete + move back restores the bill", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    const transactionId = newId();
+    const paid = await ctx.request<PayResult>("POST", `/recurring/${bill.id}/pay`, {
+      transactionId,
+      dueAt: due(10),
+    });
+    expect(paid.body.previousDueAt).toBe(due(10));
+    // A replay moves nothing, so there is nothing to move back.
+    const replay = await ctx.request<PayResult>("POST", `/recurring/${bill.id}/pay`, {
+      transactionId,
+      dueAt: due(10),
+    });
+    expect(replay.body.previousDueAt).toBeNull();
+
+    expect((await ctx.request("DELETE", `/transactions/${transactionId}`)).status).toBe(200);
+    const restored = await ctx.request<Row>("PATCH", `/recurring/${bill.id}`, {
+      nextDueAt: paid.body.previousDueAt,
+    });
+    expect(restored.body.nextDueAt).toBe(due(10));
+    const expenses = await ctx.request<{ items: Row[] }>("GET", "/transactions?type=expense");
+    expect(expenses.body.items).toHaveLength(0);
   });
 });

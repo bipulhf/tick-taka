@@ -90,7 +90,8 @@ export function recurringService(deps: Deps) {
 
     /**
      * "Paid" or "Received": logs the transaction and moves next_due_at forward.
-     * Foreign-currency income is converted at the rate I enter.
+     * Foreign-currency income is converted at the rate I enter. Replies with the due date
+     * it moved from (previousDueAt), or null when nothing moved (a replay or a late tap).
      */
     pay(id: string, input: z.output<typeof recurringPaySchema>) {
       const item = base.get(id);
@@ -105,11 +106,11 @@ export function recurringService(deps: Deps) {
             .get();
           if (logged) {
             if (logged.recurringId !== item.id) throw conflict("That transaction id is taken");
-            return { transaction: logged, recurring: item };
+            return { transaction: logged, recurring: item, previousDueAt: null };
           }
         }
         if (input.dueAt !== undefined && input.dueAt < item.nextDueAt)
-          return { transaction: null, recurring: item };
+          return { transaction: null, recurring: item, previousDueAt: null };
         let transaction: typeof transactions.$inferSelect | null = null;
         if (!input.skip) {
           const accountId = input.accountId ?? item.accountId ?? settings.defaultAccountId;
@@ -155,7 +156,8 @@ export function recurringService(deps: Deps) {
             db.select().from(transactions).where(eq(transactions.id, transactionId)).get() ?? null;
         }
         const updated = base.update(id, { nextDueAt: advance(item, timeZone), overdueAt: null });
-        return { transaction, recurring: updated };
+        // previousDueAt lets the app undo: delete the transaction, then move the due date back.
+        return { transaction, recurring: updated, previousDueAt: item.nextDueAt };
       });
     },
 

@@ -7,6 +7,7 @@ import { Group } from "@/components/ui/group";
 import { ListRow } from "@/components/ui/list-row";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
+import { payRecurring } from "@/features/money/recurring-pay";
 import { TaskRow } from "@/features/tasks/task-row";
 import { formatClock, formatMinutes } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -41,15 +42,19 @@ function MoneyRow({ item }: { item: Extract<Item, { kind: "bill" | "payday" }> }
               router.push(`/money/recurring/${item.id}`);
               return;
             }
-            send({
-              method: "POST",
-              path: `/recurring/${item.id}/pay`,
+            const undo = payRecurring(send, item, {
+              transactionId: newId(),
               // The due time seen here (start of today if overdue): a replay or double tap
               // then finds the bill already moved past it and changes nothing.
-              body: { transactionId: newId(), dueAt: item.at },
-              label: `Couldn't log ${item.name}`,
+              dueAt: item.at,
             });
-            notify(`${item.name} logged`);
+            notify(`${item.name} logged`, {
+              label: "Undo",
+              onPress: () => {
+                undo();
+                notify(`Took back ${item.name}`);
+              },
+            });
           }}
         />
       }

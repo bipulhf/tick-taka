@@ -10,7 +10,21 @@ import {
 import { newId } from "@tick-taka/shared/ids";
 import { nextOccurrence, parseRRule } from "@tick-taka/shared/recurrence";
 import type { TaskCreate, TaskListQuery, TaskUpdate } from "@tick-taka/shared/schemas/time";
-import { and, asc, desc, eq, gte, inArray, isNull, lt, ne, or, type SQL, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  between,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  lt,
+  ne,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import { tasks } from "../../db/schema/time";
 import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
@@ -22,6 +36,8 @@ export type Task = typeof tasks.$inferSelect;
 
 const OPEN_STATUSES = ["inbox", "open"] as const;
 const PRIORITY_RANK = { low: 0, normal: 1, high: 2 } as const;
+/** Subtasks stamped this soon after their parent's deletion were deleted with it. */
+const CASCADE_WINDOW_MS = 5_000;
 
 export function taskService(deps: Deps) {
   const base = crud(deps.db, tasks, "Task", deps.now);
@@ -52,6 +68,17 @@ export function taskService(deps: Deps) {
       .where(and(...filters))
       .get();
     if ((count?.n ?? 0) >= 3) throw conflict("Top three is full for that day. Swap one out first.");
+  }
+
+  /** Soft-deletes a task and its subtasks with one deletion time, so restore can match them. */
+  function removeWithSubtasks(id: string): Task {
+    const removed = base.remove(id);
+    const time = removed.deletedAt ?? deps.now();
+    db.update(tasks)
+      .set({ deletedAt: time, updatedAt: time })
+      .where(and(eq(tasks.parentId, id), isNull(tasks.deletedAt)))
+      .run();
+    return removed;
   }
 
   /** The copy a repeating task leaves behind when completed. */
@@ -219,6 +246,7 @@ export function taskService(deps: Deps) {
       return db.transaction(() => {
         const changes: Parameters<typeof base.update>[1] = { ...input };
         let completing = false;
+        let undoCopy: Task | undefined;
         if (input.status === "done" && current.status !== "done") {
           completing = true;
           changes.doneAt = deps.now();
@@ -226,23 +254,48 @@ export function taskService(deps: Deps) {
           if (current.rrule) changes.rrule = null;
         } else if (input.status && input.status !== "done" && current.status === "done") {
           changes.doneAt = null;
+          // Reopening (Undo) takes the series back from the copy completing it made,
+          // unless that copy has been worked on since.
+          const copy = current.nextId ? base.find(current.nextId) : undefined;
+          if (copy && copy.status !== "done" && copy.updatedAt === copy.createdAt) {
+            changes.rrule = copy.rrule;
+            undoCopy = copy;
+          }
+          if (current.nextId) changes.nextId = null;
         }
         const updated = base.update(id, changes);
         const applied = updated.updatedAt !== current.updatedAt;
-        const next = completing && applied ? createNextOccurrence(current, timeZone, today) : null;
-        return { ...updated, next };
+        if (!applied) return { ...updated, next: null };
+        if (undoCopy) removeWithSubtasks(undoCopy.id);
+        const next = completing ? createNextOccurrence(current, timeZone, today) : null;
+        if (!next) return { ...updated, next };
+        db.update(tasks).set({ nextId: next.id }).where(eq(tasks.id, id)).run();
+        return { ...updated, nextId: next.id, next };
       });
     },
 
     remove(id: string): Task {
+      return db.transaction(() => removeWithSubtasks(id));
+    },
+
+    /** Undo of a delete brings back the subtasks that went with the task. */
+    restore(id: string): Task {
       return db.transaction(() => {
-        const removed = base.remove(id);
-        const time = deps.now();
+        const row = base.find(id, true);
+        if (!row || row.deletedAt === null) return base.restore(id);
+        const restored = base.restore(id);
+        // Subtasks deleted along with it share its deletion time (older rows were stamped
+        // a few ms later); ones deleted on their own before it stay deleted.
         db.update(tasks)
-          .set({ deletedAt: time, updatedAt: time })
-          .where(and(eq(tasks.parentId, id), isNull(tasks.deletedAt)))
+          .set({ deletedAt: null, updatedAt: restored.updatedAt })
+          .where(
+            and(
+              eq(tasks.parentId, id),
+              between(tasks.deletedAt, row.deletedAt, row.deletedAt + CASCADE_WINDOW_MS),
+            ),
+          )
           .run();
-        return removed;
+        return restored;
       });
     },
 

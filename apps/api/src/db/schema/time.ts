@@ -58,6 +58,8 @@ export const tasks = sqliteTable(
     doneAt: integer("done_at"),
     /** Set on "move ৳X to the jar" tasks that a savings goal creates each month */
     goalId: text("goal_id"),
+    /** On a completed repeating task: the copy completing it created, so Undo can remove it */
+    nextId: text("next_id"),
   },
   (t) => [
     index("tasks_status_do_at_idx").on(t.status, t.doAt),

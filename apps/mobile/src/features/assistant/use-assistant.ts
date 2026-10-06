@@ -24,7 +24,7 @@ const HISTORY = 20;
 const ERRORS: Record<string, string> = {
   ai_disabled: "The assistant is switched off in Settings › AI.",
   ai_unavailable: "AI isn't set up on the server yet.",
-  ai_cap_reached: "This month's AI budget is used up. Raise it in Settings › AI.",
+  ai_cap_reached: "This month's AI limit is used up. It resets on the 1st.",
 };
 
 function errorText(error: unknown): string {

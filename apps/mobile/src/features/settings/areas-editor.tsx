@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Icon } from "@/components/ui/icon";
+import { Group } from "@/components/ui/group";
+import { ListRow } from "@/components/ui/list-row";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonList } from "@/components/ui/skeleton";
@@ -19,11 +20,10 @@ import { useOutbox } from "@/lib/outbox";
 import { useAreas, useCategories } from "@/lib/queries";
 import { useRemove } from "@/lib/use-remove";
 
-const COLORS = ["#5B8CFF", "#7A6BFF", "#FFB547", "#2EC4A0", "#FF7A6B", "#A57BFF"];
 const BUCKETS = ["flexible", "fixed", "non_monthly"] as const;
 const BUCKET_LABEL = { flexible: "Flexible", fixed: "Fixed", non_monthly: "Non-monthly" } as const;
 
-/** Rename, recolour or delete areas; add categories, pick their bucket, tap one to edit it. */
+/** Areas as a list (tap to edit, swipe to delete); add categories, pick their bucket, tap one to edit it. */
 export function AreasEditor() {
   const router = useRouter();
   const send = useOutbox();
@@ -32,8 +32,6 @@ export function AreasEditor() {
   const categoriesQuery = useCategories();
   const areas = areasQuery.data ?? [];
   const categories = categoriesQuery.data ?? [];
-  const [names, setNames] = useState<Record<string, string>>({});
-  const [newArea, setNewArea] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [parentId, setParentId] = useState<string | null>(null);
   const parents = categories.filter((c) => c.parentId === null && c.kind === "expense");
@@ -54,84 +52,45 @@ export function AreasEditor() {
             <EmptyState title="No areas yet" message="Add one below, like Work, Home or Health." />
           }
         >
-          {() =>
-            areas.map((area) => (
-              <Card key={area.id} className="gap-2">
-                <View className="flex-row gap-2">
-                  <TextField
-                    value={area.emoji}
-                    onChangeText={(emoji) =>
-                      emoji && send({ method: "PATCH", path: `/areas/${area.id}`, body: { emoji } })
-                    }
-                    className="w-16"
-                  />
-                  <TextField
-                    value={names[area.id] ?? area.name}
-                    onChangeText={(v) => setNames((n) => ({ ...n, [area.id]: v }))}
-                    onEndEditing={() =>
-                      names[area.id]?.trim() &&
-                      send({
-                        method: "PATCH",
-                        path: `/areas/${area.id}`,
-                        body: { name: names[area.id]?.trim() },
-                      })
-                    }
-                    className="flex-1"
-                  />
-                  <Pressable
-                    onPress={() => remove(`/areas/${area.id}`, `“${area.name}”`)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Delete ${area.name}`}
-                    className="h-12 w-12 items-center justify-center rounded-2xl active:bg-line/40"
-                  >
-                    <Icon name="trash-can-outline" color="coral" />
-                  </Pressable>
-                </View>
-                <View className="flex-row gap-2">
-                  {COLORS.map((color) => (
-                    <Pressable
-                      key={color}
-                      onPress={() =>
-                        send({ method: "PATCH", path: `/areas/${area.id}`, body: { color } })
+          {() => (
+            <Group inset={60}>
+              {areas.map((area) => (
+                <SwipeRow
+                  key={area.id}
+                  rounded={false}
+                  actions={editDelete(
+                    () => router.push(`/area/${area.id}`),
+                    () => remove(`/areas/${area.id}`, `“${area.name}”`),
+                  )}
+                >
+                  <View className="bg-card">
+                    <ListRow
+                      emoji={area.emoji}
+                      title={area.name}
+                      right={
+                        <View
+                          className="h-4 w-4 rounded-full"
+                          style={{ backgroundColor: area.color }}
+                        />
                       }
-                      accessibilityLabel={`Colour ${color}`}
-                      className="h-10 w-10 items-center justify-center rounded-full"
-                      style={{ backgroundColor: color }}
-                    >
-                      {area.color === color ? <Text tone="inverse">✓</Text> : null}
-                    </Pressable>
-                  ))}
-                </View>
-              </Card>
-            ))
-          }
+                      chevron
+                      onPress={() => router.push(`/area/${area.id}`)}
+                    />
+                  </View>
+                </SwipeRow>
+              ))}
+            </Group>
+          )}
         </AsyncContent>
-        <View className="flex-row gap-2">
-          <TextField
-            value={newArea}
-            onChangeText={setNewArea}
-            placeholder="New area"
-            className="flex-1"
-          />
-          <Button
-            label="Add"
-            disabled={!newArea.trim()}
-            onPress={() => {
-              send({
-                method: "POST",
-                path: "/areas",
-                body: {
-                  id: newId(),
-                  name: newArea.trim(),
-                  emoji: "⭐",
-                  color: COLORS[areas.length % COLORS.length],
-                  sort: areas.length,
-                },
-              });
-              setNewArea("");
-            }}
-          />
-        </View>
+        <Button
+          label="New area"
+          icon="plus"
+          variant="secondary"
+          onPress={() => router.push("/area/new")}
+        />
+        <Text variant="caption" tone="muted" className="px-1">
+          Tap an area to rename or recolour it. Swipe left to delete.
+        </Text>
       </Section>
       <Section title="Expense categories">
         <AsyncContent

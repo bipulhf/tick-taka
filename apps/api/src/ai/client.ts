@@ -4,6 +4,8 @@
 export interface AiUsage {
   inputTokens: number;
   outputTokens: number;
+  /** Input tokens served from OpenAI's prompt cache, billed at a lower rate. */
+  cachedInputTokens?: number;
 }
 
 export interface AiJsonRequest {

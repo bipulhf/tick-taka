@@ -72,10 +72,9 @@ export const settingsSchema = z.object({
   ai: z
     .object({
       enabled: z.boolean().default(true),
-      monthlyCapMicros: z.number().int().nonnegative().default(2_000_000),
       features: z.partialRecord(z.enum(AI_FEATURES), z.boolean()).default({}),
     })
-    .default({ enabled: true, monthlyCapMicros: 2_000_000, features: {} }),
+    .default({ enabled: true, features: {} }),
   billOverdueGraceDays: z.number().int().min(0).max(30).default(0),
   /** "Next week's focus" picked at the end of the weekly review. */
   weeklyFocus: z.string().max(200).nullable().default(null),

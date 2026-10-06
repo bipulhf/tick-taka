@@ -5,18 +5,10 @@ import { and, gte, isNull, lt, sql } from "drizzle-orm";
 import { aiUsage } from "../db/schema/system";
 import type { Deps } from "../lib/deps";
 import { AppError } from "../lib/errors";
+import { currentScope } from "../lib/user-scope";
 import { userTime } from "../lib/user-time";
 import type { AiClient, AiUsage } from "./client";
-
-/** Cost of one call in micro-dollars, from the per-million-token prices in env. */
-export function costMicros(deps: Deps, tier: "fast" | "smart", usage: AiUsage): number {
-  const env = deps.env;
-  const [input, output] =
-    tier === "fast"
-      ? [env.OPENAI_FAST_INPUT_MICROS_PER_MTOK, env.OPENAI_FAST_OUTPUT_MICROS_PER_MTOK]
-      : [env.OPENAI_SMART_INPUT_MICROS_PER_MTOK, env.OPENAI_SMART_OUTPUT_MICROS_PER_MTOK];
-  return Math.ceil((usage.inputTokens * input + usage.outputTokens * output) / 1_000_000);
-}
+import { costMicros } from "./pricing";
 
 export function monthSpendMicros(deps: Deps): number {
   const { timeZone, now } = userTime(deps);
@@ -52,29 +44,37 @@ export function logUsage(
       model,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
-      costMicros: costMicros(deps, tier, usage),
+      costMicros: costMicros(deps.env, model, tier, usage),
       createdAt: now,
       updatedAt: now,
     })
     .run();
 }
 
-/** The user's own cap, never above the per-user limit the server allows. */
-export function monthlyCapMicros(deps: Deps, settings: { ai: { monthlyCapMicros: number } }) {
-  return Math.min(settings.ai.monthlyCapMicros, deps.env.AI_USER_MONTHLY_CAP_MICROS);
+/**
+ * Most the signed-in user's AI may cost this month, or null for no limit. The owner
+ * (OWNER_EMAIL) pays the bill and is never limited; everyone else gets the server's
+ * AI_USER_MONTHLY_CAP_MICROS (0 turns the limit off).
+ */
+export function monthlyCapMicros(deps: Deps): number | null {
+  const email = currentScope()?.user.email;
+  if (email && email === deps.env.OWNER_EMAIL) return null;
+  return deps.env.AI_USER_MONTHLY_CAP_MICROS || null;
 }
 
 /**
  * Guardrails before any AI call: the off switch, per-feature opt-in, a configured
- * key and the monthly cost cap. Each failure has its own code so the app can fall
- * back to the plain form with nothing lost.
+ * key and, for users other than the owner, the server's monthly cost cap. Each
+ * failure has its own code so the app can fall back to the plain form with
+ * nothing lost.
  */
 export function requireAi(deps: Deps, feature: AiFeature): AiClient {
   const { settings } = userTime(deps);
   if (!isAiFeatureEnabled(settings, feature))
     throw new AppError(403, "ai_disabled", "AI is switched off for this");
   if (!deps.ai) throw new AppError(503, "ai_unavailable", "AI isn't set up on the server");
-  if (monthSpendMicros(deps) >= monthlyCapMicros(deps, settings)) {
+  const cap = monthlyCapMicros(deps);
+  if (cap !== null && monthSpendMicros(deps) >= cap) {
     throw new AppError(429, "ai_cap_reached", "This month's AI budget is used up");
   }
   return deps.ai;

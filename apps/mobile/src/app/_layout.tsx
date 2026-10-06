@@ -114,7 +114,11 @@ export default function RootLayout() {
                 <Stack.Protected guard={Boolean(token)}>
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen name="add" options={sheet} />
-                  <Stack.Screen name="assistant" options={sheet} />
+                  {/* Full screen, not a sheet: scrolling back through the chat must never drag it closed. */}
+                  <Stack.Screen
+                    name="assistant"
+                    options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+                  />
                   <Stack.Screen name="task/[id]" options={sheet} />
                   <Stack.Screen name="pick-top-three" options={sheet} />
                   <Stack.Screen name="habit/[id]" options={sheet} />
@@ -124,6 +128,7 @@ export default function RootLayout() {
                   <Stack.Screen name="goal/[id]" options={sheet} />
                   <Stack.Screen name="debt/[id]" options={sheet} />
                   <Stack.Screen name="project/[id]" options={sheet} />
+                  <Stack.Screen name="area/[id]" options={sheet} />
                   <Stack.Screen name="category/[id]" options={sheet} />
                   <Stack.Screen name="event/[id]" options={sheet} />
                   <Stack.Screen name="shopping-item/[id]" options={sheet} />

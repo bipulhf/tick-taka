@@ -1,0 +1,125 @@
+import { newId } from "@tick-taka/shared/ids";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Pressable, View } from "react-native";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { DeleteButton } from "@/components/ui/delete-button";
+import { ErrorState } from "@/components/ui/empty-state";
+import { Icon } from "@/components/ui/icon";
+import { Sheet } from "@/components/ui/sheet";
+import { SkeletonForm } from "@/components/ui/skeleton";
+import { Text } from "@/components/ui/text";
+import { TextField } from "@/components/ui/text-field";
+import { useOutbox } from "@/lib/outbox";
+import { useAreas } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
+import { useRemove } from "@/lib/use-remove";
+
+type Area = NonNullable<ReturnType<typeof useAreas>["data"]>[number];
+
+export const AREA_COLORS = ["#5B8CFF", "#7A6BFF", "#FFB547", "#2EC4A0", "#FF7A6B", "#A57BFF"];
+const EMOJIS = ["💼", "🏠", "💪", "📚", "💰", "❤️", "🧘", "🎨", "👨‍👩‍👧", "🕌", "✈️", "⭐"];
+
+/** Add or edit an area of life: its emoji, name and colour, in one small sheet. */
+export function AreaSheet({ id }: { id: string | null }) {
+  const areas = useAreas();
+  const area = id ? areas.data?.find((a) => a.id === id) : undefined;
+  // Wait for the record so the form's fields start filled, even with nothing cached.
+  if (id && !area)
+    return (
+      <Sheet title="Area">
+        {areas.isError ? (
+          <ErrorState onRetry={() => void areas.refetch()} />
+        ) : (
+          <SkeletonForm fields={3} />
+        )}
+      </Sheet>
+    );
+  return <AreaForm area={area} count={areas.data?.length ?? 0} />;
+}
+
+function AreaForm({ area, count }: { area: Area | undefined; count: number }) {
+  const router = useRouter();
+  const send = useOutbox();
+  const remove = useRemove();
+  const [name, setName] = useState(area?.name ?? "");
+  const [emoji, setEmoji] = useState(area?.emoji ?? "⭐");
+  const [color, setColor] = useState(area?.color ?? AREA_COLORS[count % AREA_COLORS.length]!);
+  const save = () => {
+    if (!name.trim() || !emoji.trim()) return;
+    const body = { name: name.trim(), emoji: emoji.trim(), color };
+    if (area)
+      send({
+        method: "PATCH",
+        path: `/areas/${area.id}`,
+        body: { ...body, updatedAt: editTime() },
+        label: "Couldn't save",
+      });
+    else
+      send({
+        method: "POST",
+        path: "/areas",
+        body: { id: newId(), ...body, sort: count },
+        label: "Couldn't save",
+      });
+    router.back();
+  };
+  return (
+    <Sheet
+      title={area ? area.name : "New area"}
+      footer={
+        <View className="flex-row gap-2">
+          {area ? (
+            <DeleteButton
+              onPress={() => {
+                remove(`/areas/${area.id}`, `“${area.name}”`);
+                router.back();
+              }}
+            />
+          ) : null}
+          <Button
+            label={area ? "Save" : "Add area"}
+            onPress={save}
+            disabled={!name.trim() || !emoji.trim()}
+            className="flex-1"
+          />
+        </View>
+      }
+    >
+      <View className="flex-row gap-2">
+        <TextField value={emoji} onChangeText={setEmoji} className="w-16" />
+        <TextField
+          value={name}
+          onChangeText={setName}
+          placeholder="Work, Home, Health…"
+          autoFocus={!area}
+          className="flex-1"
+        />
+      </View>
+      <View className="flex-row flex-wrap gap-2">
+        {EMOJIS.map((e) => (
+          <Chip key={e} label={e} selected={emoji === e} onPress={() => setEmoji(e)} />
+        ))}
+      </View>
+      <Text variant="label" tone="muted">
+        Colour
+      </Text>
+      <View className="flex-row flex-wrap gap-3">
+        {AREA_COLORS.map((c) => (
+          <Pressable
+            key={c}
+            onPress={() => setColor(c)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: color === c }}
+            accessibilityLabel={`Colour ${c}`}
+            className="h-11 w-11 items-center justify-center rounded-full"
+            style={{ backgroundColor: c }}
+          >
+            {color === c ? <Icon name="check" color="white" size={22} /> : null}
+          </Pressable>
+        ))}
+      </View>
+    </Sheet>
+  );
+}

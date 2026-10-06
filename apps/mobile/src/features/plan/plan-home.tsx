@@ -145,7 +145,7 @@ export function PlanHome() {
                 key={area.id}
                 rounded={false}
                 actions={editDelete(
-                  () => router.push("/settings/areas"),
+                  () => router.push(`/area/${area.id}`),
                   () => remove(`/areas/${area.id}`, `“${area.name}”`),
                 )}
               >
@@ -161,6 +161,13 @@ export function PlanHome() {
               </SwipeRow>
             );
           })}
+          <ListRow
+            icon="plus"
+            iconColor="sky"
+            title="New area"
+            subtitle="Work, Home, Health…"
+            onPress={() => router.push("/area/new")}
+          />
         </Group>
       ) : null}
       <Section title="More">

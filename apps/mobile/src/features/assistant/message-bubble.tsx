@@ -5,6 +5,7 @@ import { Text } from "@/components/ui/text";
 import { plural } from "@/lib/format";
 import { useColors } from "@/theme/colors";
 import type { ChatAction, ChatMessage, ChatStep } from "./chat-store";
+import { StreamingCaret, ThinkingIndicator } from "./thinking-indicator";
 import type { LiveTurn } from "./use-assistant";
 
 /** What changed in one turn, one row each, with its own Undo. */
@@ -210,7 +211,6 @@ export function MessageBubble({
 
 /** Tiki at work: each step as it happens, then the reply as it streams in. */
 export function LiveBubble({ turn }: { turn: LiveTurn }) {
-  const colors = useColors();
   return (
     <View className="w-[90%] items-start gap-2 self-start">
       {turn.steps.length ? (
@@ -223,13 +223,10 @@ export function LiveBubble({ turn }: { turn: LiveTurn }) {
         {turn.text ? (
           <Text>
             {turn.text}
-            <Text tone="muted"> ▍</Text>
+            <StreamingCaret />
           </Text>
         ) : (
-          <View className="flex-row items-center gap-2">
-            {turn.steps.length ? null : <ActivityIndicator size="small" color={colors.muted} />}
-            <Text tone="muted">{turn.steps.length ? "Working…" : "Thinking…"}</Text>
-          </View>
+          <ThinkingIndicator working={turn.steps.length > 0} />
         )}
       </View>
     </View>

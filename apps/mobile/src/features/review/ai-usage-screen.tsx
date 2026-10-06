@@ -102,12 +102,16 @@ export function AiUsageScreen() {
                 {dollars(report.costMicros)}
               </Text>
               <Text tone="muted">
-                of your {dollars(report.capMicros)} monthly cap · {plural(report.calls, "request")}
+                {report.capMicros === null
+                  ? `at OpenAI's list prices · ${plural(report.calls, "request")}`
+                  : `of the ${dollars(report.capMicros)} monthly limit · ${plural(report.calls, "request")}`}
               </Text>
-              <ProgressBar
-                value={report.capMicros ? report.costMicros / report.capMicros : 0}
-                tone={report.costMicros >= report.capMicros ? "coral" : "grape"}
-              />
+              {report.capMicros === null ? null : (
+                <ProgressBar
+                  value={report.costMicros / report.capMicros}
+                  tone={report.costMicros >= report.capMicros ? "coral" : "grape"}
+                />
+              )}
             </Card>
             <Card className="gap-2">
               <Text variant="label" tone="muted">

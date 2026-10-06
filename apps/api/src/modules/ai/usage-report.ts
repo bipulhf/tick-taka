@@ -47,7 +47,7 @@ function add(totals: Totals, row: Totals) {
  * the owner (OWNER_EMAIL), every user's total, since the owner pays the bill.
  */
 export function aiUsageReport(deps: Deps, month?: LocalMonth) {
-  const { settings, timeZone, now } = userTime(deps);
+  const { timeZone, now } = userTime(deps);
   const selected = month ?? toLocalMonth(now, timeZone);
   const range = localMonthRange(selected, timeZone);
   const total = zero();
@@ -81,7 +81,7 @@ export function aiUsageReport(deps: Deps, month?: LocalMonth) {
   return {
     month: selected,
     ...total,
-    capMicros: monthlyCapMicros(deps, settings),
+    capMicros: monthlyCapMicros(deps),
     byDay: [...byDay]
       .map(([date, sum]) => ({ date, ...sum }))
       .sort((a, b) => a.date.localeCompare(b.date)),

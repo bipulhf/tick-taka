@@ -362,7 +362,7 @@ describe("chat assistant", () => {
     expect(String(sent[0]!.content)).toContain("Today is 2026-10-04");
 
     await ctx.request("PATCH", "/settings", {
-      ai: { enabled: true, monthlyCapMicros: 2_000_000, features: { assistant: false } },
+      ai: { enabled: true, features: { assistant: false } },
     });
     const off = await ctx.request<{ error: { code: string } }>("POST", "/ai/assistant", {
       messages: [{ role: "user", content: "hi" }],

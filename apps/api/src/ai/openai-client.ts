@@ -1,7 +1,7 @@
 import OpenAI, { toFile } from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { Env } from "../env";
-import type { AiChatMessage, AiClient } from "./client";
+import type { AiChatMessage, AiClient, AiUsage } from "./client";
 
 /** OpenAI picks the decoder from the file name, so each type needs an extension it knows. */
 const EXTENSIONS: Record<string, string> = {
@@ -76,6 +76,7 @@ export function createOpenAiClient(env: Env): AiClient | null {
         model: completion.model,
         usage: {
           inputTokens: completion.usage?.prompt_tokens ?? 0,
+          cachedInputTokens: completion.usage?.prompt_tokens_details?.cached_tokens ?? 0,
           outputTokens: completion.usage?.completion_tokens ?? 0,
         },
       };
@@ -116,6 +117,7 @@ export function createOpenAiClient(env: Env): AiClient | null {
           model: completion.model,
           usage: {
             inputTokens: completion.usage?.prompt_tokens ?? 0,
+            cachedInputTokens: completion.usage?.prompt_tokens_details?.cached_tokens ?? 0,
             outputTokens: completion.usage?.completion_tokens ?? 0,
           },
         };
@@ -128,7 +130,7 @@ export function createOpenAiClient(env: Env): AiClient | null {
       });
       let content = "";
       let model = params.model;
-      let usage = { inputTokens: 0, outputTokens: 0 };
+      let usage: AiUsage = { inputTokens: 0, outputTokens: 0 };
       // Tool calls arrive in pieces, keyed by their position in the reply.
       const calls: { id: string; name: string; arguments: string }[] = [];
       for await (const chunk of stream) {
@@ -136,6 +138,7 @@ export function createOpenAiClient(env: Env): AiClient | null {
         if (chunk.usage) {
           usage = {
             inputTokens: chunk.usage.prompt_tokens ?? 0,
+            cachedInputTokens: chunk.usage.prompt_tokens_details?.cached_tokens ?? 0,
             outputTokens: chunk.usage.completion_tokens ?? 0,
           };
         }

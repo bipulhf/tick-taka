@@ -25,23 +25,21 @@ const blankParse = {
 };
 
 describe("guardrails", () => {
-  test("off switch, missing key and monthly cap each have their own code", async () => {
+  test("off switch, missing key and the server's cap each have their own code", async () => {
     const noKey = await createTestContext();
     expect((await noKey.request("POST", "/ai/parse", { text: "hi" })).body).toMatchObject({
       error: { code: "ai_unavailable" },
     });
 
     const ai = new FakeAi();
-    const ctx = await createTestContext({ ai });
-    await ctx.request("PATCH", "/settings", {
-      ai: { enabled: false, monthlyCapMicros: 1, features: {} },
-    });
+    const ctx = await createTestContext({ ai, env: { AI_USER_MONTHLY_CAP_MICROS: "1000" } });
+    await ctx.request("PATCH", "/settings", { ai: { enabled: false, features: {} } });
     expect((await ctx.request("POST", "/ai/parse", { text: "hi" })).body).toMatchObject({
       error: { code: "ai_disabled" },
     });
 
     await ctx.request("PATCH", "/settings", {
-      ai: { enabled: true, monthlyCapMicros: 1000, features: { breakdown: false } },
+      ai: { enabled: true, features: { breakdown: false } },
     });
     expect((await ctx.request("POST", "/ai/breakdown", { title: "x" })).body).toMatchObject({
       error: { code: "ai_disabled" },
@@ -54,11 +52,24 @@ describe("guardrails", () => {
     expect((await ctx.request("POST", "/ai/parse", { text: "thing" })).body).toMatchObject({
       error: { code: "ai_cap_reached" },
     });
-    const status = await ctx.request<{ capReached: boolean; monthSpendMicros: number }>(
+    const status = await ctx.request<{ capReached: boolean; monthlyCapMicros: number }>(
       "GET",
       "/ai/status",
     );
-    expect(status.body.capReached).toBe(true);
+    expect(status.body).toMatchObject({ capReached: true, monthlyCapMicros: 1000 });
+  });
+
+  test("the owner is never capped", async () => {
+    const ai = new FakeAi();
+    const ctx = await createTestContext({
+      ai,
+      env: { AI_USER_MONTHLY_CAP_MICROS: "1", OWNER_EMAIL: "test@example.com" },
+    });
+    ai.queueJson({ subtasks: [] }, { subtasks: [] });
+    expect((await ctx.request("POST", "/ai/breakdown", { title: "x" })).status).toBe(200);
+    expect((await ctx.request("POST", "/ai/breakdown", { title: "y" })).status).toBe(200);
+    const status = await ctx.request("GET", "/ai/status");
+    expect(status.body).toMatchObject({ capReached: false, monthlyCapMicros: null });
   });
 
   test("provider errors fall back cleanly", async () => {

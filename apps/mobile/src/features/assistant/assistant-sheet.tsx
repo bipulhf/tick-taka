@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { useRef } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,16 +22,25 @@ const SUGGESTIONS = [
 /** Chat with Tiki: add, change, delete or ask about anything, by typing or talking. */
 export function AssistantSheet() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const keyboard = useKeyboardHeight();
   const scroll = useRef<ScrollView>(null);
   const { messages, live, ask, undo, confirmDeletions, keepAll, clear, thinking } = useAssistant();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingBottom: keyboard }}>
-      <View className="items-center pt-2">
-        <View className="h-1.5 w-10 rounded-full bg-line" />
-      </View>
-      <View className="flex-row items-center gap-3 px-5 pb-3 pt-2">
+      <View
+        className="flex-row items-center gap-3 px-3 pb-3"
+        style={{ paddingTop: insets.top + 8 }}
+      >
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Close chat"
+          className="h-12 w-12 items-center justify-center rounded-full active:bg-line/40"
+        >
+          <Icon name="chevron-down" color="ink" size={28} />
+        </Pressable>
         <Tiki mood={thinking ? "focused" : "happy"} size={44} />
         <View className="flex-1">
           <Text variant="title" accessibilityRole="header">

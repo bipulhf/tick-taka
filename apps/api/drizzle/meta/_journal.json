@@ -15,6 +15,13 @@
       "when": 1791105573457,
       "tag": "0001_task_goal_link",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791275203033,
+      "tag": "0002_reprice_ai_usage",
+      "breakpoints": true
     }
   ]
 }

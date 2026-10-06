@@ -41,15 +41,14 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
     .get("/status", (c) => {
       const { settings } = userTime(deps);
       const spent = monthSpendMicros(deps);
-      const cap = monthlyCapMicros(deps, settings);
+      const cap = monthlyCapMicros(deps);
       return c.json({
         configured: deps.ai !== null,
         enabled: settings.ai.enabled,
         monthSpendMicros: spent,
+        /** Null when this user has no limit (the owner, or a server without one). */
         monthlyCapMicros: cap,
-        /** The highest cap this user may choose. */
-        maxCapMicros: deps.env.AI_USER_MONTHLY_CAP_MICROS,
-        capReached: spent >= cap,
+        capReached: cap !== null && spent >= cap,
         features: {
           parse: isAiFeatureEnabled(settings, "parse"),
           receipt: isAiFeatureEnabled(settings, "receipt"),

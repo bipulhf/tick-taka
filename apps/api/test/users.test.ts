@@ -145,19 +145,6 @@ describe("the owner's single-user data", () => {
 });
 
 describe("AI budget", () => {
-  test("a user's cap can't go above the server's per-user limit", async () => {
-    const ai = new FakeAi();
-    const ctx = await createTestContext({ ai, env: { AI_USER_MONTHLY_CAP_MICROS: "500" } });
-    await ctx.request("PATCH", "/settings", {
-      ai: { enabled: true, monthlyCapMicros: 50_000_000, features: {} },
-    });
-    const status = await ctx.request<{ monthlyCapMicros: number; maxCapMicros: number }>(
-      "GET",
-      "/ai/status",
-    );
-    expect(status.body).toMatchObject({ monthlyCapMicros: 500, maxCapMicros: 500 });
-  });
-
   test("one user's spending doesn't count against another's", async () => {
     const ai = new FakeAi();
     const ctx = await createTestContext({ ai, env: { AI_USER_MONTHLY_CAP_MICROS: "500" } });

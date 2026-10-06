@@ -380,13 +380,15 @@ The full product and technical spec is in `tick_taka_spec.pdf`; the build order 
   (Eisenhower and ordering), `tasks.goal_id` (goals become tasks), `time_entries.note`,
   `habits.remind_at`, `recurring.currency/active/overdue_at`, `goals.create_tasks`,
   `debts.remind_at`, and `sort` columns on lists.
-- **Dependency advisories** (`bun audit`, reported by CI without failing it): `uuid` is
-  pinned to a patched 11.x through `overrides` in `package.json`. The rest are accepted
-  for now, all in build or CLI tooling rather than the API: `braces` and `node-forge`
-  (no patched release exists), `postcss-selector-parser` (Tailwind 3 needs 6.x),
-  `esbuild` 0.18 inside drizzle-kit's loader (only runs `db:generate` locally), and
-  `decode-uri-component` 0.2 under expo-router (the fix is an ESM-only major; the risk is
-  a slow parse of a malformed deep link on the user's own phone). Re-check on upgrades.
+- **Dependency advisories** (`bun run audit`, which CI runs): `uuid` is pinned to a
+  patched 11.x through `overrides` in `package.json`. The rest are accepted in
+  `scripts/audit-allowlist.json`, each with its reason, and the audit fails only on an
+  advisory not listed there. They are all in build or CLI tooling rather than the API:
+  `braces` and `node-forge` (no patched release exists), `postcss-selector-parser`
+  (Tailwind 3 needs 6.x), `esbuild` 0.18 inside drizzle-kit's loader (only runs
+  `db:generate` locally), and `decode-uri-component` 0.2 under expo-router (the fix is an
+  ESM-only major; the risk is a slow parse of a malformed deep link on the user's own
+  phone). Re-check on upgrades.
 - **Coverage** (`bun test --coverage` per workspace): read each package's numbers from
   its own run. Bun 1.3 maps lines of a file imported from another workspace badly (a
   file with an uncalled default-parameter function can show 0% lines at 100% functions),

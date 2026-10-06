@@ -13,6 +13,7 @@ import {
 import { formatAmount } from "@tick-taka/shared/money";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
+import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -66,6 +67,7 @@ export function MoneyCalendar() {
       right={
         <View className="flex-row">
           <Pressable
+            accessibilityRole="button"
             className="h-12 w-12 items-center justify-center"
             onPress={() => setMonth(addMonths(month, -1))}
             accessibilityLabel="Previous month"
@@ -73,6 +75,7 @@ export function MoneyCalendar() {
             <Icon name="chevron-left" />
           </Pressable>
           <Pressable
+            accessibilityRole="button"
             className="h-12 w-12 items-center justify-center"
             onPress={() => setMonth(addMonths(month, 1))}
             accessibilityLabel="Next month"
@@ -101,39 +104,56 @@ export function MoneyCalendar() {
             {cells.map((date) => {
               const spent = byDay.get(date) ?? 0;
               const inMonth = date.slice(0, 7) === month;
-              const intensity = spent / max;
+              const isSelected = date === selected;
               return (
                 <Pressable
                   key={date}
                   onPress={() => setSelected(date)}
-                  accessibilityLabel={`${formatLocalDate(date)}, spent ${formatAmount(spent)}`}
-                  className={`h-16 w-[14.28%] items-center justify-center rounded-xl ${date === selected ? "border-2 border-coral" : ""}`}
-                  style={{
-                    backgroundColor:
-                      spent > 0 && inMonth
-                        ? `rgba(255,122,107,${0.12 + intensity * 0.55})`
-                        : undefined,
-                  }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`${formatLocalDate(date)}, spent ${hidden ? "amount hidden" : formatAmount(spent)}`}
+                  // Neutral cells with a small coral mark sized by the day's spend, not a heat fill.
+                  className={`min-h-16 w-[14.28%] items-center justify-center gap-1.5 rounded-xl py-1 ${isSelected ? "bg-ink" : ""}`}
                 >
-                  <Text variant="caption" tone={inMonth ? "ink" : "muted"} numeric>
+                  <Text
+                    variant="caption"
+                    tone={isSelected ? "background" : inMonth ? "ink" : "muted"}
+                    numeric
+                    maxFontSizeMultiplier={1.3}
+                  >
                     {Number(date.slice(8))}
                   </Text>
-                  {spent > 0 && inMonth ? (
-                    <Text className="text-[9px]" numeric numberOfLines={1}>
-                      {hidden
-                        ? "•"
-                        : spent >= 100_000
-                          ? `${Math.round(spent / 100_000)}k`
-                          : Math.round(spent / 100)}
-                    </Text>
-                  ) : null}
+                  <View className="h-1 w-4/5 items-center">
+                    {spent > 0 && inMonth ? (
+                      <View
+                        className={`h-1 rounded-full ${isSelected ? "bg-background" : "bg-coral"}`}
+                        style={{ width: `${Math.max(20, (spent / max) * 100)}%` }}
+                      />
+                    ) : null}
+                  </View>
                 </Pressable>
               );
             })}
           </Card>
         )}
       </AsyncContent>
-      <Text variant="heading">{formatLocalDate(selected, "long")}</Text>
+      {/* The selected day's spend, at a readable size, instead of a figure in every cell. */}
+      <View className="flex-row items-baseline justify-between gap-3">
+        <Text variant="heading" className="flex-1">
+          {formatLocalDate(selected, "long")}
+        </Text>
+        {insights.data ? (
+          <Text variant="callout" tone="muted">
+            Spent{" "}
+            <Amount
+              minor={byDay.get(selected) ?? 0}
+              variant="callout"
+              className="font-nunito-bold"
+              animate={false}
+            />
+          </Text>
+        ) : null}
+      </View>
       <AsyncContent
         query={dayTx}
         skeleton={<SkeletonList rows={3} trailing />}

@@ -197,4 +197,18 @@ export async function signOut(): Promise<void> {
   await forgetUser();
 }
 
+/**
+ * Deletes the account and all its data on the server (DELETE /auth/account), then
+ * wipes the phone. Throws with the server's message if the server didn't delete it;
+ * the phone is left untouched in that case.
+ */
+export async function deleteAccount(): Promise<void> {
+  const response = await request(apiUrl("/auth/account"), { method: "DELETE", timeout: 30_000 });
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => null);
+    throw new Error(errorMessage(body) ?? `Couldn't delete the account (${response.status})`);
+  }
+  await forgetUser();
+}
+
 connectAuth({ token: () => tokenStore.get(), onUnauthorized: () => void expireSession() });

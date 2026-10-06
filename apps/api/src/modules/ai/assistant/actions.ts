@@ -1,5 +1,6 @@
 import { isLocalDate, isLocalMonth, type LocalDate } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
+import type { SettingsKey } from "@tick-taka/shared/schemas/settings";
 import type { Caller } from "./dispatch";
 import { type createFieldConverter, project } from "./fields";
 import { type Action, type DRAFTED, type Draft, isId, label, listOf, type Undo } from "./records";
@@ -17,6 +18,34 @@ export const ACTIONS = [
   "update_settings",
 ] as const;
 export type ActionName = (typeof ACTIONS)[number];
+
+/**
+ * Settings the assistant may change. App lock, AI, and what decides the money totals
+ * (currency, default and cash accounts, time zone) stay with the user in Settings, so
+ * a misheard voice note or text inside a note can't change them.
+ */
+const ASSISTANT_SETTINGS = new Set<SettingsKey>([
+  "theme",
+  "numerals",
+  "rewardTheme",
+  "tikiOutfit",
+  "weekStartsOn",
+  "workdays",
+  "dayCapacityMinutes",
+  "dailyTaskGoal",
+  "daysOff",
+  "vacationMode",
+  "advancedViews",
+  "focus",
+  "quietHours",
+  "shutdownTime",
+  "weeklyReviewDay",
+  "weeklyReviewTime",
+  "costInHours",
+  "costInHoursThresholdMinor",
+  "billOverdueGraceDays",
+  "weeklyFocus",
+]);
 
 /** What every action handler can use from the turn's tool runner. */
 export interface ActionContext {
@@ -212,9 +241,25 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
     return { ok: true };
   },
   update_settings: async ({ caller, fail, actions }, raw, _needId) => {
+    const keys = Object.keys(raw);
+    const refused = keys.filter((key) => !ASSISTANT_SETTINGS.has(key as SettingsKey));
+    if (keys.length === 0 || refused.length > 0)
+      return fail(
+        `Only the user can change ${refused.join(", ") || "that"}, in the app's Settings. Tiki can change: ${[...ASSISTANT_SETTINGS].join(", ")}.`,
+      );
+    const current = await caller.call("GET", "/settings");
+    if (!current.ok) return fail(current.error);
+    const before = (current.data ?? {}) as Record<string, unknown>;
+    // Turning vacation mode on or off also opens or closes a vacation period.
+    const restored = "vacationMode" in raw && !("vacations" in raw) ? [...keys, "vacations"] : keys;
+    const undo: Undo = {
+      method: "PATCH",
+      path: "/settings",
+      body: Object.fromEntries(restored.map((key) => [key, before[key]])),
+    };
     const result = await caller.call("PATCH", "/settings", raw);
     if (!result.ok) return fail(result.error);
-    actions.push({ summary: `Changed settings: ${Object.keys(raw).join(", ")}` });
+    actions.push({ summary: `Changed settings: ${keys.join(", ")}`, undo });
     return { ok: true };
   },
 };

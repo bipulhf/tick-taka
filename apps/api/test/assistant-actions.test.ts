@@ -115,19 +115,63 @@ describe("assistant timer and settings actions", () => {
     expect(sent).toEqual([{ method: "POST", path: "/timer/stop", body: { endedAt: NOW } }]);
   });
 
-  test("update_settings patches exactly the fields asked for and names them", async () => {
-    const { ctx, sent, actions } = context();
+  const settingsReply = (sent: Sent) =>
+    sent.method === "GET"
+      ? { theme: "light", dailyTaskGoal: 5, vacationMode: false, vacations: [], appLock: true }
+      : { id: ID };
+
+  test("update_settings patches exactly the fields asked for, with an Undo to the old values", async () => {
+    const { ctx, sent, actions } = context({ reply: settingsReply });
     await ACTION_HANDLERS.update_settings(ctx, { theme: "dark", dailyTaskGoal: 4 }, needId);
-    expect(sent).toEqual([
+    expect(sent.filter((r) => r.method === "PATCH")).toEqual([
       { method: "PATCH", path: "/settings", body: { theme: "dark", dailyTaskGoal: 4 } },
     ]);
-    expect(actions[0]?.summary).toBe("Changed settings: theme, dailyTaskGoal");
+    expect(actions).toEqual([
+      {
+        summary: "Changed settings: theme, dailyTaskGoal",
+        undo: { method: "PATCH", path: "/settings", body: { theme: "light", dailyTaskGoal: 5 } },
+      },
+    ]);
+  });
+
+  // QA-306: a mis-heard voice note must not turn App lock off or move money totals.
+  test.each([
+    { appLock: false },
+    { lockAfterMinutes: 60 },
+    { ai: { enabled: false, features: {} } },
+    { defaultCurrency: "USD" },
+    { defaultAccountId: ID },
+    { timeZone: "Europe/London" },
+    { theme: "dark", appLock: false },
+    { madeUp: true },
+  ])("update_settings refuses %o and changes nothing", async (fields) => {
+    const { ctx, sent, actions } = context({ reply: settingsReply });
+    const result = await ACTION_HANDLERS.update_settings(ctx, fields, needId);
+    expect(result).toMatchObject({ error: expect.stringContaining("in the app") });
+    expect(sent.filter((r) => r.method === "PATCH")).toEqual([]);
+    expect(actions).toEqual([]);
+  });
+
+  test("undoing vacation mode also puts the vacation list back", async () => {
+    const { ctx, actions } = context({ reply: settingsReply });
+    await ACTION_HANDLERS.update_settings(ctx, { vacationMode: true }, needId);
+    expect(actions[0]?.undo).toEqual({
+      method: "PATCH",
+      path: "/settings",
+      body: { vacationMode: false, vacations: [] },
+    });
   });
 
   test("a refused settings change is reported", async () => {
-    const { ctx, actions } = context({ reply: () => new Error("Unknown time zone") });
-    const result = await ACTION_HANDLERS.update_settings(ctx, { timeZone: "Nope" }, needId);
-    expect(result).toEqual({ error: "Unknown time zone" });
+    const { ctx, actions } = context({
+      reply: (sent) => (sent.method === "PATCH" ? new Error("Invalid time") : settingsReply(sent)),
+    });
+    const result = await ACTION_HANDLERS.update_settings(
+      ctx,
+      { weeklyReviewTime: "25:00" },
+      needId,
+    );
+    expect(result).toEqual({ error: "Invalid time" });
     expect(actions).toEqual([]);
   });
 });

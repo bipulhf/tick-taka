@@ -305,6 +305,41 @@ describe("chat assistant", () => {
     });
     expect(off.body.error.code).toBe("ai_disabled");
   });
+
+  // QA-306
+  test("changes a safe setting with an Undo, and leaves App lock alone", async () => {
+    const { ai, ctx, say, undo } = await setup();
+    await ctx.request("PATCH", "/settings", { appLock: true });
+    ai.queueChat(
+      {
+        toolCalls: [
+          call("act", {
+            action: "update_settings",
+            id: null,
+            fields: fields({ appLock: false, defaultCurrency: "USD" }),
+          }),
+          call("act", {
+            action: "update_settings",
+            id: null,
+            fields: fields({ vacationMode: true }),
+          }),
+        ],
+      },
+      { content: "Vacation mode is on. App lock stays as it is." },
+    );
+    const res = await say("turn off app lock, use dollars, and I'm on vacation");
+    type Stored = { appLock: boolean; defaultCurrency: string; vacationMode: boolean };
+    const settings = async () =>
+      (await ctx.request<Stored & { vacations: unknown[] }>("GET", "/settings")).body;
+    expect(await settings()).toMatchObject({
+      appLock: true,
+      defaultCurrency: "BDT",
+      vacationMode: true,
+    });
+    expect(res.body.actions).toHaveLength(1);
+    await undo(res.body.actions[0]!);
+    expect(await settings()).toMatchObject({ vacationMode: false, vacations: [] });
+  });
 });
 
 describe("voice", () => {

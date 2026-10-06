@@ -104,7 +104,7 @@ export const WRITE_TOOLS: AiToolDefinition[] = [
       "start_timer: id null; fields {task?: task id, area?, project?, note?}. stop_timer: id null; fields {}.",
       "set_budget: id null; fields {month: YYYY-MM, category, limit} (taka; 0 removes it).",
       "checkout_shopping: id null; fields {listName, account, category?, amount?}.",
-      'update_settings: id null; fields = settings to change, e.g. {dailyTaskGoal: 5, theme: "dark", vacationMode: true}.',
+      'update_settings: id null; fields = settings to change, e.g. {dailyTaskGoal: 5, theme: "dark", vacationMode: true}. App lock, AI, currency, default accounts and time zone are only changed by the user in Settings.',
     ].join("\n"),
     parameters: {
       type: "object",

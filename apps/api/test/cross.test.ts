@@ -300,26 +300,10 @@ describe("progress", () => {
   });
 });
 
-describe("sync and export", () => {
-  test("changes since a timestamp include deletions", async () => {
+describe("export", () => {
+  test("the unused /sync/changes endpoint is gone", async () => {
     const ctx = await createTestContext();
-    const initial = await ctx.request<{ serverTime: number; changes: Record<string, Row[]> }>(
-      "GET",
-      "/sync/changes?since=0",
-    );
-    expect(initial.body.changes.areas).toHaveLength(6);
-    expect(initial.body.changes.settings?.some((r) => String(r.key).startsWith("_"))).toBe(false);
-    ctx.clock.advance(1000);
-    const area = initial.body.changes.areas![0]!;
-    await ctx.request("DELETE", `/areas/${area.id}`);
-    const delta = await ctx.request<{ changes: Record<string, Row[]> }>(
-      "GET",
-      `/sync/changes?since=${initial.body.serverTime}`,
-    );
-    expect(delta.body.changes.areas).toEqual([
-      expect.objectContaining({ id: area.id, deletedAt: DEFAULT_NOW + 1000 }),
-    ]);
-    expect(delta.body.changes.tasks).toEqual([]);
+    expect((await ctx.request("GET", "/sync/changes?since=0")).status).toBe(404);
   });
 
   test("export has every table", async () => {
@@ -328,9 +312,34 @@ describe("sync and export", () => {
       headers: { authorization: `Bearer ${ctx.token}` },
     });
     expect(res.headers.get("content-disposition")).toContain("tick-taka-export-");
-    const body = (await res.json()) as { tables: Record<string, unknown[]> };
+    expect(res.headers.get("content-type")).toContain("application/json");
+    const body = (await res.json()) as {
+      app: string;
+      version: number;
+      exportedAt: number;
+      tables: Record<string, unknown[]>;
+    };
+    expect(body).toMatchObject({ app: "tick-taka", version: 1, exportedAt: DEFAULT_NOW });
     expect(Object.keys(body.tables)).toHaveLength(21);
     expect(body.tables.categories!.length).toBeGreaterThan(10);
+    expect(body.tables.tasks).toEqual([]);
+  });
+
+  test("export streams long tables page by page, every row once and in order", async () => {
+    const ctx = await createTestContext();
+    const insert = ctx.deps.sqlite.prepare(
+      "insert into tasks (id, title, status, priority, created_at, updated_at) values (?, ?, 'open', 'normal', ?, ?)",
+    );
+    const ids = Array.from({ length: 1201 }, (_, i) => `01K${String(i).padStart(23, "0")}`);
+    ctx.deps.sqlite.transaction(() => {
+      for (const [i, id] of ids.entries()) insert.run(id, `Task ${i}`, DEFAULT_NOW, DEFAULT_NOW);
+    })();
+    const res = await ctx.app.request("/export", {
+      headers: { authorization: `Bearer ${ctx.token}` },
+    });
+    const body = (await res.json()) as { tables: Record<string, Row[]> };
+    expect(body.tables.tasks!.map((t) => t.id)).toEqual(ids);
+    expect(body.tables.tasks![0]).toMatchObject({ title: "Task 0", createdAt: DEFAULT_NOW });
   });
 });
 

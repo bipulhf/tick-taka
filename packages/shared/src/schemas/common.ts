@@ -40,8 +40,6 @@ export const paginationQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
-export const syncQuerySchema = z.object({ since: queryEpochSchema.default(0) });
-
 export const errorBodySchema = z.object({
   error: z.object({ code: z.string(), message: z.string(), details: z.unknown().optional() }),
 });

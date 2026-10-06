@@ -24,7 +24,7 @@ import { routinesRoutes } from "./modules/routines/routes";
 import { settingsRoutes } from "./modules/settings/routes";
 import { shoppingRoutes } from "./modules/shopping/routes";
 import { siteRoutes } from "./modules/site/routes";
-import { exportRoutes, syncRoutes } from "./modules/sync/routes";
+import { exportRoutes } from "./modules/sync/routes";
 import { tasksRoutes } from "./modules/tasks/routes";
 import { timeEntriesRoutes, timerRoutes } from "./modules/time-entries/routes";
 import { todayRoutes } from "./modules/today/routes";
@@ -62,7 +62,6 @@ export function createApp(deps: Deps) {
     .route("/insights", insightsRoutes(deps))
     .route("/reviews", reviewsRoutes(deps))
     .route("/gamification", gamificationRoutes(deps))
-    .route("/sync", syncRoutes(deps))
     .route("/export", exportRoutes(deps))
     .route("/ai", aiRoutes(deps, dispatch));
 

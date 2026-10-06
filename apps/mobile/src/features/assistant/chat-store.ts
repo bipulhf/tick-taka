@@ -54,7 +54,8 @@ export const chatStore = createStore<ChatMessage[]>([]);
 resetOnSignOut(() => chatStore.set([]));
 
 export async function loadChat() {
-  const raw = await secureStorage.getItem(KEY);
+  // The storage key may be unreadable for a moment; the chat just starts empty then.
+  const raw = await secureStorage.getItem(KEY).catch(() => null);
   if (raw) chatStore.set(JSON.parse(raw) as ChatMessage[]);
 }
 

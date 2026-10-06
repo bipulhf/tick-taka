@@ -35,9 +35,15 @@ export const outbox = new OutboxQueue({
   send: (request) => send(request.method, request.path, request.body),
   describe,
   canSend: () => onlineManager.isOnline() && Boolean(currentToken()),
+  // Throws while the storage key can't be read; the queue then holds off and reads again.
   load: async () => {
     const raw = await secureStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null; // damaged beyond reading, now or later
+    }
   },
   save: (state) => secureStorage.setItem(STORAGE_KEY, JSON.stringify(state)),
   onSent: (request) => scheduleRefresh(request.path),

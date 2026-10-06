@@ -47,6 +47,11 @@ export class OutboxQueue {
   private entries: OutboxEntry[] = [];
   private userId: string | null = null;
   private loaded = false;
+  private reading = false;
+  /** The saved queue couldn't be read on the last try. */
+  private unreadable = false;
+  /** Writes from an older storage format, waiting for the saved queue to be read. */
+  private legacy: OutboxRequest[] = [];
   /** Cleared before the saved queue was read: what's on disk is not to be sent. */
   private discardSaved = false;
   private running = false;
@@ -66,6 +71,11 @@ export class OutboxQueue {
     return this.userId;
   }
 
+  /** The saved queue couldn't be read yet; writes are held until it can. */
+  get savedUnreadable(): boolean {
+    return this.unreadable;
+  }
+
   snapshot(): readonly OutboxEntry[] {
     return this.entries;
   }
@@ -83,12 +93,25 @@ export class OutboxQueue {
    * storage format; they go first.
    */
   async load(legacy: OutboxRequest[] = []): Promise<void> {
-    let saved: PersistedOutbox | null = null;
+    this.legacy.push(...legacy);
+    if (this.loaded || this.reading) return;
+    this.reading = true;
+    let saved: PersistedOutbox | null;
     try {
       saved = parsePersistedOutbox(await this.deps.load());
     } catch {
-      saved = null;
+      // The saved queue is there but can't be read right now (the storage key, say).
+      // Keep it untouched: nothing is saved over it and nothing is sent ahead of it.
+      // New writes wait in memory, and the next kick reads again.
+      this.reading = false;
+      this.unreadable = true;
+      this.changed();
+      return;
     }
+    this.reading = false;
+    this.unreadable = false;
+    legacy = this.legacy;
+    this.legacy = [];
     const restored = [...legacy.map((request) => this.entry(request)), ...(saved?.entries ?? [])];
     // Only the first write can have been on its way when the app stopped.
     if (restored[0]) restored[0].maybeDelivered = true;
@@ -123,6 +146,10 @@ export class OutboxQueue {
 
   /** Try now: the network came back, the app came forward, or the user signed in again. */
   kick(): void {
+    if (!this.loaded) {
+      if (this.unreadable) void this.load();
+      return;
+    }
     if (this.wake) {
       this.wake();
       return;

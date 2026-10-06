@@ -11,36 +11,59 @@ export interface KeyValueStorage {
 
 export interface Cipher {
   encrypt(plain: string): Promise<string>;
+  /** Throws KeyUnavailableError when the key can't be loaded right now. */
   decrypt(sealed: string): Promise<string>;
+}
+
+/**
+ * The key store couldn't be read (a Keystore hiccup, or the phone still locked).
+ * Nothing is wrong with the data: read again later.
+ */
+export class KeyUnavailableError extends Error {
+  constructor(cause?: unknown) {
+    super("The storage key can't be read right now", { cause });
+    this.name = "KeyUnavailableError";
+  }
 }
 
 /** Marks an encrypted value; anything else is plain text from before encryption. */
 export const SEALED_PREFIX = "enc1:";
+/** Where a value that no key can open is kept, instead of being deleted. */
+export const UNREADABLE_SUFFIX = ".unreadable";
+
+export interface EncryptedStorageEvents {
+  /** A value was sealed with a key that is gone; it was moved to `${key}.unreadable`. */
+  onUnreadable?(key: string): void;
+  /** The cipher failed, so this value was stored as plain text rather than lost. */
+  onPlainFallback?(key: string, error: unknown): void;
+}
 
 /**
  * Wraps `base` so values are sealed with `cipher`:
- * - a plain value written by an older build is still read, then sealed in place;
- * - a value that won't decrypt (the key was lost with a Keystore reset) reads as
- *   missing and is removed, rather than crashing start-up;
+ * - a plain value written by an older build is still read; the next write seals it;
+ * - when the key can't be loaded, reading throws KeyUnavailableError and the sealed
+ *   value stays as it is, to be read on a later try;
+ * - a value the key loaded but can't open (the key was replaced after a Keystore
+ *   reset) reads as missing and is moved aside, never deleted;
  * - if the cipher can't work at all (no key could be stored), values are written
- *   plain, so queued writes are never lost to an encryption failure.
+ *   plain and reported, so queued writes are never lost to an encryption failure.
  */
-export function createEncryptedStorage(base: KeyValueStorage, cipher: Cipher): KeyValueStorage {
+export function createEncryptedStorage(
+  base: KeyValueStorage,
+  cipher: Cipher,
+  events: EncryptedStorageEvents = {},
+): KeyValueStorage {
   return {
     async getItem(key) {
       const raw = await base.getItem(key);
-      if (raw === null) return null;
-      if (!raw.startsWith(SEALED_PREFIX)) {
-        void cipher
-          .encrypt(raw)
-          .then((sealed) => base.setItem(key, SEALED_PREFIX + sealed))
-          .catch(() => {});
-        return raw;
-      }
+      if (raw === null || !raw.startsWith(SEALED_PREFIX)) return raw;
       try {
         return await cipher.decrypt(raw.slice(SEALED_PREFIX.length));
-      } catch {
-        await base.removeItem(key).catch(() => {});
+      } catch (error) {
+        if (error instanceof KeyUnavailableError) throw error;
+        await base.setItem(key + UNREADABLE_SUFFIX, raw);
+        await base.removeItem(key);
+        events.onUnreadable?.(key);
         return null;
       }
     },
@@ -48,7 +71,8 @@ export function createEncryptedStorage(base: KeyValueStorage, cipher: Cipher): K
       let stored: string;
       try {
         stored = SEALED_PREFIX + (await cipher.encrypt(value));
-      } catch {
+      } catch (error) {
+        events.onPlainFallback?.(key, error);
         stored = value;
       }
       await base.setItem(key, stored);

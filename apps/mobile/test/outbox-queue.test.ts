@@ -252,6 +252,36 @@ describe("outbox queue", () => {
     expect(state.online).toBe(false);
   });
 
+  test("a saved queue that can't be read yet is kept, and loads on the next try", async () => {
+    const saved: PersistedOutbox = {
+      version: 1,
+      userId: "u1",
+      entries: [
+        { id: "s", request: post("saved"), queuedAt: 0, attempts: 0, maybeDelivered: false },
+      ],
+    };
+    const { queue, state, received } = harness({ saved });
+    const deps = (queue as unknown as { deps: OutboxDeps }).deps;
+    let keyReadable = false;
+    deps.load = async () => {
+      if (!keyReadable) throw new Error("storage key can't be read");
+      return state.disk;
+    };
+    await queue.load();
+    expect(queue.savedUnreadable).toBe(true);
+    void queue.enqueue(post("new"));
+    await queue.flushed();
+    await new Promise((r) => setTimeout(r, 5));
+    // Nothing was sent ahead of the saved writes, and nothing was saved over them.
+    expect(received).toHaveLength(0);
+    expect(state.disk).toBe(saved);
+    keyReadable = true;
+    queue.kick(); // the app came forward: read again
+    await idle(queue);
+    expect(queue.savedUnreadable).toBe(false);
+    expect(received.map((r) => (r.body as { id: string }).id)).toEqual(["saved", "new"]);
+  });
+
   test("clearing empties the queue and the disk", async () => {
     const { queue, state } = harness({ online: false });
     await queue.load();

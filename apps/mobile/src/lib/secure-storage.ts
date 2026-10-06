@@ -1,13 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AESEncryptionKey, AESSealedData, aesDecryptAsync, aesEncryptAsync } from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
-import { type Cipher, createEncryptedStorage } from "./encrypted-storage";
+import { type Cipher, createEncryptedStorage, KeyUnavailableError } from "./encrypted-storage";
+import { notify } from "./notify";
 
 /** A random AES-256 key, created on first use and kept in the Android Keystore-backed store. */
 const KEY_NAME = "tt.storage-key";
 
 let key: Promise<AESEncryptionKey> | null = null;
 
+/** The storage key; rejects with KeyUnavailableError when the Keystore can't be read now. */
 function storageKey(): Promise<AESEncryptionKey> {
   key ??= (async () => {
     const saved = await SecureStore.getItemAsync(KEY_NAME);
@@ -17,7 +19,7 @@ function storageKey(): Promise<AESEncryptionKey> {
     return created;
   })().catch((error: unknown) => {
     key = null; // try again next time
-    throw error;
+    throw new KeyUnavailableError(error);
   });
   return key;
 }
@@ -39,4 +41,13 @@ const aesGcm: Cipher = {
  * transactions, notes), the outbox and the assistant chat. The app lock only hides
  * the screen; this keeps the data unreadable from a backup or a file dump.
  */
-export const secureStorage = createEncryptedStorage(AsyncStorage, aesGcm);
+export const secureStorage = createEncryptedStorage(AsyncStorage, aesGcm, {
+  onUnreadable(name) {
+    console.warn(`Stored ${name} was sealed with a lost key; kept aside as unreadable`);
+    if (name === "tt.outbox")
+      notify("Some changes saved on this phone can't be read anymore and weren't synced.");
+  },
+  onPlainFallback(name, error) {
+    console.warn(`Couldn't encrypt ${name}; stored without encryption`, error);
+  },
+});

@@ -65,6 +65,8 @@ export async function runHourlyJobs(deps: Deps): Promise<void> {
   const now = deps.now();
   for (const user of deps.users.list()) {
     await yieldToRequests();
+    // The account may have been deleted while this run yielded.
+    if (!deps.users.find(user.id)) continue;
     try {
       runJobsFor(deps, user, now);
     } catch (error) {

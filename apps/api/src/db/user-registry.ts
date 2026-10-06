@@ -166,11 +166,13 @@ export function createUserRegistry(
     /**
      * Returns this user's database, opening it (and seeding defaults on first use)
      * if it isn't open. For work that spans awaits, use `lease` so the handle
-     * can't be closed underneath it.
+     * can't be closed underneath it. Refuses a user whose account was deleted, so
+     * a late caller can't recreate their database.
      */
     data(user: User): UserData {
       const cached = open.get(user.id);
       if (cached) return cached;
+      if (!byId.get(user.id)) throw new Error("This account was deleted");
       const paths = dataPaths(user);
       const handle = openDatabase(paths.db);
       if (options.seed !== false) seedDefaults(handle.db, now());

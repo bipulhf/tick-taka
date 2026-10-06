@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, readdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
@@ -88,6 +88,37 @@ describe("hourly job loop", () => {
     stop();
     expect(readdirSync(join(backups, "users", a.id))).toEqual(["app-2026-10-04.db"]);
     expect(ctx.deps.users.jobRuns.lastDate(b.id, "nightly-backup")).toBe("2026-10-04");
+  });
+});
+
+describe("account deleted during a job run", () => {
+  test("the run skips the deleted user and recreates none of their files", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tt-jobs-gone-"));
+    const ctx = await createTestContext({
+      now: BACKUP_TIME,
+      env: { USER_DATA_DIR: join(dir, "users"), BACKUPS_DIR: join(dir, "backups") },
+    });
+    await ctx.tokenFor("sub-gone", "gone@example.com");
+    const gone = ctx.deps.users.list()[1];
+    if (!gone) throw new Error("expected a second user");
+    ctx.deps.users.sweep();
+    const run = runHourlyJobs(ctx.deps); // takes the user list, then yields
+    ctx.deps.users.remove(gone);
+    await run;
+    expect(existsSync(join(dir, "users", `${gone.id}.db`))).toBe(false);
+    expect(existsSync(join(dir, "backups", "users", gone.id))).toBe(false);
+    expect(ctx.deps.users.jobRuns.lastDate(gone.id, "nightly-backup")).toBeUndefined();
+  });
+
+  test("opening a removed user's data refuses instead of creating a new file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tt-jobs-gone-"));
+    const ctx = await createTestContext({ env: { USER_DATA_DIR: join(dir, "users") } });
+    await ctx.tokenFor("sub-gone", "gone@example.com");
+    const gone = ctx.deps.users.list()[1];
+    if (!gone) throw new Error("expected a second user");
+    ctx.deps.users.remove(gone);
+    expect(() => ctx.deps.users.data(gone)).toThrow();
+    expect(existsSync(join(dir, "users", `${gone.id}.db`))).toBe(false);
   });
 });
 

@@ -1,3 +1,4 @@
+import { parseTypedInteger } from "@tick-taka/shared/digits";
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -34,7 +35,7 @@ function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
   const [perWeek, setPerWeek] = useState(habit?.perWeek ?? 3);
   const [target, setTarget] = useState(String(habit?.targetCount ?? 1));
   const [remindAt, setRemindAt] = useState<string | null>(habit?.remindAt ?? null);
-  const targetCount = Math.max(1, Math.min(100, Number(target) || 1));
+  const targetCount = Math.max(1, Math.min(100, parseTypedInteger(target) || 1));
 
   const save = () => {
     const body = {

@@ -14,3 +14,12 @@ export function toAsciiDigits(text: string): string {
 export function toBanglaDigits(text: string): string {
   return text.replace(/[0-9]/g, (digit) => String.fromCharCode(BANGLA_ZERO + Number(digit)));
 }
+
+/**
+ * A whole number typed into a count or minutes field ("৩", "12"), or null when the
+ * text isn't one. `Number("৩")` is NaN, so typed numbers always go through here.
+ */
+export function parseTypedInteger(text: string): number | null {
+  const plain = toAsciiDigits(text).trim();
+  return /^\d+$/.test(plain) ? Number(plain) : null;
+}

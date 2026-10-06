@@ -1,3 +1,4 @@
+import { parseTypedInteger } from "@tick-taka/shared/digits";
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -95,7 +96,7 @@ function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
           />
           <TextField
             value={step.minutes ? String(step.minutes) : ""}
-            onChangeText={(v) => update(index, { minutes: Number(v) || null })}
+            onChangeText={(v) => update(index, { minutes: parseTypedInteger(v) || null })}
             placeholder="min"
             accessibilityLabel={`Minutes for step ${index + 1}`}
             keyboardType="number-pad"

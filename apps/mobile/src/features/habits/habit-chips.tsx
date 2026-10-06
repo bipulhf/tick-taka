@@ -32,8 +32,10 @@ function HabitChip({
   onTakeBack: () => void;
 }) {
   const progress = Math.min(1, habit.todayCount / habit.targetCount);
-  // Always grape: purple means habits everywhere; the emoji tells habits apart.
-  const ring = useColors().grape;
+  // Always grape: purple means habits everywhere; the emoji tells habits apart. The arc is
+  // the only cue to progress, so it uses the -text tier, which keeps 3:1 on every surface.
+  const colors = useColors();
+  const ring = colors.grapeText;
   return (
     <Pressable
       onPress={onTap}
@@ -57,7 +59,7 @@ function HabitChip({
             cx={SIZE / 2}
             cy={SIZE / 2}
             r={R}
-            stroke={ring}
+            stroke={colors.grape}
             strokeOpacity={0.25}
             strokeWidth={5}
             fill="none"

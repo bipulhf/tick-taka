@@ -72,6 +72,19 @@ export const palette: { light: PaletteShape; dark: PaletteShape } = {
 export type Palette = PaletteShape;
 export type ColorName = keyof Palette;
 
+/**
+ * Tokens for marks that are the only cue to a state or value (an unchecked checkbox ring,
+ * a habit's progress arc, the money calendar's spend bar). They keep 3:1 (WCAG 1.4.11) on
+ * every surface, where the bright marks may not; test/contrast.test.ts checks them.
+ */
+export const SOLE_CUE_MARKS = [
+  "skyText",
+  "mintText",
+  "coralText",
+  "grapeText",
+  "lineStrong",
+] as const satisfies readonly ColorName[];
+
 /** Text and icons on mango and every other semantic fill: always dark, in both themes. */
 export const ON_ACCENT = "#23202B";
 

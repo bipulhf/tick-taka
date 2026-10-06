@@ -39,6 +39,8 @@ Contrast (WCAG 2.x, checked by `apps/mobile/test/contrast.test.ts` against both 
 - on-mango on each fill: mango 9.10 / 10.0, sky 5.06 / 6.43, mint 7.25 / 9.00, coral 6.28 / 7.44, grape 5.24 / 6.76 (light / dark).
 - Snackbar: mango-inverse on ink 9.10 (light), 5.25 (dark).
 - line-strong (UI boundaries, 3:1): 3.48 on background and 3.67 on surface in light; 4.06 and 3.59 in dark.
+- Marks that are the only cue to a state or value (an unchecked checkbox ring, a habit's progress arc, the money calendar's spend bar) use the `-text` token or line-strong, never the bright mark, so they keep 3:1 on every surface. The bright marks stay for fills and for marks that sit beside a label.
+- The home-screen widget builds its colours from the same tokens (`features/widget/widget-colors.ts`) and is checked by the same test.
 
 ## Typography
 

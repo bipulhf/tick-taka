@@ -16,7 +16,12 @@ export interface CheckboxProps {
   label: string;
 }
 
-const RING = { sky: "border-sky", grape: "border-grape", mint: "border-mint" } as const;
+/** An unchecked ring is the only cue that a box is there: the -text tier keeps it at 3:1. */
+const RING = {
+  sky: "border-sky-text",
+  grape: "border-grape-text",
+  mint: "border-mint-text",
+} as const;
 const FILL = {
   sky: "bg-sky border-sky",
   grape: "bg-grape border-grape",

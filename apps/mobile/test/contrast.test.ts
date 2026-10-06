@@ -7,6 +7,7 @@ import {
   type Palette,
   palette,
   rewardThemes,
+  SOLE_CUE_MARKS,
   themedPalette,
 } from "../src/theme/palette";
 
@@ -140,7 +141,24 @@ describe("component boundaries reach 3:1", () => {
       expect(contrast(colors.lineStrong, colors.background)).toBeGreaterThanOrEqual(UI_AA);
       expect(contrast(colors.lineStrong, colors.card)).toBeGreaterThanOrEqual(UI_AA);
     });
+
+    test(`${name}: marks that are the only cue (rings, arcs, spend bars)`, () => {
+      for (const token of SOLE_CUE_MARKS) {
+        for (const surface of ["background", "card"] as const) {
+          expect({
+            pair: `${token} on ${surface}`,
+            ok: contrast(colors[token], colors[surface]) >= UI_AA,
+          }).toEqual({ pair: `${token} on ${surface}`, ok: true });
+        }
+      }
+    });
   }
+
+  test("the bright light-mode marks are why sole cues use the -text tier", () => {
+    // Fine as fills under dark text, too faint alone: an unchecked mint ring was 2.21:1.
+    expect(contrast(palette.light.mint, palette.light.card)).toBeLessThan(UI_AA);
+    expect(contrast(palette.light.coral, palette.light.card)).toBeLessThan(UI_AA);
+  });
 });
 
 describe("home-screen widget reaches WCAG AA", () => {

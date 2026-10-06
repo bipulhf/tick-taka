@@ -126,7 +126,7 @@ export function MoneyCalendar() {
                   <View className="h-1 w-4/5 items-center">
                     {spent > 0 && inMonth ? (
                       <View
-                        className={`h-1 rounded-full ${isSelected ? "bg-background" : "bg-coral"}`}
+                        className={`h-1 rounded-full ${isSelected ? "bg-background" : "bg-coral-text"}`}
                         style={{ width: `${Math.max(20, (spent / max) * 100)}%` }}
                       />
                     ) : null}

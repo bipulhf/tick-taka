@@ -63,7 +63,9 @@ function HabitChip({
             transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
           />
         </Svg>
-        <Text className="text-2xl">{habit.emoji}</Text>
+        <Text className="text-2xl" maxFontSizeMultiplier={1.3}>
+          {habit.emoji}
+        </Text>
       </View>
       <Text variant="caption" numberOfLines={2} className="w-20 text-center">
         {habit.name}

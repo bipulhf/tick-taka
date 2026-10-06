@@ -31,6 +31,12 @@ const TONES = {
   mangoOnInk: "text-mango-inverse",
 } as const;
 
+/**
+ * Font scaling stays on everywhere so text grows with the system setting; only the
+ * 44 px hero number is capped, since at 2x it would no longer fit one line on a phone.
+ */
+const MAX_SCALE: Partial<Record<keyof typeof VARIANTS, number>> = { hero: 1.3 };
+
 export type TextVariant = keyof typeof VARIANTS;
 export type TextTone = keyof typeof TONES;
 
@@ -52,6 +58,7 @@ export function Text({
 }: TextProps) {
   return (
     <RNText
+      maxFontSizeMultiplier={MAX_SCALE[variant]}
       className={`${VARIANTS[variant]} ${TONES[tone]} ${className ?? ""}`}
       style={[numeric ? { fontVariant: ["tabular-nums"] } : null, style]}
       {...props}

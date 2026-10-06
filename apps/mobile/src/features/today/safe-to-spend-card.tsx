@@ -43,6 +43,8 @@ export function SafeToSpendCard({ data }: { data: TodayData }) {
       <Amount
         minor={Math.abs(money.leftTodayMinor)}
         variant="hero"
+        numberOfLines={1}
+        adjustsFontSizeToFit
         tone={over ? "coral" : "mint"}
       />
       <ProgressBar

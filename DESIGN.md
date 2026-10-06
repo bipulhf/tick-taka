@@ -56,6 +56,8 @@ Nunito everywhere (rounded, friendly). Tabular digits for every amount and timer
 
 Section labels are 13 SemiBold sentence case in muted, not shouting uppercase.
 
+Caption (13) is the smallest text; nothing goes below it except tab labels (12). Text follows the system font size. Only the hero number and tight chrome (tab labels, calendar cells, keypad keys, the focus clock, emoji in fixed circles) are capped at 1.3x; the hero also shrinks to fit one line. Containers that hold text use a minimum height, never a fixed one.
+
 ## Layout
 
 - Screen padding 20; 28 between sections; 12 inside a group.

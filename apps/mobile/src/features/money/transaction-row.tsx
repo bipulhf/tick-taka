@@ -60,7 +60,7 @@ export function TransactionRow({
         accessibilityHint="Opens the transaction. Delete is in the actions menu"
       >
         <View className="h-10 w-10 items-center justify-center rounded-full bg-background">
-          <Text className="text-lg">
+          <Text className="text-lg" maxFontSizeMultiplier={1.3}>
             {tx.type === "transfer"
               ? "🔁"
               : tx.type === "adjustment"

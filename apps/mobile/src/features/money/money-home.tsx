@@ -57,7 +57,13 @@ export function MoneyHome() {
           <PrivacyToggle />
         </View>
         {accounts.data ? (
-          <Amount minor={total} currency={currency} variant="hero" />
+          <Amount
+            minor={total}
+            currency={currency}
+            variant="hero"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          />
         ) : (
           <Skeleton className="mt-1 h-11 w-1/2 rounded-2xl" />
         )}

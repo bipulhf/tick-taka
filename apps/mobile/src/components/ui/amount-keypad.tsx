@@ -64,9 +64,11 @@ export function AmountKeypad({
             onLongPress={key === "⌫" ? () => press("⌫") : undefined}
             accessibilityRole="keyboardkey"
             accessibilityLabel={key === "⌫" ? "Delete" : key}
-            className={`h-14 w-[23.5%] items-center justify-center rounded-2xl active:opacity-60 ${"÷×−+".includes(key) ? "bg-mango/30" : "bg-card"}`}
+            className={`min-h-14 w-[23.5%] items-center justify-center rounded-2xl active:opacity-60 ${"÷×−+".includes(key) ? "bg-mango/30" : "bg-card"}`}
           >
-            <Text variant="title">{key}</Text>
+            <Text variant="title" maxFontSizeMultiplier={1.3}>
+              {key}
+            </Text>
           </Pressable>
         ))}
       </View>

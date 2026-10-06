@@ -38,7 +38,9 @@ export function ListRow({
   const swipeActions = useSwipeRowA11y(Boolean(onPress));
   const leading = emoji ? (
     <View className="h-10 w-10 items-center justify-center rounded-full bg-background">
-      <Text className="text-xl">{emoji}</Text>
+      <Text className="text-xl" maxFontSizeMultiplier={1.3}>
+        {emoji}
+      </Text>
     </View>
   ) : icon ? (
     <View

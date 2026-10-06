@@ -1,5 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toLocalDate } from "@tick-taka/shared/dates";
+import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { api, unwrap } from "./api";
+import { latestToday, nextDateCheckMs } from "./local-day";
 
 /** Query keys in one place so writes can invalidate precisely when needed. */
 export const keys = {
@@ -29,14 +33,60 @@ export function useCategories() {
   return useQuery({ queryKey: keys.categories, queryFn: () => unwrap(api.categories.$get()) });
 }
 
-export function useToday(date?: string) {
-  return useQuery({
-    queryKey: keys.today(date),
-    queryFn: () => unwrap(api.today.$get({ query: date ? { date } : {} })),
-  });
+const fetchToday = (date?: string) => unwrap(api.today.$get({ query: date ? { date } : {} }));
+
+export type TodayData = Awaited<ReturnType<typeof fetchToday>>;
+
+/** Today's date where the user lives; turns over at local midnight even with the app open. */
+export function useLocalToday(): string {
+  const { data: settings } = useSettings();
+  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const [date, setDate] = useState(() => toLocalDate(Date.now(), timeZone));
+  useEffect(() => {
+    const update = () => setDate(toLocalDate(Date.now(), timeZone));
+    update();
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      timer = setTimeout(
+        () => {
+          update();
+          schedule();
+        },
+        nextDateCheckMs(Date.now(), timeZone),
+      );
+    };
+    schedule();
+    const subscription = AppState.addEventListener("change", (status) => {
+      if (status === "active") update();
+    });
+    return () => {
+      clearTimeout(timer);
+      subscription.remove();
+    };
+  }, [timeZone]);
+  return date;
 }
 
-export type TodayData = NonNullable<ReturnType<typeof useToday>["data"]>;
+/**
+ * Today's screen data, keyed by the local date so a new day is a new query. Until
+ * the new day loads (or while offline) the newest cached day is shown as a
+ * placeholder; compare `data.date` with useLocalToday() to say it's older.
+ */
+export function useToday(date?: string) {
+  const localToday = useLocalToday();
+  const client = useQueryClient();
+  return useQuery({
+    queryKey: keys.today(date ?? localToday),
+    queryFn: () => fetchToday(date),
+    placeholderData: date
+      ? undefined
+      : (previous: TodayData | undefined) =>
+          previous ??
+          latestToday(
+            client.getQueriesData<TodayData>({ queryKey: ["today"] }).map(([, data]) => data),
+          ),
+  });
+}
 export type TaskRow = TodayData["topThree"][number];
 
 export function useCategoryRules() {

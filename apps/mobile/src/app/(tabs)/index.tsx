@@ -2,6 +2,7 @@ import { View } from "react-native";
 import type { TikiOutfit } from "@/components/tiki/tiki";
 import { ErrorState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
+import { Text } from "@/components/ui/text";
 import { HabitChips } from "@/features/habits/habit-chips";
 import { RunningTimerBar } from "@/features/timer/running-timer-bar";
 import { LaterToday } from "@/features/today/later-today";
@@ -11,11 +12,13 @@ import { SafeToSpendCard } from "@/features/today/safe-to-spend-card";
 import { TodayHeader } from "@/features/today/today-header";
 import { TodaySkeleton } from "@/features/today/today-skeleton";
 import { TopThree } from "@/features/today/top-three";
-import { useAreas, useSettings, useToday } from "@/lib/queries";
+import { formatLocalDate } from "@/lib/format";
+import { useAreas, useLocalToday, useSettings, useToday } from "@/lib/queries";
 
 /** Today answers two questions first: what now, and can I afford it; logging is one tap away. */
 export default function TodayScreen() {
   const today = useToday();
+  const localToday = useLocalToday();
   const { data: areas } = useAreas();
   const { data: settings } = useSettings();
   const data = today.data;
@@ -44,6 +47,12 @@ export default function TodayScreen() {
     <View className="flex-1">
       <Screen refreshing={today.isRefetching} onRefresh={() => void today.refetch()}>
         <TodayHeader data={data} outfit={(settings?.tikiOutfit ?? null) as TikiOutfit} />
+        {data.date < localToday ? (
+          // Past midnight with yesterday's numbers on screen: say so until today's load.
+          <Text variant="caption" tone="muted" accessibilityRole="alert">
+            {`Showing ${formatLocalDate(data.date, "long")} · today's numbers load once the server answers`}
+          </Text>
+        ) : null}
         <QuickActions />
         <SafeToSpendCard data={data} />
         <TopThree data={data} />

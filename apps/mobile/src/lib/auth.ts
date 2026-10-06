@@ -7,31 +7,28 @@ import {
 import * as SecureStore from "expo-secure-store";
 import { GOOGLE_WEB_CLIENT_ID } from "./config";
 import { apiUrl, connectAuth, request } from "./http";
+import { PROFILE_KEY, type Profile, readStoredSession, TOKEN_KEY } from "./session";
 import { createStore } from "./store";
 import { clearUserData } from "./user-data";
 
-const TOKEN_KEY = "tt.token";
-const PROFILE_KEY = "tt.profile";
-
-export interface Profile {
-  id: string;
-  email: string;
-  name: string | null;
-  pictureUrl: string | null;
-}
+export type { Profile } from "./session";
 
 /** `undefined` while loading from secure storage, `null` when signed out. */
 export const tokenStore = createStore<string | null | undefined>(undefined);
 /** Who is signed in, for the account row in Settings. */
 export const profileStore = createStore<Profile | null>(null);
 
+/** Reads the saved session. Always settles the token store, so start-up can't hang. */
 export async function loadToken(): Promise<void> {
-  const [token, profile] = await Promise.all([
-    SecureStore.getItemAsync(TOKEN_KEY),
-    SecureStore.getItemAsync(PROFILE_KEY),
-  ]);
-  profileStore.set(profile ? (JSON.parse(profile) as Profile) : null);
-  tokenStore.set(token ?? null);
+  const stored = await readStoredSession((key) => SecureStore.getItemAsync(key));
+  if (stored.broken) {
+    // Unreadable (Keystore reset or a restored backup): start again from the login screen.
+    await Promise.all(
+      [TOKEN_KEY, PROFILE_KEY].map((key) => SecureStore.deleteItemAsync(key).catch(() => {})),
+    );
+  }
+  profileStore.set(stored.profile);
+  tokenStore.set(stored.token);
 }
 
 GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });

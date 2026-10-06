@@ -68,7 +68,8 @@ export default function RootLayout() {
   const ready = fontsLoaded && token !== undefined;
 
   useEffect(() => {
-    void loadToken();
+    // Belt and braces: whatever happens, leave the splash screen for login.
+    loadToken().catch(() => tokenStore.set(null));
     void startOutbox();
     void loadPrivacy();
     void loadFeedbackPrefs();

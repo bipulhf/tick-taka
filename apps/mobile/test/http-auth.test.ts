@@ -4,6 +4,7 @@ type HttpModule = typeof import("../src/lib/http");
 let http: HttpModule;
 let token = "new";
 let expired = 0;
+let lastSent: string | null = null;
 
 const realFetch = globalThis.fetch;
 afterAll(() => {
@@ -18,7 +19,13 @@ beforeAll(async () => {
       headers: { "content-type": "application/json" },
     })) as unknown as typeof fetch;
   http = await import("../src/lib/http");
-  http.connectAuth({ token: () => token, onUnauthorized: () => expired++ });
+  http.connectAuth({
+    token: () => token,
+    onUnauthorized: (sent) => {
+      expired++;
+      lastSent = sent;
+    },
+  });
 });
 
 describe("401 handling", () => {
@@ -27,6 +34,7 @@ describe("401 handling", () => {
     const response = await http.request(http.apiUrl("/tasks"), { method: "POST", json: {} });
     expect(response.status).toBe(401);
     expect(expired).toBe(1);
+    expect(lastSent).toBe("new");
   });
 
   test("a 401 for a token that was refreshed meanwhile is ignored", async () => {

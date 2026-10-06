@@ -9,51 +9,33 @@ import { AppState } from "react-native";
 import { GOOGLE_WEB_CLIENT_ID } from "./config";
 import { apiUrl, connectAuth, request } from "./http";
 import { outbox } from "./outbox";
-import {
-  errorMessage,
-  ISSUED_KEY,
-  mustWipeBeforeSignIn,
-  needsRefresh,
-  PROFILE_KEY,
-  type Profile,
-  readStoredSession,
-  type SessionResponse,
-  sessionResponseSchema,
-  TOKEN_KEY,
-} from "./session";
-import { createStore } from "./store";
+import { errorMessage, mustWipeBeforeSignIn, sessionResponseSchema } from "./session";
+import { createSessionManager } from "./session-manager";
 import { clearUserData } from "./user-data";
 
 export type { Profile } from "./session";
 
+const sessionManager = createSessionManager({
+  storage: {
+    getItem: (key) => SecureStore.getItemAsync(key),
+    setItem: (key, value) => SecureStore.setItemAsync(key, value),
+    deleteItem: (key) => SecureStore.deleteItemAsync(key),
+  },
+  postRefresh: () => request(apiUrl("/auth/refresh"), { method: "POST", timeout: 15_000 }),
+  outbox,
+  now: Date.now,
+});
+
 /** `undefined` while loading from secure storage, `null` when signed out or expired. */
-export const tokenStore = createStore<string | null | undefined>(undefined);
+export const tokenStore = sessionManager.tokenStore;
 /**
  * Who is signed in, for the account row in Settings. Kept when the session expires:
  * a profile with no token means "sign in again", and the phone's data waits for them.
  */
-export const profileStore = createStore<Profile | null>(null);
-
-/** When this phone got the current token; null when unknown (older builds). */
-let issuedAt: number | null = null;
+export const profileStore = sessionManager.profileStore;
 
 /** Reads the saved session. Always settles the token store, so start-up can't hang. */
-export async function loadToken(): Promise<void> {
-  const stored = await readStoredSession((key) => SecureStore.getItemAsync(key));
-  if (stored.broken) {
-    // Unreadable (Keystore reset or a restored backup): start again from the login screen.
-    await Promise.all(
-      [TOKEN_KEY, PROFILE_KEY, ISSUED_KEY].map((key) =>
-        SecureStore.deleteItemAsync(key).catch(() => {}),
-      ),
-    );
-  }
-  issuedAt = stored.issuedAt;
-  if (stored.token && stored.profile) outbox.setOwner(stored.profile.id);
-  profileStore.set(stored.profile);
-  tokenStore.set(stored.token);
-  if (stored.token) void refreshSessionIfStale();
-}
+export const loadToken = sessionManager.load;
 
 GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });
 
@@ -75,19 +57,6 @@ function googleErrorMessage(error: unknown): string {
     default:
       return error.message || "Google sign-in didn't work. Try again.";
   }
-}
-
-/** Saves a new or refreshed session and lets queued writes go. */
-async function saveSession(session: SessionResponse): Promise<void> {
-  const now = Date.now();
-  await SecureStore.setItemAsync(TOKEN_KEY, session.token);
-  await SecureStore.setItemAsync(PROFILE_KEY, JSON.stringify(session.user));
-  await SecureStore.setItemAsync(ISSUED_KEY, String(now));
-  issuedAt = now;
-  outbox.setOwner(session.user.id);
-  profileStore.set(session.user);
-  tokenStore.set(session.token);
-  outbox.kick();
 }
 
 /**
@@ -128,7 +97,7 @@ export async function signInWithGoogle(): Promise<void> {
   }
   const previousUserId = profileStore.get()?.id ?? outbox.owner;
   if (mustWipeBeforeSignIn(previousUserId, session.data.user.id)) await clearUserData();
-  await saveSession(session.data);
+  await sessionManager.save(session.data);
 }
 
 /**
@@ -136,37 +105,10 @@ export async function signInWithGoogle(): Promise<void> {
  * profile and the queued writes stay, the outbox pauses (it needs a token) and the
  * login screen asks the same person to sign in again.
  */
-export async function expireSession(): Promise<void> {
-  if (!tokenStore.get()) return;
-  tokenStore.set(null);
-  issuedAt = null;
-  await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
-  await SecureStore.deleteItemAsync(ISSUED_KEY).catch(() => {});
-}
-
-let refreshing: Promise<void> | null = null;
+export const expireSession = sessionManager.expire;
 
 /** Swaps a token older than a day for a fresh one, so an active phone never hits the expiry. */
-export function refreshSessionIfStale(): Promise<void> {
-  const token = tokenStore.get();
-  if (!token || !needsRefresh(issuedAt, Date.now())) return Promise.resolve();
-  refreshing ??= (async () => {
-    try {
-      const response = await request(apiUrl("/auth/refresh"), { method: "POST", timeout: 15_000 });
-      // 401 is handled by the http hook (expireSession). A server without the route
-      // answers 404: don't ask again until tomorrow.
-      if (response.status === 404) issuedAt = Date.now();
-      if (!response.ok) return;
-      const session = sessionResponseSchema.safeParse(await response.json().catch(() => null));
-      if (session.success && tokenStore.get() === token) await saveSession(session.data);
-    } catch {
-      // Offline or unreachable: try again on the next start or foreground.
-    } finally {
-      refreshing = null;
-    }
-  })();
-  return refreshing;
-}
+export const refreshSessionIfStale = sessionManager.refreshIfStale;
 
 AppState.addEventListener("change", (status) => {
   if (status === "active") void refreshSessionIfStale();
@@ -174,14 +116,7 @@ AppState.addEventListener("change", (status) => {
 
 /** Wipes the session and everything of this user's from the phone, and signs out of Google. */
 async function forgetUser(): Promise<void> {
-  await Promise.all(
-    [TOKEN_KEY, PROFILE_KEY, ISSUED_KEY].map((key) =>
-      SecureStore.deleteItemAsync(key).catch(() => {}),
-    ),
-  );
-  issuedAt = null;
-  tokenStore.set(null);
-  profileStore.set(null);
+  await sessionManager.forget();
   await Promise.all([GoogleSignin.signOut().catch(() => {}), clearUserData()]);
 }
 
@@ -211,4 +146,4 @@ export async function deleteAccount(): Promise<void> {
   await forgetUser();
 }
 
-connectAuth({ token: () => tokenStore.get(), onUnauthorized: () => void expireSession() });
+connectAuth({ token: () => tokenStore.get(), onUnauthorized: sessionManager.onUnauthorized });

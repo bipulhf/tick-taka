@@ -7,7 +7,11 @@ const TIMEOUT_MS = 20_000;
 const AI_TIMEOUT_MS = 90_000;
 
 /** Supplied by the auth module, so this one stays free of it (no import cycle). */
-let auth: { token: () => string | null | undefined; onUnauthorized: () => void } = {
+let auth: {
+  token: () => string | null | undefined;
+  /** The server refused this token; the auth module decides whether it still matters. */
+  onUnauthorized: (sentToken: string | null) => void;
+} = {
   token: () => null,
   onUnauthorized: () => {},
 };
@@ -49,7 +53,7 @@ export const http = ky.create({
         // A 401 for a token that has since been refreshed says nothing about the new one.
         const token = auth.token();
         if (token && request.headers.get("authorization") === `Bearer ${token}`)
-          auth.onUnauthorized();
+          auth.onUnauthorized(token);
       },
     ],
   },
@@ -94,6 +98,7 @@ export function authHeaders(): Record<string, string> {
   return token ? { authorization: `Bearer ${token}` } : {};
 }
 
-export function reportUnauthorized(): void {
-  auth.onUnauthorized();
+/** A 401 from outside ky, for the token the request was sent with. */
+export function reportUnauthorized(sentToken: string | null): void {
+  auth.onUnauthorized(sentToken);
 }

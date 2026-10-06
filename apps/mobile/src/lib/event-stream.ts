@@ -1,6 +1,6 @@
 import { fetch } from "expo/fetch";
 import { ApiError } from "./api";
-import { apiUrl, authHeaders, reportUnauthorized, ServerUnreachableError } from "./http";
+import { apiUrl, currentToken, reportUnauthorized, ServerUnreachableError } from "./http";
 import { noteServerTime } from "./server-clock";
 
 const TIMEOUT_MS = 180_000;
@@ -19,6 +19,8 @@ export async function postEventStream(
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     const sentAt = Date.now();
+    // Remembered so a 401 is judged against the token this request carried.
+    const sentToken = currentToken();
     let response: Awaited<ReturnType<typeof fetch>>;
     try {
       response = await fetch(apiUrl(path), {
@@ -26,7 +28,7 @@ export async function postEventStream(
         headers: {
           "content-type": "application/json",
           accept: "text/event-stream",
-          ...authHeaders(),
+          ...(sentToken ? { authorization: `Bearer ${sentToken}` } : {}),
         },
         body: JSON.stringify(body),
         signal: controller.signal,
@@ -36,7 +38,7 @@ export async function postEventStream(
     }
     noteServerTime(Number(response.headers.get("x-server-time")), sentAt, Date.now());
     if (!response.ok || !response.body) {
-      if (response.status === 401) reportUnauthorized();
+      if (response.status === 401) reportUnauthorized(sentToken);
       const error = (await response.json().catch(() => null)) as {
         error?: { code: string; message: string };
       } | null;

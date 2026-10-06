@@ -385,3 +385,8 @@ The full product and technical spec is in `tick_taka_spec.pdf`; the build order 
   `esbuild` 0.18 inside drizzle-kit's loader (only runs `db:generate` locally), and
   `decode-uri-component` 0.2 under expo-router (the fix is an ESM-only major; the risk is
   a slow parse of a malformed deep link on the user's own phone). Re-check on upgrades.
+- **Coverage** (`bun test --coverage` per workspace): read each package's numbers from
+  its own run. Bun 1.3 maps lines of a file imported from another workspace badly (a
+  file with an uncalled default-parameter function can show 0% lines at 100% functions),
+  so `packages/shared` files look under-covered in the API and mobile runs; their own
+  run in `packages/shared` is the real figure.

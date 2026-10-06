@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Draggable, DragProvider, DropZone } from "@/components/ui/drag";
-import { Icon } from "@/components/ui/icon";
+import { IconButton } from "@/components/ui/icon-button";
 import { Screen } from "@/components/ui/screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -70,22 +70,16 @@ export function WeekPlanner() {
         tabBarPadding={false}
         right={
           <View className="flex-row">
-            <Pressable
-              accessibilityRole="button"
-              className="h-12 w-12 items-center justify-center"
+            <IconButton
+              icon="chevron-left"
+              label="Previous week"
               onPress={() => setWeekStart(addDays(weekStart, -7))}
-              accessibilityLabel="Previous week"
-            >
-              <Icon name="chevron-left" />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              className="h-12 w-12 items-center justify-center"
+            />
+            <IconButton
+              icon="chevron-right"
+              label="Next week"
               onPress={() => setWeekStart(addDays(weekStart, 7))}
-              accessibilityLabel="Next week"
-            >
-              <Icon name="chevron-right" />
-            </Pressable>
+            />
           </View>
         }
       >

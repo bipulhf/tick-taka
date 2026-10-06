@@ -2,7 +2,7 @@ import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Icon } from "@/components/ui/icon";
+import { IconButton } from "@/components/ui/icon-button";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
@@ -175,14 +175,13 @@ export function ShoppingScreen() {
                         />
                       ) : null}
                     </SwipeRowPressable>
-                    <Pressable
+                    <IconButton
+                      icon="close"
+                      label={`Remove ${item.title}`}
+                      color="muted"
+                      iconSize={18}
                       onPress={drop}
-                      accessibilityRole="button"
-                      className="h-12 w-12 items-center justify-center"
-                      accessibilityLabel={`Remove ${item.title}`}
-                    >
-                      <Icon name="close" size={18} color="muted" />
-                    </Pressable>
+                    />
                   </View>
                 </SwipeRow>
               );

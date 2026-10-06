@@ -10,6 +10,7 @@ import { celebrate } from "@/components/ui/confetti";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
+import { IconButton } from "@/components/ui/icon-button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
@@ -103,22 +104,17 @@ function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
             keyboardType="number-pad"
             className="w-16"
           />
-          <Pressable
+          <IconButton
+            icon="chevron-up"
+            label={`Move step ${index + 1} up`}
             onPress={() => move(index, -1)}
-            accessibilityRole="button"
-            accessibilityLabel={`Move step ${index + 1} up`}
-            className="h-12 w-12 items-center justify-center"
-          >
-            <Icon name="chevron-up" />
-          </Pressable>
-          <Pressable
+          />
+          <IconButton
+            icon="close"
+            label={`Remove step ${index + 1}`}
+            color="muted"
             onPress={() => setSteps((list) => list.filter((_, i) => i !== index))}
-            accessibilityRole="button"
-            accessibilityLabel={`Remove step ${index + 1}`}
-            className="h-12 w-12 items-center justify-center"
-          >
-            <Icon name="close" color="muted" />
-          </Pressable>
+          />
         </Card>
       ))}
       <Button

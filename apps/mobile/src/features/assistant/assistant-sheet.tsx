@@ -1,10 +1,10 @@
 import { useRouter } from "expo-router";
 import { useRef } from "react";
-import { Alert, Pressable, ScrollView, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tiki } from "@/components/tiki/tiki";
 import { Chip } from "@/components/ui/chip";
-import { Icon } from "@/components/ui/icon";
+import { IconButton } from "@/components/ui/icon-button";
 import { Text } from "@/components/ui/text";
 import { useKeyboardHeight } from "@/components/ui/use-keyboard-height";
 import { ChatComposer } from "./chat-composer";
@@ -45,14 +45,13 @@ export function AssistantSheet({ start }: { start?: "talk" }) {
         className="flex-row items-center gap-3 px-3 pb-3"
         style={{ paddingTop: insets.top + 8 }}
       >
-        <Pressable
+        <IconButton
+          icon="chevron-down"
+          label="Close chat"
+          shape="round"
+          iconSize={28}
           onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Close chat"
-          className="h-12 w-12 items-center justify-center rounded-full active:bg-line/40"
-        >
-          <Icon name="chevron-down" color="ink" size={28} />
-        </Pressable>
+        />
         <Tiki mood={thinking ? "focused" : "happy"} size={44} />
         <View className="flex-1">
           <Text variant="title" accessibilityRole="header">
@@ -63,7 +62,11 @@ export function AssistantSheet({ start }: { start?: "talk" }) {
           </Text>
         </View>
         {messages.length && !thinking ? (
-          <Pressable
+          <IconButton
+            icon="broom"
+            label="Start a new chat"
+            shape="round"
+            color="muted"
             onPress={() => {
               const warning = clearChatWarning(messages);
               if (!warning) return clear();
@@ -72,12 +75,7 @@ export function AssistantSheet({ start }: { start?: "talk" }) {
                 { text: "New chat", onPress: clear },
               ]);
             }}
-            accessibilityRole="button"
-            accessibilityLabel="Start a new chat"
-            className="h-12 w-12 items-center justify-center rounded-full active:bg-line/40"
-          >
-            <Icon name="broom" color="muted" />
-          </Pressable>
+          />
         ) : null}
       </View>
       <ScrollView

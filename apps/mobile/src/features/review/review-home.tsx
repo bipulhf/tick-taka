@@ -7,7 +7,7 @@ import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { ShortcutRow } from "@/components/ui/shortcut-row";
 import { SkeletonCard } from "@/components/ui/skeleton";
-import { plural } from "@/lib/format";
+import { bestText, streakText } from "@/lib/gentle-progress";
 import { useAiStatus } from "@/lib/queries";
 import type { ColorName } from "@/theme/colors";
 import { useGamification } from "./queries";
@@ -94,14 +94,19 @@ export function ReviewHome() {
               <ListRow
                 icon="fire"
                 iconColor="mango"
-                title={`Daily goal: ${plural(progress.dailyGoal.streak.current, "day")}`}
-                subtitle={`${progress.dailyGoal.goal} tasks a day · best ${plural(progress.dailyGoal.streak.best, "day")}`}
+                title={streakText("Daily goal", progress.dailyGoal.streak.current)}
+                subtitle={[
+                  `${progress.dailyGoal.goal} tasks a day`,
+                  bestText(progress.dailyGoal.streak.best),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               />
             ) : null}
             <ListRow
               icon="notebook-check-outline"
               iconColor="mint"
-              title={`Logging: ${plural(progress.loggingStreak.current, "day")}`}
+              title={streakText("Logging", progress.loggingStreak.current)}
               subtitle="Spending logged on the day it happened"
             />
           </Group>

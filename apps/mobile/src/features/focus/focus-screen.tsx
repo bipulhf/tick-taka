@@ -166,7 +166,7 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
           </Text>
           {drooping ? (
             <Text tone="muted" className="mt-2 text-center">
-              The plant missed you. It perks up when you stay.
+              Back with it. The plant perks up while you stay.
             </Text>
           ) : null}
         </View>

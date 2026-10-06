@@ -41,7 +41,9 @@ export function Plant({
       height={size}
       viewBox="0 0 200 220"
       accessibilityLabel={
-        drooping ? "The plant is drooping" : `The plant is ${Math.round(growth * 100)}% grown`
+        drooping
+          ? "The plant is resting until you're back"
+          : `The plant is ${Math.round(growth * 100)}% grown`
       }
     >
       <Path

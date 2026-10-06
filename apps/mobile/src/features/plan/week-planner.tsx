@@ -132,8 +132,8 @@ export function WeekPlanner() {
                     <Text variant="strong" className="flex-1" numberOfLines={1}>
                       {formatLocalDate(day, "long")}
                     </Text>
-                    <Text variant="caption" tone={planned > capacity ? "coral" : "muted"} numeric>
-                      {formatMinutes(planned)} planned ›
+                    <Text variant="caption" tone="muted" numeric>
+                      {formatMinutes(planned)} planned{planned > capacity ? " · a full day" : ""} ›
                     </Text>
                   </Pressable>
                   {tasks.map((task) => (

@@ -7,7 +7,6 @@ import { Tiki } from "@/components/tiki/tiki";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
-import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -15,6 +14,7 @@ import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
 import { friendlyError } from "@/lib/error-copy";
 import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
+import { planShare } from "@/lib/gentle-progress";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { usePrivacy } from "@/lib/privacy";
@@ -79,30 +79,43 @@ export function WeeklyReview() {
       ) : null}
       {step === 0 && data.hoursVsPlan.length > 0 ? (
         <Card className="gap-3">
-          {data.hoursVsPlan.map((row) => (
-            <View key={row.areaId ?? "none"} className="gap-1">
-              <View className="flex-row justify-between">
-                <Text>
-                  {area(row.areaId)
-                    ? `${area(row.areaId)?.emoji} ${area(row.areaId)?.name}`
-                    : "No area"}
-                </Text>
-                <Text variant="caption" tone="muted" numeric>
-                  {formatMinutes(row.trackedMinutes)} of {formatMinutes(row.plannedMinutes)} planned
-                </Text>
+          {data.hoursVsPlan.map((row) => {
+            const share = planShare(row.trackedMinutes, row.plannedMinutes);
+            return (
+              <View key={row.areaId ?? "none"} className="gap-1">
+                <View className="flex-row justify-between">
+                  <Text>
+                    {area(row.areaId)
+                      ? `${area(row.areaId)?.emoji} ${area(row.areaId)?.name}`
+                      : "No area"}
+                  </Text>
+                  <Text variant="caption" tone="muted" numeric>
+                    {formatMinutes(row.trackedMinutes)} of {formatMinutes(row.plannedMinutes)}{" "}
+                    planned
+                    {share.extraMinutes ? ` · +${formatMinutes(share.extraMinutes)}` : ""}
+                  </Text>
+                </View>
+                {/* Over plan: the planned share in full sky, the extra lighter, never the same as on plan. */}
+                <View
+                  className="h-2.5 flex-row overflow-hidden rounded-full bg-line"
+                  accessibilityRole="progressbar"
+                  accessibilityValue={{
+                    min: 0,
+                    max: 100,
+                    now: Math.round(share.filled * 100),
+                  }}
+                >
+                  <View
+                    className="h-full rounded-full bg-sky"
+                    style={{
+                      width: `${share.filled * 100}%`,
+                    }}
+                  />
+                  {share.extraMinutes ? <View className="h-full flex-1 bg-sky/40" /> : null}
+                </View>
               </View>
-              <ProgressBar
-                value={
-                  row.plannedMinutes
-                    ? row.trackedMinutes / row.plannedMinutes
-                    : row.trackedMinutes
-                      ? 1
-                      : 0
-                }
-                tone="sky"
-              />
-            </View>
-          ))}
+            );
+          })}
         </Card>
       ) : null}
       {step === 1 ? (

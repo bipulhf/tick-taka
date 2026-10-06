@@ -4,11 +4,11 @@ import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
+import { bestText, weekProgressText } from "@/lib/gentle-progress";
 import { useRemove } from "@/lib/use-remove";
 import { useHabits } from "./queries";
 import { useArchiveHabit } from "./use-archive-habit";
@@ -96,17 +96,30 @@ export function HabitList() {
                       </Text>
                     </View>
                     <View className="items-end">
-                      <Text variant="heading" tone="grape" numeric>
-                        🔥 {habit.streak.current}
-                      </Text>
-                      <Text variant="caption" tone="muted">
-                        best {habit.streak.best} {habit.streak.unit}s
-                      </Text>
+                      {habit.streak.current > 0 ? (
+                        <Text variant="heading" tone="grape" numeric>
+                          🔥 {habit.streak.current}
+                        </Text>
+                      ) : null}
+                      {bestText(habit.streak.best, habit.streak.unit) ? (
+                        <Text variant="caption" tone="muted">
+                          {bestText(habit.streak.best, habit.streak.unit)}
+                        </Text>
+                      ) : null}
                     </View>
                   </View>
-                  <ProgressBar value={habit.weekDoneDays / weekTarget} tone="grape" />
+                  {/* Days done, as dots: the week is counted up, never shown as days short. */}
+                  <View className="flex-row gap-1.5" accessible={false}>
+                    {Array.from({ length: Math.min(7, weekTarget) }, (_, i) => (
+                      <View
+                        // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length row of dots
+                        key={i}
+                        className={`h-2.5 w-2.5 rounded-full ${i < habit.weekDoneDays ? "bg-grape" : "bg-line"}`}
+                      />
+                    ))}
+                  </View>
                   <Text variant="caption" tone="muted">
-                    {habit.weekDoneDays}/{weekTarget} this week ·{" "}
+                    {weekProgressText(habit.weekDoneDays, weekTarget, habit.schedule === "daily")} ·{" "}
                     {habit.streak.freezesLeftThisMonth} freeze day
                     {habit.streak.freezesLeftThisMonth === 1 ? "" : "s"} left this month
                   </Text>

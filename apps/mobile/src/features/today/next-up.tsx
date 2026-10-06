@@ -77,11 +77,7 @@ export function NextUp({
   return (
     <Section title="Next up" action="Full day" onAction={openDay}>
       {subtitle ? (
-        <Text
-          variant="callout"
-          tone={data.dayFit.overflowMinutes > 0 ? "coral" : "muted"}
-          className="-mt-2 px-1"
-        >
+        <Text variant="callout" tone="muted" className="-mt-2 px-1">
           {subtitle}
         </Text>
       ) : null}

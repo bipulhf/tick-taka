@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { newId } from "@tick-taka/shared/ids";
 import {
   type FailureInfo,
   type OutboxRequest,
@@ -47,6 +48,12 @@ const idle = async (queue: OutboxQueue) => {
 };
 
 const post = (id: string): OutboxRequest => ({ method: "POST", path: "/tasks", body: { id } });
+const bodyId = (request: OutboxRequest | undefined) => (request?.body as { id?: string })?.id;
+
+const waitUntil = async (done: () => boolean) => {
+  for (let i = 0; i < 100 && !done(); i++) await new Promise((r) => setTimeout(r, 2));
+  expect(done()).toBe(true);
+};
 
 describe("outbox queue", () => {
   test("writes replay one at a time in the order they were made", async () => {
@@ -314,6 +321,135 @@ describe("outbox queue", () => {
     await idle(queue);
     expect(received.at(-1)?.path).toBe("/events/e1");
     expect(queue.size).toBe(0);
+  });
+
+  // QA-301 / CQ-038: the writes behind a stuck create that name its record.
+  test("edits and deletes of a stuck create are set aside with it, and Retry sends them in order", async () => {
+    const { queue, received, answers, rejected } = harness();
+    await queue.load();
+    const task = newId();
+    const other = newId();
+    for (let i = 0; i < STUCK_AFTER; i++) answers.push(() => new HttpFailure({ status: 500 }));
+    // Until the create lands, the server answers an edit or a delete of it with 404.
+    let created = false;
+    const notFoundUntilCreated = () => (created ? { ok: true } : new HttpFailure({ status: 404 }));
+    void queue
+      .enqueue({ method: "POST", path: "/tasks", body: { id: task, title: "Call bank" } })
+      .catch(() => {});
+    void queue
+      .enqueue({
+        method: "PATCH",
+        path: `/tasks/${task}`,
+        body: { title: "Call bank about card", updatedAt: 2 },
+      })
+      .catch(() => {});
+    void queue.enqueue(post(other));
+    await waitUntil(() => queue.sending === 0);
+    expect(received.map((r) => `${r.method} ${r.path}`).slice(STUCK_AFTER)).toEqual([
+      "POST /tasks",
+    ]);
+    expect(bodyId(received.at(-1))).toBe(other);
+    expect(rejected).toEqual([]);
+    expect(queue.stuck().map((e) => e.request.method)).toEqual(["POST", "PATCH"]);
+
+    // Queued after the create was set aside: it joins the group instead of going first.
+    void queue.enqueue({ method: "DELETE", path: `/tasks/${task}` }).catch(() => {});
+    await waitUntil(() => queue.sending === 0);
+    expect(queue.stuck().map((e) => e.request.method)).toEqual(["POST", "PATCH", "DELETE"]);
+    expect(received).toHaveLength(STUCK_AFTER + 1);
+
+    // Retry from any of them sends the whole group, in the order it was made.
+    answers.push(
+      () => {
+        created = true;
+        return { ok: true };
+      },
+      notFoundUntilCreated,
+      notFoundUntilCreated,
+    );
+    queue.retryStuck(queue.stuck()[1]!.id);
+    await idle(queue);
+    expect(received.slice(STUCK_AFTER + 1).map((r) => r.method)).toEqual([
+      "POST",
+      "PATCH",
+      "DELETE",
+    ]);
+    expect(rejected).toEqual([]);
+    expect(queue.size).toBe(0);
+  });
+
+  test("a write that refers to a stuck create (a transaction in a new account) waits with it", async () => {
+    const { queue, received, answers } = harness();
+    await queue.load();
+    const account = newId();
+    const spend = newId();
+    for (let i = 0; i < STUCK_AFTER; i++) answers.push(() => new HttpFailure({ status: 500 }));
+    void queue
+      .enqueue({ method: "POST", path: "/accounts", body: { id: account } })
+      .catch(() => {});
+    void queue
+      .enqueue({ method: "POST", path: "/transactions", body: { id: spend, accountId: account } })
+      .catch(() => {});
+    // An edit of that transaction depends on the account through it.
+    void queue
+      .enqueue({ method: "PATCH", path: `/transactions/${spend}`, body: { note: "tea" } })
+      .catch(() => {});
+    void queue.enqueue(post(newId()));
+    await waitUntil(() => queue.sending === 0);
+    expect(received.slice(STUCK_AFTER).map((r) => r.path)).toEqual(["/tasks"]);
+    expect(queue.stuck().map((e) => e.request.path)).toEqual([
+      "/accounts",
+      "/transactions",
+      `/transactions/${spend}`,
+    ]);
+  });
+
+  test("Retry all sends every stuck write again in the order they were made", async () => {
+    const saved: PersistedOutbox = {
+      version: 1,
+      userId: "u1",
+      entries: [],
+      stuck: ["a", "b", "c"].map((id) => ({
+        id,
+        request: post(id),
+        queuedAt: 0,
+        attempts: STUCK_AFTER,
+        maybeDelivered: true,
+      })),
+    };
+    const { queue, received, rejected } = harness({ saved });
+    await queue.load();
+    queue.retryAllStuck();
+    await idle(queue);
+    expect(received.map(bodyId)).toEqual(["a", "b", "c"]);
+    expect(rejected).toEqual([]);
+    expect(queue.size).toBe(0);
+  });
+
+  test("Discard drops the whole group, and Undo puts it back as it was", async () => {
+    const { queue, answers, state } = harness();
+    const discarded: OutboxRequest[] = [];
+    (queue as unknown as { deps: OutboxDeps }).deps.onDiscarded = (r) => discarded.push(r);
+    await queue.load();
+    const task = newId();
+    for (let i = 0; i < STUCK_AFTER; i++) answers.push(() => new HttpFailure({ status: 500 }));
+    void queue.enqueue({ method: "POST", path: "/tasks", body: { id: task } }).catch(() => {});
+    void queue.enqueue({ method: "PATCH", path: `/tasks/${task}`, body: {} }).catch(() => {});
+    await waitUntil(() => queue.stuck().length === 2);
+    const group = queue.discardStuck(queue.stuck()[0]!.id);
+    await queue.flushed();
+    expect(queue.size).toBe(0);
+    expect(discarded.map((r) => r.method)).toEqual(["POST", "PATCH"]);
+    expect((state.disk as PersistedOutbox).stuck).toEqual([]);
+
+    queue.restoreStuck(group);
+    queue.restoreStuck(group); // a second tap changes nothing
+    await queue.flushed();
+    expect(queue.stuck().map((e) => e.request.method)).toEqual(["POST", "PATCH"]);
+    expect((state.disk as PersistedOutbox).stuck?.map((e) => e.request.method)).toEqual([
+      "POST",
+      "PATCH",
+    ]);
   });
 
   test("503, 429 and an unreachable server never make a write stuck", async () => {

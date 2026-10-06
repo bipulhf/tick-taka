@@ -4,12 +4,14 @@ import {
   followCreatedRecords,
   isServerFault,
   mayHaveReachedServer,
+  mentionsAny,
   type OutboxEntry,
   type OutboxRequest,
   type PersistedOutbox,
   parsePersistedOutbox,
   retryDelay,
   STUCK_AFTER,
+  writtenIds,
 } from "./outbox-policy";
 
 export interface OutboxDeps {
@@ -41,6 +43,17 @@ interface Waiter {
 
 let counter = 0;
 const defaultId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`;
+
+/** Which stuck group an entry belongs to: the write that got stuck (older builds: its own). */
+const groupKey = (entry: OutboxEntry): string => entry.stuckWith ?? entry.id;
+
+/** A write that joined a stuck group as it was queued; it waits there for Retry. */
+export class SetAsideError extends Error {
+  constructor() {
+    super("Set aside with a change the server keeps failing on");
+    this.name = "SetAsideError";
+  }
+}
 
 /**
  * Every write goes through one queue, sent one at a time in the order made. An entry
@@ -86,25 +99,62 @@ export class OutboxQueue {
     return this.parked;
   }
 
-  /** Sends a stuck write again, after the writes queued now. */
-  retryStuck(id: string): void {
+  /** The stuck write and the writes set aside with it, oldest first. */
+  stuckGroup(id: string): OutboxEntry[] {
     const entry = this.parked.find((e) => e.id === id);
-    if (!entry) return;
-    this.parked = this.parked.filter((e) => e !== entry);
-    this.entries.push({ ...entry, attempts: 0, serverFailures: 0, maybeDelivered: true });
+    if (!entry) return [];
+    const key = groupKey(entry);
+    return this.parked.filter((e) => groupKey(e) === key);
+  }
+
+  /** Sends a stuck write and the writes set aside with it again, in order, after the writes queued now. */
+  retryStuck(id: string): void {
+    this.requeue(this.stuckGroup(id));
+  }
+
+  /** Sends every stuck write again, in the order they were made. */
+  retryAllStuck(): void {
+    this.requeue(this.parked);
+  }
+
+  /**
+   * Drops a stuck write for good, with the writes set aside with it (they name its
+   * record, so they can't land without it). Returns them, for an Undo.
+   */
+  discardStuck(id: string): OutboxEntry[] {
+    const group = this.stuckGroup(id);
+    if (group.length === 0) return group;
+    this.parked = this.parked.filter((e) => !group.includes(e));
+    this.persist();
+    this.changed();
+    for (const entry of group) this.deps.onDiscarded?.(entry.request);
+    return group;
+  }
+
+  /** Undo of a discard: the group is stuck again, as it was. */
+  restoreStuck(group: readonly OutboxEntry[]): void {
+    const known = new Set([...this.entries, ...this.parked].map((e) => e.id));
+    const back = group.filter((e) => !known.has(e.id));
+    if (back.length === 0) return;
+    this.parked = [...this.parked, ...back];
+    this.persist();
+    this.changed();
+  }
+
+  private requeue(group: readonly OutboxEntry[]): void {
+    if (group.length === 0) return;
+    this.parked = this.parked.filter((e) => !group.includes(e));
+    for (const { stuckWith: _, ...entry } of group)
+      this.entries.push({
+        ...entry,
+        attempts: 0,
+        serverFailures: 0,
+        // A 5xx may have landed: a repeat-of-delivered reply then counts as done.
+        maybeDelivered: entry.maybeDelivered || entry.attempts > 0,
+      });
     this.persist();
     this.changed();
     this.kick();
-  }
-
-  /** Drops a stuck write for good. */
-  discardStuck(id: string): void {
-    const entry = this.parked.find((e) => e.id === id);
-    if (!entry) return;
-    this.parked = this.parked.filter((e) => e !== entry);
-    this.persist();
-    this.changed();
-    this.deps.onDiscarded?.(entry.request);
   }
 
   get owner(): string | null {
@@ -171,7 +221,12 @@ export class OutboxQueue {
     const done = new Promise<unknown>((resolve, reject) => {
       this.waiters.set(entry.id, { resolve, reject });
     });
-    this.entries.push(entry);
+    const head = this.parkedHeadFor(request);
+    if (head) {
+      // It names a record a stuck write creates or edits: sent now it would get 404.
+      this.parked.push({ ...entry, stuckWith: head });
+      this.settle(entry.id, undefined, new SetAsideError());
+    } else this.entries.push(entry);
     this.persist();
     this.changed();
     this.kick();
@@ -280,15 +335,44 @@ export class OutboxQueue {
     this.settle(entry.id, response);
   }
 
-  /** Sets a write the server keeps failing on aside, so the ones behind it can go. */
+  /**
+   * Sets a write the server keeps failing on aside, so the ones behind it can go.
+   * Every later write that names a record it creates or edits (or one of theirs) goes
+   * aside with it, in order: sent first, it would get 404 and be lost, and Retry would
+   * then bring the record back without it.
+   */
   private park(entry: OutboxEntry, error: unknown): void {
-    this.entries = this.entries.filter((e) => e !== entry);
-    this.parked = [...this.parked, entry];
+    const ids = new Set(writtenIds(entry.request));
+    const group: OutboxEntry[] = [entry];
+    const rest: OutboxEntry[] = [];
+    for (const later of this.entries) {
+      if (later === entry) continue;
+      if (mentionsAny(later.request, ids)) {
+        group.push(later);
+        for (const id of writtenIds(later.request)) ids.add(id);
+      } else rest.push(later);
+    }
+    this.entries = rest;
+    const key = groupKey(entry);
+    this.parked = [...this.parked, ...group.map((e) => ({ ...e, stuckWith: key }))];
     this.persist();
     this.changed();
     this.deps.onStuck?.(entry.request, error);
-    // Whoever waits on it hears now; a later retry from the list lands without them.
-    this.settle(entry.id, undefined, error);
+    // Whoever waits on them hears now; a later retry from the list lands without them.
+    for (const e of group) this.settle(e.id, undefined, error);
+  }
+
+  /** The stuck group a new write must join, because it names one of the group's records. */
+  private parkedHeadFor(request: OutboxRequest): string | null {
+    const groups = new Map<string, Set<string>>();
+    for (const entry of this.parked) {
+      const key = groupKey(entry);
+      const ids = groups.get(key) ?? new Set<string>();
+      for (const id of writtenIds(entry.request)) ids.add(id);
+      groups.set(key, ids);
+    }
+    for (const [key, ids] of groups) if (mentionsAny(request, ids)) return key;
+    return null;
   }
 
   private remove(entry: OutboxEntry): void {

@@ -27,6 +27,11 @@ export interface OutboxEntry {
   maybeDelivered: boolean;
   /** Server errors in a row (see isServerFault); missing on entries from older builds. */
   serverFailures?: number;
+  /**
+   * Set aside together with this stuck write (its entry id), because it names a record
+   * that write creates or edits. Retry and Discard act on the whole group.
+   */
+  stuckWith?: string;
 }
 
 /** What went wrong with one attempt, reduced to what the policy needs. */
@@ -93,6 +98,41 @@ export const STUCK_AFTER = 8;
 export function isServerFault(failure: FailureInfo): boolean {
   if (failure.unreachable || failure.status === undefined) return false;
   return failure.status >= 500 && failure.status !== 503;
+}
+
+/** Record ids are ULIDs, made on the phone. */
+const RECORD_ID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+
+/**
+ * The records a write creates or edits: record ids in its path (`/tasks/<id>`,
+ * `/recurring/<id>/pay`) and the `id` or `transactionId` in its body.
+ */
+export function writtenIds(request: OutboxRequest): string[] {
+  const ids = (request.path.split("?", 1)[0] ?? "").split("/").filter((s) => RECORD_ID.test(s));
+  const body = request.body;
+  if (body && typeof body === "object" && !Array.isArray(body))
+    for (const key of ["id", "transactionId"]) {
+      const id = (body as Record<string, unknown>)[key];
+      if (typeof id === "string" && id) ids.push(id);
+    }
+  return ids;
+}
+
+function bodyMentions(value: unknown, ids: ReadonlySet<string>, depth: number): boolean {
+  if (typeof value === "string") return ids.has(value);
+  if (!value || typeof value !== "object" || depth > 3) return false;
+  return Object.values(value).some((v) => bodyMentions(v, ids, depth + 1));
+}
+
+/**
+ * Whether a write names any of these records: in its path, or anywhere in its body
+ * (an edit of a parked create, or a transaction in a parked new account). Such a
+ * write can't land before them: it would get 404 or invalid_reference and be lost.
+ */
+export function mentionsAny(request: OutboxRequest, ids: ReadonlySet<string>): boolean {
+  if (ids.size === 0) return false;
+  const inPath = (request.path.split("?", 1)[0] ?? "").split("/").some((s) => ids.has(s));
+  return inPath || bodyMentions(request.body, ids, 0);
 }
 
 export function mayHaveReachedServer(failure: FailureInfo): boolean {
@@ -162,6 +202,7 @@ const entrySchema = z.object({
   attempts: z.number().int().min(0),
   maybeDelivered: z.boolean(),
   serverFailures: z.number().int().min(0).optional(),
+  stuckWith: z.string().optional(),
 });
 
 const persistedSchema = z.object({

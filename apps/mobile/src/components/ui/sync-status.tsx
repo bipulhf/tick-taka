@@ -23,8 +23,22 @@ function describeWrite(entry: OutboxEntry): string {
   return `${verb} in ${what}`;
 }
 
-/** Changes the server kept failing on, each with Retry and Discard. */
+/**
+ * Stuck writes by group: the write the server kept failing on, then the later changes
+ * to the same record that were set aside with it.
+ */
+function groupStuck(entries: readonly OutboxEntry[]): OutboxEntry[][] {
+  const groups = new Map<string, OutboxEntry[]>();
+  for (const entry of entries) {
+    const key = entry.stuckWith ?? entry.id;
+    groups.set(key, [...(groups.get(key) ?? []), entry]);
+  }
+  return [...groups.values()];
+}
+
+/** Changes the server kept failing on, each group with Retry and Discard. */
 function StuckWrites({ entries }: { entries: readonly OutboxEntry[] }) {
+  const groups = groupStuck(entries);
   return (
     <View accessibilityRole="alert" className="gap-3 rounded-3xl bg-card p-4">
       <View className="flex-row items-center gap-2">
@@ -33,27 +47,39 @@ function StuckWrites({ entries }: { entries: readonly OutboxEntry[] }) {
           {`${plural(entries.length, "change")} couldn't be saved on the server`}
         </Text>
       </View>
-      {entries.map((entry) => (
-        <View key={entry.id} className="gap-2">
-          <Text variant="caption" tone="muted">
-            {describeWrite(entry)}
-          </Text>
-          <View className="flex-row gap-2">
-            <Button
-              label="Retry"
-              size="sm"
-              variant="secondary"
-              onPress={() => outbox.retryStuck(entry.id)}
-            />
-            <Button
-              label="Discard"
-              size="sm"
-              variant="ghost"
-              onPress={() => outbox.discardStuck(entry.id)}
-            />
+      {groups.map(([head, ...rest]) =>
+        head ? (
+          <View key={head.id} className="gap-2">
+            <Text variant="caption" tone="muted">
+              {rest.length
+                ? `${describeWrite(head)}, and ${plural(rest.length, "later change")} to it`
+                : describeWrite(head)}
+            </Text>
+            <View className="flex-row gap-2">
+              <Button
+                label="Retry"
+                size="sm"
+                variant="secondary"
+                onPress={() => outbox.retryStuck(head.id)}
+              />
+              <Button
+                label="Discard"
+                size="sm"
+                variant="ghost"
+                onPress={() => outbox.discardStuck(head.id)}
+              />
+            </View>
           </View>
-        </View>
-      ))}
+        ) : null,
+      )}
+      {groups.length > 1 ? (
+        <Button
+          label="Retry all"
+          size="sm"
+          variant="secondary"
+          onPress={() => outbox.retryAllStuck()}
+        />
+      ) : null}
     </View>
   );
 }

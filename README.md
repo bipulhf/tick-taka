@@ -373,7 +373,8 @@ The full product and technical spec is in `tick_taka_spec.pdf`; the build order 
 - **Offline**: every write goes through one outbox queue, saved encrypted on the phone,
   that replays in order after a restart and keeps retrying until the server answers. A
   write the server keeps refusing is set aside for the user to retry or discard instead
-  of blocking the rest. PATCHes carry the edit time and lose to newer rows.
+  of blocking the rest; later writes that name its record are set aside with it, so
+  they never go first. PATCHes carry the edit time and lose to newer rows.
 - **Weekdays** in plain-words recurrence ("every weekday") follow the Bangladesh work
   week, Sunday to Thursday; the default week starts on Saturday. Both are settings.
 - A few columns beyond the spec's table list: `tasks.urgent` and `tasks.sort`

@@ -11,7 +11,8 @@ import { TaskRow } from "@/features/tasks/task-row";
 import { formatClock, formatMinutes } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
-import type { TodayData } from "@/lib/queries";
+import { type TodayData, useAccounts, useSettings } from "@/lib/queries";
+import { payNeedsRate } from "./pay-needs-rate";
 
 type Item = TodayData["timeline"][number];
 const SHOWN = 3;
@@ -19,6 +20,8 @@ const SHOWN = 3;
 function MoneyRow({ item }: { item: Extract<Item, { kind: "bill" | "payday" }> }) {
   const router = useRouter();
   const send = useOutbox();
+  const { data: accounts } = useAccounts();
+  const { data: settings } = useSettings();
   const isBill = item.kind === "bill";
   return (
     <ListRow
@@ -33,7 +36,8 @@ function MoneyRow({ item }: { item: Extract<Item, { kind: "bill" | "payday" }> }
           size="sm"
           variant="secondary"
           onPress={() => {
-            if (!isBill && item.currency !== "BDT") {
+            // A foreign-currency bill or payday needs its rate, which the sheet asks for.
+            if (payNeedsRate(item, accounts, settings)) {
               router.push(`/money/recurring/${item.id}`);
               return;
             }

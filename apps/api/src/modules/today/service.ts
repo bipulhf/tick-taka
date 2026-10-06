@@ -31,6 +31,8 @@ export type TimelineItem =
       name: string;
       amountMinor: number;
       currency: string;
+      /** Paid from or into; null means the default account. */
+      accountId: string | null;
       overdue: boolean;
     }
   | {
@@ -112,6 +114,7 @@ export function todayView(deps: Deps, date?: LocalDate) {
       name: item.name,
       amountMinor: item.amountMinor,
       currency: item.currency,
+      accountId: item.accountId,
       overdue: item.status === "overdue",
     })),
     ...debtReminders.map((debt) => ({

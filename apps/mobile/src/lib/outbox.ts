@@ -73,9 +73,20 @@ function applyOptimistic(request: OutboxRequest) {
   const categories = queryClient.getQueryData<
     { id: string; parentId: string | null; budgetType: string }[]
   >(keys.categories);
-  const timeZone = userTime(queryClient.getQueryData<{ timeZone: string }>(keys.settings)).timeZone;
+  const settings = queryClient.getQueryData<{
+    timeZone: string;
+    defaultCurrency: string;
+    defaultAccountId: string | null;
+  }>(keys.settings);
+  const timeZone = userTime(settings).timeZone;
+  // Only default-currency spending moves the number, as on the server.
+  const currency = settings && {
+    accounts: queryClient.getQueryData<{ id: string; currency: string }[]>(keys.accounts) ?? [],
+    defaultCurrency: settings.defaultCurrency,
+    defaultAccountId: settings.defaultAccountId,
+  };
   updateToday(queryClient, (data: TodayData) =>
-    withNewExpense(data, body, categories ?? [], timeZone),
+    withNewExpense(data, body, categories ?? [], timeZone, currency || undefined),
   );
 }
 

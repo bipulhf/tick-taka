@@ -65,4 +65,40 @@ describe("instant safe-to-spend", () => {
     expect(yesterday.safeToSpend.leftTodayMinor).toBe(40_500);
     expect(noBudgets.safeToSpend.leftTodayMinor).toBe(40_500);
   });
+
+  // QA-213: the server leaves foreign-currency accounts out; so must the screen.
+  test("spending from a foreign-currency account leaves the taka number alone", () => {
+    const money = {
+      accounts: [
+        { id: "cash", currency: "BDT" },
+        { id: "card", currency: "USD" },
+      ],
+      defaultCurrency: "BDT",
+      defaultAccountId: "card",
+    };
+    const usd = withNewExpense(
+      today(),
+      { amountMinor: 5_000, categoryId: "food", accountId: "card", occurredAt: now },
+      categories,
+      TZ,
+      money,
+    );
+    const viaDefault = withNewExpense(
+      today(),
+      { amountMinor: 5_000, categoryId: "food", occurredAt: now },
+      categories,
+      TZ,
+      money,
+    );
+    const taka = withNewExpense(
+      today(),
+      { amountMinor: 5_000, categoryId: "food", accountId: "cash", occurredAt: now },
+      categories,
+      TZ,
+      money,
+    );
+    expect(usd.safeToSpend.leftTodayMinor).toBe(40_500);
+    expect(viaDefault.safeToSpend.leftTodayMinor).toBe(40_500);
+    expect(taka.safeToSpend.leftTodayMinor).toBe(35_500);
+  });
 });

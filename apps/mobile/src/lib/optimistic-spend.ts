@@ -10,7 +10,26 @@ interface Category {
 export interface NewExpense {
   amountMinor: number;
   categoryId?: string | null;
+  accountId?: string | null;
   occurredAt: number;
+}
+
+/** What it takes to tell a foreign-currency expense from a default-currency one. */
+export interface MoneyContext {
+  accounts: { id: string; currency: string }[];
+  defaultCurrency: string;
+  defaultAccountId: string | null;
+}
+
+/**
+ * Safe-to-spend is in the default currency and the server leaves other accounts out.
+ * An account not in the cache yet is taken to be in the default currency.
+ */
+function inDefaultCurrency(expense: NewExpense, money: MoneyContext | undefined): boolean {
+  if (!money) return true;
+  const accountId = expense.accountId ?? money.defaultAccountId;
+  const account = money.accounts.find((a) => a.id === accountId);
+  return !account || account.currency === money.defaultCurrency;
 }
 
 /**
@@ -36,10 +55,12 @@ export function withNewExpense(
   expense: NewExpense,
   categories: Category[],
   timeZone: string,
+  currency?: MoneyContext,
 ): TodayData {
   const money = data.safeToSpend;
   if (!money.hasBudgets || toLocalDate(expense.occurredAt, timeZone) !== data.date) return data;
   if (!countsAsFlexible(expense.categoryId, categories)) return data;
+  if (!inDefaultCurrency(expense, currency)) return data;
   return {
     ...data,
     safeToSpend: {

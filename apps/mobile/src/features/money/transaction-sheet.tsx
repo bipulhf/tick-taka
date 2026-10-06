@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toLocalDate } from "@tick-taka/shared/dates";
 import { costInHours } from "@tick-taka/shared/finance";
 import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
@@ -10,6 +9,7 @@ import { View } from "react-native";
 import { AmountKeypad } from "@/components/ui/amount-keypad";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { DateField } from "@/components/ui/date-field";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { PickerField } from "@/components/ui/picker-field";
 import { Segmented } from "@/components/ui/segmented";
@@ -270,11 +270,12 @@ export function TransactionSheet({ id }: { id: string | null }) {
           />
         )}
       />
-      <View className="flex-row flex-wrap gap-2">
-        <Chip
-          label={formatWhen(values.occurredAt, true, Date.now(), timeZone)}
-          tone="sky"
-          selected
+      <View className="flex-row items-center gap-3">
+        <DateField
+          label="When"
+          kind="time"
+          span="half"
+          value={formatWhen(values.occurredAt, true, Date.now(), timeZone)}
           onPress={async () => {
             const date = await pickDate(values.occurredAt, timeZone);
             if (!date) return;
@@ -282,11 +283,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
             form.setValue("occurredAt", at ?? values.occurredAt);
           }}
         />
-        <Chip
-          label="Now"
-          onPress={() => form.setValue("occurredAt", Date.now())}
-          selected={toLocalDate(values.occurredAt, timeZone) === toLocalDate(Date.now(), timeZone)}
-        />
+        <Chip label="Now" choice="action" onPress={() => form.setValue("occurredAt", Date.now())} />
       </View>
       <View className="flex-row gap-3">
         <PickerField

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { haptic } from "@/lib/haptics";
+import { choiceA11y } from "./a11y-actions";
 import { Icon } from "./icon";
 import { type PickerOption, withCurrentOption } from "./picker-options";
 import { Text } from "./text";
@@ -140,6 +141,8 @@ export function PickerField({
         </View>
       ) : open ? (
         <ScrollView
+          accessibilityRole="radiogroup"
+          accessibilityLabel={label}
           className="max-h-72 border-t border-line"
           nestedScrollEnabled
           keyboardShouldPersistTaps="handled"
@@ -147,8 +150,7 @@ export function PickerField({
           {all.map((option) => (
             <Pressable
               key={option.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected: option.id === selected }}
+              {...choiceA11y("single", option.id === selected)}
               onPress={() => {
                 haptic.select();
                 onChange(option.id === NONE ? null : option.id);

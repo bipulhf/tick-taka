@@ -103,7 +103,11 @@ function ProjectForm({ project }: { project: Project | null }) {
       <Text variant="label" tone="muted">
         Status
       </Text>
-      <View className="flex-row flex-wrap gap-2">
+      <View
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Status"
+        className="flex-row flex-wrap gap-2"
+      >
         {STATUSES.map((s) => (
           <Chip
             key={s.value}

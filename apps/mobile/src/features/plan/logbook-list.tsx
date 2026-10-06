@@ -59,7 +59,11 @@ export function LogbookList() {
       tabBarPadding={false}
     >
       <TextField value={q} onChangeText={setQ} placeholder="Search finished tasks" />
-      <View className="flex-row flex-wrap gap-2">
+      <View
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Area"
+        className="flex-row flex-wrap gap-2"
+      >
         <Chip
           label="All areas"
           choice="single"

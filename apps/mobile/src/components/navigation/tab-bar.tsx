@@ -4,6 +4,7 @@ import type { Tabs } from "expo-router/js-tabs";
 import type { ComponentProps } from "react";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { choiceA11y } from "@/components/ui/a11y-actions";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { AssistantButton, useAssistantAvailable } from "@/features/assistant/assistant-button";
@@ -42,8 +43,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
     return (
       <Pressable
         key={route.key}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: focused }}
+        {...choiceA11y("tab", focused)}
         accessibilityLabel={tab.label}
         className="min-h-12 flex-1 items-center justify-center gap-0.5"
         onPress={() => {
@@ -102,6 +102,8 @@ export function TabBar({ state, navigation }: TabBarProps) {
       >
         {chat ? <AssistantButton size={TAB_BAR_HEIGHT} /> : null}
         <View
+          // The four tabs are one tab list; quick-add sits among them as a plain button.
+          accessibilityRole="tablist"
           className="h-full flex-1 flex-row items-center rounded-full border border-line bg-card px-1"
           style={{ elevation: 10 }}
         >

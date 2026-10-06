@@ -6,6 +6,7 @@ import { PickerField } from "@/components/ui/picker-field";
 import { Segmented } from "@/components/ui/segmented";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { formatWhen } from "@/lib/format";
 import type { Form, Priority } from "./task-form";
 
@@ -49,12 +50,10 @@ export function TaskMoreFields({
         ]}
         onChange={(choice) => (choice === null ? set("deadlineAt", null) : void setDeadline())}
       />
-      <Chip
-        label={form.top3Date === today ? "In top three" : "Add to top three"}
-        tone="mango"
-        selected={form.top3Date === today}
-        onPress={() => set("top3Date", form.top3Date === today ? null : today)}
-        className="self-start"
+      <ToggleRow
+        label="In today's top three"
+        value={form.top3Date === today}
+        onChange={(on) => set("top3Date", on ? today : null)}
       />
 
       <TextField
@@ -70,7 +69,7 @@ export function TaskMoreFields({
         </Text>
       ) : null}
       {form.rrule && !repeatText ? (
-        <Chip label="Stop repeating" onPress={() => set("rrule", null)} />
+        <Chip label="Stop repeating" choice="action" onPress={() => set("rrule", null)} />
       ) : null}
 
       <Text variant="label" tone="muted">
@@ -87,13 +86,7 @@ export function TaskMoreFields({
         ]}
       />
       {advanced?.eisenhower ? (
-        <Chip
-          label={form.urgent ? "Urgent" : "Not urgent"}
-          tone="coral"
-          selected={form.urgent}
-          onPress={() => set("urgent", !form.urgent)}
-          className="self-start"
-        />
+        <ToggleRow label="Urgent" value={form.urgent} onChange={(on) => set("urgent", on)} />
       ) : null}
       {advanced?.energy ? (
         <PickerField

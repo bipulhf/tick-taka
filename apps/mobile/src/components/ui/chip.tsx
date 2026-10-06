@@ -10,18 +10,24 @@ import { Text } from "./text";
  */
 export type ChipChoice = "action" | "single" | "multi";
 
-export interface ChipProps {
+/**
+ * `choice` is required so every chip says how a screen reader announces it. An
+ * action has no selected state: an on/off setting is a ToggleRow (a switch), not
+ * a chip that changes its label.
+ */
+export type ChipProps = {
   label: string;
-  selected?: boolean;
   /** Kept for call sites; selection is shown the same way everywhere (restrained colour). */
   tone?: "mango" | "sky" | "mint" | "coral" | "grape";
-  choice?: ChipChoice;
   onPress?: () => void;
   className?: string;
-}
+} & (
+  | { choice: "action"; selected?: never }
+  | { choice: Exclude<ChipChoice, "action">; selected: boolean }
+);
 
 /** Neutral pill; selected = ink fill with background-coloured text, readable in both themes. */
-export function Chip({ label, selected, choice = "action", onPress, className }: ChipProps) {
+export function Chip({ label, selected, choice, onPress, className }: ChipProps) {
   return (
     <Pressable
       {...choiceA11y(choice, Boolean(selected))}

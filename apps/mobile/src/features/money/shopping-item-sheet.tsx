@@ -87,7 +87,11 @@ function ShoppingItemForm({ item }: { item: Item }) {
         placeholder="৳"
       />
       <TextField label="List" value={listName} onChangeText={setListName} placeholder="Bazar" />
-      <View className="flex-row flex-wrap gap-2">
+      <View
+        accessibilityRole="radiogroup"
+        accessibilityLabel="List"
+        className="flex-row flex-wrap gap-2"
+      >
         {names.map((name) => (
           <Chip
             key={name}

@@ -93,7 +93,12 @@ export function AssistantSheet({ start }: { start?: "talk" }) {
             </Text>
             <View className="flex-row flex-wrap gap-2">
               {SUGGESTIONS.map((suggestion) => (
-                <Chip key={suggestion} label={suggestion} onPress={() => void ask(suggestion)} />
+                <Chip
+                  key={suggestion}
+                  label={suggestion}
+                  choice="action"
+                  onPress={() => void ask(suggestion)}
+                />
               ))}
             </View>
           </View>

@@ -158,7 +158,11 @@ export function DebtsScreen() {
                             placeholder="Amount repaid"
                             autoFocus
                           />
-                          <View className="flex-row flex-wrap gap-2">
+                          <View
+                            accessibilityRole="radiogroup"
+                            accessibilityLabel="Account"
+                            className="flex-row flex-wrap gap-2"
+                          >
                             {accounts.map((a) => (
                               <Chip
                                 key={a.id}

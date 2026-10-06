@@ -13,6 +13,7 @@ import { Section } from "@/components/ui/section";
 import { SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
 import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { useNow } from "@/features/timer/use-now";
 import { formatClock, formatLocalDate, formatMinutes, formatTimer } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -99,7 +100,11 @@ export function TimeTracking() {
               </>
             ) : (
               <>
-                <View className="flex-row flex-wrap gap-2">
+                <View
+                  accessibilityRole="radiogroup"
+                  accessibilityLabel="Area"
+                  className="flex-row flex-wrap gap-2"
+                >
                   {areas.map((area) => (
                     <Chip
                       key={area.id}
@@ -111,12 +116,7 @@ export function TimeTracking() {
                     />
                   ))}
                 </View>
-                <Chip
-                  label={billable ? "Billable" : "Not billable"}
-                  tone="mint"
-                  selected={billable}
-                  onPress={() => setBillable(!billable)}
-                />
+                <ToggleRow label="Billable" value={billable} onChange={setBillable} />
                 <Button
                   label="Start timer"
                   variant="time"

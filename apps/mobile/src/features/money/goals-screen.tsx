@@ -140,7 +140,11 @@ export function GoalsScreen() {
                         placeholder="Amount"
                         autoFocus
                       />
-                      <View className="flex-row flex-wrap gap-2">
+                      <View
+                        accessibilityRole="radiogroup"
+                        accessibilityLabel="From account"
+                        className="flex-row flex-wrap gap-2"
+                      >
                         {accounts
                           .filter((a) => a.id !== goal.accountId)
                           .map((a) => (

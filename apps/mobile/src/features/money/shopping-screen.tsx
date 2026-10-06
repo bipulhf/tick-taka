@@ -87,7 +87,11 @@ export function ShoppingScreen() {
 
   return (
     <Screen title="Shopping" subtitle={`Estimated ${formatAmount(estimate)}`} tabBarPadding={false}>
-      <View className="flex-row flex-wrap gap-2">
+      <View
+        accessibilityRole="radiogroup"
+        accessibilityLabel="List"
+        className="flex-row flex-wrap gap-2"
+      >
         {names.map((name) => (
           <Chip
             key={name}
@@ -200,7 +204,11 @@ export function ShoppingScreen() {
             keyboardType="decimal-pad"
             placeholder={`Paid (default ${formatAmount(checkedTotal)})`}
           />
-          <View className="flex-row flex-wrap gap-2">
+          <View
+            accessibilityRole="radiogroup"
+            accessibilityLabel="Paid from"
+            className="flex-row flex-wrap gap-2"
+          >
             {accounts.map((a) => (
               <Chip
                 key={a.id}

@@ -69,6 +69,20 @@ describe("areas and projects", () => {
     expect(stale.body.name).toBe("Newer");
   });
 
+  test("an edit stamped before the app existed is a broken clock, and still applies", async () => {
+    // CQ-036: a phone that learned "1970" from a header-less 502 stamped its edits so.
+    const ctx = await createTestContext();
+    const task = await ctx.request<Row>("POST", "/tasks", { title: "Buy milk" });
+    ctx.clock.advance(1000);
+    const edited = await ctx.request<Row>("PATCH", `/tasks/${task.body.id}`, {
+      title: "Buy oat milk",
+      updatedAt: 60_000,
+    });
+    expect(edited.status).toBe(200);
+    expect(edited.body.title).toBe("Buy oat milk");
+    expect(edited.body.updatedAt).toBe(ctx.clock.now);
+  });
+
   test("bad references are rejected", async () => {
     const { request } = await createTestContext();
     const res = await request("POST", "/projects", { areaId: newId(), name: "Ghost" });

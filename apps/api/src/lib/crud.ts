@@ -1,3 +1,4 @@
+import { EARLIEST_PLAUSIBLE_MS } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
 import { and, asc, eq, type InferSelectModel, isNull, type SQL } from "drizzle-orm";
 import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
@@ -82,7 +83,11 @@ export function crud<T extends SoftDeleteTable>(
     update(id: string, values: UpdateValues<T>): Row {
       const current = service.get(id) as Row & { updatedAt: number };
       const { updatedAt: editedAt, ...changes } = values;
-      if (editedAt !== undefined && editedAt < current.updatedAt) return current;
+      // A stamp from before the app existed is a phone with a broken clock, not an old
+      // edit: comparing it would silently drop what the user just typed. Such an edit
+      // applies as if unstamped (arrival order), which is what the user expects.
+      const stamped = editedAt !== undefined && editedAt >= EARLIEST_PLAUSIBLE_MS;
+      if (stamped && editedAt < current.updatedAt) return current;
       const clean = Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined));
       db.update(t)
         .set({ ...clean, updatedAt: Math.max(now(), current.updatedAt + 1) })

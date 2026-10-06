@@ -20,7 +20,7 @@ const SUGGESTIONS = [
 ];
 
 /** Chat with Tiki: add, change, delete or ask about anything, by typing or talking. */
-export function AssistantSheet() {
+export function AssistantSheet({ start }: { start?: "talk" }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const keyboard = useKeyboardHeight();
@@ -96,7 +96,7 @@ export function AssistantSheet() {
         className="border-t border-line px-4 pt-3"
         style={{ paddingBottom: (keyboard ? 0 : insets.bottom) + 10 }}
       >
-        <ChatComposer onSend={(text) => void ask(text)} busy={thinking} />
+        <ChatComposer onSend={(text) => void ask(text)} busy={thinking} start={start} />
       </View>
     </View>
   );

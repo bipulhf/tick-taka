@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
 import type { IconName } from "@/components/ui/icon";
 import { ListRow } from "@/components/ui/list-row";
+import { PrivacyToggle } from "@/components/ui/privacy-toggle";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { ShortcutRow } from "@/components/ui/shortcut-row";
@@ -49,9 +50,12 @@ export function MoneyHome() {
       onRefresh={() => void accounts.refetch()}
     >
       <View className="gap-1">
-        <Text variant="callout" tone="muted">
-          All accounts
-        </Text>
+        <View className="flex-row items-center justify-between">
+          <Text variant="callout" tone="muted">
+            All accounts
+          </Text>
+          <PrivacyToggle />
+        </View>
         {accounts.data ? (
           <Amount minor={total} currency={currency} variant="hero" />
         ) : (

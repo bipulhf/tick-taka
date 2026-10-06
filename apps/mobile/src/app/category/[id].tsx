@@ -3,5 +3,5 @@ import { CategorySheet } from "@/features/settings/category-sheet";
 
 export default function Route() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <CategorySheet id={id} />;
+  return <CategorySheet id={id === "new" ? null : id} />;
 }

@@ -20,6 +20,8 @@ const COLORS = {
     coralTint: "#FFE6E2",
     grapeTint: "#EFE6FF",
     grape: "#7B4FE0",
+    mangoTint: "#FFEBC8",
+    mango: "#8A5A00",
   },
   dark: {
     from: "#22202B",
@@ -35,6 +37,8 @@ const COLORS = {
     coralTint: "#3D2A2D",
     grapeTint: "#33294A",
     grape: "#B996FF",
+    mangoTint: "#3D3222",
+    mango: "#FFC266",
   },
 } as const;
 type Palette = (typeof COLORS)["light" | "dark"];
@@ -90,7 +94,11 @@ function Action({ label, uri, tint, tone }: { label: string; uri: string; tint: 
         justifyContent: "center",
       }}
     >
-      <TextWidget text={label} style={{ fontSize: 13, fontWeight: "bold", color: tone }} />
+      <TextWidget
+        text={label}
+        maxLines={1}
+        style={{ fontSize: 12, fontWeight: "bold", color: tone }}
+      />
     </FlexWidget>
   );
 }
@@ -126,7 +134,7 @@ function SignedOut({ c }: { c: Palette }) {
 /**
  * Home-screen widget: today at a glance. What's safe to spend (and how much of
  * today's share is gone), what to do next, top-three and habit progress, and
- * one-tap buttons to add a task, log an expense or start focusing.
+ * one-tap buttons to add a task, log an expense, start focusing or talk to Tiki.
  */
 export function SafeToSpendWidget({
   cache,
@@ -272,6 +280,12 @@ export function SafeToSpendWidget({
           tone={c.coral}
         />
         <Action label="▶ Focus" uri="ticktaka://focus" tint={c.grapeTint} tone={c.grape} />
+        <Action
+          label="🎙 Tiki"
+          uri="ticktaka://assistant?start=talk"
+          tint={c.mangoTint}
+          tone={c.mango}
+        />
       </FlexWidget>
     </FlexWidget>
   );

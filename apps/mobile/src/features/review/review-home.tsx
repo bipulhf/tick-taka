@@ -43,8 +43,8 @@ const ENTRIES: Entry[] = [
   },
   {
     href: "/review/subscriptions",
-    title: "Subscription spotter",
-    hint: "Repeating charges worth a look",
+    title: "Subscriptions",
+    hint: "Monthly charges you aren't tracking yet",
     icon: "repeat-variant",
   },
   {

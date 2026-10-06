@@ -1,3 +1,4 @@
+import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -17,18 +18,24 @@ import { useRemove } from "@/lib/use-remove";
 type Category = NonNullable<ReturnType<typeof useCategories>["data"]>[number];
 type BudgetType = Category["budgetType"];
 
-const BUCKETS: { value: BudgetType; label: string }[] = [
-  { value: "flexible", label: "Flexible" },
-  { value: "fixed", label: "Fixed" },
-  { value: "non_monthly", label: "Non-monthly" },
+export const BUCKET_LABEL: Record<BudgetType, string> = {
+  flexible: "Flexible",
+  fixed: "Fixed",
+  non_monthly: "Non-monthly",
+};
+const BUCKETS: { value: BudgetType; label: string; hint: string }[] = [
+  { value: "flexible", label: "Flexible", hint: "Changes month to month, like food or fun" },
+  { value: "fixed", label: "Fixed", hint: "The same every month, like rent or internet" },
+  { value: "non_monthly", label: "Non-monthly", hint: "Now and then, like gifts or repairs" },
 ];
+const EMOJIS = ["🍽️", "🛒", "🚌", "🏠", "💡", "📱", "💊", "🎓", "👕", "🎁", "🐾", "🎮"];
 
-/** Rename a category, change its emoji or budget bucket. */
-export function CategorySheet({ id }: { id: string }) {
+/** Add a spending category, or rename one, change its emoji, parent or budget bucket. */
+export function CategorySheet({ id }: { id: string | null }) {
   const categories = useCategories();
-  const category = categories.data?.find((c) => c.id === id);
+  const category = id ? categories.data?.find((c) => c.id === id) : undefined;
   // Wait for the record so the form's fields start filled, even with nothing cached.
-  if (!category)
+  if (id && !category)
     return (
       <Sheet title="Category">
         {categories.isError ? (
@@ -41,36 +48,53 @@ export function CategorySheet({ id }: { id: string }) {
   return <CategoryForm category={category} />;
 }
 
-function CategoryForm({ category }: { category: Category }) {
+function CategoryForm({ category }: { category: Category | undefined }) {
   const router = useRouter();
   const send = useOutbox();
   const remove = useRemove();
-  const [name, setName] = useState(category.name);
-  const [emoji, setEmoji] = useState(category.emoji);
-  const [budgetType, setBudgetType] = useState<BudgetType>(category.budgetType);
+  const { data: all = [] } = useCategories();
+  const parents = all.filter(
+    (c) => c.kind === "expense" && c.parentId === null && c.id !== category?.id,
+  );
+  const hasChildren = !!category && all.some((c) => c.parentId === category.id);
+  const [name, setName] = useState(category?.name ?? "");
+  const [emoji, setEmoji] = useState(category?.emoji ?? "🏷️");
+  const [budgetType, setBudgetType] = useState<BudgetType>(category?.budgetType ?? "flexible");
+  const [parentId, setParentId] = useState<string | null>(category?.parentId ?? null);
   const save = () => {
     if (!name.trim() || !emoji.trim()) return;
-    send({
-      method: "PATCH",
-      path: `/categories/${category.id}`,
-      body: { name: name.trim(), emoji: emoji.trim(), budgetType, updatedAt: editTime() },
-      label: "Couldn't save",
-    });
+    const body = { name: name.trim(), emoji: emoji.trim(), budgetType, parentId };
+    if (category)
+      send({
+        method: "PATCH",
+        path: `/categories/${category.id}`,
+        body: { ...body, updatedAt: editTime() },
+        label: "Couldn't save",
+      });
+    else
+      send({
+        method: "POST",
+        path: "/categories",
+        body: { id: newId(), ...body, kind: "expense" },
+        label: "Couldn't add the category",
+      });
     router.back();
   };
   return (
     <Sheet
-      title={category.name}
+      title={category ? category.name : "New category"}
       footer={
         <View className="flex-row gap-2">
-          <DeleteButton
-            onPress={() => {
-              remove(`/categories/${category.id}`, `“${category.name}”`);
-              router.back();
-            }}
-          />
+          {category ? (
+            <DeleteButton
+              onPress={() => {
+                remove(`/categories/${category.id}`, `“${category.name}”`);
+                router.back();
+              }}
+            />
+          ) : null}
           <Button
-            label="Save"
+            label={category ? "Save" : "Add category"}
             onPress={save}
             disabled={!name.trim() || !emoji.trim()}
             className="flex-1"
@@ -80,7 +104,18 @@ function CategoryForm({ category }: { category: Category }) {
     >
       <View className="flex-row gap-2">
         <TextField value={emoji} onChangeText={setEmoji} className="w-16" />
-        <TextField value={name} onChangeText={setName} placeholder="Name" className="flex-1" />
+        <TextField
+          value={name}
+          onChangeText={setName}
+          placeholder="Pets, Gym, Bazar…"
+          autoFocus={!category}
+          className="flex-1"
+        />
+      </View>
+      <View className="flex-row flex-wrap gap-2">
+        {EMOJIS.map((e) => (
+          <Chip key={e} label={e} selected={emoji === e} onPress={() => setEmoji(e)} />
+        ))}
       </View>
       <Text variant="label" tone="muted">
         Budget bucket
@@ -95,6 +130,31 @@ function CategoryForm({ category }: { category: Category }) {
           />
         ))}
       </View>
+      <Text variant="caption" tone="muted">
+        {BUCKETS.find((b) => b.value === budgetType)?.hint}
+      </Text>
+      {hasChildren ? null : (
+        <>
+          <Text variant="label" tone="muted">
+            Sits under
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            <Chip
+              label="Nothing (top level)"
+              selected={!parentId}
+              onPress={() => setParentId(null)}
+            />
+            {parents.map((p) => (
+              <Chip
+                key={p.id}
+                label={`${p.emoji} ${p.name}`}
+                selected={parentId === p.id}
+                onPress={() => setParentId(p.id)}
+              />
+            ))}
+          </View>
+        </>
+      )}
     </Sheet>
   );
 }

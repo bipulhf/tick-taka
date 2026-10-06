@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
@@ -40,15 +40,37 @@ function RoundButton({
   );
 }
 
-/** Type or talk. Speech becomes editable text first, so a misheard word never gets sent. */
-export function ChatComposer({ onSend, busy }: { onSend: (text: string) => void; busy: boolean }) {
+/**
+ * Type or talk. Speech becomes editable text first, so a misheard word never gets
+ * sent, except when the chat was opened to talk (the widget's one tap): then what
+ * was heard goes straight to Tiki.
+ */
+export function ChatComposer({
+  onSend,
+  busy,
+  start,
+}: {
+  onSend: (text: string) => void;
+  busy: boolean;
+  start?: "talk";
+}) {
   const colors = useColors();
   const input = useRef<TextInput>(null);
   const [text, setText] = useState("");
+  const sendHeard = useRef(start === "talk");
   const voice = useVoiceInput((heard) => {
+    if (sendHeard.current) {
+      sendHeard.current = false;
+      onSend(heard);
+      return;
+    }
     setText((current) => (current.trim() ? `${current.trim()} ${heard}` : heard));
     input.current?.focus();
   });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only on opening; voice.start is new each render.
+  useEffect(() => {
+    if (start === "talk") void voice.start();
+  }, [start]);
 
   const send = () => {
     if (!text.trim() || busy) return;

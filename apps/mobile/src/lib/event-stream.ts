@@ -1,7 +1,7 @@
 import { fetch } from "expo/fetch";
 import { ApiError } from "./api";
 import { apiUrl, currentToken, reportUnauthorized, ServerUnreachableError } from "./http";
-import { noteServerTime } from "./server-clock";
+import { noteServerTime, serverTimeOf } from "./server-clock";
 
 const TIMEOUT_MS = 180_000;
 
@@ -36,7 +36,7 @@ export async function postEventStream(
     } catch {
       throw new ServerUnreachableError();
     }
-    noteServerTime(Number(response.headers.get("x-server-time")), sentAt, Date.now());
+    noteServerTime(serverTimeOf(response.headers), sentAt, Date.now());
     if (!response.ok || !response.body) {
       if (response.status === 401) reportUnauthorized(sentToken);
       const error = (await response.json().catch(() => null)) as {

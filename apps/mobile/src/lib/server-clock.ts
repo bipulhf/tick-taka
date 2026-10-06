@@ -1,3 +1,5 @@
+import { EARLIEST_PLAUSIBLE_MS } from "@tick-taka/shared/dates";
+
 /**
  * How far the server's clock is ahead of this phone's (ms). Edits are stamped in
  * server time, because the server keeps whichever edit is newest: a phone clock
@@ -24,9 +26,28 @@ function save(): void {
   storage.setItem(KEY, String(savedMs)).catch(() => {});
 }
 
-/** Learns the offset from a response's server time, splitting the round trip evenly. */
+/** A server time worth learning from: a finite number no earlier than the app itself. */
+function plausible(serverTime: number): boolean {
+  return Number.isFinite(serverTime) && serverTime >= EARLIEST_PLAUSIBLE_MS;
+}
+
+/**
+ * The server time a reply carries, or NaN when it carries none. Only our API sets the
+ * header; a proxy's own error page (a 502 during a deploy, a 413) has none, and
+ * `Number(null)` would read that as 0, the start of 1970.
+ */
+export function serverTimeOf(headers: { get(name: string): string | null }): number {
+  const header = headers.get("x-server-time")?.trim();
+  return header ? Number(header) : Number.NaN;
+}
+
+/**
+ * Learns the offset from a response's server time, splitting the round trip evenly.
+ * A missing or impossible time (NaN, 0, anything before the app existed) is ignored,
+ * so a reply without the header can't stamp edits in 1970.
+ */
 export function noteServerTime(serverTime: number, sentAt: number, receivedAt: number): void {
-  if (!Number.isFinite(serverTime)) return;
+  if (!plausible(serverTime)) return;
   offsetMs = serverTime - (sentAt + receivedAt) / 2;
   learned = true;
   save();
@@ -38,7 +59,8 @@ export async function restoreServerClock(store: ClockStorage): Promise<void> {
   savedMs = null;
   try {
     const saved = Number((await store.getItem(KEY)) ?? Number.NaN);
-    if (!learned && Number.isFinite(saved)) {
+    // An offset that puts "now" before the app existed was learned from a bad reply.
+    if (!learned && Number.isFinite(saved) && plausible(Date.now() + saved)) {
       offsetMs = saved;
       savedMs = saved;
       return;

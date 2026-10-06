@@ -2,12 +2,14 @@ import {
   classifyFailure,
   type FailureInfo,
   followCreatedRecords,
+  isServerFault,
   mayHaveReachedServer,
   type OutboxEntry,
   type OutboxRequest,
   type PersistedOutbox,
   parsePersistedOutbox,
   retryDelay,
+  STUCK_AFTER,
 } from "./outbox-policy";
 
 export interface OutboxDeps {
@@ -23,6 +25,10 @@ export interface OutboxDeps {
   onSent?(request: OutboxRequest, response: unknown): void;
   /** The server refused the write for good; it has left the queue. */
   onRejected?(request: OutboxRequest, error: unknown): void;
+  /** The server kept failing on this write; it was set aside so later ones can go. */
+  onStuck?(request: OutboxRequest, error: unknown): void;
+  /** The user discarded a stuck write. */
+  onDiscarded?(request: OutboxRequest): void;
   now?(): number;
   delay?(attempts: number): number;
   newId?(): string;
@@ -39,12 +45,15 @@ const defaultId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`
 /**
  * Every write goes through one queue, sent one at a time in the order made. An entry
  * stays saved until the server has it, so a write that is sending when the app is
- * killed is sent again on the next start. Unreachable servers, 5xx and 429 retry
+ * killed is sent again on the next start. Unreachable servers, 503 and 429 retry
  * forever with a capped backoff; a 401 pauses the queue without dropping anything;
- * only a final 4xx takes a write out.
+ * only a final 4xx takes a write out. A write our API keeps answering with another
+ * 5xx is set aside as stuck after STUCK_AFTER tries, kept until the user retries or
+ * discards it, so one bad write can't hold back every write behind it.
  */
 export class OutboxQueue {
   private entries: OutboxEntry[] = [];
+  private parked: OutboxEntry[] = [];
   private userId: string | null = null;
   private loaded = false;
   private reading = false;
@@ -62,9 +71,40 @@ export class OutboxQueue {
 
   constructor(private readonly deps: OutboxDeps) {}
 
-  /** Number of writes not yet on the server. */
+  /** Number of writes not yet on the server, stuck ones included. */
   get size(): number {
+    return this.entries.length + this.parked.length;
+  }
+
+  /** Writes still being sent (or waiting to be), not counting stuck ones. */
+  get sending(): number {
     return this.entries.length;
+  }
+
+  /** Writes the server kept failing on, oldest first. */
+  stuck(): readonly OutboxEntry[] {
+    return this.parked;
+  }
+
+  /** Sends a stuck write again, after the writes queued now. */
+  retryStuck(id: string): void {
+    const entry = this.parked.find((e) => e.id === id);
+    if (!entry) return;
+    this.parked = this.parked.filter((e) => e !== entry);
+    this.entries.push({ ...entry, attempts: 0, serverFailures: 0, maybeDelivered: true });
+    this.persist();
+    this.changed();
+    this.kick();
+  }
+
+  /** Drops a stuck write for good. */
+  discardStuck(id: string): void {
+    const entry = this.parked.find((e) => e.id === id);
+    if (!entry) return;
+    this.parked = this.parked.filter((e) => e !== entry);
+    this.persist();
+    this.changed();
+    this.deps.onDiscarded?.(entry.request);
   }
 
   get owner(): string | null {
@@ -117,6 +157,7 @@ export class OutboxQueue {
     if (restored[0]) restored[0].maybeDelivered = true;
     const queuedEarly = this.entries.length > 0;
     this.entries = [...(this.discardSaved ? [] : restored), ...this.entries];
+    if (!this.discardSaved) this.parked = [...(saved?.stuck ?? []), ...this.parked];
     if (saved && !this.discardSaved && this.userId === null) this.userId = saved.userId;
     this.loaded = true;
     if (legacy.length || queuedEarly || this.discardSaved) this.persist();
@@ -161,6 +202,7 @@ export class OutboxQueue {
   async clear(): Promise<void> {
     const dropped = this.entries;
     this.entries = [];
+    this.parked = [];
     this.userId = null;
     if (!this.loaded) this.discardSaved = true;
     for (const entry of dropped) this.settle(entry.id, null);
@@ -188,8 +230,7 @@ export class OutboxQueue {
     if (this.running || !this.loaded) return;
     this.running = true;
     try {
-      while (this.entries.length > 0 && this.deps.canSend()) {
-        const entry = this.entries[0]!;
+      for (let entry = this.entries[0]; entry && this.deps.canSend(); entry = this.entries[0]) {
         let response: unknown;
         try {
           response = await this.deps.send(entry.request);
@@ -206,6 +247,11 @@ export class OutboxQueue {
           } else if (kind === "retry") {
             entry.attempts += 1;
             entry.maybeDelivered ||= mayHaveReachedServer(failure);
+            entry.serverFailures = isServerFault(failure) ? (entry.serverFailures ?? 0) + 1 : 0;
+            if (entry.serverFailures >= STUCK_AFTER) {
+              this.park(entry, error);
+              continue;
+            }
             this.persist();
             this.changed();
             await this.sleep((this.deps.delay ?? retryDelay)(entry.attempts));
@@ -232,6 +278,17 @@ export class OutboxQueue {
     this.changed();
     this.deps.onSent?.(entry.request, response);
     this.settle(entry.id, response);
+  }
+
+  /** Sets a write the server keeps failing on aside, so the ones behind it can go. */
+  private park(entry: OutboxEntry, error: unknown): void {
+    this.entries = this.entries.filter((e) => e !== entry);
+    this.parked = [...this.parked, entry];
+    this.persist();
+    this.changed();
+    this.deps.onStuck?.(entry.request, error);
+    // Whoever waits on it hears now; a later retry from the list lands without them.
+    this.settle(entry.id, undefined, error);
   }
 
   private remove(entry: OutboxEntry): void {
@@ -267,6 +324,7 @@ export class OutboxQueue {
       version: 1,
       userId: this.userId,
       entries: this.entries.map((entry) => ({ ...entry })),
+      stuck: this.parked.map((entry) => ({ ...entry })),
     };
     this.saving = this.saving.then(() => this.deps.save(state)).catch(() => {});
   }

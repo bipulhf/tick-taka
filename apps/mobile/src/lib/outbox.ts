@@ -52,6 +52,12 @@ export const outbox = new OutboxQueue({
     // Undo the optimistic change on screen.
     scheduleRefresh(request.path);
   },
+  onStuck: (request) => {
+    notify(
+      `${request.label ? `${request.label}. ` : ""}The server keeps failing on this change. It's kept at the top of the screen to retry or discard.`,
+    );
+  },
+  onDiscarded: (request) => scheduleRefresh(request.path),
 });
 
 let started: Promise<void> | null = null;

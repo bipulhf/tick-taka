@@ -14,14 +14,14 @@ const KEY = "tt.last-sync";
 let running = false;
 
 function outboxEmpty(timeoutMs = 30_000): Promise<boolean> {
-  if (outbox.size === 0) return Promise.resolve(true);
+  if (outbox.sending === 0) return Promise.resolve(true);
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
       stop();
       resolve(false);
     }, timeoutMs);
     const stop = outbox.subscribe(() => {
-      if (outbox.size > 0) return;
+      if (outbox.sending > 0) return;
       clearTimeout(timer);
       stop();
       resolve(true);

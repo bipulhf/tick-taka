@@ -25,6 +25,8 @@ export interface OutboxEntry {
   attempts: number;
   /** An earlier attempt may have reached the server (timeout, dropped reply, 5xx, app killed). */
   maybeDelivered: boolean;
+  /** Server errors in a row (see isServerFault); missing on entries from older builds. */
+  serverFailures?: number;
 }
 
 /** What went wrong with one attempt, reduced to what the policy needs. */
@@ -77,6 +79,22 @@ export function classifyFailure(entry: OutboxEntry, failure: FailureInfo): Failu
 }
 
 /** Whether a failed attempt could have changed data on the server before it failed. */
+/**
+ * After this many server errors in a row, a write is set aside as stuck so the ones
+ * queued behind it can go. With the backoff that is about two minutes of trying.
+ */
+export const STUCK_AFTER = 8;
+
+/**
+ * Our API answered with a 5xx: the same request is likely to fail the same way.
+ * 503 means the API is down for a moment, and a proxy's error page counts as
+ * unreachable (see outbox.ts), so neither of those ever makes a write stuck.
+ */
+export function isServerFault(failure: FailureInfo): boolean {
+  if (failure.unreachable || failure.status === undefined) return false;
+  return failure.status >= 500 && failure.status !== 503;
+}
+
 export function mayHaveReachedServer(failure: FailureInfo): boolean {
   return Boolean(failure.unreachable) || (failure.status !== undefined && failure.status >= 500);
 }
@@ -143,12 +161,14 @@ const entrySchema = z.object({
   queuedAt: z.number(),
   attempts: z.number().int().min(0),
   maybeDelivered: z.boolean(),
+  serverFailures: z.number().int().min(0).optional(),
 });
 
 const persistedSchema = z.object({
   version: z.literal(1),
   userId: z.string().nullable(),
   entries: z.array(z.unknown()),
+  stuck: z.array(z.unknown()).optional(),
 });
 
 export interface PersistedOutbox {
@@ -156,6 +176,17 @@ export interface PersistedOutbox {
   /** Whose writes these are: a different account signing in must not send them. */
   userId: string | null;
   entries: OutboxEntry[];
+  /** Writes the server kept failing on, waiting for the user to retry or discard them. */
+  stuck?: OutboxEntry[];
+}
+
+function parseEntries(items: unknown[]): OutboxEntry[] {
+  const entries: OutboxEntry[] = [];
+  for (const item of items) {
+    const entry = entrySchema.safeParse(item);
+    if (entry.success) entries.push(entry.data as OutboxEntry);
+  }
+  return entries;
 }
 
 /**
@@ -165,12 +196,12 @@ export interface PersistedOutbox {
 export function parsePersistedOutbox(raw: unknown): PersistedOutbox | null {
   const outer = persistedSchema.safeParse(raw);
   if (!outer.success) return null;
-  const entries: OutboxEntry[] = [];
-  for (const item of outer.data.entries) {
-    const entry = entrySchema.safeParse(item);
-    if (entry.success) entries.push(entry.data as OutboxEntry);
-  }
-  return { version: 1, userId: outer.data.userId, entries };
+  return {
+    version: 1,
+    userId: outer.data.userId,
+    entries: parseEntries(outer.data.entries),
+    stuck: parseEntries(outer.data.stuck ?? []),
+  };
 }
 
 /** Outbox writes TanStack Query persisted before the outbox had its own storage. */

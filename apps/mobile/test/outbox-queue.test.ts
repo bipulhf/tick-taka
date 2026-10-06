@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import type { FailureInfo, OutboxRequest, PersistedOutbox } from "../src/lib/outbox-policy";
+import {
+  type FailureInfo,
+  type OutboxRequest,
+  type PersistedOutbox,
+  STUCK_AFTER,
+} from "../src/lib/outbox-policy";
 import { type OutboxDeps, OutboxQueue } from "../src/lib/outbox-queue";
 
 class HttpFailure extends Error {
@@ -280,6 +285,69 @@ describe("outbox queue", () => {
     await idle(queue);
     expect(queue.savedUnreadable).toBe(false);
     expect(received.map((r) => (r.body as { id: string }).id)).toEqual(["saved", "new"]);
+  });
+
+  test("a write the server keeps failing on is set aside, and the ones behind it go", async () => {
+    const { queue, received, answers, state } = harness();
+    await queue.load();
+    for (let i = 0; i < STUCK_AFTER; i++) answers.push(() => new HttpFailure({ status: 500 }));
+    const poison = queue.enqueue({ method: "PATCH", path: "/events/e1", body: { endsOn: "x" } });
+    poison.catch(() => {});
+    void queue.enqueue(post("good"));
+    await idle(queue);
+    for (let i = 0; i < 50 && queue.sending > 0; i++) await new Promise((r) => setTimeout(r, 2));
+    await queue.flushed();
+    expect(received.map((r) => r.path)).toEqual([
+      ...Array.from({ length: STUCK_AFTER }, () => "/events/e1"),
+      "/tasks",
+    ]);
+    expect(queue.sending).toBe(0);
+    expect(queue.size).toBe(1);
+    expect(queue.stuck().map((e) => e.request.path)).toEqual(["/events/e1"]);
+    await expect(poison).rejects.toBeInstanceOf(HttpFailure);
+    expect((state.disk as PersistedOutbox).stuck?.map((e) => e.request.path)).toEqual([
+      "/events/e1",
+    ]);
+
+    // Retry sends it again; this time it lands.
+    queue.retryStuck(queue.stuck()[0]!.id);
+    await idle(queue);
+    expect(received.at(-1)?.path).toBe("/events/e1");
+    expect(queue.size).toBe(0);
+  });
+
+  test("503, 429 and an unreachable server never make a write stuck", async () => {
+    const { queue, answers } = harness();
+    await queue.load();
+    for (let i = 0; i < STUCK_AFTER; i++) {
+      answers.push(() => new HttpFailure({ status: 503 }));
+      answers.push(() => new HttpFailure({ unreachable: true }));
+    }
+    void queue.enqueue(post("a"));
+    await idle(queue);
+    expect(queue.stuck()).toHaveLength(0);
+    expect(queue.size).toBe(0);
+  });
+
+  test("a stuck write can be discarded, and stays stuck across a restart until then", async () => {
+    const saved: PersistedOutbox = {
+      version: 1,
+      userId: "u1",
+      entries: [],
+      stuck: [{ id: "s", request: post("bad"), queuedAt: 0, attempts: 8, maybeDelivered: true }],
+    };
+    const { queue, received, state } = harness({ saved });
+    const discarded: OutboxRequest[] = [];
+    (queue as unknown as { deps: OutboxDeps }).deps.onDiscarded = (r) => discarded.push(r);
+    await queue.load();
+    await idle(queue);
+    expect(received).toHaveLength(0);
+    expect(queue.stuck()).toHaveLength(1);
+    queue.discardStuck("s");
+    await queue.flushed();
+    expect(queue.size).toBe(0);
+    expect(discarded).toEqual([post("bad")]);
+    expect((state.disk as PersistedOutbox).stuck).toEqual([]);
   });
 
   test("clearing empties the queue and the disk", async () => {

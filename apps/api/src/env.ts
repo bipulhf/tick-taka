@@ -17,6 +17,12 @@ const envSchema = z.object({
   DB_PATH: z.string().default("./data/app.db"),
   UPLOADS_DIR: z.string().optional(),
   BACKUPS_DIR: z.string().optional(),
+  /**
+   * Optional shell command run after a tick that wrote any backup, with BACKUPS_DIR
+   * in its environment: e.g. `rsync -a --delete "$BACKUPS_DIR"/ backup-host:tick-taka/`
+   * or an rclone/age push. Keeps a copy off the server's disk.
+   */
+  BACKUP_OFFSITE_CMD: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
   /** The sign-in list: one row per Google account. Defaults to users.db next to DB_PATH. */
   USERS_DB_PATH: z.string().optional(),
   /** One SQLite file per user lives here. Defaults to users/ next to DB_PATH. */

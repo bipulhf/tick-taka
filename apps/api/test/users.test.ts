@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
@@ -275,6 +275,35 @@ describe("nightly jobs", () => {
     expect(readdirSync(join(backups, "users", dhakaUser!.id))).toEqual(["app-2026-10-04.db"]);
     expect(existsSync(join(backups, "users", londonUser!.id))).toBe(false);
     expect(ctx.deps.users.jobRuns.lastDate(dhakaUser!.id, "nightly-backup")).toBe("2026-10-04");
+  });
+
+  test("run the off-site copy once after a tick that wrote backups, and only then", async () => {
+    const backups = mkdtempSync(join(tmpdir(), "tt-jobs-"));
+    const marker = join(backups, "offsite-runs");
+    const at = zonedTimeToUtc({ year: 2026, month: 10, day: 4, hour: 3, minute: 5 }, "Asia/Dhaka");
+    const ctx = await createTestContext({
+      now: at,
+      env: { BACKUPS_DIR: backups, BACKUP_OFFSITE_CMD: `echo run >> "$BACKUPS_DIR/offsite-runs"` },
+    });
+    await ctx.tokenFor("sub-two", "two@example.com");
+    await runHourlyJobs(ctx.deps);
+    expect(readFileSync(marker, "utf8")).toBe("run\n");
+    // Nothing new to back up an hour later: no second copy.
+    ctx.clock.advance(60 * 60_000);
+    await runHourlyJobs(ctx.deps);
+    expect(readFileSync(marker, "utf8")).toBe("run\n");
+  });
+
+  test("a failing off-site copy is logged, never thrown", async () => {
+    const backups = mkdtempSync(join(tmpdir(), "tt-jobs-"));
+    const at = zonedTimeToUtc({ year: 2026, month: 10, day: 4, hour: 3, minute: 5 }, "Asia/Dhaka");
+    const ctx = await createTestContext({
+      now: at,
+      env: { BACKUPS_DIR: backups, BACKUP_OFFSITE_CMD: "exit 3" },
+    });
+    await runHourlyJobs(ctx.deps);
+    const me = ctx.deps.users.list()[0]!;
+    expect(ctx.deps.users.jobRuns.lastDate(me.id, "nightly-backup")).toBe("2026-10-04");
   });
 
   test("catch up after the server was down at 3 am", async () => {

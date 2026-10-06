@@ -305,12 +305,15 @@ backup missed because the server was down runs on the next tick (and 10 seconds 
 start).
 
 Backups on the same disk as the live data die with it. The API logs a warning at start
-when they share a disk. Either point `BACKUPS_DIR` at another disk or mount, or copy the
-folder off the server nightly, for example with a cron entry on the VPS:
+when they share a disk. Either point `BACKUPS_DIR` at another disk or mount, or have the
+API copy the folder off the server itself: set `BACKUP_OFFSITE_CMD` in `apps/api/.env`
+and it runs (through `sh -c`, with `BACKUPS_DIR` set) once after every hourly run that
+wrote a backup. A failure is logged as `offsite backup failed` and tried again the next
+night.
 
 ```bash
-# 04:30 every night: push backups to another machine (or `rclone sync` to B2/S3)
-30 4 * * * rsync -a --delete ~/tick-taka-data/backups/ backup@other-host:tick-taka-backups/
+# apps/api/.env — push to another machine over SSH (or `rclone sync` to B2/S3)
+BACKUP_OFFSITE_CMD=rsync -a --delete "$BACKUPS_DIR"/ backup@other-host:tick-taka-backups/
 ```
 
 Once a month, restore one locally to check it works:

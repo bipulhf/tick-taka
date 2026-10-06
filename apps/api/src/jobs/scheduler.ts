@@ -8,6 +8,7 @@ import { runAsUser } from "../lib/user-scope";
 import { recurringService } from "../modules/recurring/service";
 import { readSettings } from "../modules/settings/service";
 import { runBackup } from "./backup";
+import { copyBackupsOffsite } from "./offsite";
 
 interface NightlyJob {
   name: string;
@@ -36,8 +37,12 @@ const JOBS: NightlyJob[] = [
 /** Lets requests waiting on the event loop run between one user's jobs and the next. */
 const yieldToRequests = () => new Promise<void>((resolve) => setImmediate(resolve));
 
-/** One user's due jobs. Throws only if the user's database or settings can't be read. */
-function runJobsFor(deps: Deps, user: User, now: number): void {
+/**
+ * One user's due jobs; returns the names of the jobs that ran. Throws only if the
+ * user's database or settings can't be read.
+ */
+function runJobsFor(deps: Deps, user: User, now: number): string[] {
+  const ran: string[] = [];
   const lease = deps.users.lease(user);
   const { data } = lease;
   const tag = userTag(user.id, deps.env.JWT_SECRET);
@@ -51,6 +56,7 @@ function runJobsFor(deps: Deps, user: User, now: number): void {
         try {
           const result = job.run(deps, data, now, timeZone, user);
           deps.users.jobRuns.record(user.id, job.name, today, now);
+          ran.push(job.name);
           log("info", "job", { job: job.name, user: tag, result });
         } catch (error) {
           log("error", "job failed", { job: job.name, user: tag, ...errorFields(error) });
@@ -61,6 +67,7 @@ function runJobsFor(deps: Deps, user: User, now: number): void {
     // Databases opened only for the jobs don't stay open.
     lease.release({ closeIfOpened: true });
   }
+  return ran;
 }
 
 /**
@@ -72,12 +79,13 @@ function runJobsFor(deps: Deps, user: User, now: number): void {
  */
 export async function runHourlyJobs(deps: Deps): Promise<void> {
   const now = deps.now();
+  let backedUp = false;
   for (const user of deps.users.list()) {
     await yieldToRequests();
     // The account may have been deleted while this run yielded.
     if (!deps.users.find(user.id)) continue;
     try {
-      runJobsFor(deps, user, now);
+      if (runJobsFor(deps, user, now).includes("nightly-backup")) backedUp = true;
     } catch (error) {
       log("error", "user jobs failed", {
         user: userTag(user.id, deps.env.JWT_SECRET),
@@ -86,6 +94,8 @@ export async function runHourlyJobs(deps: Deps): Promise<void> {
     }
   }
   deps.users.sweep();
+  // One off-site copy per tick that wrote backups, after every user's are done.
+  if (backedUp) await copyBackupsOffsite(deps.env);
 }
 
 /**

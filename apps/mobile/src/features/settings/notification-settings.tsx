@@ -2,9 +2,9 @@ import { Card } from "@/components/ui/card";
 import { PickerField } from "@/components/ui/picker-field";
 import { clockLabel, clockOptions } from "@/components/ui/picker-options";
 import { Section } from "@/components/ui/section";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { setFeedbackPrefs, useFeedbackPrefs } from "@/lib/feedback-prefs";
 import { ReminderStatusBanner } from "./reminder-status-banner";
-import { ToggleRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
 

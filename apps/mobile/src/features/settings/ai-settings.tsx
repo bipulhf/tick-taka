@@ -3,8 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Group } from "@/components/ui/group";
 import { ListRow } from "@/components/ui/list-row";
 import { Text } from "@/components/ui/text";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { useAiStatus } from "@/lib/queries";
-import { ToggleRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
 

@@ -2,8 +2,9 @@ import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { PickerField } from "@/components/ui/picker-field";
 import { Section } from "@/components/ui/section";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { formatMinutes, plural } from "@/lib/format";
-import { ChoiceRow, ToggleRow } from "./setting-row";
+import { ChoiceRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
 

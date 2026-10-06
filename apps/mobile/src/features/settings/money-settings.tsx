@@ -1,8 +1,8 @@
 import { View } from "react-native";
 import { Card } from "@/components/ui/card";
 import { PickerField } from "@/components/ui/picker-field";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { useAccounts } from "@/lib/queries";
-import { ToggleRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
 

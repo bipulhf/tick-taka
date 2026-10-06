@@ -1,9 +1,9 @@
 import * as LocalAuthentication from "expo-local-authentication";
 import { Card } from "@/components/ui/card";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { togglePrivacy, usePrivacy } from "@/lib/privacy";
-import { ToggleRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
 

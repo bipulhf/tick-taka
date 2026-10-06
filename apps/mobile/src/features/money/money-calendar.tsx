@@ -112,6 +112,7 @@ export function MoneyCalendar() {
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={`${formatLocalDate(date)}, spent ${hidden ? "amount hidden" : formatAmount(spent)}`}
+                  hitSlop={{ left: 3, right: 3 }}
                   // Neutral cells with a small coral mark sized by the day's spend, not a heat fill.
                   className={`min-h-16 w-[14.28%] items-center justify-center gap-1.5 rounded-xl py-1 ${isSelected ? "bg-ink" : ""}`}
                 >

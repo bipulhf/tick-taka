@@ -126,7 +126,7 @@ export function WeekPlanner() {
                 >
                   <Pressable
                     onPress={() => router.push(`/plan/day?date=${day}`)}
-                    className="flex-row items-center justify-between"
+                    className="min-h-12 flex-row items-center justify-between"
                     accessibilityRole="button"
                   >
                     <Text variant="strong" className="flex-1" numberOfLines={1}>

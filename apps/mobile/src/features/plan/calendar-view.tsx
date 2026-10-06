@@ -134,6 +134,7 @@ export function CalendarView() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
                 accessibilityLabel={`${formatLocalDate(date)}, ${plural(count, "task")}${hasBills ? ", bills due" : ""}`}
+                hitSlop={{ left: 3, right: 3 }}
                 className={`min-h-14 w-[14.28%] items-center justify-center rounded-xl py-1 ${isSelected ? "bg-ink" : date === today ? "bg-sky/15" : ""}`}
               >
                 <Text

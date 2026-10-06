@@ -56,7 +56,7 @@ export function TransactionRow({
     >
       <SwipeRowPressable
         onPress={edit}
-        className={`min-h-14 flex-row items-center gap-3 py-2 active:opacity-70 ${PLACEMENT[placement]}`}
+        className={`min-h-[60px] flex-row items-center gap-3 py-2 active:opacity-70 ${PLACEMENT[placement]}`}
         accessibilityHint="Opens the transaction. Delete is in the actions menu"
       >
         <View className="h-10 w-10 items-center justify-center rounded-full bg-background">

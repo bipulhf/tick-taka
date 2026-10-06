@@ -23,6 +23,27 @@ async function internetBill(ctx: TestContext) {
 
 type PayResult = { transaction: Row | null; recurring: Row };
 
+describe("repeat rules that never occur are refused", () => {
+  test("bills and tasks", async () => {
+    const ctx = await createTestContext();
+    const { cash } = await setupMoney(ctx);
+    const bill = await ctx.request("POST", "/recurring", {
+      kind: "bill",
+      name: "Internet",
+      amountMinor: 120_000,
+      accountId: cash.id,
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=0",
+      nextDueAt: due(10),
+    });
+    expect(bill.status).toBe(400);
+    const task = await ctx.request("POST", "/tasks", {
+      title: "Water plants",
+      rrule: "FREQ=YEARLY;BYMONTH=13",
+    });
+    expect(task.status).toBe(400);
+  });
+});
+
 describe("paying a bill is safe to replay", () => {
   test("the same transactionId twice logs one expense and advances once", async () => {
     const ctx = await createTestContext();

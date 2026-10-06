@@ -3,6 +3,7 @@ import {
   describeRRule,
   firstOccurrence,
   formatRRule,
+  isValidRRule,
   nextOccurrence,
   parseClock,
   parseRecurrence,
@@ -16,6 +17,32 @@ describe("rrule text", () => {
   });
   test("rejects unsupported rules", () => {
     expect(() => parseRRule("FREQ=HOURLY")).toThrow();
+  });
+  test("rules with out-of-range parts or no occurrence are invalid", () => {
+    for (const rule of [
+      "FREQ=MONTHLY;BYMONTHDAY=0",
+      "FREQ=MONTHLY;BYMONTHDAY=32",
+      "FREQ=MONTHLY;BYMONTHDAY=-5",
+      "FREQ=YEARLY;BYMONTH=13;BYMONTHDAY=1",
+      "FREQ=DAILY;BYHOUR=24",
+      "FREQ=DAILY;BYMINUTE=60",
+      "FREQ=YEARLY;INTERVAL=50",
+    ]) {
+      expect([rule, isValidRRule(rule, "2026-10-04")]).toEqual([rule, false]);
+    }
+    for (const rule of [
+      "FREQ=MONTHLY;BYMONTHDAY=31",
+      "FREQ=MONTHLY;BYMONTHDAY=-1",
+      "FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=29",
+      "FREQ=DAILY;BYHOUR=23;BYMINUTE=59",
+    ]) {
+      expect([rule, isValidRRule(rule, "2026-10-04")]).toEqual([rule, true]);
+    }
+  });
+  test("plain words never produce a rule that can't occur", () => {
+    const parsed = parseRecurrence("pay rent every month on the 0th");
+    expect(parsed?.rrule).not.toContain("BYMONTHDAY=0");
+    expect(isValidRRule(parsed?.rrule ?? "", "2026-10-04")).toBe(true);
   });
 });
 

@@ -21,7 +21,10 @@ export const currencySchema = z
   .string()
   .regex(/^[A-Za-z]{3}$/, "Expected a 3-letter currency code")
   .transform((value) => value.toUpperCase());
-export const rruleSchema = z.string().max(200).refine(isValidRRule, "Unsupported repeat rule");
+export const rruleSchema = z
+  .string()
+  .max(200)
+  .refine((value) => isValidRRule(value), "Unsupported repeat rule, or one that never comes due");
 export const clockSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Expected a time like 21:30");

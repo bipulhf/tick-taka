@@ -11,6 +11,7 @@ import {
   type LocalDate,
   parseLocalDate,
   startOfWeek,
+  toLocalDate,
   weekdayOf,
 } from "./dates";
 import { toAsciiDigits } from "./digits";
@@ -99,10 +100,28 @@ export function parseRRule(text: string): RecurrenceRule {
   return rule;
 }
 
-export function isValidRRule(text: string): boolean {
+const inRange = (values: number[] | undefined, min: number, max: number) =>
+  values === undefined || values.every((v) => v >= min && v <= max);
+
+/** Whether every BY* part is a real value: month day 1-31 or -1 (last), month 1-12, hour 0-23. */
+export function hasValidRanges(rule: RecurrenceRule): boolean {
+  return (
+    (rule.byMonthDay === undefined ||
+      rule.byMonthDay.every((d) => d === -1 || (d >= 1 && d <= 31))) &&
+    inRange(rule.byMonth, 1, 12) &&
+    inRange(rule.byHour === undefined ? undefined : [rule.byHour], 0, 23) &&
+    inRange(rule.byMinute === undefined ? undefined : [rule.byMinute], 0, 59)
+  );
+}
+
+/**
+ * A rule is valid when it parses, its parts are in range and it actually occurs
+ * after `today`, so "every month on the 0th" can't be saved and never come due.
+ */
+export function isValidRRule(text: string, today: LocalDate = toLocalDate(Date.now())): boolean {
   try {
-    parseRRule(text);
-    return true;
+    const rule = parseRRule(text);
+    return hasValidRanges(rule) && nextOccurrence(rule, today) !== null;
   } catch {
     return false;
   }
@@ -397,7 +416,7 @@ export function parseRecurrence(
     const match = pattern.regex.exec(text);
     if (!match) continue;
     const rule = pattern.build(match, workdays);
-    if (!rule || rule.interval < 1) continue;
+    if (!rule || rule.interval < 1 || !hasValidRanges(rule)) continue;
     if (rule.freq === "WEEKLY" && rule.byDay && rule.byDay.length === 0) continue;
     let end = match.index + match[0].length;
     const clockMatch = CLOCK_AFTER.exec(text.slice(end));

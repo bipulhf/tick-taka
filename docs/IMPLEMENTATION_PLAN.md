@@ -13,6 +13,13 @@ commit.
   `READ_SMS`/`RECEIVE_SMS` to default SMS apps, and the owner chose not to hold
   message permissions at all, so the build blocks them. Receipt photos (AI scan) and
   quick-add cover the same capture need. Every SMS item below is marked *dropped*.
+- **The AI cap is server-side only** (spec: a cap set in Settings). Since `2b9bc5e`
+  the monthly cap comes from `AI_USER_MONTHLY_CAP_MICROS` and the owner
+  (`OWNER_EMAIL`) is never capped; there is no cap in Settings. The cap is checked
+  before every model call, not once per assistant turn.
+- **Assistant money writes are drafts.** Per the spec's "no AI feature saves records
+  without my confirmation", the app asks the assistant for money drafts and the user
+  saves or discards each one. Task and habit changes still apply at once, with Undo.
 
 ## Repository layout
 

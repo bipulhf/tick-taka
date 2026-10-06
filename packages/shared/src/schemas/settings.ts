@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { addDays, DEFAULT_TIME_ZONE } from "../dates";
+import { addDays, DEFAULT_TIME_ZONE, DEFAULT_WEEK_STARTS_ON } from "../dates";
 import { DEFAULT_WORKDAYS } from "../recurrence";
 import { clockSchema, currencySchema, idSchema, localDateSchema } from "./common";
 
@@ -30,7 +30,7 @@ export const settingsSchema = z.object({
   rewardTheme: z.string().nullable().default(null),
   /** Tiki's outfit: "cap", "scarf", "crown" or none. */
   tikiOutfit: z.string().nullable().default(null),
-  weekStartsOn: z.number().int().min(0).max(6).default(6),
+  weekStartsOn: z.number().int().min(0).max(6).default(DEFAULT_WEEK_STARTS_ON),
   workdays: z.array(z.number().int().min(0).max(6)).default(DEFAULT_WORKDAYS),
   /** Free minutes on a working day, used by the "does my day fit?" bar. */
   dayCapacityMinutes: z

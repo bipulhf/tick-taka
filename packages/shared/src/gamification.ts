@@ -3,7 +3,7 @@
  * day costs a freeze, never a penalty.
  */
 
-import { addDays, type LocalDate, monthOf, startOfWeek } from "./dates";
+import { addDays, DEFAULT_WEEK_STARTS_ON, type LocalDate, monthOf, startOfWeek } from "./dates";
 
 export const FREEZES_PER_MONTH = 2;
 
@@ -42,7 +42,7 @@ export function computeStreak(input: StreakInput): StreakResult {
   const done = new Set(input.doneDates);
   const skip = new Set(input.skipDates ?? []);
   const freezes = input.freezesPerMonth ?? FREEZES_PER_MONTH;
-  const weekStartsOn = input.weekStartsOn ?? 6;
+  const weekStartsOn = input.weekStartsOn ?? DEFAULT_WEEK_STARTS_ON;
   const unit = input.schedule === "daily" ? "day" : "week";
   const maxPeriods = input.maxPeriods ?? (unit === "day" ? 730 : 104);
   const thisMonth = monthOf(input.today);

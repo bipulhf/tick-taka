@@ -4,6 +4,8 @@
  */
 
 export const DEFAULT_TIME_ZONE = "Asia/Dhaka";
+/** 0 = Sunday … 6 = Saturday; weeks in Bangladesh start on Saturday. */
+export const DEFAULT_WEEK_STARTS_ON = 6;
 export const DAY_MS = 86_400_000;
 export const HOUR_MS = 3_600_000;
 export const MINUTE_MS = 60_000;

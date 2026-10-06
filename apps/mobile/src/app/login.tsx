@@ -3,12 +3,17 @@ import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tiki } from "@/components/tiki/tiki";
+import { Button } from "@/components/ui/button";
 import { GoogleLogo } from "@/components/ui/google-logo";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
-import { SignInCancelled, signInWithGoogle } from "@/lib/auth";
+import { confirmSignOut } from "@/features/settings/confirm-sign-out";
+import { profileStore, SignInCancelled, signInWithGoogle } from "@/lib/auth";
 import { API_URL } from "@/lib/config";
+import { usePendingWrites } from "@/lib/connection";
+import { plural } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
+import { useStore } from "@/lib/store";
 import { type ColorName, useColors } from "@/theme/colors";
 
 const HIGHLIGHTS: { label: string; icon: IconName; color: ColorName }[] = [
@@ -31,6 +36,9 @@ export default function LoginScreen() {
   const colors = useColors();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // A profile without a token: the session expired and this phone still holds their data.
+  const expired = useStore(profileStore);
+  const pending = usePendingWrites();
   const mood: TikiMood = busy ? "focused" : error ? "calm" : "happy";
 
   const submit = async () => {
@@ -84,12 +92,21 @@ export default function LoginScreen() {
         </View>
 
         <View className="gap-4 rounded-4xl bg-card p-5">
-          <View className="gap-1">
-            <Text variant="heading">Welcome</Text>
-            <Text variant="callout" tone="muted">
-              Sign in with your Google account. New here? This sets up your own space.
-            </Text>
-          </View>
+          {expired ? (
+            <View className="gap-1" accessibilityLiveRegion="polite">
+              <Text variant="heading">Sign in again</Text>
+              <Text variant="callout" tone="muted">
+                {`Your session ended. Sign in as ${expired.email} to carry on${pending > 0 ? ` and send the ${plural(pending, "change")} waiting on this phone` : ""}. Signing in with another account removes ${expired.name ?? expired.email}'s data from this phone.`}
+              </Text>
+            </View>
+          ) : (
+            <View className="gap-1">
+              <Text variant="heading">Welcome</Text>
+              <Text variant="callout" tone="muted">
+                Sign in with your Google account. New here? This sets up your own space.
+              </Text>
+            </View>
+          )}
           {error ? (
             <View
               accessibilityLiveRegion="polite"
@@ -121,6 +138,9 @@ export default function LoginScreen() {
           <Text variant="caption" tone="muted" className="text-center">
             Your tasks and money stay private to your account.
           </Text>
+          {expired ? (
+            <Button label="Sign out instead" variant="ghost" size="sm" onPress={confirmSignOut} />
+          ) : null}
         </View>
 
         <View className="flex-row items-center justify-center gap-1.5">

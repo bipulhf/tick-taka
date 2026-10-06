@@ -28,8 +28,8 @@ export class ServerUnreachableError extends Error {
 
 /**
  * Every request to the API goes through this ky instance: one place for the
- * timeout, the sign-in token and sign-out on 401. Error bodies are left for
- * callers to turn into ApiError; TanStack Query and the outbox own retries.
+ * timeout, the sign-in token and marking the session expired on 401. Error bodies
+ * are left for callers to turn into ApiError; TanStack Query and the outbox own retries.
  */
 export const http = ky.create({
   timeout: TIMEOUT_MS,
@@ -45,8 +45,12 @@ export const http = ky.create({
     ],
     afterResponse: [
       ({ request, response }) => {
-        // A refused sign-in is not an expired session: nothing to sign out of.
-        if (response.status === 401 && !request.url.includes("/auth/")) auth.onUnauthorized();
+        // A refused sign-in is not an expired session: there is no session yet.
+        if (response.status !== 401 || request.url.includes("/auth/google")) return;
+        // A 401 for a token that has since been refreshed says nothing about the new one.
+        const token = auth.token();
+        if (token && request.headers.get("authorization") === `Bearer ${token}`)
+          auth.onUnauthorized();
       },
     ],
   },

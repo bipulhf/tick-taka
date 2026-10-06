@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
-import { profileStore, signOut } from "@/lib/auth";
+import { profileStore } from "@/lib/auth";
 import { useStore } from "@/lib/store";
+import { confirmSignOut } from "./confirm-sign-out";
 
 /** The Google account this space belongs to, and the way out of it. */
 export function AccountSection() {
@@ -35,7 +36,7 @@ export function AccountSection() {
           ) : null}
         </View>
       </View>
-      <Button label="Sign out" icon="logout" variant="secondary" onPress={() => void signOut()} />
+      <Button label="Sign out" icon="logout" variant="secondary" onPress={confirmSignOut} />
     </Card>
   );
 }

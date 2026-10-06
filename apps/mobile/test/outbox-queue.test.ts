@@ -189,6 +189,43 @@ describe("outbox queue", () => {
     expect(received.map((r) => (r.body as { id: string }).id)).toEqual(["legacy", "saved", "new"]);
   });
 
+  test("writes queued while the saved queue is still loading don't overwrite it", async () => {
+    const saved: PersistedOutbox = {
+      version: 1,
+      userId: "u1",
+      entries: [
+        { id: "s", request: post("saved"), queuedAt: 0, attempts: 0, maybeDelivered: false },
+      ],
+    };
+    const { queue, state } = harness({ online: false });
+    let disk: unknown = saved;
+    let release = () => {};
+    const slowDisk = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const deps = (queue as unknown as { deps: OutboxDeps }).deps;
+    deps.load = async () => {
+      await slowDisk;
+      return disk;
+    };
+    deps.save = async (next) => {
+      disk = structuredClone(next);
+    };
+    const loading = queue.load();
+    void queue.enqueue(post("new"));
+    queue.setOwner("u1");
+    await queue.flushed();
+    expect(disk).toBe(saved);
+    release();
+    await loading;
+    await queue.flushed();
+    expect((disk as PersistedOutbox).entries.map((e) => e.request.body)).toEqual([
+      { id: "saved" },
+      { id: "new" },
+    ]);
+    expect(state.online).toBe(false);
+  });
+
   test("clearing empties the queue and the disk", async () => {
     const { queue, state } = harness({ online: false });
     await queue.load();

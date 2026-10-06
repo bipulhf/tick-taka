@@ -47,6 +47,8 @@ export class OutboxQueue {
   private entries: OutboxEntry[] = [];
   private userId: string | null = null;
   private loaded = false;
+  /** Cleared before the saved queue was read: what's on disk is not to be sent. */
+  private discardSaved = false;
   private running = false;
   private wake: (() => void) | null = null;
   private saving: Promise<void> = Promise.resolve();
@@ -90,10 +92,11 @@ export class OutboxQueue {
     const restored = [...legacy.map((request) => this.entry(request)), ...(saved?.entries ?? [])];
     // Only the first write can have been on its way when the app stopped.
     if (restored[0]) restored[0].maybeDelivered = true;
-    this.entries = [...restored, ...this.entries];
-    if (saved && this.userId === null) this.userId = saved.userId;
+    const queuedEarly = this.entries.length > 0;
+    this.entries = [...(this.discardSaved ? [] : restored), ...this.entries];
+    if (saved && !this.discardSaved && this.userId === null) this.userId = saved.userId;
     this.loaded = true;
-    if (legacy.length) this.persist();
+    if (legacy.length || queuedEarly || this.discardSaved) this.persist();
     this.changed();
     this.kick();
   }
@@ -132,6 +135,7 @@ export class OutboxQueue {
     const dropped = this.entries;
     this.entries = [];
     this.userId = null;
+    if (!this.loaded) this.discardSaved = true;
     for (const entry of dropped) this.settle(entry.id, null);
     this.persist();
     this.changed();
@@ -230,6 +234,8 @@ export class OutboxQueue {
   }
 
   private persist(): void {
+    // Until the saved queue has been read, writing would overwrite it.
+    if (!this.loaded) return;
     const state: PersistedOutbox = {
       version: 1,
       userId: this.userId,

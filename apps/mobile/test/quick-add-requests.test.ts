@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { startOfLocalDay, zonedTimeToUtc } from "@tick-taka/shared/dates";
 import type { AnyDraft } from "@tick-taka/shared/quick-add";
-import { applyOverrides, draftRequests } from "../src/features/quick-add/quick-add-requests";
+import {
+  applyOverrides,
+  draftRequests,
+  undoRequest,
+} from "../src/features/quick-add/quick-add-requests";
 
 const TZ = "Asia/Dhaka";
 
@@ -77,6 +81,31 @@ describe("quick-add writes", () => {
 
   test("nothing to save without an amount", () => {
     expect(draftRequests({ ...expense, amountMinor: null }, {}, null, "tx-1")).toBeNull();
+  });
+
+  test("Undo deletes the record the save created, by its phone-made id", () => {
+    const requests = draftRequests(expense, {}, "food", "tx-1") ?? [];
+    expect(undoRequest(requests)).toEqual({
+      method: "DELETE",
+      path: "/transactions/tx-1",
+      label: "Couldn't undo",
+    });
+    const timeEntry = draftRequests(
+      {
+        kind: "time_entry",
+        minutes: 90,
+        note: "",
+        areaId: null,
+        startedAt: 0,
+        endedAt: 1,
+        confidence: "high",
+      },
+      {},
+      null,
+      "te-1",
+    );
+    expect(undoRequest(timeEntry ?? [])?.path).toBe("/time-entries/te-1");
+    expect(undoRequest([])).toBeNull();
   });
 
   test("a task dated today is sent as open, not inbox", () => {

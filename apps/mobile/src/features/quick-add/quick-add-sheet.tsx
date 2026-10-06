@@ -15,7 +15,7 @@ import { useOutbox } from "@/lib/outbox";
 import { playSound } from "@/lib/sounds";
 import type { ColorName } from "@/theme/colors";
 import { useColors } from "@/theme/colors";
-import type { DayChoice } from "./quick-add-requests";
+import { type DayChoice, undoRequest } from "./quick-add-requests";
 import { useQuickAdd } from "./use-quick-add";
 
 const KINDS: { id: QuickAddKind; label: string }[] = [
@@ -95,7 +95,12 @@ export function QuickAddSheet({
     for (const request of requests) send(request);
     haptic.success();
     playSound("pop");
-    notify("Saved");
+    // Say what was understood, so a misparse is noticed and undone in one tap.
+    const undo = undoRequest(requests);
+    notify(
+      preview ? `Saved: ${preview}` : "Saved",
+      undo ? { label: "Undo", onPress: () => send(undo) } : undefined,
+    );
     router.back();
   };
 

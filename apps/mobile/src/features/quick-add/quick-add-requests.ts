@@ -172,3 +172,15 @@ export function draftRequests(
       ];
   }
 }
+
+/**
+ * Undo for a quick-add save: delete the record it created. Ids are made on the
+ * phone, so this works before the create has reached the server (the outbox
+ * sends them in order).
+ */
+export function undoRequest(requests: OutboxRequest[]): OutboxRequest | null {
+  const created = requests[0];
+  const id = (created?.body as { id?: unknown } | undefined)?.id;
+  if (created?.method !== "POST" || typeof id !== "string") return null;
+  return { method: "DELETE", path: `${created.path}/${id}`, label: "Couldn't undo" };
+}

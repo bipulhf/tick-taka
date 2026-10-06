@@ -34,9 +34,7 @@ describe("friendlyError", () => {
 
   test("known codes get their own words", () => {
     expect(friendlyError(apiError(401, "session_expired", "jwt expired"))).toContain("Sign in");
-    expect(friendlyError(apiError(404, "not_found", "Task not found"))).toContain(
-      "no longer here",
-    );
+    expect(friendlyError(apiError(404, "not_found", "Task not found"))).toContain("no longer here");
     expect(friendlyError(apiError(429, "ai_cap_reached", "cap"))).toContain("resets on the 1st");
   });
 

@@ -177,7 +177,7 @@ export function PlanHome() {
         <Group inset={60}>
           <ListRow
             icon="format-list-checks"
-            iconColor="grape"
+            iconColor="sky"
             title="Routines"
             subtitle="Morning and shutdown"
             chevron
@@ -193,14 +193,14 @@ export function PlanHome() {
           />
           <ListRow
             icon="chart-bar"
-            iconColor="mint"
+            iconColor="sky"
             title="Focus statistics"
             chevron
             onPress={() => router.push("/plan/focus-stats")}
           />
           <ListRow
             icon="weather-night"
-            iconColor="grape"
+            iconColor="muted"
             title="Someday"
             subtitle="Ideas parked for later"
             chevron
@@ -217,7 +217,7 @@ export function PlanHome() {
           {settings?.advancedViews.eisenhower ? (
             <ListRow
               icon="view-grid-outline"
-              iconColor="coral"
+              iconColor="muted"
               title="Eisenhower matrix"
               chevron
               onPress={() => router.push("/plan/eisenhower")}

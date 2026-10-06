@@ -107,7 +107,7 @@ export function MoneyHome() {
           {
             label: "Goals",
             icon: "piggy-bank-outline",
-            color: "grape",
+            color: "muted",
             onPress: () => router.push("/money/goals"),
           },
         ]}
@@ -185,7 +185,7 @@ export function MoneyHome() {
         <Group inset={60}>
           <ListRow
             icon="handshake-outline"
-            iconColor="grape"
+            iconColor="muted"
             title="Debts"
             subtitle="Who owes whom"
             chevron

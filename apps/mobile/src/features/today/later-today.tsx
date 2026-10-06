@@ -59,7 +59,7 @@ export function LaterToday({ data }: { data: TodayData }) {
       <ListRow
         key="fit"
         icon="scale-unbalanced"
-        iconColor="coral"
+        iconColor="muted"
         title="The day doesn't quite fit"
         subtitle={`${formatMinutes(overflow)} over your free time`}
         right={
@@ -123,7 +123,7 @@ export function LaterToday({ data }: { data: TodayData }) {
       <ListRow
         key="evening"
         icon="weather-night"
-        iconColor="grape"
+        iconColor="sky"
         title="This evening"
         subtitle={plural(data.evening.length, "task")}
         onPress={() => setEveningOpen(!eveningOpen)}
@@ -159,7 +159,7 @@ export function LaterToday({ data }: { data: TodayData }) {
       <ListRow
         key="recap"
         icon="chart-line"
-        iconColor="grape"
+        iconColor="muted"
         title="Your weekly recap is ready"
         chevron
         onPress={() => router.push("/review/weekly")}

@@ -6,6 +6,8 @@ const FILLS = {
   coral: "bg-coral",
   grape: "bg-grape",
   mango: "bg-mango",
+  /** Neutral progress, for anything that isn't time, money or a habit. */
+  ink: "bg-ink",
 } as const;
 
 export function ProgressBar({

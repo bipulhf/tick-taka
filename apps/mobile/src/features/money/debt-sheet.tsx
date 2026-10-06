@@ -164,7 +164,6 @@ function DebtForm({ id }: { id: string | null }) {
       <View className="flex-row gap-2">
         <Chip
           label={remind ? `Remind ${formatLocalDate(remind)}` : "Add a reminder"}
-          tone="grape"
           selected={Boolean(remind)}
           onPress={async () => {
             const picked = await pickDate();

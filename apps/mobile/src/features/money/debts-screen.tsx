@@ -141,7 +141,7 @@ export function DebtsScreen() {
                             tone={debt.direction === "owed_to_me" ? "mint" : "coral"}
                           />
                         </View>
-                        <ProgressBar value={debt.repaidMinor / debt.principalMinor} tone="grape" />
+                        <ProgressBar value={debt.repaidMinor / debt.principalMinor} tone="ink" />
                         <Text variant="caption" tone="muted">
                           {formatAmount(debt.repaidMinor, { currency: debt.currency })} of{" "}
                           {formatAmount(debt.principalMinor, { currency: debt.currency })} repaid

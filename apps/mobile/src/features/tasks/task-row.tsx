@@ -72,7 +72,7 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji }: Task
             {task.title}
           </Text>
           {meta.length || deadlineSoon ? (
-            <Text variant="callout" tone={deadlineSoon ? "coral" : "muted"}>
+            <Text variant="callout" tone={deadlineSoon ? "ink" : "muted"}>
               {[
                 ...meta,
                 deadlineSoon && task.deadlineAt
@@ -84,7 +84,7 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji }: Task
             </Text>
           ) : null}
         </View>
-        {task.priority === "high" ? <Icon name="flag" size={20} color="coral" /> : null}
+        {task.priority === "high" ? <Icon name="flag" size={20} color="ink" /> : null}
       </SwipeRowPressable>
     </SwipeRow>
   );

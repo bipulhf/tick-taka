@@ -203,7 +203,7 @@ export function RoutineRunner({ id, startInEdit }: { id: string; startInEdit: bo
         <Editor routine={routine} onDone={() => setEditing(false)} />
       ) : (
         <>
-          <ProgressBar value={total ? checked.size / total : 0} tone="grape" />
+          <ProgressBar value={total ? checked.size / total : 0} tone="sky" />
           {total === 0 ? (
             <EmptyState
               title="No steps yet"
@@ -215,7 +215,7 @@ export function RoutineRunner({ id, startInEdit }: { id: string; startInEdit: bo
           {routine.steps.map((step) => (
             <Card key={step.id} className="flex-row items-center gap-2 py-1 pl-1">
               <Checkbox
-                tone="grape"
+                tone="sky"
                 checked={checked.has(step.id)}
                 label={step.title}
                 onChange={(on) => {

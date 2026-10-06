@@ -57,7 +57,7 @@ export function AiSettings() {
             <Group inset={60}>
               <ListRow
                 icon="chart-bar"
-                iconColor="grape"
+                iconColor="muted"
                 title={`${dollars(ai.data.monthSpendMicros)} this month`}
                 subtitle={
                   ai.data.monthlyCapMicros === null

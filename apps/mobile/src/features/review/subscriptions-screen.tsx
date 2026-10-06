@@ -115,8 +115,8 @@ export function SubscriptionsScreen() {
                   ]}
                 >
                   <View className="min-h-[68px] flex-row items-center gap-3 bg-card px-4 py-2">
-                    <View className="h-10 w-10 items-center justify-center rounded-full bg-grape/15">
-                      <Icon name="repeat-variant" color="grape" size={20} />
+                    <View className="h-10 w-10 items-center justify-center rounded-full bg-coral/15">
+                      <Icon name="repeat-variant" color="coral" size={20} />
                     </View>
                     <View className="flex-1">
                       <Text variant="strong" numberOfLines={1}>

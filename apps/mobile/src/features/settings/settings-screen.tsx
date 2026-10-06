@@ -47,7 +47,7 @@ export function SettingsScreen() {
         title: "Appearance",
         subtitle: s ? join(THEMES[s.theme], accent) : "Theme, accent, Tiki",
         icon: "palette-outline",
-        color: "grape",
+        color: "muted",
       },
       {
         href: "/settings/planning",
@@ -74,7 +74,7 @@ export function SettingsScreen() {
         title: "Areas and categories",
         subtitle: "Add, rename or remove them",
         icon: "shape-outline",
-        color: "mango",
+        color: "muted",
       },
     ],
     [
@@ -88,14 +88,14 @@ export function SettingsScreen() {
             )
           : "Quiet hours, sounds",
         icon: "bell-outline",
-        color: "mango",
+        color: "muted",
       },
       {
         href: "/settings/privacy",
         title: "Privacy and security",
         subtitle: join(s?.appLock ? "Fingerprint lock on" : "No lock", privacy && "amounts hidden"),
         icon: "shield-lock-outline",
-        color: "coral",
+        color: "muted",
       },
       {
         href: "/settings/ai",
@@ -106,7 +106,7 @@ export function SettingsScreen() {
             ? `On · ${dollars(ai.data.monthSpendMicros)} this month`
             : "Off",
         icon: "creation",
-        color: "grape",
+        color: "muted",
       },
     ],
     [

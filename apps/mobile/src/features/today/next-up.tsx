@@ -117,7 +117,7 @@ export function NextUp({
                 <ListRow
                   key={`debt-${item.id}`}
                   icon="handshake-outline"
-                  iconColor="grape"
+                  iconColor="muted"
                   title={
                     item.direction === "owed_to_me"
                       ? `${item.person} owes you`

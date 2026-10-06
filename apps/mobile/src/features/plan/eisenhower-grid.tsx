@@ -18,7 +18,7 @@ const QUADRANTS = [
     hint: "Urgent · important",
     urgent: true,
     important: true,
-    tone: "coral" as const,
+    tone: "ink" as const,
   },
   {
     id: "plan",
@@ -34,7 +34,7 @@ const QUADRANTS = [
     hint: "Urgent, not important",
     urgent: true,
     important: false,
-    tone: "grape" as const,
+    tone: "muted" as const,
   },
   {
     id: "drop",
@@ -42,7 +42,7 @@ const QUADRANTS = [
     hint: "Neither",
     urgent: false,
     important: false,
-    tone: "grape" as const,
+    tone: "muted" as const,
   },
 ];
 
@@ -112,7 +112,7 @@ export function EisenhowerGrid() {
                       <Draggable key={task.id} id={task.id}>
                         <CompactTask
                           task={task}
-                          tone={quadrant.tone}
+                          tone={quadrant.tone === "sky" ? "sky" : "neutral"}
                           // Screen readers can't drag between boxes; offer each other box instead.
                           actions={QUADRANTS.filter((q) => q.id !== quadrant.id).map((q) => ({
                             label: `Move to ${q.title}`,

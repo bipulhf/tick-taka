@@ -23,10 +23,10 @@ interface Entry {
 
 /** The rituals used most, as big shortcuts at the top. */
 const RITUALS: { href: string; label: string; icon: IconName; color: ColorName }[] = [
-  { href: "/review/shutdown", label: "Shutdown", icon: "weather-night", color: "grape" },
+  { href: "/review/shutdown", label: "Shutdown", icon: "weather-night", color: "sky" },
   { href: "/review/weekly", label: "Weekly", icon: "calendar-week", color: "sky" },
   { href: "/review/insights", label: "Reports", icon: "chart-bar", color: "mint" },
-  { href: "/review/payday", label: "Payday", icon: "cash-multiple", color: "mango" },
+  { href: "/review/payday", label: "Payday", icon: "cash-multiple", color: "mint" },
 ];
 
 const ENTRIES: Entry[] = [
@@ -94,7 +94,7 @@ export function ReviewHome() {
             {progress.dailyGoal.goal > 0 ? (
               <ListRow
                 icon="fire"
-                iconColor="mango"
+                iconColor="muted"
                 title={streakText("Daily goal", progress.dailyGoal.streak.current)}
                 subtitle={[
                   `${plural(progress.dailyGoal.goal, "task")} a day`,
@@ -119,7 +119,7 @@ export function ReviewHome() {
         <Group>
           <ListRow
             icon="calendar-week"
-            iconColor="mango"
+            iconColor="muted"
             title="Weekly review"
             subtitle="It's Sunday, a good day for it"
             chevron
@@ -134,7 +134,7 @@ export function ReviewHome() {
             <ListRow
               key={entry.href}
               icon={entry.icon}
-              iconColor="grape"
+              iconColor="muted"
               title={entry.title}
               subtitle={entry.hint}
               chevron

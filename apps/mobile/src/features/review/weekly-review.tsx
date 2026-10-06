@@ -64,7 +64,7 @@ export function WeeklyReview() {
         {STEPS.map((label, i) => (
           <View
             key={label}
-            className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-grape" : "bg-line"}`}
+            className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-ink" : "bg-line"}`}
           />
         ))}
       </View>

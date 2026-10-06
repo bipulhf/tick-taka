@@ -1,4 +1,5 @@
 import { send } from "@/lib/api";
+import { phoneWrites } from "@/lib/phone-writes";
 import { scheduleRefresh } from "@/lib/query-client";
 import { changedPaths, syncChangesSchema } from "@/lib/sync-paths";
 import { chatStore, updateMessage } from "./chat-store";
@@ -9,6 +10,10 @@ export const SETTLE_MS = 15_000;
 /** After a week, nobody is going to undo it from the chat any more. */
 const GIVE_UP_MS = 7 * 86_400_000;
 const running = new Set<string>();
+
+/** Rows Tiki already reported, and rows the phone's own outbox wrote meanwhile. */
+const ownOrKnown = (actions: Parameters<typeof knownIds>[0]) =>
+  new Set([...knownIds(actions), ...phoneWrites.ids()]);
 
 const NOTE =
   "Tiki kept working after the connection dropped. These changes were made; undo any you didn't want.";
@@ -33,7 +38,7 @@ export async function recoverDroppedTurns(): Promise<void> {
         await send("GET", `/sync/changes?since=${window.since - 1}`),
       );
       const found = reply.success
-        ? recoveredActions(reply.data.changes, window, knownIds(message.actions ?? []))
+        ? recoveredActions(reply.data.changes, window, ownOrKnown(message.actions ?? []))
         : [];
       updateMessage(message.id, (m) => ({
         ...m,

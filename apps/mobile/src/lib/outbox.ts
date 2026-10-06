@@ -8,6 +8,7 @@ import { notify } from "./notify";
 import { type NewExpense, withNewExpense } from "./optimistic-spend";
 import type { FailureInfo, OutboxRequest } from "./outbox-policy";
 import { OutboxQueue } from "./outbox-queue";
+import { phoneWrites } from "./phone-writes";
 import { keys, type TodayData } from "./queries";
 import { queryClient, scheduleRefresh, takeLegacyOutbox } from "./query-client";
 import { secureStorage } from "./secure-storage";
@@ -46,7 +47,10 @@ export const outbox = new OutboxQueue({
     }
   },
   save: (state) => secureStorage.setItem(STORAGE_KEY, JSON.stringify(state)),
-  onSent: (request) => scheduleRefresh(request.path),
+  onSent: (request, response) => {
+    phoneWrites.record(request.path, request.body, response);
+    scheduleRefresh(request.path);
+  },
   onRejected: (request, error) => {
     notify(`${request.label ? `${request.label}. ` : ""}${friendlyError(error, "save")}`);
     // Undo the optimistic change on screen.

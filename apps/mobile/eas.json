@@ -9,11 +9,11 @@
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_API_URL": "https://tt-api.bipulhf.dev" }
+      "env": { "EXPO_PUBLIC_API_URL": "https://tick.mehedismathacademy.com" }
     },
     "production": {
       "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_API_URL": "https://tt-api.bipulhf.dev" }
+      "env": { "EXPO_PUBLIC_API_URL": "https://tick.mehedismathacademy.com" }
     }
   }
 }

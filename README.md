@@ -124,7 +124,12 @@ things you buy often, and buttons to add a task, log an expense or start focusin
 - Chat or talk, in Bangla or English, to add, change, delete or ask about anything, with
   undo for every change.
 - Weekly coach, budget suggestions, "break it down" for big tasks.
-- A monthly AI budget per user, which the server caps.
+- A monthly AI budget per user, which the server checks before every model call.
+- Deletions always wait for your tap. A client that sends `draftMoney: true` with
+  `POST /ai/assistant` gets money changes back as drafts (`done.drafts`) to confirm too,
+  as the spec asks; the request a draft describes is what the phone sends on confirm.
+- AI requests time out after 25 s (one retry), and a failure or an unusable answer is a
+  `502 ai_error`, so the app falls back to its plain forms.
 
 **Privacy and accounts**
 - Google sign-in; one database per user, so nobody can reach anyone else's data.
@@ -260,10 +265,17 @@ App (`apps/mobile/.env`, and `env` in `eas.json` for EAS builds):
 Run exactly one pm2 instance in fork mode: SQLite wants a single writer and the
 scheduled jobs must run once.
 
+One host and port everywhere: the API is served at `https://tick.mehedismathacademy.com`
+(`server_name` in `deploy/nginx-tick-taka.conf`, `EXPO_PUBLIC_API_URL` in
+`apps/mobile/eas.json`) and listens on `127.0.0.1:3003` (`proxy_pass` in the Nginx file,
+`PORT` in the server's `.env`). Locally the API stays on the default port 3000, which the
+Android emulator reaches as `http://10.0.2.2:3000`.
+
 ```bash
-git clone <repo> ~/tick-taka && cd ~/tick-taka && bun install
+git clone <repo> ~/tick-taka && cd ~/tick-taka && bun install --frozen-lockfile
 mkdir -p ~/tick-taka-data/backups ~/tick-taka-data/uploads
-nano apps/api/.env                # HOST=127.0.0.1, PORT, DB_PATH=~/tick-taka-data/app.db, secrets
+nano apps/api/.env                # HOST=127.0.0.1, PORT=3003, TRUST_PROXY=true,
+                                  # DB_PATH=~/tick-taka-data/app.db, secrets
 chmod 600 apps/api/.env
 cd apps/api && pm2 start ecosystem.config.cjs && pm2 save && pm2 startup
 pm2 install pm2-logrotate
@@ -273,7 +285,12 @@ sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d tick.mehedismathacademy.com
 ```
 
-Updating: `git pull && bun install && pm2 restart tick-taka-api`.
+Certbot adds the HTTPS server block and the HTTP→HTTPS redirect to the installed copy;
+keep its `location /ai/` block (a 120 s read timeout and no buffering, for slow AI calls
+and the assistant's event stream) when you edit it later. Logs are one JSON line per
+request (`pm2 logs tick-taka-api`), each with the `x-request-id` the response carries.
+
+Updating: `git pull && bun install --frozen-lockfile && pm2 restart tick-taka-api`.
 
 ### Backups
 

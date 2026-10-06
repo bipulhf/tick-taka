@@ -50,7 +50,9 @@ export function Checkbox({ checked, onChange, size = "md", tone = "sky", label }
         style={style}
         className={`${dimension} items-center justify-center rounded-full border-2 ${checked ? FILL[tone] : RING[tone]}`}
       >
-        {checked ? <Icon name="check-bold" size={size === "lg" ? 20 : 16} color="white" /> : null}
+        {checked ? (
+          <Icon name="check-bold" size={size === "lg" ? 20 : 16} color="onAccent" />
+        ) : null}
       </Animated.View>
     </Pressable>
   );

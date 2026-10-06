@@ -79,6 +79,7 @@ export function CalendarView() {
       right={
         <View className="flex-row">
           <Pressable
+            accessibilityRole="button"
             className="h-12 w-12 items-center justify-center"
             onPress={() => setMonth(addMonths(month, -1))}
             accessibilityLabel="Previous month"
@@ -86,6 +87,7 @@ export function CalendarView() {
             <Icon name="chevron-left" />
           </Pressable>
           <Pressable
+            accessibilityRole="button"
             className="h-12 w-12 items-center justify-center"
             onPress={() => setMonth(addMonths(month, 1))}
             accessibilityLabel="Next month"
@@ -127,30 +129,37 @@ export function CalendarView() {
               <Pressable
                 key={date}
                 onPress={() => setSelected(date)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
                 accessibilityLabel={`${formatLocalDate(date)}, ${count} tasks${hasBills ? ", bills due" : ""}`}
-                className={`h-14 w-[14.28%] items-center justify-center rounded-xl ${isSelected ? "bg-sky" : date === today ? "bg-sky/15" : ""}`}
+                className={`min-h-14 w-[14.28%] items-center justify-center rounded-xl py-1 ${isSelected ? "bg-ink" : date === today ? "bg-sky/15" : ""}`}
               >
                 <Text
                   variant="strong"
-                  tone={isSelected ? "inverse" : inMonth ? "ink" : "muted"}
+                  tone={isSelected ? "background" : inMonth ? "ink" : "muted"}
                   numeric
+                  maxFontSizeMultiplier={1.3}
                 >
                   {Number(date.slice(8))}
                 </Text>
                 <View className="mt-0.5 h-1.5 flex-row gap-0.5">
+                  {/* Tasks are a sky dot, timed tasks a sky ring, bills a coral dot. */}
                   {count > 0 ? (
                     <View
-                      className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-white" : "bg-sky"}`}
+                      className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-background" : "bg-sky"}`}
                     />
                   ) : null}
-                  {timed ? <View className="h-1.5 w-1.5 rounded-full bg-grape" /> : null}
-                  {hasBills ? <View className="h-1.5 w-1.5 rounded-full bg-coral" /> : null}
+                  {timed ? (
+                    <View
+                      className={`h-1.5 w-1.5 rounded-full border ${isSelected ? "border-background" : "border-sky"}`}
+                    />
+                  ) : null}
+                  {hasBills ? (
+                    <View
+                      className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-background" : "bg-coral"}`}
+                    />
+                  ) : null}
                 </View>
-                {count > 2 ? (
-                  <Text className="text-[9px]" tone={isSelected ? "inverse" : "muted"}>
-                    {count}
-                  </Text>
-                ) : null}
               </Pressable>
             );
           })}

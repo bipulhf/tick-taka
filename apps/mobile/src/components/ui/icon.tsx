@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { type ColorName, useColors } from "@/theme/colors";
+import { ON_ACCENT } from "@/theme/palette";
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
-
-const ON_MANGO = "#23202B";
 
 export function Icon({
   name,
@@ -13,9 +12,10 @@ export function Icon({
 }: {
   name: IconName;
   size?: number;
-  color?: ColorName | "white" | "onAccent";
+  /** "onAccent" for icons on mango or any other semantic fill: always dark. */
+  color?: ColorName | "onAccent";
 }) {
   const colors = useColors();
-  const value = color === "white" ? "#FFFFFF" : color === "onAccent" ? ON_MANGO : colors[color];
+  const value = color === "onAccent" ? ON_ACCENT : colors[color];
   return <MaterialCommunityIcons name={name} size={size} color={value} />;
 }

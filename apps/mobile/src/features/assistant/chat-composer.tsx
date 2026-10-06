@@ -20,7 +20,7 @@ function RoundButton({
 }) {
   const look = {
     primary: "bg-mango",
-    plain: "border border-line bg-card",
+    plain: "border border-line-strong bg-card",
     stop: "bg-coral",
   }[variant];
   return (
@@ -31,11 +31,7 @@ function RoundButton({
       accessibilityLabel={label}
       className={`h-12 w-12 items-center justify-center rounded-full active:opacity-70 ${look} ${disabled ? "opacity-40" : ""}`}
     >
-      <Icon
-        name={icon}
-        size={24}
-        color={variant === "primary" ? "onAccent" : variant === "stop" ? "background" : "ink"}
-      />
+      <Icon name={icon} size={24} color={variant === "plain" ? "ink" : "onAccent"} />
     </Pressable>
   );
 }

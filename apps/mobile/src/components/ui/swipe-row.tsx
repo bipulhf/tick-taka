@@ -31,12 +31,13 @@ export interface RowAction {
   onPress: () => void;
 }
 
-const TONES: Record<RowAction["tone"], string> = {
-  coral: "bg-coral",
-  sky: "bg-sky",
-  grape: "bg-grape",
-  mango: "bg-mango",
-  muted: "bg-muted",
+/** Tray fills with their text colour: dark on semantic fills, inverted ink for neutral. */
+const TONES: Record<RowAction["tone"], { box: string; text: "onAccent" | "background" }> = {
+  coral: { box: "bg-coral", text: "onAccent" },
+  sky: { box: "bg-sky", text: "onAccent" },
+  grape: { box: "bg-grape", text: "onAccent" },
+  mango: { box: "bg-mango", text: "onAccent" },
+  muted: { box: "bg-ink", text: "background" },
 };
 
 /** Only one row's tray is open at a time; opening another closes this one. */
@@ -124,7 +125,7 @@ export function SwipeRow({
           style={rightHint}
           className={`absolute inset-0 justify-center pl-5 ${right.className}`}
         >
-          <Icon name={right.icon} color="white" />
+          <Icon name={right.icon} color="onAccent" />
         </Animated.View>
       ) : null}
       {actions.length ? (
@@ -138,11 +139,11 @@ export function SwipeRow({
               onPress={() => run(action)}
               accessibilityRole="button"
               accessibilityLabel={action.label}
-              className={`items-center justify-center gap-1 active:opacity-80 ${TONES[action.tone]}`}
+              className={`items-center justify-center gap-1 active:opacity-80 ${TONES[action.tone].box}`}
               style={{ width: ACTION_WIDTH }}
             >
-              <Icon name={action.icon} color="white" size={22} />
-              <Text variant="caption" tone="inverse">
+              <Icon name={action.icon} color={TONES[action.tone].text} size={22} />
+              <Text variant="caption" tone={TONES[action.tone].text}>
                 {action.label}
               </Text>
             </Pressable>

@@ -40,8 +40,15 @@ export function ShortcutRow({ items }: { items: Shortcut[] }) {
           >
             <Icon name={item.icon} size={28} color={item.color} />
             {item.badge ? (
-              <View className="absolute -right-1 -top-1 min-w-5 items-center rounded-full bg-coral px-1">
-                <Text className="text-[11px] font-nunito-bold text-white">{item.badge}</Text>
+              <View className="absolute -right-1 -top-1 min-w-6 items-center rounded-full bg-coral px-1.5">
+                <Text
+                  variant="caption"
+                  tone="onAccent"
+                  className="font-nunito-bold"
+                  maxFontSizeMultiplier={1.3}
+                >
+                  {item.badge}
+                </Text>
               </View>
             ) : null}
           </View>

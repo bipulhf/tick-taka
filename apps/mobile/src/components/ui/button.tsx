@@ -1,18 +1,19 @@
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { haptic } from "@/lib/haptics";
+import { useColors } from "@/theme/colors";
+import { ON_ACCENT } from "@/theme/palette";
 import { Icon, type IconName } from "./icon";
 import { Text, type TextTone } from "./text";
 
-const VARIANTS: Record<
-  string,
-  { box: string; text: TextTone; icon: "onAccent" | "white" | "ink" }
-> = {
-  primary: { box: "bg-mango", text: "onAccent", icon: "onAccent" },
-  time: { box: "bg-sky", text: "inverse", icon: "white" },
-  money: { box: "bg-mint", text: "onAccent", icon: "onAccent" },
-  secondary: { box: "bg-card border border-line-strong", text: "ink", icon: "ink" },
-  ghost: { box: "bg-transparent", text: "ink", icon: "ink" },
-};
+const VARIANTS: Record<string, { box: string; text: TextTone; icon: "onAccent" | "sky" | "ink" }> =
+  {
+    primary: { box: "bg-mango", text: "onAccent", icon: "onAccent" },
+    /** Time actions: outlined like secondary, marked by a sky icon instead of a large sky fill. */
+    time: { box: "bg-card border border-line-strong", text: "ink", icon: "sky" },
+    money: { box: "bg-mint", text: "onAccent", icon: "onAccent" },
+    secondary: { box: "bg-card border border-line-strong", text: "ink", icon: "ink" },
+    ghost: { box: "bg-transparent", text: "ink", icon: "ink" },
+  };
 
 export interface ButtonProps {
   label: string;
@@ -37,6 +38,7 @@ export function Button({
   className,
 }: ButtonProps) {
   const style = VARIANTS[variant]!;
+  const colors = useColors();
   return (
     <Pressable
       accessibilityRole="button"
@@ -51,7 +53,7 @@ export function Button({
       className={`${style.box} ${size === "md" ? "min-h-[52px] px-6" : "min-h-11 px-4"} flex-row items-center justify-center rounded-2xl active:opacity-80 ${disabled ? "opacity-40" : ""} ${className ?? ""}`}
     >
       {loading ? (
-        <ActivityIndicator color={style.icon === "white" ? "#fff" : "#23202B"} />
+        <ActivityIndicator color={style.text === "onAccent" ? ON_ACCENT : colors.ink} />
       ) : (
         <View className="flex-row items-center gap-2">
           {icon ? <Icon name={icon} size={size === "md" ? 22 : 18} color={style.icon} /> : null}

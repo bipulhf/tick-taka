@@ -182,7 +182,7 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
               onPress={stop}
             />
           ) : (
-            <Button label="Start focus" variant="time" icon="play" onPress={startWork} />
+            <Button label="Start focus" icon="play" onPress={startWork} />
           )}
           <Button label="Close" variant="ghost" onPress={() => router.back()} />
         </View>

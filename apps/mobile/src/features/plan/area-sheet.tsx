@@ -116,7 +116,7 @@ function AreaForm({ area, count }: { area: Area | undefined; count: number }) {
             className="h-11 w-11 items-center justify-center rounded-full"
             style={{ backgroundColor: c }}
           >
-            {color === c ? <Icon name="check" color="white" size={22} /> : null}
+            {color === c ? <Icon name="check" color="onAccent" size={22} /> : null}
           </Pressable>
         ))}
       </View>

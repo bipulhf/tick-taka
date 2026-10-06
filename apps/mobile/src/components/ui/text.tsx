@@ -23,9 +23,8 @@ const TONES = {
   coral: "text-coral-text",
   grape: "text-grape-text",
   mango: "text-mango-text",
-  /** On mango or other light accent fills: always dark. */
+  /** On mango and every other semantic fill (sky, mint, coral, grape): always dark. */
   onAccent: "text-on-mango",
-  inverse: "text-white",
   /** For text on an ink-coloured surface; flips with the theme. */
   background: "text-background",
   /** Mango action text on an ink-coloured surface (snackbar Undo). */

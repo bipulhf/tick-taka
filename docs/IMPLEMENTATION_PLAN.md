@@ -6,6 +6,14 @@ The spec ships all 63 features in one release. This plan orders the work so each
 phase builds on a tested foundation. Every phase ends with tests passing and one
 commit.
 
+## Scope changes
+
+- **SMS auto-capture is dropped** (spec pp. 17–18, build checklist p. 36: "SMS
+  auto-capture and review panel", "Receipt and SMS scan"). Google Play restricts
+  `READ_SMS`/`RECEIVE_SMS` to default SMS apps, and the owner chose not to hold
+  message permissions at all, so the build blocks them. Receipt photos (AI scan) and
+  quick-add cover the same capture need. Every SMS item below is marked *dropped*.
+
 ## Repository layout
 
 ```
@@ -26,11 +34,11 @@ tick-taka/
       src/features/<name>/  screens' components, hooks, queries
       src/components/       shared UI (Card, Chip, Sheet, Amount, Tiki…)
       src/lib/              api client, query client, offline queue, notifications
-      modules/sms-reader/   local Expo module (Kotlin)
+      modules/sms-reader/   local Expo module (Kotlin) (dropped)
   packages/
     shared/                 Zod schemas, domain logic shared by phone and server:
                             quick-add parser, recurrence parser, calculator,
-                            SMS templates/fingerprint, money/date helpers
+                            money/date helpers (SMS templates dropped)
 ```
 
 The mobile app imports only `AppType` from `apps/api` for the Hono RPC client,
@@ -49,7 +57,7 @@ plus pure logic and schemas from `packages/shared`.
 - Calculator keypad expression evaluator (`1850/3` → 617).
 - Recurrence in plain words → RRULE, and next-occurrence computation.
 - Quick-add parser (expense / income / task / time entry, account and category hints).
-- SMS: OTP filter, template builder from samples, parser, masking, fingerprint.
+- ~~SMS: OTP filter, template builder from samples, parser, masking, fingerprint.~~ Dropped.
 - Zod schemas for every API entity (single source of truth for validation).
 - Test: unit tests for every parser and helper.
 
@@ -76,7 +84,7 @@ plus pure logic and schemas from `packages/shared`.
   budgets (3 buckets, rollover, spent-so-far), recurring bills/income (pay /
   received, next_due_at), goals (+ suggested monthly amount), debts (+ payoff
   forecast), events, shopping lists (checkout to one transaction),
-  category rules (learn from corrections), SMS imports, receipt uploads.
+  category rules (learn from corrections), receipt uploads (SMS imports dropped).
 - Test: balance reconciliation, budget math, recurring pay flow.
 
 ### Phase 5 — Cross-cutting API
@@ -106,7 +114,7 @@ plus pure logic and schemas from `packages/shared`.
 ### Phase 8 — Today + Quick-add
 - Today screen (greeting + Tiki mood, safe-to-spend, top three, timeline with
   day-fit bar, habits row, running timer bar, This Evening, upcoming bills,
-  SMS banner), quick-add sheet (on-phone parser, AI fallback, type chips,
+  ~~SMS banner~~ dropped), quick-add sheet (on-phone parser, AI fallback, type chips,
   preview line, calculator keypad, cost in hours), sparks + confetti.
 
 ### Phase 9 — Plan + time features
@@ -117,18 +125,18 @@ plus pure logic and schemas from `packages/shared`.
 ### Phase 10 — Money screens
 - Accounts, transactions, categories, budgets (buckets), bills, expected income,
   goals, debts (payoff forecast), events, shopping list, money calendar,
-  balance check, SMS review panel, receipt photo.
+  balance check, receipt photo (SMS review panel dropped).
 
 ### Phase 11 — Review + settings
 - Insights/reports charts, area dashboard, hourly rates, weekly recap card,
   weekly/monthly review flows, daily shutdown, payday plan, AI coach,
   ask my data, budget suggestions, settings (AI cap, advanced views, daily
-  goal, vacation mode, SMS sources, quiet hours, export).
+  goal, vacation mode, quiet hours (SMS sources dropped), export).
 
 ### Phase 12 — Android native features
 - Local notifications with quiet hours, focus timer notification,
-  `sms-reader` Kotlin module (getMessagesSince, onSmsReceived), SMS scan on
-  open + notification actions, home-screen widget, app shortcuts, EAS config.
+  notification actions (the `sms-reader` module and SMS scan are dropped),
+  home-screen widget, app shortcuts, EAS config.
 
 ### Phase 13 — Docs and deploy
 - README with setup, VPS deploy (pm2 + Nginx + Certbot), backup restore check.
@@ -140,5 +148,3 @@ plus pure logic and schemas from `packages/shared`.
   mobile pure logic).
 - `bunx expo export --platform android` in `apps/mobile` — the whole app bundles with
   Metro for Android.
-- `./gradlew :sms-reader:compileDebugKotlin` after `expo prebuild` — the Kotlin module
-  compiles against the Expo modules core.

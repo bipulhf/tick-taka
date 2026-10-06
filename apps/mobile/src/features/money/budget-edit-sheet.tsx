@@ -90,6 +90,7 @@ export function BudgetEditSheet({
               }
               keyboardType="decimal-pad"
               placeholder="0"
+              accessibilityLabel={`${line.name} limit`}
               className="w-28"
             />
             <Switch

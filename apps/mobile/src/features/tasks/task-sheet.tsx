@@ -259,6 +259,7 @@ export function TaskSheet({ id }: { id: string | null }) {
         value={form.title}
         onChangeText={(v) => set("title", v)}
         placeholder="What needs doing?"
+        accessibilityLabel="Title"
         autoFocus={!id}
       />
       <TextField
@@ -498,7 +499,11 @@ export function TaskSheet({ id }: { id: string | null }) {
         </>
       ) : null}
       {id ? (
-        <Pressable onPress={() => router.replace(`/plan/logbook`)} className="items-center py-2">
+        <Pressable
+          onPress={() => router.replace(`/plan/logbook`)}
+          accessibilityRole="link"
+          className="items-center py-2"
+        >
           <Text variant="caption" tone="muted">
             Finished tasks live in the Logbook
           </Text>

@@ -135,6 +135,7 @@ function GoalForm({ id }: { id: string | null }) {
         <Switch
           value={createTasks}
           onValueChange={setCreateTasks}
+          accessibilityLabel="Add a monthly move money to the jar task"
           trackColor={{ true: colors.mint, false: colors.lineStrong }}
         />
       </View>

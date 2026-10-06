@@ -1,4 +1,4 @@
-import { forwardRef, useState } from "react";
+import { forwardRef, useId, useState } from "react";
 import { Pressable, TextInput, type TextInputProps, View } from "react-native";
 import { useColors } from "@/theme/colors";
 import { Icon } from "./icon";
@@ -10,7 +10,10 @@ export interface TextFieldProps extends TextInputProps {
   className?: string;
 }
 
-/** Labelled input; password fields (secureTextEntry) get a show/hide eye. */
+/**
+ * Labelled input; password fields (secureTextEntry) get a show/hide eye. The visible label
+ * is linked to the input for screen readers; without one, the placeholder names it.
+ */
 export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
   { label, error, className, secureTextEntry, ...props },
   ref,
@@ -18,10 +21,11 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   const colors = useColors();
   const [revealed, setRevealed] = useState(false);
   const secret = Boolean(secureTextEntry);
+  const labelId = useId();
   return (
     <View className={`gap-1.5 ${className ?? ""}`}>
       {label ? (
-        <Text variant="label" tone="muted">
+        <Text variant="label" tone="muted" nativeID={labelId}>
           {label}
         </Text>
       ) : null}
@@ -32,7 +36,9 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           secureTextEntry={secret && !revealed}
           autoCapitalize={secret ? "none" : props.autoCapitalize}
           autoCorrect={secret ? false : props.autoCorrect}
-          className={`min-h-12 rounded-2xl border border-line-strong bg-card px-4 font-nunito text-base text-ink ${secret ? "pr-14" : ""}`}
+          accessibilityLabel={label ?? props.placeholder}
+          accessibilityLabelledBy={label ? labelId : undefined}
+          className={`min-h-12 rounded-2xl border border-line-strong bg-card px-4 font-nunito text-[17px] text-ink ${secret ? "pr-14" : ""}`}
           {...props}
         />
         {secret ? (
@@ -48,7 +54,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
         ) : null}
       </View>
       {error ? (
-        <Text variant="caption" tone="coral">
+        <Text variant="caption" tone="coral" accessibilityLiveRegion="polite">
           {error}
         </Text>
       ) : null}

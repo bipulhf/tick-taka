@@ -60,6 +60,7 @@ export function BudgetsScreen() {
       right={
         <View className="flex-row">
           <Pressable
+            accessibilityRole="button"
             className="h-12 w-12 items-center justify-center"
             onPress={() => setMonth(addMonths(month, -1))}
             accessibilityLabel="Previous month"
@@ -67,6 +68,7 @@ export function BudgetsScreen() {
             <Icon name="chevron-left" />
           </Pressable>
           <Pressable
+            accessibilityRole="button"
             className="h-12 w-12 items-center justify-center"
             onPress={() => setMonth(addMonths(month, 1))}
             accessibilityLabel="Next month"

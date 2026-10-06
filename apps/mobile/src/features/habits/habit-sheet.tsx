@@ -90,7 +90,13 @@ function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
         </View>
       }
     >
-      <TextField value={name} onChangeText={setName} placeholder="Drink water" autoFocus={!habit} />
+      <TextField
+        value={name}
+        onChangeText={setName}
+        placeholder="Drink water"
+        accessibilityLabel="Habit name"
+        autoFocus={!habit}
+      />
       <View className="flex-row flex-wrap gap-2">
         {EMOJIS.map((e) => (
           <Chip key={e} label={e} tone="grape" selected={emoji === e} onPress={() => setEmoji(e)} />

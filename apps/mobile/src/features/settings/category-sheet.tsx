@@ -103,11 +103,17 @@ function CategoryForm({ category }: { category: Category | undefined }) {
       }
     >
       <View className="flex-row gap-2">
-        <TextField value={emoji} onChangeText={setEmoji} className="w-16" />
+        <TextField
+          value={emoji}
+          onChangeText={setEmoji}
+          accessibilityLabel="Emoji"
+          className="w-16"
+        />
         <TextField
           value={name}
           onChangeText={setName}
           placeholder="Pets, Gym, Bazar…"
+          accessibilityLabel="Category name"
           autoFocus={!category}
           className="flex-1"
         />

@@ -69,8 +69,18 @@ function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
   return (
     <>
       <View className="flex-row gap-2">
-        <TextField value={emoji} onChangeText={setEmoji} className="w-16" />
-        <TextField value={name} onChangeText={setName} className="flex-1" />
+        <TextField
+          value={emoji}
+          onChangeText={setEmoji}
+          accessibilityLabel="Emoji"
+          className="w-16"
+        />
+        <TextField
+          value={name}
+          onChangeText={setName}
+          accessibilityLabel="Routine name"
+          className="flex-1"
+        />
       </View>
       {steps.map((step, index) => (
         <Card
@@ -80,26 +90,30 @@ function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
           <TextField
             value={step.title}
             onChangeText={(title) => update(index, { title })}
+            accessibilityLabel={`Step ${index + 1}`}
             className="flex-1"
           />
           <TextField
             value={step.minutes ? String(step.minutes) : ""}
             onChangeText={(v) => update(index, { minutes: Number(v) || null })}
             placeholder="min"
+            accessibilityLabel={`Minutes for step ${index + 1}`}
             keyboardType="number-pad"
             className="w-16"
           />
           <Pressable
             onPress={() => move(index, -1)}
+            accessibilityRole="button"
+            accessibilityLabel={`Move step ${index + 1} up`}
             className="h-12 w-8 items-center justify-center"
-            accessibilityLabel="Move up"
           >
             <Icon name="chevron-up" />
           </Pressable>
           <Pressable
             onPress={() => setSteps((list) => list.filter((_, i) => i !== index))}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove step ${index + 1}`}
             className="h-12 w-8 items-center justify-center"
-            accessibilityLabel="Remove step"
           >
             <Icon name="close" color="muted" />
           </Pressable>

@@ -90,6 +90,7 @@ export function PaydayPlan() {
         onChangeText={(v) => setAmounts((a) => ({ ...a, [key]: v }))}
         keyboardType="decimal-pad"
         placeholder="0"
+        accessibilityLabel={label}
         className="w-28"
       />
     </View>

@@ -100,6 +100,7 @@ export function ShoppingScreen() {
           value={newList}
           onChangeText={setNewList}
           placeholder="+ list"
+          accessibilityLabel="New list name"
           onSubmitEditing={addList}
           className="w-28"
         />
@@ -109,6 +110,7 @@ export function ShoppingScreen() {
           value={title}
           onChangeText={setTitle}
           placeholder="Rice 5kg"
+          accessibilityLabel="Item"
           className="flex-1"
           onSubmitEditing={add}
         />
@@ -116,6 +118,7 @@ export function ShoppingScreen() {
           value={price}
           onChangeText={setPrice}
           placeholder="৳"
+          accessibilityLabel="Estimated price"
           keyboardType="decimal-pad"
           className="w-24"
           onSubmitEditing={add}
@@ -172,7 +175,8 @@ export function ShoppingScreen() {
                     </SwipeRowPressable>
                     <Pressable
                       onPress={drop}
-                      className="h-12 w-10 items-center justify-center"
+                      accessibilityRole="button"
+                      className="h-12 w-12 items-center justify-center"
                       accessibilityLabel={`Remove ${item.title}`}
                     >
                       <Icon name="close" size={18} color="muted" />

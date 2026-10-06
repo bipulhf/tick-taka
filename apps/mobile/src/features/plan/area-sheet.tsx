@@ -88,11 +88,17 @@ function AreaForm({ area, count }: { area: Area | undefined; count: number }) {
       }
     >
       <View className="flex-row gap-2">
-        <TextField value={emoji} onChangeText={setEmoji} className="w-16" />
+        <TextField
+          value={emoji}
+          onChangeText={setEmoji}
+          accessibilityLabel="Emoji"
+          className="w-16"
+        />
         <TextField
           value={name}
           onChangeText={setName}
           placeholder="Work, Home, Health…"
+          accessibilityLabel="Area name"
           autoFocus={!area}
           className="flex-1"
         />

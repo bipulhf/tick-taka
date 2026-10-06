@@ -60,7 +60,13 @@ export function EventsScreen() {
     >
       {adding ? (
         <Card className="gap-2">
-          <TextField value={name} onChangeText={setName} placeholder="Sylhet trip" autoFocus />
+          <TextField
+            value={name}
+            onChangeText={setName}
+            placeholder="Sylhet trip"
+            accessibilityLabel="Event name"
+            autoFocus
+          />
           <TextField
             value={budget}
             onChangeText={setBudget}

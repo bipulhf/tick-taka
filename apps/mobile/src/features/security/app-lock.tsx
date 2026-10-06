@@ -5,13 +5,18 @@ import { Tiki } from "@/components/tiki/tiki";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { useSettings } from "@/lib/queries";
+import { useStore } from "@/lib/store";
+import { appLockPref, saveAppLockPref } from "./app-lock-pref";
+import { coldStartLocked } from "./lock-decision";
 
-/** Fingerprint or face lock after the app sits in the background for a while. */
+/** Fingerprint or face lock on a cold start, and after the app sits in the background a while. */
 export function AppLock() {
   const { data: settings } = useSettings();
-  const enabled = settings?.appLock ?? false;
+  const pref = useStore(appLockPref);
+  const enabled = settings?.appLock ?? pref ?? false;
   const lockAfterMs = (settings?.lockAfterMinutes ?? 5) * 60_000;
-  const [locked, setLocked] = useState(enabled);
+  /** null until the cold-start decision is made. */
+  const [locked, setLocked] = useState<boolean | null>(null);
   const backgroundedAt = useRef<number | null>(null);
 
   const unlock = useCallback(async () => {
@@ -21,9 +26,19 @@ export function AppLock() {
     if (result.success) setLocked(false);
   }, []);
 
+  // Cold start: decide from the phone's copy of the setting, before settings load.
   useEffect(() => {
-    if (!enabled) setLocked(false);
-  }, [enabled]);
+    if (locked !== null || pref === undefined) return;
+    const decision = coldStartLocked(pref, settings?.appLock);
+    if (decision !== null) setLocked(decision);
+  }, [locked, pref, settings?.appLock]);
+
+  // Keep the phone's copy in step with the setting; turning it off unlocks.
+  useEffect(() => {
+    if (settings === undefined) return;
+    saveAppLockPref(settings.appLock);
+    if (!settings.appLock) setLocked(false);
+  }, [settings]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (status) => {
@@ -40,12 +55,18 @@ export function AppLock() {
     if (locked) void unlock();
   }, [locked, unlock]);
 
-  if (!locked || !enabled) return null;
+  // While the phone's copy is still being read, cover the screen rather than flash it.
+  const reading = locked === null && pref === undefined;
+  if (!locked && !reading) return null;
   return (
     <View className="absolute inset-0 items-center justify-center gap-4 bg-background px-8">
-      <Tiki mood="sleepy" size={110} />
-      <Text variant="title">Locked</Text>
-      <Button label="Unlock" icon="fingerprint" onPress={unlock} />
+      {reading ? null : (
+        <>
+          <Tiki mood="sleepy" size={110} />
+          <Text variant="title">Locked</Text>
+          <Button label="Unlock" icon="fingerprint" onPress={unlock} />
+        </>
+      )}
     </View>
   );
 }

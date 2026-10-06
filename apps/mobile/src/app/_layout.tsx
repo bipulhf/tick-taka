@@ -21,6 +21,7 @@ import { Snackbar } from "@/components/ui/snackbar";
 import { AppServices } from "@/features/app/app-services";
 import { loadFocusSession } from "@/features/focus/focus-session";
 import { AppLock } from "@/features/security/app-lock";
+import { loadAppLockPref } from "@/features/security/app-lock-pref";
 import { loadThemeChoice, ThemedRoot } from "@/features/settings/themed-root";
 import { loadToken, tokenStore } from "@/lib/auth";
 import { loadFeedbackPrefs } from "@/lib/feedback-prefs";
@@ -71,6 +72,7 @@ export default function RootLayout() {
     // Belt and braces: whatever happens, leave the splash screen for login.
     loadToken().catch(() => tokenStore.set(null));
     void startOutbox();
+    void loadAppLockPref();
     void loadPrivacy();
     void loadFeedbackPrefs();
     preloadSounds();

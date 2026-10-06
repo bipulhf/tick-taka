@@ -1,22 +1,30 @@
 import { Pressable } from "react-native";
 import { haptic } from "@/lib/haptics";
+import { choiceA11y } from "./a11y-actions";
 import { Text } from "./text";
+
+/**
+ * - action: a one-off tap (a suggestion, "No deadline"); a button.
+ * - single: one of a row, picked alone; a radio, announced as checked.
+ * - multi: one of a row where several can be picked (days off); a checkbox.
+ */
+export type ChipChoice = "action" | "single" | "multi";
 
 export interface ChipProps {
   label: string;
   selected?: boolean;
   /** Kept for call sites; selection is shown the same way everywhere (restrained colour). */
   tone?: "mango" | "sky" | "mint" | "coral" | "grape";
+  choice?: ChipChoice;
   onPress?: () => void;
   className?: string;
 }
 
 /** Neutral pill; selected = ink fill with background-coloured text, readable in both themes. */
-export function Chip({ label, selected, onPress, className }: ChipProps) {
+export function Chip({ label, selected, choice = "action", onPress, className }: ChipProps) {
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: Boolean(selected) }}
+      {...choiceA11y(choice, Boolean(selected))}
       hitSlop={4}
       onPress={
         onPress

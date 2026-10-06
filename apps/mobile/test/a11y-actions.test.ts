@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import { a11yActionProps, swipeRowActions } from "../src/components/ui/a11y-actions";
+import { a11yActionProps, choiceA11y, swipeRowActions } from "../src/components/ui/a11y-actions";
 
 const pick = (props: ReturnType<typeof a11yActionProps>, actionName: string) =>
   props.onAccessibilityAction({ nativeEvent: { actionName } });
@@ -41,5 +41,27 @@ describe("gesture actions for screen readers", () => {
       pick(a11yActionProps([{ label: "Schedule for today", run }]), "activate"),
     ).not.toThrow();
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+describe("single-choice controls are read as radios with a checked state", () => {
+  test("one of several: radio, checked", () => {
+    expect(choiceA11y("single", true)).toEqual({
+      accessibilityRole: "radio",
+      accessibilityState: { checked: true },
+    });
+    expect(choiceA11y("single", false).accessibilityState).toEqual({ checked: false });
+  });
+
+  test("several at once: checkbox; a view switch: tab; anything else: button", () => {
+    expect(choiceA11y("multi", true)).toEqual({
+      accessibilityRole: "checkbox",
+      accessibilityState: { checked: true },
+    });
+    expect(choiceA11y("tab", true)).toEqual({
+      accessibilityRole: "tab",
+      accessibilityState: { selected: true },
+    });
+    expect(choiceA11y("action", false).accessibilityRole).toBe("button");
   });
 });

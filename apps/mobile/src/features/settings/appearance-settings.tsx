@@ -27,6 +27,7 @@ export function AppearanceSettings() {
       {(s) => (
         <>
           <Segmented<"system" | "light" | "dark">
+            label="Theme"
             value={s.theme}
             onChange={(theme) => update({ theme })}
             options={[
@@ -38,6 +39,7 @@ export function AppearanceSettings() {
           <Card className="gap-2">
             <Text>Numbers</Text>
             <Segmented<"latn" | "beng">
+              label="Numbers"
               value={s.numerals}
               onChange={(numerals) => update({ numerals })}
               options={[
@@ -55,6 +57,7 @@ export function AppearanceSettings() {
                 <Chip
                   key={accent.label}
                   label={accent.label}
+                  choice="single"
                   selected={(s.rewardTheme ?? null) === accent.id}
                   onPress={() => update({ rewardTheme: accent.id })}
                 />
@@ -65,6 +68,7 @@ export function AppearanceSettings() {
                 <Chip
                   key={outfit.label}
                   label={outfit.label}
+                  choice="single"
                   selected={(s.tikiOutfit ?? null) === outfit.id}
                   onPress={() => update({ tikiOutfit: outfit.id })}
                 />

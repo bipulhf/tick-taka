@@ -128,6 +128,7 @@ function DebtForm({ id }: { id: string | null }) {
         </Text>
       ) : (
         <Segmented<Direction>
+          label="Who owes"
           value={direction}
           onChange={setDirection}
           options={[

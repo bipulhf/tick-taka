@@ -1,12 +1,14 @@
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { PickerField } from "@/components/ui/picker-field";
 import { Section } from "@/components/ui/section";
-import { formatMinutes } from "@/lib/format";
+import { formatMinutes, plural } from "@/lib/format";
 import { ChoiceRow, ToggleRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
 
 export const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const LONG_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 /** The daily goal, days off, focus timer lengths and the optional planning views. */
 export function PlanningSettings() {
@@ -16,23 +18,23 @@ export function PlanningSettings() {
       {(s) => (
         <>
           <Section title="Today">
-            <Card className="gap-1">
-              <ChoiceRow label="Daily task goal">
-                {[0, 3, 5, 7, 10].map((n) => (
-                  <Chip
-                    key={n}
-                    label={n === 0 ? "Off" : String(n)}
-                    selected={s.dailyTaskGoal === n}
-                    onPress={() => update({ dailyTaskGoal: n })}
-                  />
-                ))}
-              </ChoiceRow>
-              <ChoiceRow label="Days off">
+            <Card className="gap-3">
+              <PickerField
+                label="Daily task goal"
+                value={String(s.dailyTaskGoal)}
+                options={[0, 3, 5, 7, 10].map((n) => ({
+                  id: String(n),
+                  label: n === 0 ? "Off" : plural(n, "task"),
+                }))}
+                onChange={(n) => update({ dailyTaskGoal: Number(n) })}
+              />
+              {/* Several can be picked, so these stay chips (checkboxes), not a picker. */}
+              <ChoiceRow label="Days off" choice="multi">
                 {DAYS.map((day, i) => (
                   <Chip
                     key={day}
                     label={day}
-                    tone="sky"
+                    choice="multi"
                     selected={s.daysOff.includes(i)}
                     onPress={() =>
                       update({
@@ -50,57 +52,44 @@ export function PlanningSettings() {
                 value={s.vacationMode}
                 onChange={(on) => update({ vacationMode: on })}
               />
-              <ChoiceRow label="Free time on a working day">
-                {[240, 360, 480, 600].map((m) => (
-                  <Chip
-                    key={m}
-                    label={formatMinutes(m)}
-                    tone="sky"
-                    selected={s.dayCapacityMinutes === m}
-                    onPress={() => update({ dayCapacityMinutes: m })}
-                  />
-                ))}
-              </ChoiceRow>
-              <ChoiceRow label="Week starts on">
-                {[6, 0, 1].map((d) => (
-                  <Chip
-                    key={d}
-                    label={DAYS[d]!}
-                    selected={s.weekStartsOn === d}
-                    onPress={() => update({ weekStartsOn: d })}
-                  />
-                ))}
-              </ChoiceRow>
+              <PickerField
+                label="Free time on a working day"
+                value={String(s.dayCapacityMinutes)}
+                options={[240, 360, 480, 600].map((m) => ({
+                  id: String(m),
+                  label: formatMinutes(m),
+                }))}
+                onChange={(m) => update({ dayCapacityMinutes: Number(m) })}
+              />
+              <PickerField
+                label="Week starts on"
+                value={String(s.weekStartsOn)}
+                options={[6, 0, 1].map((d) => ({ id: String(d), label: LONG_DAYS[d]! }))}
+                onChange={(d) => update({ weekStartsOn: Number(d) })}
+              />
             </Card>
           </Section>
           <Section title="Focus">
-            <Card className="gap-1">
-              <ChoiceRow label="Work">
-                {[15, 25, 45, 50, 90].map((m) => (
-                  <Chip
-                    key={m}
-                    label={`${m}m`}
-                    tone="sky"
-                    selected={s.focus.workMinutes === m}
-                    onPress={() => update({ focus: { ...s.focus, workMinutes: m } })}
-                  />
-                ))}
-              </ChoiceRow>
-              <ChoiceRow label="Break">
-                {[5, 10, 15].map((m) => (
-                  <Chip
-                    key={m}
-                    label={`${m}m`}
-                    tone="sky"
-                    selected={s.focus.breakMinutes === m}
-                    onPress={() => update({ focus: { ...s.focus, breakMinutes: m } })}
-                  />
-                ))}
-              </ChoiceRow>
+            <Card className="gap-3">
+              <PickerField
+                label="Work"
+                value={String(s.focus.workMinutes)}
+                options={[15, 25, 45, 50, 90].map((m) => ({
+                  id: String(m),
+                  label: plural(m, "minute"),
+                }))}
+                onChange={(m) => update({ focus: { ...s.focus, workMinutes: Number(m) } })}
+              />
+              <PickerField
+                label="Break"
+                value={String(s.focus.breakMinutes)}
+                options={[5, 10, 15].map((m) => ({ id: String(m), label: plural(m, "minute") }))}
+                onChange={(m) => update({ focus: { ...s.focus, breakMinutes: Number(m) } })}
+              />
             </Card>
           </Section>
           <Section title="Advanced views">
-            <Card className="gap-1">
+            <Card className="gap-3">
               <ToggleRow
                 label="Eisenhower matrix"
                 value={s.advancedViews.eisenhower}

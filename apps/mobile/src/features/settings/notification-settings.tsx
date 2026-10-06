@@ -1,11 +1,13 @@
 import { Card } from "@/components/ui/card";
-import { Chip } from "@/components/ui/chip";
+import { PickerField } from "@/components/ui/picker-field";
 import { Section } from "@/components/ui/section";
 import { setFeedbackPrefs, useFeedbackPrefs } from "@/lib/feedback-prefs";
 import { ReminderStatusBanner } from "./reminder-status-banner";
-import { ChoiceRow, ToggleRow } from "./setting-row";
+import { ToggleRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
+
+const times = (...list: string[]) => list.map((t) => ({ id: t, label: t }));
 
 /** Quiet hours, the shutdown reminder, and sounds and vibration. */
 export function NotificationSettings() {
@@ -17,37 +19,29 @@ export function NotificationSettings() {
         <>
           <ReminderStatusBanner />
           <Section title="Notifications">
-            <Card className="gap-1">
-              <ChoiceRow label="Quiet hours start">
-                {["21:00", "22:00", "23:00", "00:00"].map((t) => (
-                  <Chip
-                    key={t}
-                    label={t}
-                    selected={s.quietHours.start === t}
-                    onPress={() => update({ quietHours: { ...s.quietHours, start: t } })}
-                  />
-                ))}
-              </ChoiceRow>
-              <ChoiceRow label="Quiet hours end">
-                {["06:00", "07:00", "08:00"].map((t) => (
-                  <Chip
-                    key={t}
-                    label={t}
-                    selected={s.quietHours.end === t}
-                    onPress={() => update({ quietHours: { ...s.quietHours, end: t } })}
-                  />
-                ))}
-              </ChoiceRow>
-              <ChoiceRow label="Daily shutdown">
-                {["20:30", "21:30", "22:30"].map((t) => (
-                  <Chip
-                    key={t}
-                    label={t}
-                    selected={s.shutdownTime === t}
-                    onPress={() => update({ shutdownTime: t })}
-                  />
-                ))}
-              </ChoiceRow>
+            <Card className="gap-3">
+              <PickerField
+                label="Quiet hours start"
+                value={s.quietHours.start}
+                options={times("21:00", "22:00", "23:00", "00:00")}
+                onChange={(t) =>
+                  update({ quietHours: { ...s.quietHours, start: t ?? s.quietHours.start } })
+                }
+              />
+              <PickerField
+                label="Quiet hours end"
+                value={s.quietHours.end}
+                options={times("06:00", "07:00", "08:00")}
+                onChange={(t) =>
+                  update({ quietHours: { ...s.quietHours, end: t ?? s.quietHours.end } })
+                }
+              />
+              <PickerField
+                label="Daily shutdown"
+                value={s.shutdownTime}
+                options={times("20:30", "21:30", "22:30")}
+                onChange={(t) => update({ shutdownTime: t ?? s.shutdownTime })}
+              />
             </Card>
           </Section>
           <Section title="Sounds and vibration">

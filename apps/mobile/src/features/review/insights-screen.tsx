@@ -107,6 +107,7 @@ export function InsightsScreen() {
   return (
     <Screen title="Reports" tabBarPadding={false}>
       <Segmented<Range>
+        label="Period"
         value={range}
         onChange={setRange}
         options={[

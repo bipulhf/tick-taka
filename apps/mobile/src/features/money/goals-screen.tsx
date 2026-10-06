@@ -148,6 +148,7 @@ export function GoalsScreen() {
                               key={a.id}
                               label={a.name}
                               tone="mint"
+                              choice="single"
                               selected={(from ?? accounts[0]?.id) === a.id}
                               onPress={() => setFrom(a.id)}
                             />

@@ -35,11 +35,26 @@ export function ToggleRow({
   );
 }
 
-export function ChoiceRow({ label, children }: { label: string; children: ReactNode }) {
+/** A labelled row of chips: single-choice rows are a radio group for screen readers. */
+export function ChoiceRow({
+  label,
+  choice = "single",
+  children,
+}: {
+  label: string;
+  choice?: "single" | "multi";
+  children: ReactNode;
+}) {
   return (
     <View className="gap-2 py-1">
       <Text>{label}</Text>
-      <View className="flex-row flex-wrap gap-2">{children}</View>
+      <View
+        accessibilityRole={choice === "single" ? "radiogroup" : undefined}
+        accessibilityLabel={label}
+        className="flex-row flex-wrap gap-2"
+      >
+        {children}
+      </View>
     </View>
   );
 }

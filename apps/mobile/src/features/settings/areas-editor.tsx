@@ -66,6 +66,7 @@ export function AreasEditor() {
   return (
     <Screen title="Areas & categories" tabBarPadding={false}>
       <Segmented<Tab>
+        kind="tabs"
         value={tab}
         onChange={setTab}
         options={[

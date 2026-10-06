@@ -93,6 +93,7 @@ function ShoppingItemForm({ item }: { item: Item }) {
             key={name}
             label={name}
             tone="mint"
+            choice="single"
             selected={listName.trim() === name}
             onPress={() => setListName(name)}
           />

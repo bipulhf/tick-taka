@@ -112,13 +112,17 @@ function AreaForm({ area, count }: { area: Area | undefined; count: number }) {
       <Text variant="label" tone="muted">
         Colour
       </Text>
-      <View className="flex-row flex-wrap gap-3">
+      <View
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Colour"
+        className="flex-row flex-wrap gap-3"
+      >
         {AREA_SWATCHES.map(({ hex, name }) => (
           <Pressable
             key={hex}
             onPress={() => setColor(hex)}
             accessibilityRole="radio"
-            accessibilityState={{ selected: color === hex }}
+            accessibilityState={{ checked: color === hex }}
             accessibilityLabel={name}
             className="h-12 w-12 items-center justify-center rounded-full"
             style={{ backgroundColor: areaColorValue(hex, scheme) }}

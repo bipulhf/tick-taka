@@ -167,6 +167,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
     >
       {values.type !== "adjustment" ? (
         <Segmented<TxType>
+          label="Type"
           value={values.type as TxType}
           onChange={(type) => form.setValue("type", type)}
           options={[

@@ -105,6 +105,7 @@ export function TimeTracking() {
                       key={area.id}
                       label={`${area.emoji} ${area.name}`}
                       tone="sky"
+                      choice="single"
                       selected={areaId === area.id}
                       onPress={() => setAreaId(areaId === area.id ? null : area.id)}
                     />

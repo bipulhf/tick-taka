@@ -93,6 +93,7 @@ export function ShoppingScreen() {
             key={name}
             label={name}
             tone="mint"
+            choice="single"
             selected={listName === name}
             onPress={() => setListName(name)}
           />
@@ -206,6 +207,7 @@ export function ShoppingScreen() {
                 key={a.id}
                 label={a.name}
                 tone="mint"
+                choice="single"
                 selected={(accountId ?? accounts[0]?.id) === a.id}
                 onPress={() => setAccountId(a.id)}
               />

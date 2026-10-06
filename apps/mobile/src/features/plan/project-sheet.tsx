@@ -108,6 +108,7 @@ function ProjectForm({ project }: { project: Project | null }) {
           <Chip
             key={s.value}
             label={s.label}
+            choice="single"
             selected={status === s.value}
             onPress={() => setStatus(s.value)}
           />

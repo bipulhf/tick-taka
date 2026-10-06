@@ -77,6 +77,7 @@ export function TaskMoreFields({
         Priority
       </Text>
       <Segmented<Priority>
+        label="Priority"
         value={form.priority}
         onChange={(v) => set("priority", v)}
         options={[

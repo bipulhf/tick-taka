@@ -132,6 +132,7 @@ function CategoryForm({ category }: { category: Category | undefined }) {
           <Chip
             key={b.value}
             label={b.label}
+            choice="single"
             selected={budgetType === b.value}
             onPress={() => setBudgetType(b.value)}
           />

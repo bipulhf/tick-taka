@@ -75,6 +75,7 @@ export function PlanHome() {
         ]}
       />
       <Segmented<Tab>
+        kind="tabs"
         value={tab}
         onChange={setTab}
         options={[

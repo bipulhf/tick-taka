@@ -19,6 +19,9 @@ export type PickerFieldVariant = "field" | "filter";
 /** full takes the row's width; half shares a row with one other picker. */
 export type PickerFieldSpan = "full" | "half";
 
+/** list: one option per row; grid: emoji-only options in a wrapping grid of 48 dp circles. */
+export type PickerFieldLayout = "list" | "grid";
+
 const BOX: Record<PickerFieldVariant, string> = {
   field: "rounded-2xl",
   filter: "rounded-3xl",
@@ -46,6 +49,7 @@ export function PickerField({
   noneLabel,
   variant = "field",
   span = "full",
+  layout = "list",
 }: {
   label: string;
   value: string | null;
@@ -55,6 +59,7 @@ export function PickerField({
   noneLabel?: string;
   variant?: PickerFieldVariant;
   span?: PickerFieldSpan;
+  layout?: PickerFieldLayout;
 }) {
   const [open, setOpen] = useState(false);
   const all = noneLabel ? [{ id: NONE, label: noneLabel }, ...options] : options;
@@ -107,7 +112,32 @@ export function PickerField({
           </>
         )}
       </Pressable>
-      {open ? (
+      {open && layout === "grid" ? (
+        <View
+          accessibilityRole="radiogroup"
+          accessibilityLabel={label}
+          className="flex-row flex-wrap gap-2 border-t border-line p-3"
+        >
+          {all.map((option) => (
+            <Pressable
+              key={option.id}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: option.id === selected }}
+              accessibilityLabel={option.label}
+              onPress={() => {
+                haptic.select();
+                onChange(option.id === NONE ? null : option.id);
+                setOpen(false);
+              }}
+              className={`h-12 w-12 items-center justify-center rounded-full ${option.id === selected ? "bg-ink" : "bg-background"}`}
+            >
+              <Text className="text-2xl" maxFontSizeMultiplier={1.3}>
+                {option.emoji ?? option.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : open ? (
         <ScrollView
           className="max-h-72 border-t border-line"
           nestedScrollEnabled

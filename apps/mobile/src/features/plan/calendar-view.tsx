@@ -99,6 +99,7 @@ export function CalendarView() {
       }
     >
       <Segmented
+        kind="tabs"
         value={mode}
         onChange={setMode}
         options={[

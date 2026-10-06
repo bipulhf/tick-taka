@@ -59,12 +59,18 @@ export function LogbookList() {
     >
       <TextField value={q} onChangeText={setQ} placeholder="Search finished tasks" />
       <View className="flex-row flex-wrap gap-2">
-        <Chip label="All areas" selected={!areaId} onPress={() => setAreaId(null)} />
+        <Chip
+          label="All areas"
+          choice="single"
+          selected={!areaId}
+          onPress={() => setAreaId(null)}
+        />
         {areas.map((area) => (
           <Chip
             key={area.id}
             label={`${area.emoji} ${area.name}`}
             tone="sky"
+            choice="single"
             selected={areaId === area.id}
             onPress={() => setAreaId(area.id)}
           />

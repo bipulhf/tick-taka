@@ -192,6 +192,7 @@ function RecurringForm({ id }: { id: string | null }) {
         </Card>
       ) : null}
       <Segmented<Kind>
+        label="Kind"
         value={kind}
         onChange={setKind}
         options={[

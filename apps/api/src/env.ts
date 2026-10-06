@@ -43,6 +43,10 @@ const envSchema = z.object({
   OPENAI_SMART_OUTPUT_MICROS_PER_MTOK: z.coerce.number().nonnegative().default(10_000_000),
   /** Most any one user's AI calls may cost per month, in micro-dollars, whatever their setting. */
   AI_USER_MONTHLY_CAP_MICROS: z.coerce.number().int().nonnegative().default(2_000_000),
+  /** Who runs the service, named on the public home, privacy and terms pages. */
+  SITE_OPERATOR: z.string().default("Tick & Taka"),
+  /** Where people write about their data or to delete their account; shown on those pages. */
+  CONTACT_EMAIL: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
   JOBS_ENABLED: z
     .enum(["true", "false"])
     .default("true")

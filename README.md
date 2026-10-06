@@ -239,6 +239,7 @@ API (`apps/api/.env`):
 | `OPENAI_*_MICROS_PER_MTOK` | Prices per million tokens for models missing from the built-in price list (`src/ai/pricing.ts`, which has gpt-6-luna and gpt-4o-mini-transcribe). |
 | `AI_USER_MONTHLY_CAP_MICROS` | Most AI may cost each user other than `OWNER_EMAIL` per month (default 2000000 = $2, 0 = no limit). The owner is never limited. |
 | `HOST`, `PORT`, `JOBS_ENABLED` | Where to listen; whether to run the nightly jobs. |
+| `SITE_OPERATOR`, `CONTACT_EMAIL` | Who runs the service and how to reach them, shown on the public home (`/`), privacy (`/privacy`) and terms (`/terms`) pages used by Google's consent screen. |
 
 App (`apps/mobile/.env`, and `env` in `eas.json` for EAS builds):
 

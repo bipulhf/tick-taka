@@ -22,6 +22,7 @@ import { reviewsRoutes } from "./modules/reviews/routes";
 import { routinesRoutes } from "./modules/routines/routes";
 import { settingsRoutes } from "./modules/settings/routes";
 import { shoppingRoutes } from "./modules/shopping/routes";
+import { siteRoutes } from "./modules/site/routes";
 import { exportRoutes, syncRoutes } from "./modules/sync/routes";
 import { tasksRoutes } from "./modules/tasks/routes";
 import { timeEntriesRoutes, timerRoutes } from "./modules/time-entries/routes";
@@ -74,6 +75,8 @@ export function createApp(deps: Deps) {
     .onError(onError)
     .notFound(onNotFound)
     .get("/health", (c) => c.json({ ok: true, uptimeMs: Date.now() - startedAt }))
+    // Public pages, before the signed-in API so they never ask for a token.
+    .route("/", siteRoutes(deps))
     .route("/auth", authRoutes(deps))
     .route("/", api);
   return app;

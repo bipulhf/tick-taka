@@ -300,10 +300,31 @@ describe("progress", () => {
   });
 });
 
-describe("export", () => {
-  test("the unused /sync/changes endpoint is gone", async () => {
+describe("sync and export", () => {
+  test("changes since a timestamp include deletions", async () => {
     const ctx = await createTestContext();
-    expect((await ctx.request("GET", "/sync/changes?since=0")).status).toBe(404);
+    const initial = await ctx.request<{ serverTime: number; changes: Record<string, Row[]> }>(
+      "GET",
+      "/sync/changes?since=0",
+    );
+    expect(initial.body.changes.areas).toHaveLength(6);
+    expect(initial.body.changes.settings?.some((r) => String(r.key).startsWith("_"))).toBe(false);
+    ctx.clock.advance(1000);
+    const area = initial.body.changes.areas![0]!;
+    await ctx.request("DELETE", `/areas/${area.id}`);
+    const delta = await ctx.request<{ changes: Record<string, Row[]> }>(
+      "GET",
+      `/sync/changes?since=${initial.body.serverTime}`,
+    );
+    expect(delta.body.changes.areas).toEqual([
+      expect.objectContaining({ id: area.id, deletedAt: DEFAULT_NOW + 1000 }),
+    ]);
+    expect(delta.body.changes.tasks).toEqual([]);
+  });
+
+  test("sync changes reject a bad since", async () => {
+    const ctx = await createTestContext();
+    expect((await ctx.request("GET", "/sync/changes?since=-5")).status).toBe(400);
   });
 
   test("export has every table", async () => {

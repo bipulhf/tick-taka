@@ -46,6 +46,7 @@ export const categories = sqliteTable(
     sort: integer("sort").notNull().default(0),
   },
   (t) => [
+    index("categories_updated_at_idx").on(t.updatedAt),
     index("categories_parent_idx").on(t.parentId),
     check("categories_kind_check", oneOf("kind", CATEGORY_KINDS)),
     check("categories_budget_type_check", oneOf("budget_type", BUDGET_TYPES)),
@@ -128,6 +129,7 @@ export const recurring = sqliteTable(
     overdueAt: integer("overdue_at"),
   },
   (t) => [
+    index("recurring_updated_at_idx").on(t.updatedAt),
     index("recurring_next_due_idx").on(t.nextDueAt),
     check("recurring_kind_check", oneOf("kind", RECURRING_KINDS)),
     check("recurring_amount_check", rule(`"amount_minor" > 0`)),
@@ -185,6 +187,7 @@ export const budgets = sqliteTable(
     rollover: bool("rollover").notNull().default(false),
   },
   (t) => [
+    index("budgets_updated_at_idx").on(t.updatedAt),
     uniqueIndex("budgets_category_month_uq").on(t.categoryId, t.month),
     check("budgets_month_check", isLocalMonth("month")),
     check("budgets_limit_check", rule(`"limit_minor" >= 0`)),
@@ -203,6 +206,7 @@ export const shoppingItems = sqliteTable(
     sort: integer("sort").notNull().default(0),
   },
   (t) => [
+    index("shopping_items_updated_at_idx").on(t.updatedAt),
     index("shopping_items_list_idx").on(t.listName),
     check("shopping_items_estimate_check", rule(`"est_minor" >= 0`)),
   ],
@@ -233,6 +237,7 @@ export const smsImports = sqliteTable(
     transactionId: text("transaction_id").references(() => transactions.id),
   },
   (t) => [
+    index("sms_imports_updated_at_idx").on(t.updatedAt),
     uniqueIndex("sms_imports_fingerprint_uq").on(t.fingerprint),
     check("sms_imports_direction_check", oneOf("direction", SMS_DIRECTIONS)),
     check("sms_imports_status_check", oneOf("status", SMS_STATUSES)),

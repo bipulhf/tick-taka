@@ -38,6 +38,7 @@ export const projects = sqliteTable(
     sort: integer("sort").notNull().default(0),
   },
   (t) => [
+    index("projects_updated_at_idx").on(t.updatedAt),
     index("projects_area_idx").on(t.areaId),
     check("projects_status_check", oneOf("status", PROJECT_STATUSES)),
   ],
@@ -104,6 +105,7 @@ export const timeEntries = sqliteTable(
     note: text("note"),
   },
   (t) => [
+    index("time_entries_updated_at_idx").on(t.updatedAt),
     index("time_entries_started_at_idx").on(t.startedAt),
     check("time_entries_source_check", oneOf("source", TIME_SOURCES)),
     check("time_entries_range_check", rule(`"ended_at" >= "started_at"`)),
@@ -144,6 +146,7 @@ export const habitLogs = sqliteTable(
     count: integer("count").notNull().default(0),
   },
   (t) => [
+    index("habit_logs_updated_at_idx").on(t.updatedAt),
     uniqueIndex("habit_logs_habit_date_uq").on(t.habitId, t.date),
     check("habit_logs_date_check", isLocalDate("date")),
     check("habit_logs_count_check", rule(`"count" >= 0`)),
@@ -169,6 +172,7 @@ export const routineSteps = sqliteTable(
     sort: integer("sort").notNull().default(0),
   },
   (t) => [
+    index("routine_steps_updated_at_idx").on(t.updatedAt),
     index("routine_steps_routine_idx").on(t.routineId),
     check("routine_steps_minutes_check", rule(`"minutes" >= 0`)),
   ],

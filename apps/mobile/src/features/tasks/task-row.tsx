@@ -1,8 +1,8 @@
 import { useRouter } from "expo-router";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Icon } from "@/components/ui/icon";
-import { SwipeRow } from "@/components/ui/swipe-row";
+import { SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { formatMinutes, formatWhen } from "@/lib/format";
 import type { TaskRow as Task } from "@/lib/queries";
@@ -35,6 +35,7 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji }: Task
     <SwipeRow
       rounded={false}
       right={{
+        label: done ? "Mark not done" : "Complete",
         icon: done ? "undo" : "check-bold",
         className: "bg-mint",
         onTrigger: () => actions.toggleDone(task),
@@ -49,11 +50,11 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji }: Task
         },
       ]}
     >
-      <Pressable
+      <SwipeRowPressable
         onPress={() => router.push(`/task/${task.id}`)}
         onLongPress={() => router.push(`/task/${task.id}`)}
         className="min-h-[60px] flex-row items-center gap-1 bg-card pr-4"
-        accessibilityHint="Swipe right to complete, left for snooze and delete"
+        accessibilityHint="Opens the task. Complete, snooze and delete are in the actions menu"
       >
         <Checkbox
           checked={done}
@@ -84,7 +85,7 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji }: Task
           ) : null}
         </View>
         {task.priority === "high" ? <Icon name="flag" size={20} color="coral" /> : null}
-      </Pressable>
+      </SwipeRowPressable>
     </SwipeRow>
   );
 }

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import type { ColorName } from "@/theme/colors";
 import { Icon, type IconName } from "./icon";
+import { useSwipeRowA11y } from "./swipe-row";
 import { Text } from "./text";
 
 export interface ListRowProps {
@@ -34,6 +35,7 @@ export function ListRow({
   onPress,
   chevron,
 }: ListRowProps) {
+  const swipeActions = useSwipeRowA11y(Boolean(onPress));
   const leading = emoji ? (
     <View className="h-10 w-10 items-center justify-center rounded-full bg-background">
       <Text className="text-xl">{emoji}</Text>
@@ -63,7 +65,12 @@ export function ListRow({
     </View>
   );
   return onPress ? (
-    <Pressable onPress={onPress} accessibilityRole="button" className="active:bg-line/40">
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      className="active:bg-line/40"
+      {...swipeActions}
+    >
       {body}
     </Pressable>
   ) : (

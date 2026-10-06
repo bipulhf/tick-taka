@@ -2,7 +2,7 @@ import { addDays, startOfLocalDay, startOfWeek, toLocalDate } from "@tick-taka/s
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
-import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
+import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { useNow } from "@/features/timer/use-now";
 import { formatClock, formatLocalDate, formatMinutes, formatTimer } from "@/lib/format";
@@ -179,10 +179,9 @@ export function TimeTracking() {
                     remove(`/time-entries/${entry.id}`, `“${title}”`),
                   )}
                 >
-                  <Pressable
+                  <SwipeRowPressable
                     onPress={edit}
-                    accessibilityRole="button"
-                    accessibilityHint="Opens the entry. Swipe left for edit and delete"
+                    accessibilityHint="Opens the entry. Delete is in the actions menu"
                     className="min-h-12 flex-row items-center justify-between gap-2 bg-card"
                   >
                     <Text className="flex-1" numberOfLines={1}>
@@ -193,7 +192,7 @@ export function TimeTracking() {
                     <Text variant="caption" tone="muted" numeric>
                       {formatClock(entry.startedAt, timeZone)} · {formatMinutes(minutesOf(entry))}
                     </Text>
-                  </Pressable>
+                  </SwipeRowPressable>
                 </SwipeRow>
               );
             })}

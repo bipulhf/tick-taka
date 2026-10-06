@@ -110,7 +110,15 @@ export function EisenhowerGrid() {
                     </Text>
                     {items.map((task) => (
                       <Draggable key={task.id} id={task.id}>
-                        <CompactTask task={task} tone={quadrant.tone} />
+                        <CompactTask
+                          task={task}
+                          tone={quadrant.tone}
+                          // Screen readers can't drag between boxes; offer each other box instead.
+                          actions={QUADRANTS.filter((q) => q.id !== quadrant.id).map((q) => ({
+                            label: `Move to ${q.title}`,
+                            run: () => onDrop(task.id, q.id),
+                          }))}
+                        />
                       </Draggable>
                     ))}
                   </DropZone>

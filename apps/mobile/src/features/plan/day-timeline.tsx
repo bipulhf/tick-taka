@@ -14,9 +14,10 @@ import { api, unwrap } from "@/lib/api";
 import { formatLocalDate } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
+import { pickTime } from "@/lib/pick-date";
 import { useAiStatus, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
-import { CompactTask } from "./compact-task";
+import { CompactTask, type PlanAction } from "./compact-task";
 import { type PlanTask, useTasks } from "./queries";
 import { useMoveTask } from "./use-move-task";
 
@@ -63,6 +64,15 @@ export function DayTimeline({ date }: { date: string }) {
     const minute = START_HOUR * 60 + Math.round(point.y / PX_PER_MIN / SNAP_MIN) * SNAP_MIN;
     move.toTime(task, date, Math.max(START_HOUR * 60, Math.min(END_HOUR * 60 - SNAP_MIN, minute)));
   };
+
+  // Screen readers can't drag onto the grid, so "Set a time" opens the time picker instead.
+  const pickSlot = async (task: PlanTask) => {
+    const at = await pickTime(date, task.doAt ?? Date.now(), timeZone);
+    if (at !== null) move.toTime(task, date, localMinuteOfDay(at, timeZone));
+  };
+  const timeActions = (task: PlanTask): PlanAction[] => [
+    { label: "Set a time", run: () => void pickSlot(task) },
+  ];
 
   const applyProposal = () => {
     if (!proposal) return;
@@ -141,7 +151,7 @@ export function DayTimeline({ date }: { date: string }) {
                   </Text>
                   {untimed.map((task) => (
                     <Draggable key={task.id} id={task.id}>
-                      <CompactTask task={task} tone="grape" />
+                      <CompactTask task={task} tone="neutral" actions={timeActions(task)} />
                     </Draggable>
                   ))}
                 </View>
@@ -176,7 +186,7 @@ export function DayTimeline({ date }: { date: string }) {
                 {timed.map((task) => {
                   const minute = localMinuteOfDay(task.doAt!, timeZone);
                   const top = Math.max(0, (minute - START_HOUR * 60) * PX_PER_MIN);
-                  const height = Math.max(44, (task.estimateMin ?? 30) * PX_PER_MIN);
+                  const height = Math.max(48, (task.estimateMin ?? 30) * PX_PER_MIN);
                   return (
                     <View
                       key={task.id}
@@ -187,7 +197,7 @@ export function DayTimeline({ date }: { date: string }) {
                           style={{ height }}
                           className="justify-center rounded-xl bg-sky/20 px-1"
                         >
-                          <CompactTask task={task} />
+                          <CompactTask task={task} actions={timeActions(task)} />
                         </View>
                       </Draggable>
                     </View>

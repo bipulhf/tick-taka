@@ -9,7 +9,7 @@ import { Group } from "@/components/ui/group";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonList } from "@/components/ui/skeleton";
-import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
+import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
@@ -87,16 +87,15 @@ export function AreaDetail({ areaId }: { areaId: string }) {
                         )}
                       >
                         <View className="min-h-12 flex-row items-center justify-between gap-3 bg-background px-1">
-                          <Pressable
+                          <SwipeRowPressable
                             onPress={edit}
-                            accessibilityRole="button"
-                            accessibilityHint="Opens the project. Swipe left for edit and delete"
+                            accessibilityHint="Opens the project. Delete is in the actions menu"
                             className="flex-1"
                           >
                             <Text variant="heading" accessibilityRole="header" numberOfLines={1}>
                               {project.name}
                             </Text>
-                          </Pressable>
+                          </SwipeRowPressable>
                           <Pressable
                             onPress={() =>
                               send({

@@ -1,8 +1,8 @@
 import { useRouter } from "expo-router";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { Icon } from "@/components/ui/icon";
-import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
+import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { formatWhen } from "@/lib/format";
 import { useRemove } from "@/lib/use-remove";
@@ -54,11 +54,10 @@ export function TransactionRow({
       rounded={placement !== "group"}
       actions={editDelete(edit, () => remove(`/transactions/${tx.id}`, `“${title}”`))}
     >
-      <Pressable
+      <SwipeRowPressable
         onPress={edit}
         className={`min-h-14 flex-row items-center gap-3 py-2 active:opacity-70 ${PLACEMENT[placement]}`}
-        accessibilityRole="button"
-        accessibilityHint="Swipe left for edit and delete"
+        accessibilityHint="Opens the transaction. Delete is in the actions menu"
       >
         <View className="h-10 w-10 items-center justify-center rounded-full bg-background">
           <Text className="text-lg">
@@ -95,7 +94,7 @@ export function TransactionRow({
             animate={false}
           />
         </View>
-      </Pressable>
+      </SwipeRowPressable>
     </SwipeRow>
   );
 }

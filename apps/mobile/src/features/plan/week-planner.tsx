@@ -15,8 +15,9 @@ import { Screen } from "@/components/ui/screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMinutes } from "@/lib/format";
+import { pickDate } from "@/lib/pick-date";
 import { useSettings } from "@/lib/queries";
-import { CompactTask } from "./compact-task";
+import { CompactTask, type PlanAction } from "./compact-task";
 import { type PlanTask, useTasks } from "./queries";
 import { useMoveTask } from "./use-move-task";
 
@@ -39,6 +40,18 @@ export function WeekPlanner() {
   const all = new Map<string, PlanTask>([...(week.data ?? []), ...tray].map((t) => [t.id, t]));
   const capacity = settings?.dayCapacityMinutes ?? 360;
 
+  // Screen readers can't drag, so the same moves are in each card's actions menu.
+  const pickDay = async (task: PlanTask) => {
+    const date = await pickDate(task.doAt ?? Date.now(), timeZone);
+    if (date) move.toDay(task, date);
+  };
+  const scheduleActions = (task: PlanTask): PlanAction[] => [
+    { label: "Schedule for today", run: () => move.toDay(task, today) },
+    { label: "Schedule for tomorrow", run: () => move.toDay(task, addDays(today, 1)) },
+    { label: "Schedule for a date", run: () => void pickDay(task) },
+    ...(task.doAt !== null ? [{ label: "Unschedule", run: () => move.unschedule(task) }] : []),
+  ];
+
   const onDrop = (taskId: string, zoneId: string) => {
     const task = all.get(taskId);
     if (!task) return;
@@ -55,6 +68,7 @@ export function WeekPlanner() {
         right={
           <View className="flex-row">
             <Pressable
+              accessibilityRole="button"
               className="h-12 w-12 items-center justify-center"
               onPress={() => setWeekStart(addDays(weekStart, -7))}
               accessibilityLabel="Previous week"
@@ -62,6 +76,7 @@ export function WeekPlanner() {
               <Icon name="chevron-left" />
             </Pressable>
             <Pressable
+              accessibilityRole="button"
               className="h-12 w-12 items-center justify-center"
               onPress={() => setWeekStart(addDays(weekStart, 7))}
               accessibilityLabel="Next week"
@@ -84,7 +99,7 @@ export function WeekPlanner() {
           ) : null}
           {tray.map((task) => (
             <Draggable key={task.id} id={task.id}>
-              <CompactTask task={task} tone="grape" />
+              <CompactTask task={task} tone="neutral" actions={scheduleActions(task)} />
             </Draggable>
           ))}
         </DropZone>
@@ -120,7 +135,7 @@ export function WeekPlanner() {
                   </Pressable>
                   {tasks.map((task) => (
                     <Draggable key={task.id} id={task.id}>
-                      <CompactTask task={task} />
+                      <CompactTask task={task} actions={scheduleActions(task)} />
                     </Draggable>
                   ))}
                 </DropZone>

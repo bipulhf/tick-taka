@@ -113,7 +113,7 @@ export function EventsScreen() {
             >
               <Card
                 className="gap-2"
-                accessibilityHint="Swipe left for edit and delete"
+                accessibilityHint="Shows its transactions. Edit and delete are in the actions menu"
                 onPress={() => router.push(`/money/transactions?eventId=${event.id}`)}
               >
                 <View className="flex-row items-center justify-between">

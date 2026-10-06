@@ -1,5 +1,12 @@
-import { type ReactNode, useCallback, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useState,
+} from "react";
+import { Pressable, type PressableProps, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   interpolate,
@@ -9,6 +16,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { haptic } from "@/lib/haptics";
+import { a11yActionProps, swipeRowActions } from "./a11y-actions";
 import { Icon, type IconName } from "./icon";
 import { Text } from "./text";
 
@@ -17,6 +25,8 @@ const ACTION_WIDTH = 76;
 const SPRING = { damping: 20, stiffness: 220 };
 
 export interface SwipeAction {
+  /** Name in the screen reader's actions menu, e.g. "Complete". */
+  label: string;
   icon: IconName;
   /** Background class, e.g. "bg-mint" */
   className: string;
@@ -43,10 +53,35 @@ const TONES: Record<RowAction["tone"], { box: string; text: "onAccent" | "backgr
 /** Only one row's tray is open at a time; opening another closes this one. */
 let closeOpenRow: (() => void) | null = null;
 
+type RowA11y = ReturnType<typeof a11yActionProps> & {
+  /** The focusable element inside the row takes the actions; returns a release. */
+  claim: () => () => void;
+};
+
+const RowA11yContext = createContext<RowA11y | null>(null);
+
+/**
+ * Spread onto the row's focusable element (its Pressable) so a screen reader offers the
+ * swipe actions there. Rows without one get the actions on the row itself.
+ */
+export function useSwipeRowA11y(enabled = true) {
+  const row = useContext(RowA11yContext);
+  const active = enabled ? row : null;
+  const claim = active?.claim;
+  useLayoutEffect(() => claim?.(), [claim]);
+  return active
+    ? {
+        accessibilityActions: active.accessibilityActions,
+        onAccessibilityAction: active.onAccessibilityAction,
+      }
+    : {};
+}
+
 /**
  * Swipe right to complete or check off; swipe left to reveal the row's actions
  * (edit, delete, ...), which stay open until one is tapped or the row is tapped.
- * Screen readers get the same actions from the accessibility actions menu.
+ * Screen readers get the same actions, the right swipe included, from the actions
+ * menu of the row's focusable element (see useSwipeRowA11y).
  */
 export function SwipeRow({
   children,
@@ -63,6 +98,7 @@ export function SwipeRow({
   const x = useSharedValue(0);
   const start = useSharedValue(0);
   const [open, setOpen] = useState(false);
+  const [claimed, setClaimed] = useState(0);
   const tray = actions.length * ACTION_WIDTH;
 
   const close = useCallback(() => {
@@ -85,6 +121,15 @@ export function SwipeRow({
     close();
     action.onPress();
   };
+
+  // Stable, so a consumer claims once rather than on every render.
+  const claim = useCallback(() => {
+    setClaimed((n) => n + 1);
+    return () => setClaimed((n) => n - 1);
+  }, []);
+  // The same actions for screen readers, which can't swipe.
+  const a11y: RowA11y = { ...a11yActionProps(swipeRowActions(right, actions)), claim };
+  const unclaimed = claimed === 0 && a11y.accessibilityActions.length > 0;
 
   const pan = Gesture.Pan()
     .activeOffsetX([-16, 16])
@@ -153,20 +198,17 @@ export function SwipeRow({
       <GestureDetector gesture={pan}>
         <Animated.View
           style={rowStyle}
-          accessibilityActions={actions.map((action) => ({
-            name: action.label,
-            label: action.label,
-          }))}
-          onAccessibilityAction={(event) =>
-            actions.find((action) => action.label === event.nativeEvent.actionName)?.onPress()
-          }
+          accessible={unclaimed}
+          accessibilityActions={unclaimed ? a11y.accessibilityActions : undefined}
+          onAccessibilityAction={unclaimed ? a11y.onAccessibilityAction : undefined}
         >
-          {children}
+          <RowA11yContext.Provider value={a11y}>{children}</RowA11yContext.Provider>
           {/* While the tray is open, a tap on the row closes it instead of opening the row. */}
           {open ? (
             <Pressable
               style={StyleSheet.absoluteFill}
               onPress={close}
+              accessibilityRole="button"
               accessibilityLabel="Close actions"
             />
           ) : null}
@@ -174,6 +216,12 @@ export function SwipeRow({
       </GestureDetector>
     </View>
   );
+}
+
+/** A row's main Pressable that offers the row's swipe actions to screen readers. */
+export function SwipeRowPressable(props: PressableProps & { className?: string }) {
+  const swipeActions = useSwipeRowA11y();
+  return <Pressable accessibilityRole="button" {...swipeActions} {...props} />;
 }
 
 /** Swipe-left actions for a record, in the usual order: edit first, delete last. */

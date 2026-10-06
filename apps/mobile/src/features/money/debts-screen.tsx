@@ -3,7 +3,7 @@ import { newId } from "@tick-taka/shared/ids";
 import { formatAmount, parseAmountToMinor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonCard } from "@/components/ui/skeleton";
-import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
+import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
@@ -127,12 +127,10 @@ export function DebtsScreen() {
                   >
                     <Card className="gap-2">
                       {/* Only the summary opens the loan; the forecast and repayment below stay inline. */}
-                      <Pressable
+                      <SwipeRowPressable
                         onPress={() => router.push(`/debt/${debt.id}`)}
                         className="gap-2 active:opacity-80"
-                        accessibilityRole="button"
-                        accessibilityLabel={`Edit loan with ${debt.person}`}
-                        accessibilityHint="Swipe left for edit and delete"
+                        accessibilityHint="Opens the loan. Delete is in the actions menu"
                       >
                         <View className="flex-row items-center justify-between">
                           <Text variant="strong">{debt.person}</Text>
@@ -149,7 +147,7 @@ export function DebtsScreen() {
                           {formatAmount(debt.principalMinor, { currency: debt.currency })} repaid
                           {debt.note ? ` · ${debt.note}` : ""}
                         </Text>
-                      </Pressable>
+                      </SwipeRowPressable>
                       <Forecast debt={debt} />
                       {repaying === debt.id ? (
                         <View className="gap-2">

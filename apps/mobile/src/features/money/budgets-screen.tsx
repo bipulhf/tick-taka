@@ -12,7 +12,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonCard } from "@/components/ui/skeleton";
-import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
+import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { formatMonth } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
@@ -149,11 +149,10 @@ export function BudgetsScreen() {
                           : [{ label: "Edit", icon: "pencil-outline", tone: "sky", onPress: edit }]
                       }
                     >
-                      <Pressable
+                      <SwipeRowPressable
                         onPress={edit}
                         className="gap-1 bg-card active:opacity-70"
-                        accessibilityRole="button"
-                        accessibilityHint="Opens the month's budgets. Swipe left for more."
+                        accessibilityHint="Opens the budget. More is in the actions menu"
                       >
                         <View className="flex-row justify-between">
                           <Text>
@@ -211,7 +210,7 @@ export function BudgetsScreen() {
                             rolled over
                           </Text>
                         ) : null}
-                      </Pressable>
+                      </SwipeRowPressable>
                     </SwipeRow>
                   ))}
                 </Card>

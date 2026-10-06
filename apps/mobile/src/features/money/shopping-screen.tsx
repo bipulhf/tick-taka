@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonList } from "@/components/ui/skeleton";
-import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
+import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { notify } from "@/lib/notify";
@@ -153,11 +153,10 @@ export function ShoppingScreen() {
                         })
                       }
                     />
-                    <Pressable
+                    <SwipeRowPressable
                       onPress={edit}
                       className="min-h-12 flex-1 flex-row items-center gap-2 active:opacity-80"
-                      accessibilityRole="button"
-                      accessibilityHint="Swipe left for edit and delete"
+                      accessibilityHint="Opens the item. Delete is in the actions menu"
                     >
                       <Text className={`flex-1 ${item.checkedAt ? "text-muted line-through" : ""}`}>
                         {item.title}
@@ -170,7 +169,7 @@ export function ShoppingScreen() {
                           animate={false}
                         />
                       ) : null}
-                    </Pressable>
+                    </SwipeRowPressable>
                     <Pressable
                       onPress={drop}
                       className="h-12 w-10 items-center justify-center"

@@ -18,7 +18,6 @@ import { type HabitWithProgress, useHabits } from "./queries";
 import { useArchiveHabit } from "./use-archive-habit";
 
 type Schedule = "daily" | "weekly" | "n_per_week";
-const COLORS = ["#A57BFF", "#5B8CFF", "#2EC4A0", "#FFB547", "#FF7A6B"];
 const EMOJIS = ["💧", "🏃", "📖", "🧘", "🥗", "😴", "✍️", "🙏", "💪", "🎸"];
 const REMIND = [null, "07:00", "09:00", "13:00", "18:00", "21:00"];
 
@@ -29,7 +28,8 @@ function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
   const archive = useArchiveHabit();
   const [name, setName] = useState(habit?.name ?? "");
   const [emoji, setEmoji] = useState(habit?.emoji ?? "💧");
-  const [color, setColor] = useState(habit?.color ?? "#A57BFF");
+  // Habits are always grape on screen (purple means habits); the emoji gives each its identity.
+  const color = habit?.color ?? "#A57BFF";
   const [schedule, setSchedule] = useState<Schedule>(habit?.schedule ?? "daily");
   const [perWeek, setPerWeek] = useState(habit?.perWeek ?? 3);
   const [target, setTarget] = useState(String(habit?.targetCount ?? 1));
@@ -100,20 +100,6 @@ function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
       <View className="flex-row flex-wrap gap-2">
         {EMOJIS.map((e) => (
           <Chip key={e} label={e} tone="grape" selected={emoji === e} onPress={() => setEmoji(e)} />
-        ))}
-      </View>
-      <View className="flex-row gap-3">
-        {COLORS.map((c) => (
-          <Text
-            key={c}
-            onPress={() => setColor(c)}
-            accessibilityRole="button"
-            accessibilityLabel={`Colour ${c}`}
-            className="h-10 w-10 rounded-full text-center leading-10"
-            style={{ backgroundColor: c }}
-          >
-            {color === c ? "✓" : " "}
-          </Text>
         ))}
       </View>
       <Segmented<Schedule>

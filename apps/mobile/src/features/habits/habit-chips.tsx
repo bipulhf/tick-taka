@@ -10,6 +10,7 @@ import { useOutbox } from "@/lib/outbox";
 import type { TodayData } from "@/lib/queries";
 import { playSound } from "@/lib/sounds";
 import { updateToday } from "@/lib/today-cache";
+import { useColors } from "@/theme/colors";
 
 type Habit = TodayData["habits"][number];
 const SIZE = 64;
@@ -26,6 +27,8 @@ function HabitChip({
   onReset: () => void;
 }) {
   const progress = Math.min(1, habit.todayCount / habit.targetCount);
+  // Always grape: purple means habits everywhere; the emoji tells habits apart.
+  const ring = useColors().grape;
   return (
     <Pressable
       onPress={onTap}
@@ -41,7 +44,7 @@ function HabitChip({
             cx={SIZE / 2}
             cy={SIZE / 2}
             r={R}
-            stroke={habit.color}
+            stroke={ring}
             strokeOpacity={0.25}
             strokeWidth={5}
             fill="none"
@@ -50,9 +53,9 @@ function HabitChip({
             cx={SIZE / 2}
             cy={SIZE / 2}
             r={R}
-            stroke={habit.color}
+            stroke={ring}
             strokeWidth={5}
-            fill={habit.doneToday ? habit.color : "none"}
+            fill={habit.doneToday ? ring : "none"}
             fillOpacity={0.2}
             strokeDasharray={`${CIRCUMFERENCE * progress} ${CIRCUMFERENCE}`}
             strokeOpacity={progress === 0 ? 0 : 1}

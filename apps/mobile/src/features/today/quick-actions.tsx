@@ -28,7 +28,7 @@ export function QuickActions() {
         {
           label: "Focus",
           icon: "sprout",
-          color: "grape",
+          color: "sky",
           onPress: () => router.push("/focus"),
         },
       ]}

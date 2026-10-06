@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
+import { useColorScheme, View } from "react-native";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,6 +11,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
+import { areaColorValue } from "@/features/plan/area-colors";
 import { plural } from "@/lib/format";
 import { useAreas, useCategories } from "@/lib/queries";
 import { useRemove } from "@/lib/use-remove";
@@ -24,6 +25,7 @@ type Tab = "areas" | "categories";
  */
 export function AreasEditor() {
   const router = useRouter();
+  const scheme = useColorScheme() === "dark" ? "dark" : "light";
   const remove = useRemove();
   const areasQuery = useAreas();
   const categoriesQuery = useCategories();
@@ -102,7 +104,7 @@ export function AreasEditor() {
                         right={
                           <View
                             className="h-4 w-4 rounded-full"
-                            style={{ backgroundColor: area.color }}
+                            style={{ backgroundColor: areaColorValue(area.color, scheme) }}
                           />
                         }
                         chevron

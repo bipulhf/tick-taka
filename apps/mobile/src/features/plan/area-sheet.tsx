@@ -1,7 +1,7 @@
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, useColorScheme, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
@@ -15,10 +15,10 @@ import { useOutbox } from "@/lib/outbox";
 import { useAreas } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { AREA_COLORS, AREA_SWATCHES, areaColorValue } from "./area-colors";
 
 type Area = NonNullable<ReturnType<typeof useAreas>["data"]>[number];
 
-export const AREA_COLORS = ["#5B8CFF", "#7A6BFF", "#FFB547", "#2EC4A0", "#FF7A6B", "#A57BFF"];
 const EMOJIS = ["💼", "🏠", "💪", "📚", "💰", "❤️", "🧘", "🎨", "👨‍👩‍👧", "🕌", "✈️", "⭐"];
 
 /** Add or edit an area of life: its emoji, name and colour, in one small sheet. */
@@ -41,6 +41,7 @@ export function AreaSheet({ id }: { id: string | null }) {
 
 function AreaForm({ area, count }: { area: Area | undefined; count: number }) {
   const router = useRouter();
+  const scheme = useColorScheme() === "dark" ? "dark" : "light";
   const send = useOutbox();
   const remove = useRemove();
   const [name, setName] = useState(area?.name ?? "");
@@ -112,17 +113,17 @@ function AreaForm({ area, count }: { area: Area | undefined; count: number }) {
         Colour
       </Text>
       <View className="flex-row flex-wrap gap-3">
-        {AREA_COLORS.map((c) => (
+        {AREA_SWATCHES.map(({ hex, name }) => (
           <Pressable
-            key={c}
-            onPress={() => setColor(c)}
+            key={hex}
+            onPress={() => setColor(hex)}
             accessibilityRole="radio"
-            accessibilityState={{ selected: color === c }}
-            accessibilityLabel={`Colour ${c}`}
+            accessibilityState={{ selected: color === hex }}
+            accessibilityLabel={name}
             className="h-12 w-12 items-center justify-center rounded-full"
-            style={{ backgroundColor: c }}
+            style={{ backgroundColor: areaColorValue(hex, scheme) }}
           >
-            {color === c ? <Icon name="check" color="onAccent" size={22} /> : null}
+            {color === hex ? <Icon name="check" color="onAccent" size={22} /> : null}
           </Pressable>
         ))}
       </View>

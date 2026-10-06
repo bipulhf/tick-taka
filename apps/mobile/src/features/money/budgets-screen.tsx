@@ -159,7 +159,9 @@ export function BudgetsScreen() {
                         <View className="flex-row justify-between">
                           <Text>
                             {line.emoji} {line.name}
-                            {line.pace === "ahead" ? "  · running ahead" : ""}
+                            {line.pace === "ahead" ? (
+                              <Text tone="coral">{"  · running ahead"}</Text>
+                            ) : null}
                           </Text>
                           <Text
                             variant="caption"
@@ -191,13 +193,8 @@ export function BudgetsScreen() {
                                 ? line.spentMinor / (line.limitMinor + line.carriedMinor)
                                 : 1
                             }
-                            tone={
-                              line.availableMinor < 0
-                                ? "coral"
-                                : line.pace === "ahead"
-                                  ? "mango"
-                                  : "mint"
-                            }
+                            // Mango is for the primary action; "running ahead" is the coral text mark.
+                            tone={line.availableMinor < 0 ? "coral" : "mint"}
                           />
                         ) : null}
                         {line.carriedMinor > 0 ? (

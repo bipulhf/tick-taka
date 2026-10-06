@@ -279,7 +279,7 @@ export function SafeToSpendWidget({
           tint={c.coralTint}
           tone={c.coral}
         />
-        <Action label="▶ Focus" uri="ticktaka://focus" tint={c.grapeTint} tone={c.grape} />
+        <Action label="▶ Focus" uri="ticktaka://focus" tint={c.skyTint} tone={c.sky} />
         <Action
           label="🎙 Tiki"
           uri="ticktaka://assistant?start=talk"

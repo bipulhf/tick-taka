@@ -31,7 +31,7 @@ Strategy: **Restrained.** Tinted neutrals plus one accent used for the primary a
 | grape-text | #6E44D6 | #B996FF | Grape as text (habit counts) |
 | mango-inverse | #FFB547 | #8A5A00 | Action text on an ink surface (snackbar Undo) |
 
-Rules: semantic colours appear as small marks (dots, rings, amounts, icons), not as large fills. The bright tokens are for marks; whenever a semantic colour is used for words, it uses its `-text` token, which the `Text` component's tones do automatically. Text and icons on a semantic fill (a mango button, a swipe-tray action) are always on-mango. Selected chips use the ink colour inverted (ink fill, background-coloured text) so they read in both themes; mango is reserved for the one primary action per screen.
+Rules: semantic colours appear as small marks (dots, rings, amounts, icons), not as large fills. The bright tokens are for marks; whenever a semantic colour is used for words, it uses its `-text` token, which the `Text` component's tones do automatically. Text and icons on a semantic fill (a mango button, a swipe-tray action) are always on-mango. Selected chips use the ink colour inverted (ink fill, background-coloured text) so they read in both themes; mango is reserved for the one primary action per screen. Focus, timers and every planner card are sky (time); cards with no time yet are neutral. Habit rings are always grape and habits differ by emoji, not colour. Area colours are picked from named swatches (Blue, Indigo, Mango, Green, Coral, Purple) that are drawn through the theme tokens and announced by name.
 
 Contrast (WCAG 2.x, checked by `apps/mobile/test/contrast.test.ts` against both themes and both accent themes):
 

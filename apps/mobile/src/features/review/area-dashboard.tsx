@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { View } from "react-native";
+import { useColorScheme, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Card } from "@/components/ui/card";
@@ -7,12 +7,14 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
+import { areaColorValue } from "@/features/plan/area-colors";
 import { formatMinutes } from "@/lib/format";
 import { useAreaDashboard } from "./queries";
 
 /** For each area: hours this week, money in and out this month, open tasks. */
 export function AreaDashboard() {
   const router = useRouter();
+  const scheme = useColorScheme() === "dark" ? "dark" : "light";
   const dashboard = useAreaDashboard();
   return (
     <Screen title="Areas" subtitle="How each part of life is going" tabBarPadding={false}>
@@ -45,7 +47,7 @@ export function AreaDashboard() {
               <View className="flex-row items-center gap-2">
                 <View
                   className="h-3 w-3 rounded-full"
-                  style={{ backgroundColor: row.area.color }}
+                  style={{ backgroundColor: areaColorValue(row.area.color, scheme) }}
                 />
                 <Text variant="strong" className="flex-1">
                   {row.area.emoji} {row.area.name}

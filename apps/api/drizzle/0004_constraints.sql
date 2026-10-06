@@ -5,6 +5,55 @@ UPDATE `tasks` SET `parent_id` = NULL WHERE `parent_id` IS NOT NULL AND `parent_
 UPDATE `tasks` SET `goal_id` = NULL WHERE `goal_id` IS NOT NULL AND `goal_id` NOT IN (SELECT `id` FROM `goals`);--> statement-breakpoint
 UPDATE `tasks` SET `next_id` = NULL WHERE `next_id` IS NOT NULL AND `next_id` NOT IN (SELECT `id` FROM `tasks`);--> statement-breakpoint
 UPDATE `categories` SET `parent_id` = NULL WHERE `parent_id` IS NOT NULL AND `parent_id` NOT IN (SELECT `id` FROM `categories`);--> statement-breakpoint
+-- Each rebuild copies every row, deleted ones included, and one row that breaks a new
+-- CHECK aborts the whole migration. Older builds let some through (a zero-amount
+-- expense, an event edited to end before it starts), so bring them to the nearest
+-- value the CHECK accepts first. Added after release: the migrator applies files by
+-- timestamp, not hash, so databases already past 0004 never run this again.
+UPDATE `accounts` SET `type` = 'cash' WHERE `type` NOT IN ('cash', 'bank', 'mobile_wallet', 'card', 'savings');--> statement-breakpoint
+DELETE FROM `budgets` WHERE `month` NOT GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]';--> statement-breakpoint
+UPDATE `budgets` SET `limit_minor` = 0 WHERE `limit_minor` < 0;--> statement-breakpoint
+UPDATE `categories` SET `kind` = 'expense' WHERE `kind` NOT IN ('expense', 'income');--> statement-breakpoint
+UPDATE `categories` SET `budget_type` = 'flexible' WHERE `budget_type` NOT IN ('fixed', 'non_monthly', 'flexible');--> statement-breakpoint
+UPDATE `categories` SET `parent_id` = NULL WHERE `parent_id` = `id`;--> statement-breakpoint
+UPDATE `debts` SET `direction` = 'owed_to_me' WHERE `direction` NOT IN ('owed_to_me', 'i_owe');--> statement-breakpoint
+UPDATE `debts` SET `principal_minor` = abs(`principal_minor`) WHERE `principal_minor` < 0;--> statement-breakpoint
+UPDATE `debts` SET `principal_minor` = 1, `deleted_at` = coalesce(`deleted_at`, `updated_at`) WHERE `principal_minor` = 0;--> statement-breakpoint
+UPDATE `events` SET `budget_minor` = NULL WHERE `budget_minor` < 0;--> statement-breakpoint
+UPDATE `events` SET `starts_on` = strftime('%Y-%m-%d', `created_at` / 1000, 'unixepoch') WHERE `starts_on` NOT GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]';--> statement-breakpoint
+UPDATE `events` SET `ends_on` = `starts_on` WHERE `ends_on` NOT GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]' OR `ends_on` < `starts_on`;--> statement-breakpoint
+UPDATE `goals` SET `target_minor` = abs(`target_minor`) WHERE `target_minor` < 0;--> statement-breakpoint
+UPDATE `goals` SET `target_minor` = 1 WHERE `target_minor` = 0;--> statement-breakpoint
+UPDATE `goals` SET `deadline` = NULL WHERE `deadline` NOT GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]';--> statement-breakpoint
+UPDATE `recurring` SET `kind` = 'bill' WHERE `kind` NOT IN ('bill', 'income');--> statement-breakpoint
+UPDATE `recurring` SET `amount_minor` = abs(`amount_minor`) WHERE `amount_minor` < 0;--> statement-breakpoint
+UPDATE `recurring` SET `amount_minor` = 1, `active` = 0 WHERE `amount_minor` = 0;--> statement-breakpoint
+UPDATE `recurring` SET `remind_days` = 0 WHERE `remind_days` < 0;--> statement-breakpoint
+UPDATE `shopping_items` SET `est_minor` = NULL WHERE `est_minor` < 0;--> statement-breakpoint
+UPDATE `sms_imports` SET `direction` = 'out' WHERE `direction` NOT IN ('in', 'out', 'cash_out');--> statement-breakpoint
+UPDATE `sms_imports` SET `status` = 'ignored' WHERE `status` NOT IN ('pending', 'added', 'ignored');--> statement-breakpoint
+UPDATE `transactions` SET `type` = 'adjustment' WHERE `type` NOT IN ('expense', 'income', 'transfer', 'adjustment');--> statement-breakpoint
+UPDATE `transactions` SET `amount_minor` = abs(`amount_minor`) WHERE `type` <> 'adjustment' AND `amount_minor` < 0;--> statement-breakpoint
+-- A zero expense, income or transfer moved no money; as an adjustment of 0 it still doesn't.
+UPDATE `transactions` SET `type` = 'adjustment', `to_account_id` = NULL, `to_amount_minor` = NULL WHERE `type` <> 'adjustment' AND `amount_minor` = 0;--> statement-breakpoint
+UPDATE `transactions` SET `to_amount_minor` = NULL WHERE `to_amount_minor` <= 0;--> statement-breakpoint
+UPDATE `transactions` SET `fee_minor` = 0 WHERE `fee_minor` < 0;--> statement-breakpoint
+DELETE FROM `habit_logs` WHERE `date` NOT GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]';--> statement-breakpoint
+UPDATE `habit_logs` SET `count` = 0 WHERE `count` < 0;--> statement-breakpoint
+UPDATE `habits` SET `schedule` = 'daily' WHERE `schedule` NOT IN ('daily', 'weekly', 'n_per_week');--> statement-breakpoint
+UPDATE `habits` SET `per_week` = min(max(`per_week`, 1), 7) WHERE `per_week` NOT BETWEEN 1 AND 7;--> statement-breakpoint
+UPDATE `habits` SET `target_count` = 1 WHERE `target_count` < 1;--> statement-breakpoint
+UPDATE `projects` SET `status` = 'active' WHERE `status` NOT IN ('active', 'paused', 'done');--> statement-breakpoint
+UPDATE `routine_steps` SET `minutes` = NULL WHERE `minutes` < 0;--> statement-breakpoint
+UPDATE `tasks` SET `status` = 'inbox' WHERE `status` NOT IN ('inbox', 'open', 'someday', 'done');--> statement-breakpoint
+UPDATE `tasks` SET `priority` = 'normal' WHERE `priority` NOT IN ('low', 'normal', 'high');--> statement-breakpoint
+UPDATE `tasks` SET `when_slot` = 'day' WHERE `when_slot` NOT IN ('day', 'evening');--> statement-breakpoint
+UPDATE `tasks` SET `energy` = NULL WHERE `energy` NOT IN ('high', 'low');--> statement-breakpoint
+UPDATE `tasks` SET `estimate_min` = NULL WHERE `estimate_min` < 0;--> statement-breakpoint
+UPDATE `tasks` SET `top3_date` = NULL WHERE `top3_date` NOT GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]';--> statement-breakpoint
+UPDATE `tasks` SET `parent_id` = NULL WHERE `parent_id` = `id`;--> statement-breakpoint
+UPDATE `time_entries` SET `source` = 'manual' WHERE `source` NOT IN ('timer', 'focus', 'manual');--> statement-breakpoint
+UPDATE `time_entries` SET `ended_at` = `started_at` WHERE `ended_at` < `started_at`;--> statement-breakpoint
 CREATE TABLE `__new_accounts` (
 	`id` text PRIMARY KEY NOT NULL,
 	`created_at` integer NOT NULL,

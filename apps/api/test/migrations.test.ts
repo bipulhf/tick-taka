@@ -129,4 +129,61 @@ describe("0004_constraints on a populated database", () => {
     rejects(`DELETE FROM tasks WHERE id = '${parent}'`);
     sqlite.close();
   });
+
+  test("repairs rows older builds let through instead of aborting", () => {
+    const path = join(work, "legacy-rows.db");
+    const before = new Database(path, { create: true });
+    migrate(drizzle({ client: before }), { migrationsFolder: migrationsUpTo("0003_task_next_id") });
+    const now = Date.UTC(2026, 9, 4, 4);
+    seedDefaults(drizzle({ client: before }), now);
+    const stamp = `${now}, ${now}, NULL`;
+    const [cash, zeroSpend, deletedZero, trip, debt, habit, log, budget] = Array.from(
+      { length: 8 },
+      () => newId(),
+    );
+    before.exec(`
+      INSERT INTO accounts (id, created_at, updated_at, deleted_at, name, type, currency, opening_minor, sort)
+        VALUES ('${cash}', ${stamp}, 'Cash', 'cash', 'BDT', 500000, 0);
+      INSERT INTO transactions (id, created_at, updated_at, deleted_at, type, account_id, amount_minor, fee_minor, occurred_at)
+        VALUES ('${zeroSpend}', ${stamp}, 'expense', '${cash}', 0, 0, ${now});
+      INSERT INTO transactions (id, created_at, updated_at, deleted_at, type, account_id, amount_minor, fee_minor, occurred_at)
+        VALUES ('${deletedZero}', ${now}, ${now}, ${now}, 'expense', '${cash}', 0, -5, ${now});
+      INSERT INTO events (id, created_at, updated_at, deleted_at, name, emoji, budget_minor, starts_on, ends_on)
+        VALUES ('${trip}', ${stamp}, 'Trip', '✈️', -100, '2026-10-10', '2026-10-01');
+      INSERT INTO debts (id, created_at, updated_at, deleted_at, person, direction, principal_minor)
+        VALUES ('${debt}', ${stamp}, 'Rafi', 'i_owe', -2000);
+      INSERT INTO habits (id, created_at, updated_at, deleted_at, name, emoji, color, schedule, per_week, target_count)
+        VALUES ('${habit}', ${stamp}, 'Run', '🏃', 'green', 'n_per_week', 9, 0);
+      INSERT INTO habit_logs (id, created_at, updated_at, deleted_at, habit_id, date, count)
+        VALUES ('${log}', ${stamp}, '${habit}', '4 Oct', 1);
+      INSERT INTO budgets (id, created_at, updated_at, deleted_at, category_id, month, limit_minor, rollover)
+        VALUES ('${budget}', ${stamp}, (SELECT id FROM categories LIMIT 1), '2026-10', -1, 0);
+    `);
+    before.close();
+
+    const { sqlite } = openDatabase(path);
+    const row = (sql: string) => sqlite.query(sql).get();
+    expect(row(`SELECT type, amount_minor FROM transactions WHERE id = '${zeroSpend}'`)).toEqual({
+      type: "adjustment",
+      amount_minor: 0,
+    });
+    expect(row(`SELECT fee_minor FROM transactions WHERE id = '${deletedZero}'`)).toEqual({
+      fee_minor: 0,
+    });
+    expect(row(`SELECT budget_minor, starts_on, ends_on FROM events WHERE id = '${trip}'`)).toEqual(
+      { budget_minor: null, starts_on: "2026-10-10", ends_on: "2026-10-10" },
+    );
+    expect(row(`SELECT principal_minor FROM debts WHERE id = '${debt}'`)).toEqual({
+      principal_minor: 2000,
+    });
+    expect(row(`SELECT per_week, target_count FROM habits WHERE id = '${habit}'`)).toEqual({
+      per_week: 7,
+      target_count: 1,
+    });
+    expect(row(`SELECT id FROM habit_logs WHERE id = '${log}'`)).toBeNull();
+    expect(row(`SELECT limit_minor FROM budgets WHERE id = '${budget}'`)).toEqual({
+      limit_minor: 0,
+    });
+    sqlite.close();
+  });
 });

@@ -3,6 +3,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { newId } from "@tick-taka/shared/ids";
 import type { Env } from "../env";
+import { errorFields, log, userTag } from "../lib/log";
 import { type DbHandle, openDatabase } from "./client";
 import { createHandleCache } from "./handle-cache";
 import { createJobRunStore } from "./job-runs";
@@ -174,7 +175,17 @@ export function createUserRegistry(
       if (cached) return cached;
       if (!byId.get(user.id)) throw new Error("This account was deleted");
       const paths = dataPaths(user);
-      const handle = openDatabase(paths.db);
+      let handle: DbHandle;
+      try {
+        handle = openDatabase(paths.db);
+      } catch (error) {
+        // Usually a migration that refused an old row: say whose, so it can be repaired.
+        log("error", "user database failed to open", {
+          user: userTag(user.id, env.JWT_SECRET),
+          ...errorFields(error),
+        });
+        throw error;
+      }
       if (options.seed !== false) seedDefaults(handle.db, now());
       const data = { ...handle, uploadsDir: paths.uploads, backupsDir: paths.backups };
       open.set(user.id, data);

@@ -48,7 +48,7 @@ export function AppearanceSettings() {
               ]}
             />
             <Text variant="caption" tone="muted">
-              {`How amounts are shown, like ${formatAmount(125_000, { numerals: s.numerals })}. You can type either.`}
+              {`How amounts are shown, like ${formatAmount(125_000, { numerals: s.numerals })}, on screen, on the keypad and on the widget. Dates and times stay 0-9. You can type either.`}
             </Text>
           </Card>
           <Card className="gap-1">

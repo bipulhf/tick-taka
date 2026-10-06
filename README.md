@@ -295,6 +295,10 @@ cd apps/mobile
 bunx eas-cli build -p android --profile preview    # APK pointing at the HTTPS API
 ```
 
+Preview and production APKs allow HTTPS only (`app.config.ts` turns cleartext HTTP on
+just for local development and the `development` profile) and refuse to build unless
+`EXPO_PUBLIC_API_URL` starts with `https://`.
+
 The app is installed as an APK. It never asks to read your messages: SMS permissions are
 blocked in the build, so the phone can't grant them even by accident.
 

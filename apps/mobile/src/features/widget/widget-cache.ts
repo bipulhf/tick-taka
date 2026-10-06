@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Numerals } from "@tick-taka/shared/money";
+import { afterHandOver } from "./widget-pending";
 
 export interface QuickEntry {
   label: string;
@@ -91,6 +92,22 @@ export async function readPendingDeletes(): Promise<string[]> {
 
 export async function writePendingDeletes(ids: string[]): Promise<void> {
   await AsyncStorage.setItem(PENDING_DELETES_KEY, JSON.stringify(ids));
+}
+
+/** Drops the widget logs the app just queued, re-reading so a tap made meanwhile stays. */
+export async function removePendingLogs(sent: PendingWidgetLog[]): Promise<void> {
+  await writePendingLogs(afterHandOver(await readPendingLogs(), sent, (log) => log.id));
+}
+
+/** Drops the widget deletes the app just queued, keeping any made meanwhile. */
+export async function removePendingDeletes(sent: string[]): Promise<void> {
+  await writePendingDeletes(afterHandOver(await readPendingDeletes(), sent, (id) => id));
+}
+
+/** Widget logs and undos still waiting for the app, for the sign-out warning. */
+export async function countPendingWidgetWrites(): Promise<number> {
+  const [logs, deletes] = await Promise.all([readPendingLogs(), readPendingDeletes()]);
+  return logs.length + deletes.length;
 }
 
 /** The three most frequent "note + amount" expenses become one-tap buttons (e.g. "cha ৳20"). */

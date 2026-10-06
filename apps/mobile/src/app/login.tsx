@@ -154,7 +154,12 @@ export default function LoginScreen() {
             Your tasks and money stay private to your account.
           </Text>
           {expired ? (
-            <Button label="Sign out instead" variant="ghost" size="sm" onPress={confirmSignOut} />
+            <Button
+              label="Sign out instead"
+              variant="ghost"
+              size="sm"
+              onPress={() => void confirmSignOut()}
+            />
           ) : null}
         </View>
 

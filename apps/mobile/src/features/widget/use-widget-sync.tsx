@@ -13,9 +13,9 @@ import {
   readPendingDeletes,
   readPendingLogs,
   readWidgetCache,
+  removePendingDeletes,
+  removePendingLogs,
   type WidgetCache,
-  writePendingDeletes,
-  writePendingLogs,
   writeWidgetCache,
 } from "./widget-cache";
 import { widgetSnapshot } from "./widget-snapshot";
@@ -45,11 +45,11 @@ export function useWidgetSync() {
       const pending = await readPendingLogs();
       for (const log of pending)
         send({ method: "POST", path: "/transactions", body: { ...log, type: "expense" } });
-      if (pending.length) await writePendingLogs([]);
+      if (pending.length) await removePendingLogs(pending);
       // Quick-logs undone on the widget while it couldn't reach the server.
       const deletes = await readPendingDeletes();
       for (const id of deletes) send({ method: "DELETE", path: `/transactions/${id}` });
-      if (deletes.length) await writePendingDeletes([]);
+      if (deletes.length) await removePendingDeletes(deletes);
     })();
   }, [send]);
 

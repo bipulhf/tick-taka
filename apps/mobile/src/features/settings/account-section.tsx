@@ -41,7 +41,12 @@ export function AccountSection() {
           ) : null}
         </View>
       </View>
-      <Button label="Sign out" icon="logout" variant="secondary" onPress={confirmSignOut} />
+      <Button
+        label="Sign out"
+        icon="logout"
+        variant="secondary"
+        onPress={() => void confirmSignOut()}
+      />
       <Button
         label="Delete account…"
         icon="delete-outline"

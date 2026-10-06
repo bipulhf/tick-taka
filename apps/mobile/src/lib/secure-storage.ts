@@ -39,7 +39,15 @@ const aesGcm: Cipher = {
 /**
  * Encrypted AsyncStorage for the user's data at rest: the query cache (balances,
  * transactions, notes), the outbox and the assistant chat. The app lock only hides
- * the screen; this keeps the data unreadable from a backup or a file dump.
+ * the screen; this keeps the data unreadable from a backup or a file dump (and
+ * android.allowBackup is off).
+ *
+ * The one exception is the home-screen widget's small store (features/widget/
+ * widget-cache.ts: today's left-to-spend, the next task's title, and expenses tapped
+ * on the widget while offline until the app opens). Android renders the widget from
+ * a headless task that may run before the Keystore is unlocked after a reboot, and a
+ * widget that can't read its numbers or save a tap would lose the expense; it is
+ * shown on the home screen anyway, so it stays in plain AsyncStorage.
  */
 export const secureStorage = createEncryptedStorage(AsyncStorage, aesGcm, {
   onUnreadable(name) {

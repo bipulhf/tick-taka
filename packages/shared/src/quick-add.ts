@@ -16,7 +16,8 @@ import {
   zonedTimeToUtc,
 } from "./dates";
 import { DEFAULT_AREAS, DEFAULT_CATEGORIES } from "./defaults";
-import { DEFAULT_CURRENCY } from "./money";
+import { toAsciiDigits } from "./digits";
+import { CURRENCY_WORD_RE, DEFAULT_CURRENCY, stripCurrency } from "./money";
 import { firstOccurrence, parseRecurrence } from "./recurrence";
 
 export type QuickAddKind = "expense" | "income" | "task" | "time_entry";
@@ -116,9 +117,21 @@ function categoryIdByName(name: string, context: QuickAddContext): string | null
   return context.categories.find((c) => normalize(c.name) === normalize(name))?.id ?? null;
 }
 
+/**
+ * Whole-word match that understands Bangla: vowel signs are part of a word, so "চা"
+ * does not match inside "চাল". Both sides are NFC-normalised because keyboards emit
+ * "ড়" and "য়" either precomposed or as a base letter plus nukta.
+ */
 function containsWord(haystack: string, needle: string): boolean {
-  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i").test(haystack);
+  const escaped = needle.normalize("NFC").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^\\p{L}\\p{M}\\p{N}_])${escaped}(?![\\p{L}\\p{M}\\p{N}_])`, "iu").test(
+    haystack.normalize("NFC"),
+  );
+}
+
+/** True for letters outside the Latin script, e.g. Bangla. The AI reads those better. */
+function hasNonLatinLetters(text: string): boolean {
+  return (text.match(/\p{L}/gu) ?? []).some((letter) => letter.codePointAt(0)! > 0x24f);
 }
 
 interface CategoryGuess {
@@ -170,19 +183,23 @@ export function guessArea(text: string, context: QuickAddContext): string | null
 }
 
 const DURATION_RE =
-  /^(?:(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours))?\s*(?:(\d+)\s*(?:m|min|mins|minute|minutes))?(?=\s|$)/i;
+  /^(?:(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours|ঘণ্টা|ঘন্টা))?\s*(?:(\d+)\s*(?:m|min|mins|minute|minutes|মিনিট))?(?=\s|$)/i;
 
 function parseDuration(text: string): { minutes: number; rest: string } | null {
-  const match = DURATION_RE.exec(text.trim());
+  // Digit conversion keeps the length, so the match length also slices the original text.
+  const match = DURATION_RE.exec(toAsciiDigits(text.trim()));
   if (!match || (!match[1] && !match[2]) || match[0].trim() === "") return null;
   const minutes = Math.round(Number(match[1] ?? 0) * 60 + Number(match[2] ?? 0));
   if (minutes <= 0) return null;
   return { minutes, rest: text.trim().slice(match[0].length).trim() };
 }
 
+const YESTERDAY_WORDS = ["yesterday", "গতকাল"];
+const TODAY_WORDS = ["today", "আজ", "আজকে"];
+
 function relativeDayOffset(tokens: string[]): { offset: number; rest: string[] } {
-  const rest = tokens.filter((t) => !["yesterday", "today"].includes(normalize(t)));
-  const offset = tokens.some((t) => normalize(t) === "yesterday") ? -1 : 0;
+  const rest = tokens.filter((t) => ![...YESTERDAY_WORDS, ...TODAY_WORDS].includes(normalize(t)));
+  const offset = tokens.some((t) => YESTERDAY_WORDS.includes(normalize(t))) ? -1 : 0;
   return { offset, rest };
 }
 
@@ -218,7 +235,15 @@ function parseMoney(
     incomeSign = true;
     body = body.slice(1).trim();
   }
-  const { offset, rest: tokens } = relativeDayOffset(body.split(/\s+/).filter(Boolean));
+  const { offset, rest: words } = relativeDayOffset(body.split(/\s+/).filter(Boolean));
+  // A currency word next to a number is not part of the note ("চা ২০ টাকা", "Tk 250 lunch").
+  const isNumber = (token: string | undefined) =>
+    token !== undefined && isAmountExpression(stripCurrency(token));
+  const tokens = words.filter(
+    (t, i) => !(CURRENCY_WORD_RE.test(t) && (isNumber(words[i - 1]) || isNumber(words[i + 1]))),
+  );
+  // ASCII digits and no currency sign, for detection only; the note keeps what was typed.
+  const plain = tokens.map(stripCurrency);
   let accountId: string | null = null;
   let amountIndex = -1;
   // Amount is the last token, the second-last when an account follows ("rickshaw 60 bkash"),
@@ -227,8 +252,8 @@ function parseMoney(
   const isAmountAt = (index: number) =>
     index >= 0 &&
     index < tokens.length &&
-    isAmountExpression(tokens[index]!) &&
-    !isPartOfDate(tokens, index);
+    isAmountExpression(plain[index]!) &&
+    !isPartOfDate(plain, index);
   if (isAmountAt(last)) {
     amountIndex = last;
   } else if (isAmountAt(last - 1) && findAccount(tokens[last]!, context.accounts)) {
@@ -256,7 +281,7 @@ function parseMoney(
   const categoryId = guess.kind === null || guess.kind === kind ? guess.categoryId : null;
   accountId ??= context.defaultAccountId;
   const currency = context.accounts.find((a) => a.id === accountId)?.currency ?? DEFAULT_CURRENCY;
-  const amountMinor = amountIndex >= 0 ? expressionToMinor(tokens[amountIndex]!, currency) : null;
+  const amountMinor = amountIndex >= 0 ? expressionToMinor(plain[amountIndex]!, currency) : null;
   if (amountIndex >= 0 && (amountMinor === null || amountMinor <= 0)) return null;
   const occurredAt = offset === 0 ? context.now : addDaysToInstant(context.now, offset, timeZone);
   return {
@@ -304,15 +329,20 @@ function parseTask(text: string, context: QuickAddContext): TaskDraft {
     working = working.replace(SOMEDAY_RE, " ");
   }
 
+  // Recurrence and dates are read from an ASCII-digit copy ("every ৩ days"); the copy has
+  // the same length, so positions found in it cut the original and the title keeps "৩".
   const recurrence = parseRecurrence(
-    working,
+    toAsciiDigits(working),
     context.workdays ? { workdays: context.workdays } : {},
   );
-  if (recurrence) working = recurrence.rest;
+  if (recurrence) {
+    const at = toAsciiDigits(working).indexOf(recurrence.phrase);
+    working = `${working.slice(0, at)} ${working.slice(at + recurrence.phrase.length)}`;
+  }
 
   const offsetMinutes = timeZoneOffsetMs(context.now, timeZone) / MINUTE_MS;
   const results = chrono.parse(
-    working,
+    toAsciiDigits(working),
     { instant: new Date(context.now), timezone: offsetMinutes },
     { forwardDate: true },
   );
@@ -370,7 +400,7 @@ function parseTask(text: string, context: QuickAddContext): TaskDraft {
     .replace(/\s+/g, " ")
     .replace(/\s+([,.!?])/g, "$1")
     .trim();
-  const strayNumber = /\b\d+(\.\d+)?\b/.test(title);
+  const strayNumber = /\b\d+(\.\d+)?\b/.test(toAsciiDigits(title));
   return {
     kind: "task",
     title: title ? title.charAt(0).toUpperCase() + title.slice(1) : text.trim(),
@@ -383,21 +413,25 @@ function parseTask(text: string, context: QuickAddContext): TaskDraft {
     status,
     priority,
     areaId: guessArea(text, context),
-    confidence: title.length > 0 && !strayNumber ? "high" : "low",
+    confidence: title.length > 0 && !strayNumber && !hasNonLatinLetters(title) ? "high" : "low",
   };
 }
 
 function parseTimeEntry(text: string, context: QuickAddContext): TimeEntryDraft | null {
   const duration = parseDuration(text);
   if (!duration) return null;
+  const areaId = guessArea(duration.rest, context);
   return {
     kind: "time_entry",
     minutes: duration.minutes,
     note: duration.rest,
-    areaId: guessArea(duration.rest, context),
+    areaId,
     startedAt: context.now - duration.minutes * MINUTE_MS,
     endedAt: context.now,
-    confidence: duration.rest.length > 0 ? "high" : "low",
+    confidence:
+      duration.rest.length > 0 && (areaId !== null || !hasNonLatinLetters(duration.rest))
+        ? "high"
+        : "low",
   };
 }
 

@@ -13,6 +13,7 @@ import {
   startOfWeek,
   weekdayOf,
 } from "./dates";
+import { toAsciiDigits } from "./digits";
 
 export type Frequency = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
@@ -386,9 +387,11 @@ const CLOCK_AFTER = new RegExp(String.raw`^${CLOCK}\b`, "i");
  * A clock time right after the phrase ("every Sun and Tue 10am") sets BYHOUR/BYMINUTE.
  */
 export function parseRecurrence(
-  text: string,
+  input: string,
   options: { workdays?: number[] } = {},
 ): ParsedRecurrence | null {
+  // "every ৩ days": Bangla digits read as 0-9. `rest` and `phrase` come back in ASCII digits.
+  const text = toAsciiDigits(input);
   const workdays = options.workdays ?? DEFAULT_WORKDAYS;
   for (const pattern of PATTERNS) {
     const match = pattern.regex.exec(text);

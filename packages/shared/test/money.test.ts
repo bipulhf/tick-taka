@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  CURRENCY_WORD_RE,
   currencySymbol,
   DEFAULT_CURRENCY,
   formatAmount,
@@ -7,6 +8,7 @@ import {
   minorFactor,
   parseAmountToMinor,
   splitEvenly,
+  stripCurrency,
   toMajor,
   toMinor,
 } from "../src/money";
@@ -76,5 +78,28 @@ describe("money", () => {
     expect(splitEvenly(100, 1)).toEqual([100]);
     expect(() => splitEvenly(100, 0)).toThrow("parts must be a positive integer");
     expect(() => splitEvenly(100, 1.5)).toThrow("parts must be a positive integer");
+  });
+
+  test("parses Bangla digits and currency words (QA-011)", () => {
+    expect(parseAmountToMinor("২৫০")).toBe(25_000);
+    expect(parseAmountToMinor("১,২৫০.৫০")).toBe(125_050);
+    expect(parseAmountToMinor("৳২০")).toBe(2_000);
+    expect(parseAmountToMinor("২০ টাকা")).toBe(2_000);
+    expect(parseAmountToMinor("২০টাকা")).toBe(2_000);
+    expect(parseAmountToMinor("Tk 500")).toBe(50_000);
+    expect(parseAmountToMinor("500 tk.")).toBe(50_000);
+    expect(parseAmountToMinor("60 taka")).toBe(6_000);
+    expect(parseAmountToMinor("টাকা")).toBeNull();
+    expect(parseAmountToMinor("২৫০ apples")).toBeNull();
+  });
+
+  test("stripCurrency and CURRENCY_WORD_RE", () => {
+    expect(stripCurrency(" ৳২৫০ ")).toBe("250");
+    expect(stripCurrency("৬০tk")).toBe("60");
+    expect(stripCurrency("lunch")).toBe("lunch");
+    expect(CURRENCY_WORD_RE.test("টাকা")).toBe(true);
+    expect(CURRENCY_WORD_RE.test("TK")).toBe(true);
+    expect(CURRENCY_WORD_RE.test("৳")).toBe(true);
+    expect(CURRENCY_WORD_RE.test("tea")).toBe(false);
   });
 });

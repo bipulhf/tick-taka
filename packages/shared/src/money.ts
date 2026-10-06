@@ -3,6 +3,8 @@
  * (poisha for BDT, cents for EUR). These helpers convert at the edges only.
  */
 
+import { toAsciiDigits } from "./digits";
+
 export const DEFAULT_CURRENCY = "BDT";
 
 const ZERO_DECIMAL_CURRENCIES = new Set(["JPY", "KRW", "VND", "CLP", "ISK"]);
@@ -71,12 +73,26 @@ export function formatAmount(minor: number, options: FormatAmountOptions = {}): 
   return `${sign}${currencySymbol(currency)}${body}`;
 }
 
-/** Parses a user-typed amount like "1,250.50" into minor units. Returns null when invalid. */
+const CURRENCY_WORD = String.raw`(?:৳|tk\.?|taka|টাকা)`;
+
+/** A currency sign or word written next to an amount: ৳, tk, taka, টাকা. */
+export const CURRENCY_WORD_RE = new RegExp(`^${CURRENCY_WORD}$`, "i");
+const CURRENCY_AFFIX_RE = new RegExp(`^${CURRENCY_WORD}|${CURRENCY_WORD}$`, "gi");
+
+/** "৳২৫০" → "250", "60tk" → "60": ASCII digits, currency sign or word removed. */
+export function stripCurrency(text: string): string {
+  return toAsciiDigits(text.trim()).replace(CURRENCY_AFFIX_RE, "").trim();
+}
+
+/**
+ * Parses a user-typed amount like "1,250.50", "৳ 60", "Tk 500", "২৫০" or "২৫০ টাকা"
+ * into minor units. Returns null when invalid.
+ */
 export function parseAmountToMinor(
   input: string,
   currency: string = DEFAULT_CURRENCY,
 ): number | null {
-  const cleaned = input.replace(/[,\s৳]/g, "");
+  const cleaned = stripCurrency(input).replace(/[,\s]/g, "");
   if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return null;
   return toMinor(Number(cleaned), currency);
 }

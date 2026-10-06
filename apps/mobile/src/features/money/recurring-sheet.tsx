@@ -4,6 +4,7 @@ import {
   toLocalDate,
   zonedTimeToUtc,
 } from "@tick-taka/shared/dates";
+import { toAsciiDigits } from "@tick-taka/shared/digits";
 import { newId } from "@tick-taka/shared/ids";
 import { formatAmount, parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { describeRRule, parseRecurrence } from "@tick-taka/shared/recurrence";
@@ -112,7 +113,7 @@ function RecurringForm({ id }: { id: string | null }) {
       ...(accountId ? { accountId } : {}),
     };
     if (foreign && !skip) {
-      const value = Number(rate);
+      const value = Number(toAsciiDigits(rate.trim()));
       if (!(value > 0)) return notify(`Enter the ${currency} → ${account?.currency} rate`);
       body.rate = value;
     }

@@ -19,7 +19,9 @@ const context: QuickAddContext = {
     { id: "cat_food", name: "Food", kind: "expense", parentId: null },
     { id: "cat_eatout", name: "Eating out", kind: "expense", parentId: "cat_food" },
     { id: "cat_transport", name: "Transport", kind: "expense", parentId: null },
+    { id: "cat_groceries", name: "Groceries", kind: "expense", parentId: "cat_food" },
     { id: "cat_shopping", name: "Shopping", kind: "expense", parentId: null },
+    { id: "cat_rent", name: "Rent", kind: "expense", parentId: null },
     { id: "cat_salary", name: "Salary", kind: "income", parentId: null },
   ],
   areas: [
@@ -178,5 +180,156 @@ describe("quick-add parser (more cases)", () => {
       confidence: "high",
     });
     expect(parseQuickAdd("   ", context)).toBeNull();
+  });
+});
+
+// QA-011: a Bangla keyboard types ০-৯, and those must parse like 0-9.
+describe("quick-add parser (Bangla)", () => {
+  test("চা ২০ → expense ৳20 in Food", () => {
+    expect(parseQuickAdd("চা ২০", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 2_000,
+      categoryId: "cat_food",
+      accountId: "acc_cash",
+      note: "চা",
+      confidence: "high",
+    });
+  });
+
+  test("lunch ২৫০ → expense ৳250", () => {
+    expect(parseQuickAdd("lunch ২৫০", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 25_000,
+      categoryId: "cat_food",
+    });
+  });
+
+  test("রিকশা ৬০ bkash → expense ৳60 in Transport from bKash", () => {
+    expect(parseQuickAdd("রিকশা ৬০ bkash", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 6_000,
+      categoryId: "cat_transport",
+      accountId: "acc_bkash",
+      note: "রিকশা",
+    });
+  });
+
+  test("২h thesis → 120-minute time entry", () => {
+    expect(parseQuickAdd("২h thesis", context)).toMatchObject({
+      kind: "time_entry",
+      minutes: 120,
+      note: "thesis",
+      areaId: "area_research",
+    });
+  });
+
+  test("Bangla hour and minute words", () => {
+    expect(parseQuickAdd("২ ঘণ্টা থিসিস", context)).toMatchObject({
+      kind: "time_entry",
+      minutes: 120,
+      note: "থিসিস",
+      // No area matched a Bangla note, so the AI gets a look
+      confidence: "low",
+    });
+    expect(parseQuickAdd("১ ঘন্টা ৩০ মিনিট পড়া", context)).toMatchObject({
+      kind: "time_entry",
+      minutes: 90,
+    });
+  });
+
+  test("১৮৫০/৩ → ৳617 through the calculator", () => {
+    expect(parseQuickAdd("dinner ১৮৫০/৩", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 61_700,
+      categoryId: "cat_food",
+    });
+    expect(parseQuickAdd("১৮৫০/৩", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 61_700,
+    });
+  });
+
+  test("+৪৫০০০ বেতন → income in Salary", () => {
+    expect(parseQuickAdd("+৪৫০০০ বেতন", context)).toMatchObject({
+      kind: "income",
+      amountMinor: 4_500_000,
+      categoryId: "cat_salary",
+    });
+  });
+
+  test("currency words and signs around the amount", () => {
+    for (const text of ["চা ২০ টাকা", "চা ২০টাকা", "৳২০ চা", "চা ৳২০", "cha 20 tk", "Tk 20 cha"]) {
+      expect(parseQuickAdd(text, context)).toMatchObject({
+        kind: "expense",
+        amountMinor: 2_000,
+        categoryId: "cat_food",
+      });
+    }
+    expect(parseQuickAdd("চা ২০ টাকা", context)).toMatchObject({ note: "চা" });
+  });
+
+  test("Bangla keywords respect vowel signs", () => {
+    // চাল (rice) is groceries; চা (tea) must not match inside it
+    expect(parseQuickAdd("চাল ৫০০", context)).toMatchObject({ categoryId: "cat_groceries" });
+    // বাস (bus) must not match inside বাসা (house)
+    expect(parseQuickAdd("বাসা ভাড়া ১৫০০০", context)).toMatchObject({ categoryId: "cat_rent" });
+  });
+
+  test("precomposed and decomposed ড় both match", () => {
+    const decomposed = "বাসা ভাড\u09BCা ১৫০০০";
+    const precomposed = "বাসা ভা\u09DCা ১৫০০০";
+    expect(parseQuickAdd(decomposed, context)).toMatchObject({ categoryId: "cat_rent" });
+    expect(parseQuickAdd(precomposed, context)).toMatchObject({ categoryId: "cat_rent" });
+  });
+
+  test("গতকাল moves an expense to yesterday", () => {
+    const draft = parseQuickAdd("গতকাল চা ২০", context);
+    expect(draft).toMatchObject({ kind: "expense", amountMinor: 2_000, note: "চা" });
+    if (draft?.kind === "expense") expect(toLocalDate(draft.occurredAt, TZ)).toBe("2026-10-03");
+  });
+
+  test("Bangla task text is low confidence so the AI parser reads it", () => {
+    expect(parseQuickAdd("মাকে ফোন করা", context)).toMatchObject({
+      kind: "task",
+      title: "মাকে ফোন করা",
+      confidence: "low",
+    });
+    expect(parseQuickAdd("call bank", context)).toMatchObject({ confidence: "high" });
+  });
+
+  test("an unknown Bangla expense is low confidence", () => {
+    expect(parseQuickAdd("জিনিস ২০০", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 20_000,
+      categoryId: null,
+      confidence: "low",
+    });
+  });
+
+  test("titles and notes keep the digits the user typed", () => {
+    expect(parseQuickAdd("রুম ৩০২ মিটিং", context)).toMatchObject({
+      kind: "task",
+      title: "রুম ৩০২ মিটিং",
+    });
+    expect(parseQuickAdd("৩ নম্বর বাস ২০", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 2_000,
+      note: "৩ নম্বর বাস",
+    });
+  });
+
+  test("dates and repeats with Bangla digits", () => {
+    const fivePm = zonedTimeToUtc({ year: 2026, month: 10, day: 5, hour: 17 }, TZ);
+    expect(parseQuickAdd("call bank tomorrow ৫pm", context)).toMatchObject({
+      kind: "task",
+      title: "Call bank",
+      doAt: fivePm,
+      hasTime: true,
+    });
+    expect(parseQuickAdd("water plants every ৩ days", context)).toMatchObject({
+      kind: "task",
+      title: "Water plants",
+      rrule: "FREQ=DAILY;INTERVAL=3",
+    });
   });
 });

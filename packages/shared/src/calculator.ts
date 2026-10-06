@@ -3,6 +3,7 @@
  * e.g. `1850/3` → 616.666…. Never uses eval; a small recursive-descent parser instead.
  */
 
+import { toAsciiDigits } from "./digits";
 import { DEFAULT_CURRENCY, minorFactor, toMinor } from "./money";
 
 type Token = { type: "number"; value: number } | { type: "op"; value: string };
@@ -11,7 +12,7 @@ const OPERATORS = new Set(["+", "-", "*", "/", "(", ")"]);
 
 function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
-  const source = input
+  const source = toAsciiDigits(input)
     .replace(/[×x]/g, "*")
     .replace(/÷/g, "/")
     .replace(/−/g, "-")
@@ -116,9 +117,13 @@ export function tryEvaluateExpression(input: string): number | null {
   }
 }
 
-/** True when the text looks like an amount expression (digits with at least one operator allowed). */
+/**
+ * True when the text looks like an amount expression (digits with at least one operator
+ * allowed). Bangla digits count: "২৫০" and "১৮৫০/৩" are amounts.
+ */
 export function isAmountExpression(input: string): boolean {
-  return /^[\d.,\s]+([+\-*/×÷][\d.,\s]+)*$/.test(input.trim()) && /\d/.test(input);
+  const text = toAsciiDigits(input).trim();
+  return /^[\d.,\s]+([+\-*/×÷−][\d.,\s]+)*$/.test(text) && /\d/.test(text);
 }
 
 /** True when an operator follows the first character, e.g. "1850/3" but not "-50". */

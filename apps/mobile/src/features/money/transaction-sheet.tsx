@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toLocalDate } from "@tick-taka/shared/dates";
 import { costInHours } from "@tick-taka/shared/finance";
 import { newId } from "@tick-taka/shared/ids";
-import { toMajor, toMinor } from "@tick-taka/shared/money";
+import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -303,12 +303,10 @@ export function TransactionSheet({ id }: { id: string | null }) {
                   ? String(toMajor(values.toAmountMinor, toAccount?.currency))
                   : ""
               }
-              onChangeText={(v) =>
-                form.setValue(
-                  "toAmountMinor",
-                  Number(v) > 0 ? toMinor(Number(v), toAccount?.currency) : null,
-                )
-              }
+              onChangeText={(v) => {
+                const minor = parseAmountToMinor(v, toAccount?.currency);
+                form.setValue("toAmountMinor", minor !== null && minor > 0 ? minor : null);
+              }}
             />
           ) : null}
           <TextField
@@ -316,7 +314,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
             keyboardType="decimal-pad"
             defaultValue={values.feeMinor ? String(toMajor(values.feeMinor)) : ""}
             onChangeText={(v) =>
-              form.setValue("feeMinor", Math.max(0, toMinor(Number(v) || 0, account?.currency)))
+              form.setValue("feeMinor", Math.max(0, parseAmountToMinor(v, account?.currency) ?? 0))
             }
           />
         </>

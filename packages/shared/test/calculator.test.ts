@@ -16,6 +16,8 @@ describe("calculator keypad", () => {
     expect(evaluateExpression("1,200 + 300")).toBe(1500);
     expect(evaluateExpression("100×2÷4")).toBe(50);
     expect(evaluateExpression("500−120")).toBe(380);
+    expect(evaluateExpression("১৮৫০/৩")).toBeCloseTo(616.6667);
+    expect(evaluateExpression("২০০ + ৫০")).toBe(250);
   });
 
   test("rejects invalid input instead of guessing", () => {
@@ -30,6 +32,10 @@ describe("calculator keypad", () => {
     expect(isAmountExpression("1850/3")).toBe(true);
     expect(isAmountExpression("5pm")).toBe(false);
     expect(isAmountExpression("2h")).toBe(false);
+    expect(isAmountExpression("২৫০")).toBe(true);
+    expect(isAmountExpression("১৮৫০/৩")).toBe(true);
+    expect(isAmountExpression("২h")).toBe(false);
+    expect(isAmountExpression("500−120")).toBe(true);
   });
 
   test("detects operators after the first character", () => {
@@ -60,6 +66,7 @@ describe("expressionToMinor", () => {
     ["-1850/3", "BDT", -61_700],
     ["1850/3", "USD", 61_700],
     ["1000/3", "JPY", 333],
+    ["১৮৫০/৩", "BDT", 61_700],
   ] as const)("%s in %s → %d", (input, currency, expected) => {
     expect(expressionToMinor(input, currency)).toBe(expected);
   });

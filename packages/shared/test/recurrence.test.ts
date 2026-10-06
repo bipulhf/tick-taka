@@ -96,3 +96,13 @@ describe("helpers", () => {
     expect(describeRRule("FREQ=DAILY;INTERVAL=3")).toBe("Every 3 days");
   });
 });
+
+describe("Bangla digits in repeat text (QA-011)", () => {
+  test("read as 0-9", () => {
+    expect(parseRecurrence("every ৩ days")?.rrule).toBe("FREQ=DAILY;INTERVAL=3");
+    expect(parseRecurrence("x every month on the ৫th")?.rrule).toBe("FREQ=MONTHLY;BYMONTHDAY=5");
+    expect(parseRecurrence("standup every Sun ১০am")?.rrule).toBe(
+      "FREQ=WEEKLY;BYDAY=SU;BYHOUR=10;BYMINUTE=0",
+    );
+  });
+});

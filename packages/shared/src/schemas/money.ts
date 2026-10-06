@@ -201,6 +201,15 @@ export const recurringPaySchema = z.object({
   rate: z.number().positive().optional(),
   skip: z.boolean().default(false),
 });
+/**
+ * Takes back a "Paid", "Received" or "Skip": the same transactionId, dueAt and skip the
+ * pay was sent with. Safe to send whatever became of the pay (landed, replayed, refused).
+ */
+export const recurringUnpaySchema = z.object({
+  transactionId: idSchema.optional(),
+  dueAt: epochMsSchema,
+  skip: z.boolean().default(false),
+});
 
 // Goals -----------------------------------------------------------------------
 export const goalCreateSchema = z.object({

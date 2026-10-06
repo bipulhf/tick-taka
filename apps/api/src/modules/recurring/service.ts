@@ -12,6 +12,7 @@ import { nextOccurrence } from "@tick-taka/shared/recurrence";
 import type {
   recurringCreateSchema,
   recurringPaySchema,
+  recurringUnpaySchema,
   recurringUpdateSchema,
 } from "@tick-taka/shared/schemas/money";
 import { and, asc, eq, isNull, lt } from "drizzle-orm";
@@ -63,6 +64,27 @@ export function recurringService(deps: Deps) {
     return zonedTimeToUtc({ year, month, day, hour, minute }, timeZone);
   }
 
+  /**
+   * Whether a pay or skip for `dueAt` is what put the bill where it is now: one step on
+   * from `dueAt`, with nothing (a later pay, an edit) having moved it since.
+   */
+  function movedOnceFrom(item: Recurring, dueAt: number | undefined, timeZone: string): boolean {
+    if (dueAt === undefined || dueAt >= item.nextDueAt) return false;
+    try {
+      return advance({ ...item, nextDueAt: dueAt }, timeZone) === item.nextDueAt;
+    } catch {
+      return false;
+    }
+  }
+
+  /** The transaction a pay logged under this id, if any; another item's is a conflict. */
+  function loggedPay(item: Recurring, transactionId: string | undefined) {
+    if (!transactionId) return undefined;
+    const logged = db.select().from(transactions).where(eq(transactions.id, transactionId)).get();
+    if (logged && logged.recurringId !== item.id) throw conflict("That transaction id is taken");
+    return logged;
+  }
+
   return {
     ...base,
 
@@ -91,23 +113,22 @@ export function recurringService(deps: Deps) {
     /**
      * "Paid" or "Received": logs the transaction and moves next_due_at forward.
      * Foreign-currency income is converted at the rate I enter. Replies with the due date
-     * it moved from (previousDueAt), or null when nothing moved (a replay or a late tap).
+     * it moved from (previousDueAt), or null when nothing moved (a late tap). A replay
+     * names it too while the bill still sits where that pay put it, so an Undo built from
+     * a replay's reply (the first reply was lost) still moves the date back.
      */
     pay(id: string, input: z.output<typeof recurringPaySchema>) {
       const item = base.get(id);
       const { timeZone, settings } = userTime(deps);
       return db.transaction(() => {
         // Replays (lost response, double tap, outbox retry) return the state as it is.
-        if (input.transactionId) {
-          const logged = db
-            .select()
-            .from(transactions)
-            .where(eq(transactions.id, input.transactionId))
-            .get();
-          if (logged) {
-            if (logged.recurringId !== item.id) throw conflict("That transaction id is taken");
-            return { transaction: logged, recurring: item, previousDueAt: null };
-          }
+        const logged = loggedPay(item, input.transactionId);
+        if (logged) {
+          const previousDueAt =
+            input.dueAt !== undefined && movedOnceFrom(item, input.dueAt, timeZone)
+              ? input.dueAt
+              : null;
+          return { transaction: logged, recurring: item, previousDueAt };
         }
         if (input.dueAt !== undefined && input.dueAt < item.nextDueAt)
           return { transaction: null, recurring: item, previousDueAt: null };
@@ -158,6 +179,32 @@ export function recurringService(deps: Deps) {
         const updated = base.update(id, { nextDueAt: advance(item, timeZone), overdueAt: null });
         // previousDueAt lets the app undo: delete the transaction, then move the due date back.
         return { transaction, recurring: updated, previousDueAt: item.nextDueAt };
+      });
+    },
+
+    /**
+     * Takes back a pay or skip, sent with the pay's own transactionId and dueAt. It needs
+     * nothing from the pay's reply, so the phone can queue it at once, even offline and
+     * across a restart. Deletes the transaction the pay logged (if it logged one), then
+     * moves the due date back to dueAt if that pay is what moved it: a pay that logged
+     * nothing (refused, or a late tap) moved nothing, and a bill paid again since keeps
+     * its date. Safe to repeat.
+     */
+    unpay(id: string, input: z.output<typeof recurringUnpaySchema>) {
+      const item = base.get(id);
+      const { timeZone } = userTime(deps);
+      return db.transaction(() => {
+        const logged = loggedPay(item, input.transactionId);
+        let transaction = logged ?? null;
+        if (logged && logged.deletedAt === null)
+          transaction = crud(db, transactions, "Transaction", deps.now).remove(logged.id);
+        // A skip logs nothing, so only the date says whether it went through.
+        const movedBack =
+          (logged !== undefined || input.skip) && movedOnceFrom(item, input.dueAt, timeZone);
+        const recurring = movedBack
+          ? base.update(id, { nextDueAt: input.dueAt, overdueAt: null })
+          : item;
+        return { transaction, recurring, movedBack };
       });
     },
 

@@ -97,12 +97,6 @@ describe("paying a bill can be undone", () => {
       dueAt: due(10),
     });
     expect(paid.body.previousDueAt).toBe(due(10));
-    // A replay moves nothing, so there is nothing to move back.
-    const replay = await ctx.request<PayResult>("POST", `/recurring/${bill.id}/pay`, {
-      transactionId,
-      dueAt: due(10),
-    });
-    expect(replay.body.previousDueAt).toBeNull();
 
     expect((await ctx.request("DELETE", `/transactions/${transactionId}`)).status).toBe(200);
     const restored = await ctx.request<Row>("PATCH", `/recurring/${bill.id}`, {
@@ -111,5 +105,122 @@ describe("paying a bill can be undone", () => {
     expect(restored.body.nextDueAt).toBe(due(10));
     const expenses = await ctx.request<{ items: Row[] }>("GET", "/transactions?type=expense");
     expect(expenses.body.items).toHaveLength(0);
+  });
+
+  // QA-303: the first reply was lost, so the phone only saw the replay's.
+  test("a replayed pay still names the due date the logged pay moved from", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    const body = { transactionId: newId(), dueAt: due(10) };
+    await ctx.request<PayResult>("POST", `/recurring/${bill.id}/pay`, body);
+    const replay = await ctx.request<PayResult>("POST", `/recurring/${bill.id}/pay`, body);
+    expect(replay.body.transaction?.id).toBe(body.transactionId);
+    expect(replay.body.previousDueAt).toBe(due(10));
+
+    await ctx.request("DELETE", `/transactions/${body.transactionId}`);
+    const restored = await ctx.request<Row>("PATCH", `/recurring/${bill.id}`, {
+      nextDueAt: replay.body.previousDueAt,
+    });
+    expect(restored.body.nextDueAt).toBe(due(10));
+    const expenses = await ctx.request<{ items: Row[] }>("GET", "/transactions?type=expense");
+    expect(expenses.body.items).toHaveLength(0);
+  });
+
+  test("a replay after the bill moved on again names nothing to move back to", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    const october = { transactionId: newId(), dueAt: due(10) };
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, october);
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, {
+      transactionId: newId(),
+      dueAt: due(11),
+    });
+    const replay = await ctx.request<PayResult>("POST", `/recurring/${bill.id}/pay`, october);
+    expect(replay.body.previousDueAt).toBeNull();
+    expect(replay.body.recurring.nextDueAt).toBe(due(12));
+  });
+});
+
+type UnpayResult = { transaction: Row | null; recurring: Row; movedBack: boolean };
+
+describe("taking back a pay in one write (unpay)", () => {
+  test("deletes the logged expense and moves the due date back, whatever the pay replied", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    const pay = { transactionId: newId(), dueAt: due(10) };
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, pay);
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, pay); // a replay
+    const undone = await ctx.request<UnpayResult>("POST", `/recurring/${bill.id}/unpay`, pay);
+    expect(undone.status).toBe(200);
+    expect(undone.body.movedBack).toBe(true);
+    expect(undone.body.recurring.nextDueAt).toBe(due(10));
+    const expenses = await ctx.request<{ items: Row[] }>("GET", "/transactions?type=expense");
+    expect(expenses.body.items).toHaveLength(0);
+
+    // Sent again by the outbox: nothing more changes.
+    const again = await ctx.request<UnpayResult>("POST", `/recurring/${bill.id}/unpay`, pay);
+    expect(again.status).toBe(200);
+    expect(again.body.movedBack).toBe(false);
+    expect(again.body.recurring.nextDueAt).toBe(due(10));
+  });
+
+  test("a pay that logged nothing (refused, or already done) moves nothing back", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, {
+      transactionId: newId(),
+      dueAt: due(10),
+    });
+    // A second "Paid" for October from another tap: it logged nothing.
+    const late = { transactionId: newId(), dueAt: due(10) };
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, late);
+    const undone = await ctx.request<UnpayResult>("POST", `/recurring/${bill.id}/unpay`, late);
+    expect(undone.body.movedBack).toBe(false);
+    expect(undone.body.recurring.nextDueAt).toBe(due(11));
+    const expenses = await ctx.request<{ items: Row[] }>("GET", "/transactions?type=expense");
+    expect(expenses.body.items).toHaveLength(1);
+  });
+
+  test("a skip is taken back by moving the due date back", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    const skip = { transactionId: newId(), dueAt: due(10), skip: true };
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, skip);
+    const undone = await ctx.request<UnpayResult>("POST", `/recurring/${bill.id}/unpay`, skip);
+    expect(undone.body.movedBack).toBe(true);
+    expect(undone.body.recurring.nextDueAt).toBe(due(10));
+  });
+
+  test("October's undo after November was paid keeps November's date", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    const october = { transactionId: newId(), dueAt: due(10) };
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, october);
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, {
+      transactionId: newId(),
+      dueAt: due(11),
+    });
+    const undone = await ctx.request<UnpayResult>("POST", `/recurring/${bill.id}/unpay`, october);
+    expect(undone.body.movedBack).toBe(false);
+    expect(undone.body.recurring.nextDueAt).toBe(due(12));
+    const expenses = await ctx.request<{ items: Row[] }>("GET", "/transactions?type=expense");
+    expect(expenses.body.items).toHaveLength(1);
+  });
+
+  test("another bill's transaction id is refused", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    const rent = await ctx.request<Row>("POST", "/recurring", {
+      kind: "bill",
+      name: "Rent",
+      amountMinor: 1_000_000,
+      accountId: bill.accountId,
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=5",
+      nextDueAt: due(10),
+    });
+    const pay = { transactionId: newId(), dueAt: due(10) };
+    await ctx.request("POST", `/recurring/${rent.body.id}/pay`, pay);
+    const undone = await ctx.request("POST", `/recurring/${bill.id}/unpay`, pay);
+    expect(undone.status).toBe(409);
   });
 });

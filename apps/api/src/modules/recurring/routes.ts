@@ -1,6 +1,7 @@
 import {
   recurringCreateSchema,
   recurringPaySchema,
+  recurringUnpaySchema,
   recurringUpdateSchema,
 } from "@tick-taka/shared/schemas/money";
 import { Hono } from "hono";
@@ -28,5 +29,8 @@ export const recurringRoutes = (deps: Deps) => {
     )
     .post("/:id/pay", validate("param", idParam), validate("json", recurringPaySchema), (c) =>
       c.json(service().pay(c.req.valid("param").id, c.req.valid("json"))),
+    )
+    .post("/:id/unpay", validate("param", idParam), validate("json", recurringUnpaySchema), (c) =>
+      c.json(service().unpay(c.req.valid("param").id, c.req.valid("json"))),
     );
 };

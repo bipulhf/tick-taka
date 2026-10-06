@@ -85,6 +85,14 @@ describe("error mapping", () => {
     }
   });
 
+  test("a row the database's rules refuse is 400 invalid_data, not a 500", async () => {
+    for (const code of ["SQLITE_CONSTRAINT_CHECK", "SQLITE_CONSTRAINT_NOTNULL"]) {
+      const res = await appThrowing(sqliteError(code)).request("/");
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ error: { code: "invalid_data" } });
+    }
+  });
+
   test("an HTTPException keeps its status", async () => {
     const res = await appThrowing(new HTTPException(413, { message: "Too big" })).request("/");
     expect(res.status).toBe(413);

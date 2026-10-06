@@ -1,9 +1,11 @@
 import { eventCreateSchema, eventUpdateSchema } from "@tick-taka/shared/schemas/money";
 import { desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import type { z } from "zod";
 import { events, transactions } from "../../db/schema/money";
 import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
+import { badRequest } from "../../lib/errors";
 import { spendingRows } from "../../lib/money-queries";
 import { idParam } from "../../lib/params";
 import { validate } from "../../lib/validate";
@@ -31,6 +33,14 @@ export const eventService = (deps: Deps) => {
     ...base,
     listWithSpending: () => base.list(undefined, desc(events.startsOn)).map(withSpending),
     getWithSpending: (id: string) => withSpending(base.get(id)),
+    /** A partial edit can move either end, so the range is checked against the stored row. */
+    update(id: string, input: z.output<typeof eventUpdateSchema>) {
+      const current = base.get(id);
+      const startsOn = input.startsOn ?? current.startsOn;
+      const endsOn = input.endsOn ?? current.endsOn;
+      if (endsOn < startsOn) throw badRequest("The event can't end before it starts");
+      return base.update(id, input);
+    },
   };
 };
 

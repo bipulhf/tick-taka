@@ -24,6 +24,17 @@ export const onError: ErrorHandler = (error, c) => {
   if (code === "SQLITE_CONSTRAINT_UNIQUE" || code === "SQLITE_CONSTRAINT_PRIMARYKEY") {
     return c.json(errorBody("conflict", "That record already exists"), 409);
   }
+  // A row the table's own rules refuse will be refused every time: a 400, so the
+  // phone drops the write and says so instead of retrying it forever as a 5xx.
+  if (code === "SQLITE_CONSTRAINT_CHECK" || code === "SQLITE_CONSTRAINT_NOTNULL") {
+    log("warn", "constraint refused a write", {
+      reqId: requestIdOf(c.req.raw),
+      method: c.req.method,
+      path: c.req.path,
+      ...errorFields(error),
+    });
+    return c.json(errorBody("invalid_data", "Those values don't fit together"), 400);
+  }
   log("error", "unhandled error", {
     reqId: requestIdOf(c.req.raw),
     method: c.req.method,

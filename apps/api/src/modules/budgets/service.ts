@@ -107,6 +107,39 @@ function spentByCategory(deps: Deps, cats: Category[], from: number, to: number)
   return { total, uncategorized: direct.get(null) ?? 0 };
 }
 
+/** How far back a chain of rollover months is followed. */
+const MAX_ROLLOVER_MONTHS = 24;
+
+/**
+ * Money each category carries into `month`: last month's limit plus what it carried
+ * in, minus what it spent, when rollover was on last month. Inherited months count,
+ * so budgets set once keep carrying.
+ */
+function carriedInto(
+  deps: Deps,
+  cats: Category[],
+  month: LocalMonth,
+  timeZone: string,
+  depth = 0,
+): Map<string, number> {
+  const carried = new Map<string, number>();
+  if (depth >= MAX_ROLLOVER_MONTHS) return carried;
+  const previousMonth = addMonths(month, -1);
+  const previous = effectiveBudgets(deps, previousMonth).rows.filter((b) => b.rollover);
+  if (previous.length === 0) return carried;
+  const range = localMonthRange(previousMonth, timeZone);
+  const spent = spentByCategory(deps, cats, range.from, range.to).total;
+  const before = carriedInto(deps, cats, previousMonth, timeZone, depth + 1);
+  for (const budget of previous) {
+    const left =
+      budget.limitMinor +
+      (before.get(budget.categoryId) ?? 0) -
+      (spent.get(budget.categoryId) ?? 0);
+    carried.set(budget.categoryId, Math.max(0, left));
+  }
+  return carried;
+}
+
 export function budgetMonth(
   deps: Deps,
   month: LocalMonth,
@@ -122,21 +155,12 @@ export function budgetMonth(
   const budgetByCat = new Map(rows.map((b) => [b.categoryId, b]));
 
   // Rollover: unspent money from last month's budget carries in when rollover is on.
-  const previousMonth = addMonths(month, -1);
-  const previousBudgets = new Map(budgetsFor(deps, previousMonth).map((b) => [b.categoryId, b]));
-  const previousRange = localMonthRange(previousMonth, timeZone);
-  const previousSpent = previousBudgets.size
-    ? spentByCategory(deps, cats, previousRange.from, previousRange.to).total
-    : new Map<string, number>();
+  const carried = carriedInto(deps, cats, month, timeZone);
 
   const paceDay = monthOf(day) === month ? day : null;
   const lines: BudgetLine[] = cats.map((cat) => {
     const budget = budgetByCat.get(cat.id);
-    const previous = previousBudgets.get(cat.id);
-    const carriedMinor =
-      budget?.rollover && previous?.rollover
-        ? Math.max(0, previous.limitMinor - (previousSpent.get(cat.id) ?? 0))
-        : 0;
+    const carriedMinor = budget?.rollover ? (carried.get(cat.id) ?? 0) : 0;
     const limitMinor = budget?.limitMinor ?? 0;
     const spentMinor = spent.get(cat.id) ?? 0;
     return {

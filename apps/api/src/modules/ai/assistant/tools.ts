@@ -146,7 +146,7 @@ function statusOf(value: unknown): string | null {
 
 /**
  * Runs the write tools for one assistant turn. Every change goes through the
- * normal REST routes and is recorded with a way to undo it.
+ * normal REST routes and is recorded, with a way to undo it where the action has one.
  */
 export function createToolRunner(
   caller: Caller,

@@ -121,8 +121,10 @@ things you buy often, and buttons to add a task, log an expense or start focusin
   on silent, and each can be switched off in Settings.
 
 **Tiki, the assistant** (needs an OpenAI key on the server)
-- Chat or talk, in Bangla or English, to add, change, delete or ask about anything, with
-  undo for every change.
+- Chat or talk, in Bangla or English, to add, change, delete or ask about anything. Adds,
+  edits, deletions, budgets, habit logs and settings come with Undo in the chat; the
+  timer and the money actions (paying a bill, adding to a goal, repaying a debt, a
+  balance check, a shopping checkout) are corrected in their own screens.
 - Weekly coach, budget suggestions, "break it down" for big tasks.
 - A monthly AI budget per user, which the server checks before every model call.
 - Deletions always wait for your tap. A client that sends `draftMoney: true` with

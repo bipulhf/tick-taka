@@ -6,6 +6,7 @@ import {
   startOfLocalDay,
 } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
+import { idSchema } from "@tick-taka/shared/schemas/common";
 import type { AiToolDefinition } from "../../../ai/client";
 import type { Caller } from "./dispatch";
 import { describeEntities, ENTITIES, ENTITY_NAMES, type EntityName } from "./entities";
@@ -171,6 +172,21 @@ function entityOf(name: unknown): EntityName {
   return name as EntityName;
 }
 
+const isId = (value: unknown): value is string => idSchema.safeParse(value).success;
+
+/** Ids go into request paths, so only real record ids (ULIDs) are accepted. */
+function idOf(value: unknown): string {
+  if (!isId(value)) throw new FieldError("id must be a record id from find");
+  return value;
+}
+
+/** Status filters go into a query string: a comma list of plain words only. */
+function statusOf(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  if (!/^[a-z_]+(,[a-z_]+)*$/.test(value)) throw new FieldError(`Unknown status ${value}`);
+  return value;
+}
+
 /**
  * Runs the write tools for one assistant turn. Every change goes through the
  * normal REST routes and is recorded with a way to undo it.
@@ -197,7 +213,7 @@ export function createToolRunner(
       typeof args.to === "string" && isLocalDate(args.to)
         ? startOfLocalDay(addDays(args.to, 1), timeZone)
         : null;
-    const status = typeof args.status === "string" ? args.status : null;
+    const status = statusOf(args.status);
     const search = "listQuery" in def ? def.listQuery({ query, from, to, status }) : "";
     const result = await caller.call("GET", `${def.path}${search}`);
     if (!result.ok) return fail(result.error);
@@ -245,7 +261,7 @@ export function createToolRunner(
   async function update(args: Record<string, unknown>) {
     const entity = entityOf(args.entity);
     const def = ENTITIES[entity];
-    const id = String(args.id);
+    const id = idOf(args.id);
     const fields = await convert(parseFields(String(args.fields)));
     const before = def.canGet ? await caller.call("GET", `${def.path}/${id}`) : null;
     const result = await caller.call("PATCH", `${def.path}/${id}`, { ...fields, updatedAt: now });
@@ -275,13 +291,12 @@ export function createToolRunner(
   async function remove(args: Record<string, unknown>) {
     const entity = entityOf(args.entity);
     const def = ENTITIES[entity];
-    const ids = Array.isArray(args.ids)
-      ? [...new Set(args.ids.filter((id): id is string => typeof id === "string" && id !== ""))]
-      : [];
+    const given = Array.isArray(args.ids) ? args.ids : [];
+    const ids = [...new Set(given.filter(isId))];
     if (!ids.length) throw new FieldError("ids must list at least one id from find");
+    const notFound: string[] = given.filter((id) => !isId(id)).map(String);
     // Some routes have no GET /:id; their list holds every record the user can delete.
     const list = def.canGet ? null : listOf((await caller.call("GET", def.path)).data);
-    const notFound: string[] = [];
     let proposed = 0;
     for (const id of ids) {
       const path = `${def.path}/${id}`;
@@ -315,11 +330,11 @@ export function createToolRunner(
 
   async function act(args: Record<string, unknown>) {
     const action = args.action as ActionName;
-    const id = typeof args.id === "string" ? args.id : null;
+    const id = typeof args.id === "string" && args.id ? args.id : null;
     const raw = parseFields(String(args.fields));
     const needId = () => {
       if (!id) throw new FieldError(`${action} needs the id of the record`);
-      return id;
+      return idOf(id);
     };
     switch (action) {
       case "log_habit": {

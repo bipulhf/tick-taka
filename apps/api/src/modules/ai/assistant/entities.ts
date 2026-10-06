@@ -22,13 +22,13 @@ export const ENTITIES = {
     canGet: true,
     fields: `title, notes, status (inbox|open|someday|done; open = planned, done = completed), priority (low|normal|high), area (name), project (name), parent (task id, for subtasks), doAt (${DATE}; the day to do it, with a time when given), whenSlot (day|evening), deadlineAt (${DATE}), estimateMin, reminderAt (${DATE}), rrule (iCal RRULE such as FREQ=WEEKLY;BYDAY=MO, or null), top3Date (YYYY-MM-DD, pins it to that day's top three), urgent (boolean), subtasks (array of titles, create only)`,
     listQuery: (f) =>
-      `?limit=60${f.status ? `&status=${f.status}` : "&status=inbox,open,someday"}${f.from !== null ? `&from=${f.from}` : ""}${f.to !== null ? `&to=${f.to}` : ""}${f.query ? `&q=${encodeURIComponent(f.query)}` : ""}`,
+      `?limit=60${f.status ? `&status=${encodeURIComponent(f.status)}` : "&status=inbox,open,someday"}${f.from !== null ? `&from=${f.from}` : ""}${f.to !== null ? `&to=${f.to}` : ""}${f.query ? `&q=${encodeURIComponent(f.query)}` : ""}`,
   },
   project: {
     path: "/projects",
     canGet: true,
     fields: "name, area (name, required on create), status (active|paused|done)",
-    listQuery: (f) => (f.status ? `?status=${f.status}` : ""),
+    listQuery: (f) => (f.status ? `?status=${encodeURIComponent(f.status)}` : ""),
   },
   area: { path: "/areas", canGet: true, fields: "name, emoji, color (#RRGGBB)" },
   habit: {

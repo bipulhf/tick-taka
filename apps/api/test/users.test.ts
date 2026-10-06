@@ -225,7 +225,7 @@ describe("nightly jobs", () => {
     const ctx = await createTestContext({ now: at, env: { BACKUPS_DIR: backups } });
     const london = await ctx.tokenFor("sub-london", "london@example.com");
     await ctx.request("PATCH", "/settings", { timeZone: "Europe/London" }, as(london));
-    runHourlyJobs(ctx.deps);
+    await runHourlyJobs(ctx.deps);
     const dhakaUser = ctx.deps.users.list()[0]!;
     const londonUser = ctx.deps.users.list()[1]!;
     expect(readdirSync(join(backups, "users", dhakaUser.id))).toEqual(["app-2026-10-04.db"]);

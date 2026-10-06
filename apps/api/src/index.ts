@@ -16,6 +16,8 @@ const deps = createDeps({
 });
 const app = createApp(deps);
 if (env.JOBS_ENABLED) startJobs(deps);
+// Idle user databases are closed even when no request opens another.
+setInterval(() => deps.users.sweep(), 60_000);
 
 // Started explicitly: pm2 imports this file from its own wrapper, and Bun only
 // serves a default-exported fetch when the file is the entry point.

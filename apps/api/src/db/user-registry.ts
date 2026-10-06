@@ -4,8 +4,12 @@ import { dirname, join } from "node:path";
 import { newId } from "@tick-taka/shared/ids";
 import type { Env } from "../env";
 import { type DbHandle, openDatabase } from "./client";
+import { createHandleCache } from "./handle-cache";
 import { seedDefaults } from "./seed";
 import { createSessionStore } from "./sessions";
+
+/** Open user databases: at most 50, each closed after 10 idle minutes. */
+const HANDLE_LIMITS = { max: 50, idleMs: 10 * 60_000, minIdleMs: 30_000 };
 
 export interface User {
   id: string;
@@ -63,7 +67,11 @@ export type UserRegistry = ReturnType<typeof createUserRegistry>;
  * someone else's rows. Sign-up is open: a new Google account gets a fresh,
  * seeded database on first sign-in.
  */
-export function createUserRegistry(env: Env, now: () => number, options: { seed?: boolean } = {}) {
+export function createUserRegistry(
+  env: Env,
+  now: () => number,
+  options: { seed?: boolean; handles?: Partial<typeof HANDLE_LIMITS> } = {},
+) {
   if (env.USERS_DB_PATH !== ":memory:") mkdirSync(dirname(env.USERS_DB_PATH), { recursive: true });
   const registry = new Database(env.USERS_DB_PATH, { create: true });
   registry.exec("PRAGMA journal_mode = WAL;");
@@ -85,7 +93,7 @@ export function createUserRegistry(env: Env, now: () => number, options: { seed?
   const legacyTaken = registry.query<{ n: number }, []>(
     "SELECT count(*) AS n FROM users WHERE legacy = 1",
   );
-  const open = new Map<string, UserData>();
+  const open = createHandleCache<UserData>({ ...HANDLE_LIMITS, ...options.handles, now });
   const sessions = createSessionStore(registry, now);
 
   /** The owner inherits the single-user data once, on their first sign-in. */
@@ -149,7 +157,11 @@ export function createUserRegistry(env: Env, now: () => number, options: { seed?
       return { user: toUser(byId.get(id)!), created: true };
     },
 
-    /** Opens (once) and returns this user's database, seeding defaults on first use. */
+    /**
+     * Returns this user's database, opening it (and seeding defaults on first use)
+     * if it isn't open. For work that spans awaits, use `lease` so the handle
+     * can't be closed underneath it.
+     */
     data(user: User): UserData {
       const cached = open.get(user.id);
       if (cached) return cached;
@@ -158,7 +170,39 @@ export function createUserRegistry(env: Env, now: () => number, options: { seed?
       if (options.seed !== false) seedDefaults(handle.db, now());
       const data = { ...handle, uploadsDir: paths.uploads, backupsDir: paths.backups };
       open.set(user.id, data);
+      open.sweep();
       return data;
+    },
+
+    /**
+     * This user's database, kept open until `release` is called. A handle opened
+     * just for this lease can be closed on release (`{ closeIfOpened: true }`), as
+     * the nightly jobs do, so a run over every user doesn't leave them all open.
+     */
+    lease(user: User): { data: UserData; release: (opts?: { closeIfOpened?: boolean }) => void } {
+      const opened = !open.get(user.id);
+      const data = this.data(user);
+      open.acquire(user.id);
+      let released = false;
+      return {
+        data,
+        release(opts = {}) {
+          if (released) return;
+          released = true;
+          open.release(user.id);
+          if (opened && opts.closeIfOpened) open.closeIfIdle(user.id);
+        },
+      };
+    },
+
+    /** Closes handles nobody has used for a while. Called on a timer and after jobs. */
+    sweep(): void {
+      open.sweep();
+    },
+
+    /** How many user databases are open, for tests and health checks. */
+    get openHandles(): number {
+      return open.size;
     },
   };
 }

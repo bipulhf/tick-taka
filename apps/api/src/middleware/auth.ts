@@ -38,5 +38,11 @@ export const requireAuth = (deps: Deps) =>
       deps.users.sessions.touch(session);
       sessionId = session.id;
     }
-    await runAsUser({ user, data: deps.users.data(user), sessionId }, () => next());
+    // Leased so the handle stays open for the whole request.
+    const lease = deps.users.lease(user);
+    try {
+      await runAsUser({ user, data: lease.data, sessionId }, () => next());
+    } finally {
+      lease.release();
+    }
   });

@@ -1,23 +1,8 @@
-import { type ReactNode, useEffect, useState } from "react";
-import { Keyboard, ScrollView, View } from "react-native";
+import type { ReactNode } from "react";
+import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "./text";
-
-/** Height of the on-screen keyboard; form sheets don't resize for it on their own. */
-export function useKeyboardHeight(): number {
-  const [height, setHeight] = useState(0);
-  useEffect(() => {
-    const show = Keyboard.addListener("keyboardDidShow", (event) =>
-      setHeight(event.endCoordinates.height),
-    );
-    const hide = Keyboard.addListener("keyboardDidHide", () => setHeight(0));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-  return height;
-}
+import { useKeyboardHeight } from "./use-keyboard-height";
 
 /** Body of a bottom-sheet route: creating and editing never open a full screen. */
 export function Sheet({

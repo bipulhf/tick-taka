@@ -6,6 +6,7 @@ import { useColors } from "@/theme/colors";
 import { Icon } from "./icon";
 import { SyncStatus } from "./sync-status";
 import { Text } from "./text";
+import { useKeyboardHeight } from "./use-keyboard-height";
 
 export interface ScreenProps {
   title?: string;
@@ -35,6 +36,9 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
+  // Inline fields (add money to a goal, shopping, payday, routines) stay above the keyboard:
+  // the screen shrinks by its height and Android scrolls the focused field into view.
+  const keyboard = useKeyboardHeight();
   const showBack = !tabBarPadding && router.canGoBack();
   const header = title ? (
     <View className="flex-row items-end justify-between gap-3 px-1 pb-2">
@@ -77,7 +81,10 @@ export function Screen({
   );
   if (!scroll) {
     return (
-      <View className="flex-1 gap-5 bg-background px-5" style={padding}>
+      <View
+        className="flex-1 gap-5 bg-background px-5"
+        style={{ ...padding, paddingBottom: padding.paddingBottom + keyboard }}
+      >
         <SyncStatus />
         {header}
         {children}
@@ -85,7 +92,7 @@ export function Screen({
     );
   }
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-background" style={{ paddingBottom: keyboard }}>
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-7 px-5"

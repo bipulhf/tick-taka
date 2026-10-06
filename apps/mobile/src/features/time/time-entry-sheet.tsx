@@ -5,13 +5,13 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
+import { DateField } from "@/components/ui/date-field";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
-import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { formatMinutes, formatWhen } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { pickTime } from "@/lib/pick-date";
@@ -109,24 +109,16 @@ function TimeEntryForm({ entry }: { entry: TimeEntry | null }) {
       }
     >
       <TextField value={note} onChangeText={setNote} placeholder="What did you work on?" />
-      <Text variant="label" tone="muted">
-        How long
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {durations.map((d) => (
-          <Chip
-            key={d}
-            label={DURATIONS.includes(d) ? (d < 60 ? `${d}m` : `${d / 60}h`) : formatMinutes(d)}
-            tone="sky"
-            selected={minutes === d}
-            onPress={() => setMinutes(d)}
-          />
-        ))}
-      </View>
-      <Chip
-        label={`Started ${formatWhen(startedAt, true, Date.now(), timeZone)}`}
-        tone="sky"
-        selected
+      <PickerField
+        label="How long"
+        value={String(minutes)}
+        options={durations.map((d) => ({ id: String(d), label: formatMinutes(d) }))}
+        onChange={(d) => setMinutes(d === null ? minutes : Number(d))}
+      />
+      <DateField
+        label="Started"
+        kind="time"
+        value={formatWhen(startedAt, true, Date.now(), timeZone)}
         onPress={async () => {
           const picked = await pickTime(toLocalDate(startedAt, timeZone), startedAt, timeZone);
           if (picked) setStartedAt(picked);
@@ -139,12 +131,7 @@ function TimeEntryForm({ entry }: { entry: TimeEntry | null }) {
         options={areas.map((area) => ({ id: area.id, label: area.name, emoji: area.emoji }))}
         onChange={(id) => id && setAreaId(id)}
       />
-      <Chip
-        label={billable ? "Billable" : "Not billable"}
-        tone="mint"
-        selected={billable}
-        onPress={() => setBillable(!billable)}
-      />
+      <ToggleRow label="Billable" value={billable} onChange={setBillable} />
     </Sheet>
   );
 }

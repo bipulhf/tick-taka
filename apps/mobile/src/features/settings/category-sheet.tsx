@@ -3,10 +3,10 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ErrorState } from "@/components/ui/empty-state";
 import { PickerField } from "@/components/ui/picker-field";
+import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -119,25 +119,22 @@ function CategoryForm({ category }: { category: Category | undefined }) {
           className="flex-1"
         />
       </View>
-      <View className="flex-row flex-wrap gap-2">
-        {EMOJIS.map((e) => (
-          <Chip key={e} label={e} selected={emoji === e} onPress={() => setEmoji(e)} />
-        ))}
-      </View>
+      <PickerField
+        label="Emoji"
+        layout="grid"
+        value={emoji.trim() || null}
+        options={EMOJIS.map((e) => ({ id: e, label: e }))}
+        onChange={(e) => setEmoji(e ?? emoji)}
+      />
       <Text variant="label" tone="muted">
         Budget bucket
       </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {BUCKETS.map((b) => (
-          <Chip
-            key={b.value}
-            label={b.label}
-            choice="single"
-            selected={budgetType === b.value}
-            onPress={() => setBudgetType(b.value)}
-          />
-        ))}
-      </View>
+      <Segmented<BudgetType>
+        label="Budget bucket"
+        value={budgetType}
+        onChange={setBudgetType}
+        options={BUCKETS.map((b) => ({ value: b.value, label: b.label }))}
+      />
       <Text variant="caption" tone="muted">
         {BUCKETS.find((b) => b.value === budgetType)?.hint}
       </Text>

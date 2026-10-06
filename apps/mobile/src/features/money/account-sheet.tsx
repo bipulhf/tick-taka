@@ -5,8 +5,8 @@ import { useState } from "react";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
+import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -19,12 +19,12 @@ import { editTime } from "@/lib/server-clock";
 import { useAccountActions } from "./use-account-actions";
 
 type AccountType = "cash" | "bank" | "mobile_wallet" | "card" | "savings";
-const TYPES: { value: AccountType; label: string }[] = [
-  { value: "cash", label: "💵 Cash" },
-  { value: "bank", label: "🏦 Bank" },
-  { value: "mobile_wallet", label: "📱 Wallet" },
-  { value: "card", label: "💳 Card" },
-  { value: "savings", label: "🫙 Savings" },
+const TYPES: { id: AccountType; label: string; emoji: string }[] = [
+  { id: "cash", label: "Cash", emoji: "💵" },
+  { id: "bank", label: "Bank", emoji: "🏦" },
+  { id: "mobile_wallet", label: "Wallet", emoji: "📱" },
+  { id: "card", label: "Card", emoji: "💳" },
+  { id: "savings", label: "Savings", emoji: "🫙" },
 ];
 const CURRENCIES = ["BDT", "USD", "EUR", "GBP"];
 
@@ -151,24 +151,24 @@ function AccountForm({ id }: { id: string | null }) {
         </Card>
       ) : null}
       <TextField label="Name" value={name} onChangeText={setName} placeholder="bKash" />
-      <View className="flex-row flex-wrap gap-2">
-        {TYPES.map((t) => (
-          <Chip
-            key={t.value}
-            label={t.label}
-            tone="mint"
-            selected={type === t.value}
-            onPress={() => setType(t.value)}
+      <View className="flex-row gap-3">
+        <PickerField
+          label="Type"
+          span="half"
+          value={type}
+          options={TYPES}
+          onChange={(t) => setType(TYPES.find((option) => option.id === t)?.id ?? type)}
+        />
+        {!account ? (
+          <PickerField
+            label="Currency"
+            span="half"
+            value={currency}
+            options={CURRENCIES.map((c) => ({ id: c, label: c }))}
+            onChange={(c) => setCurrency(c ?? currency)}
           />
-        ))}
+        ) : null}
       </View>
-      {!account ? (
-        <View className="flex-row flex-wrap gap-2">
-          {CURRENCIES.map((c) => (
-            <Chip key={c} label={c} selected={currency === c} onPress={() => setCurrency(c)} />
-          ))}
-        </View>
-      ) : null}
       <TextField
         label="Opening balance"
         value={opening}

@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Switch, View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
+import { DateField } from "@/components/ui/date-field";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
@@ -15,9 +15,10 @@ import { TextField } from "@/components/ui/text-field";
 import { formatLocalDate } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
-import { useAccounts } from "@/lib/queries";
+import { useAccounts, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { userTime } from "@/lib/user-time";
 import { useColors } from "@/theme/colors";
 import { useGoals } from "./queries";
 
@@ -42,6 +43,8 @@ function GoalForm({ id }: { id: string | null }) {
   const colors = useColors();
   const { data: goals } = useGoals();
   const { data: accounts = [] } = useAccounts();
+  const { data: settings } = useSettings();
+  const timeZone = userTime(settings).timeZone;
   const goal = id ? goals?.find((g) => g.id === id) : undefined;
   const [name, setName] = useState(goal?.name ?? "");
   const [emoji, setEmoji] = useState(goal?.emoji ?? "🫙");
@@ -92,11 +95,13 @@ function GoalForm({ id }: { id: string | null }) {
       }
     >
       <TextField label="Name" value={name} onChangeText={setName} placeholder="New laptop" />
-      <View className="flex-row flex-wrap gap-2">
-        {EMOJIS.map((e) => (
-          <Chip key={e} label={e} tone="mint" selected={emoji === e} onPress={() => setEmoji(e)} />
-        ))}
-      </View>
+      <PickerField
+        label="Emoji"
+        layout="grid"
+        value={emoji}
+        options={EMOJIS.map((e) => ({ id: e, label: e }))}
+        onChange={(e) => setEmoji(e ?? emoji)}
+      />
       <TextField
         label="Target"
         value={target}
@@ -104,18 +109,20 @@ function GoalForm({ id }: { id: string | null }) {
         keyboardType="decimal-pad"
         placeholder="120000"
       />
-      <View className="flex-row gap-2">
-        <Chip
-          label={deadline ? `By ${formatLocalDate(deadline)}` : "Add a deadline"}
-          tone="sky"
-          selected={Boolean(deadline)}
-          onPress={async () => {
-            const picked = await pickDate(deadline ? endOfLocalDay(deadline) - 1 : Date.now());
-            if (picked) setDeadline(picked > toLocalDate(Date.now()) ? picked : deadline);
-          }}
-        />
-        {deadline ? <Chip label="No deadline" onPress={() => setDeadline(null)} /> : null}
-      </View>
+      <DateField
+        label="Deadline"
+        value={deadline ? formatLocalDate(deadline) : null}
+        placeholder="No deadline"
+        onPress={async () => {
+          const picked = await pickDate(
+            deadline ? endOfLocalDay(deadline, timeZone) - 1 : Date.now(),
+            timeZone,
+          );
+          if (picked) setDeadline(picked > toLocalDate(Date.now(), timeZone) ? picked : deadline);
+        }}
+        onClear={() => setDeadline(null)}
+        clearLabel="No deadline"
+      />
       <PickerField
         label="Jar account (optional)"
         value={accountId}

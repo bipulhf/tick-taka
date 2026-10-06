@@ -13,7 +13,7 @@ import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Chip } from "@/components/ui/chip";
+import { DateField } from "@/components/ui/date-field";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { PickerField } from "@/components/ui/picker-field";
 import { Segmented } from "@/components/ui/segmented";
@@ -23,7 +23,7 @@ import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { payRecurring } from "@/features/money/recurring-pay";
 import { useRecurring } from "@/features/plan/queries";
-import { formatAmount, formatLocalDate } from "@/lib/format";
+import { formatAmount, formatLocalDate, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
@@ -33,6 +33,10 @@ import { useRemove } from "@/lib/use-remove";
 import { userTime } from "@/lib/user-time";
 
 type Kind = "bill" | "income";
+
+const CURRENCIES = ["BDT", "USD", "EUR"];
+const REMIND_DAYS = [0, 1, 2, 3, 7];
+const remindLabel = (days: number) => (days === 0 ? "On the day" : `${plural(days, "day")} before`);
 
 /** Create or edit a bill or expected income; "Paid"/"Received" logs it and moves the date. */
 export function RecurringSheet({ id }: { id: string | null }) {
@@ -206,22 +210,18 @@ function RecurringForm({ id }: { id: string | null }) {
         onChangeText={setName}
         placeholder={kind === "bill" ? "Internet" : "Job 1 salary"}
       />
-      <View className="flex-row gap-2">
-        <TextField
-          label="Amount"
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="decimal-pad"
-          className="flex-1"
-        />
-        <View className="justify-end gap-1">
-          <View className="flex-row gap-1">
-            {["BDT", "USD", "EUR"].map((c) => (
-              <Chip key={c} label={c} selected={currency === c} onPress={() => setCurrency(c)} />
-            ))}
-          </View>
-        </View>
-      </View>
+      <TextField
+        label="Amount"
+        value={amount}
+        onChangeText={setAmount}
+        keyboardType="decimal-pad"
+      />
+      <PickerField
+        label="Currency"
+        value={currency}
+        options={CURRENCIES.map((c) => ({ id: c, label: c }))}
+        onChange={(c) => setCurrency(c ?? currency)}
+      />
       <TextField
         label="Repeats"
         value={repeat}
@@ -234,27 +234,24 @@ function RecurringForm({ id }: { id: string | null }) {
           ↻ {describeRRule(parsed.rrule)}
         </Text>
       ) : null}
-      <Chip
-        label={`Next due ${formatLocalDate(dueDate)}`}
-        tone="sky"
-        selected
-        onPress={async () => {
-          const picked = await pickDate(startOfLocalDay(dueDate, timeZone), timeZone);
-          if (picked) setDueDate(picked);
-        }}
-      />
-      <Text variant="label" tone="muted">
-        Remind me
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {[0, 1, 2, 3, 7].map((d) => (
-          <Chip
-            key={d}
-            label={d === 0 ? "On the day" : `${d}d before`}
-            selected={remindDays === d}
-            onPress={() => setRemindDays(d)}
-          />
-        ))}
+      <View className="flex-row gap-3">
+        <DateField
+          label="Next due"
+          span="half"
+          value={formatLocalDate(dueDate)}
+          onPress={async () => {
+            const picked = await pickDate(startOfLocalDay(dueDate, timeZone), timeZone);
+            if (picked) setDueDate(picked);
+          }}
+        />
+        <PickerField
+          label="Remind me"
+          span="half"
+          value={String(remindDays)}
+          options={REMIND_DAYS.map((d) => ({ id: String(d), label: remindLabel(d) }))}
+          describe={(d) => remindLabel(Number(d))}
+          onChange={(d) => setRemindDays(d === null ? remindDays : Number(d))}
+        />
       </View>
       <View className="flex-row gap-3">
         <PickerField

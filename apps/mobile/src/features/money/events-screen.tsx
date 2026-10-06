@@ -8,7 +8,7 @@ import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Chip } from "@/components/ui/chip";
+import { DateField } from "@/components/ui/date-field";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
@@ -73,17 +73,17 @@ export function EventsScreen() {
             placeholder="Budget (optional)"
             keyboardType="decimal-pad"
           />
-          <View className="flex-row gap-2">
-            <Chip
-              label={`From ${formatLocalDate(startsOn)}`}
-              tone="sky"
-              selected
+          <View className="flex-row gap-3">
+            <DateField
+              label="From"
+              span="half"
+              value={formatLocalDate(startsOn)}
               onPress={async () => setStartsOn((await pickDate()) ?? startsOn)}
             />
-            <Chip
-              label={`To ${formatLocalDate(endsOn)}`}
-              tone="sky"
-              selected
+            <DateField
+              label="To"
+              span="half"
+              value={formatLocalDate(endsOn)}
               onPress={async () => setEndsOn((await pickDate()) ?? endsOn)}
             />
           </View>

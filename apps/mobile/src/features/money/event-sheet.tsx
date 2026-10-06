@@ -4,8 +4,9 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
+import { DateField } from "@/components/ui/date-field";
 import { DeleteButton } from "@/components/ui/delete-button";
+import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { TextField } from "@/components/ui/text-field";
@@ -76,12 +77,17 @@ function EventForm({ event }: { event: Event }) {
       }
     >
       <TextField label="Name" value={name} onChangeText={setName} placeholder="Sylhet trip" />
-      <View className="flex-row flex-wrap gap-2">
-        {/* Keep an emoji picked elsewhere selectable instead of silently dropping it. */}
-        {(EMOJIS.includes(event.emoji) ? EMOJIS : [event.emoji, ...EMOJIS]).map((e) => (
-          <Chip key={e} label={e} tone="mint" selected={emoji === e} onPress={() => setEmoji(e)} />
-        ))}
-      </View>
+      <PickerField
+        label="Emoji"
+        layout="grid"
+        value={emoji}
+        // Keep an emoji picked elsewhere selectable instead of silently dropping it.
+        options={(EMOJIS.includes(event.emoji) ? EMOJIS : [event.emoji, ...EMOJIS]).map((e) => ({
+          id: e,
+          label: e,
+        }))}
+        onChange={(e) => setEmoji(e ?? emoji)}
+      />
       <TextField
         label="Budget (optional)"
         value={budget}
@@ -89,19 +95,19 @@ function EventForm({ event }: { event: Event }) {
         keyboardType="decimal-pad"
         placeholder="15000"
       />
-      <View className="flex-row gap-2">
-        <Chip
-          label={`From ${formatLocalDate(startsOn)}`}
-          tone="sky"
-          selected
+      <View className="flex-row gap-3">
+        <DateField
+          label="From"
+          span="half"
+          value={formatLocalDate(startsOn)}
           onPress={async () =>
             setStartsOn((await pickDate(endOfLocalDay(startsOn) - 1)) ?? startsOn)
           }
         />
-        <Chip
-          label={`To ${formatLocalDate(endsOn)}`}
-          tone="sky"
-          selected
+        <DateField
+          label="To"
+          span="half"
+          value={formatLocalDate(endsOn)}
           onPress={async () => setEndsOn((await pickDate(endOfLocalDay(endsOn) - 1)) ?? endsOn)}
         />
       </View>

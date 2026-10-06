@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Switch, View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
+import { DateField } from "@/components/ui/date-field";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { PickerField } from "@/components/ui/picker-field";
 import { Segmented } from "@/components/ui/segmented";
@@ -161,17 +161,17 @@ function DebtForm({ id }: { id: string | null }) {
           onChange={setAccountId}
         />
       )}
-      <View className="flex-row gap-2">
-        <Chip
-          label={remind ? `Remind ${formatLocalDate(remind)}` : "Add a reminder"}
-          selected={Boolean(remind)}
-          onPress={async () => {
-            const picked = await pickDate();
-            if (picked) setRemind(picked);
-          }}
-        />
-        {remind ? <Chip label="No reminder" onPress={() => setRemind(null)} /> : null}
-      </View>
+      <DateField
+        label="Remind me"
+        value={remind ? formatLocalDate(remind) : null}
+        placeholder="No reminder"
+        onPress={async () => {
+          const picked = await pickDate();
+          if (picked) setRemind(picked);
+        }}
+        onClear={() => setRemind(null)}
+        clearLabel="No reminder"
+      />
       {debt ? (
         <View className="flex-row items-center justify-between">
           <Text className="flex-1">Settled</Text>

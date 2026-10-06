@@ -4,10 +4,10 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, useColorScheme, View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ErrorState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
+import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -107,11 +107,13 @@ function AreaForm({ area, count }: { area: Area | undefined; count: number }) {
           className="flex-1"
         />
       </View>
-      <View className="flex-row flex-wrap gap-2">
-        {EMOJIS.map((e) => (
-          <Chip key={e} label={e} selected={emoji === e} onPress={() => setEmoji(e)} />
-        ))}
-      </View>
+      <PickerField
+        label="Emoji"
+        layout="grid"
+        value={emoji.trim() || null}
+        options={EMOJIS.map((e) => ({ id: e, label: e }))}
+        onChange={(e) => setEmoji(e ?? emoji)}
+      />
       <Text variant="label" tone="muted">
         Colour
       </Text>

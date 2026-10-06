@@ -534,7 +534,9 @@ describe("receipt uploads", () => {
     expect(res.status).toBe(201);
     const { path } = (await res.json()) as { path: string };
     expect((await ctx.app.request(`/uploads/${path}`)).status).toBe(401);
-    const fetched = await ctx.app.request(`/uploads/${path}?token=${ctx.token}`);
+    const fetched = await ctx.app.request(`/uploads/${path}`, {
+      headers: { authorization: `Bearer ${ctx.token}` },
+    });
     expect(fetched.status).toBe(200);
     expect(fetched.headers.get("content-type")).toContain("image/jpeg");
   });

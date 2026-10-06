@@ -14,14 +14,12 @@ import { runAsUser } from "../lib/user-scope";
 export const requireAuth = (deps: Deps) =>
   createMiddleware(async (c, next) => {
     const header = c.req.header("authorization");
+    // Header only: a token in a URL ends up in proxy logs and image caches.
     const token = header?.startsWith("Bearer ") ? header.slice(7).trim() : undefined;
-    // Receipt images are opened by the phone's image view, which can only add a query token.
-    const queryToken = c.req.path.startsWith("/uploads/") ? c.req.query("token") : undefined;
-    const candidate = token ?? queryToken;
-    if (!candidate) throw unauthorized("Missing sign-in token");
+    if (!token) throw unauthorized("Missing sign-in token");
     let payload: Record<string, unknown>;
     try {
-      payload = await verify(candidate, deps.env.JWT_SECRET, "HS256");
+      payload = await verify(token, deps.env.JWT_SECRET, "HS256");
     } catch (error) {
       if (error instanceof JwtTokenExpired) throw sessionExpired();
       throw unauthorized("Sign in again");

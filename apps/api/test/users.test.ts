@@ -75,8 +75,28 @@ describe("separate users", () => {
       headers: as(ctx.token),
     });
     const { path } = (await res.json()) as { path: string };
-    expect((await ctx.app.request(`/uploads/${path}?token=${ctx.token}`)).status).toBe(200);
-    expect((await ctx.app.request(`/uploads/${path}?token=${other}`)).status).toBe(404);
+    expect((await ctx.app.request(`/uploads/${path}`, { headers: as(ctx.token) })).status).toBe(
+      200,
+    );
+    expect((await ctx.app.request(`/uploads/${path}`, { headers: as(other) })).status).toBe(404);
+  });
+
+  test("receipts refuse a token in the query string", async () => {
+    const ctx = await createTestContext();
+    const form = new FormData();
+    form.append(
+      "file",
+      new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])], "r.jpg", { type: "image/jpeg" }),
+    );
+    const res = await ctx.app.request("/uploads", {
+      method: "POST",
+      body: form,
+      headers: as(ctx.token),
+    });
+    const { path } = (await res.json()) as { path: string };
+    const viaQuery = await ctx.app.request(`/uploads/${path}?token=${ctx.token}`);
+    expect(viaQuery.status).toBe(401);
+    expect(await viaQuery.json()).toMatchObject({ error: { code: "unauthorized" } });
   });
 
   test("/me names the signed-in user", async () => {

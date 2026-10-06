@@ -177,6 +177,11 @@ export const recurringUpdateSchema = recurringCreateSchema
   .extend(editTimeShape);
 export const recurringPaySchema = z.object({
   transactionId: idSchema.optional(),
+  /**
+   * The due date (next_due_at) this pay or skip is for. When the bill has already moved
+   * past it, the request is a replay or a double tap and changes nothing.
+   */
+  dueAt: epochMsSchema.optional(),
   occurredAt: epochMsSchema.optional(),
   accountId: idSchema.optional(),
   /** Amount in the recurring item's currency, when it differs from the plan. */

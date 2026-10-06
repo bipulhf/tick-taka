@@ -19,7 +19,7 @@ import type { z } from "zod";
 import { accounts, recurring, transactions } from "../../db/schema/money";
 import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
-import { badRequest } from "../../lib/errors";
+import { badRequest, conflict } from "../../lib/errors";
 import { userTime } from "../../lib/user-time";
 
 export type Recurring = typeof recurring.$inferSelect;
@@ -96,6 +96,20 @@ export function recurringService(deps: Deps) {
       const item = base.get(id);
       const { timeZone, settings } = userTime(deps);
       return db.transaction(() => {
+        // Replays (lost response, double tap, outbox retry) return the state as it is.
+        if (input.transactionId) {
+          const logged = db
+            .select()
+            .from(transactions)
+            .where(eq(transactions.id, input.transactionId))
+            .get();
+          if (logged) {
+            if (logged.recurringId !== item.id) throw conflict("That transaction id is taken");
+            return { transaction: logged, recurring: item };
+          }
+        }
+        if (input.dueAt !== undefined && input.dueAt < item.nextDueAt)
+          return { transaction: null, recurring: item };
         let transaction: typeof transactions.$inferSelect | null = null;
         if (!input.skip) {
           const accountId = input.accountId ?? item.accountId ?? settings.defaultAccountId;
@@ -135,7 +149,6 @@ export function recurringService(deps: Deps) {
               createdAt: now,
               updatedAt: now,
             })
-            .onConflictDoNothing()
             .run();
           transaction =
             db.select().from(transactions).where(eq(transactions.id, transactionId)).get() ?? null;

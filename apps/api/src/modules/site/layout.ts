@@ -1,3 +1,6 @@
+/** The name on the Google sign-in consent screen; the pages must use exactly this. */
+export const APP_NAME = "TickNTaka";
+
 /** Who runs the service, for the public pages; both come from env. */
 export interface SiteInfo {
   operator: string;
@@ -10,10 +13,14 @@ export const escapeHtml = (text: string) =>
     (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]!,
   );
 
-/** How to reach the operator, as a mailto link when there is an address. */
+/**
+ * How to reach the operator, as a mailto link when there is an address. The
+ * email_off comments stop Cloudflare hiding it behind "[email protected]", which
+ * reviewers and readers without JavaScript would see instead.
+ */
 export const contact = (site: SiteInfo) =>
   site.contactEmail
-    ? `<a href="mailto:${escapeHtml(site.contactEmail)}">${escapeHtml(site.contactEmail)}</a>`
+    ? `<!--email_off--><a href="mailto:${escapeHtml(site.contactEmail)}">${escapeHtml(site.contactEmail)}</a><!--/email_off-->`
     : escapeHtml(site.operator);
 
 /** One plain page in the app's colours: no scripts, no trackers, no external files. */
@@ -39,13 +46,17 @@ export function page(title: string, body: string): string {
   .muted { color: var(--muted); }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px 22px; margin: 20px 0; }
   ul { padding-left: 22px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  code { font-size: 14px; background: var(--line); padding: 1px 6px; border-radius: 6px; }
   a { color: var(--link); }
   footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; display: flex; gap: 18px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
 <main>
-<header><span class="coin" aria-hidden="true">⏱</span><a href="/">Tick &amp; Taka</a></header>
+<header><span class="coin" aria-hidden="true">⏱</span><a href="/">${APP_NAME}</a></header>
 ${body}
 <footer><a href="/">Home</a><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></footer>
 </main>

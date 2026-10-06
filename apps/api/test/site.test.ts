@@ -12,10 +12,14 @@ describe("public pages", () => {
       expect(res.headers.get("content-type")).toContain("text/html");
       const html = await res.text();
       expect(html).toContain('href="/privacy"');
+      // Must match the app name on the Google consent screen.
+      expect(html).toContain("TickNTaka");
+      expect(html).not.toContain("Tick &amp; Taka");
       expect(html).toContain("Mehedi&#39;s &lt;Academy&gt;");
     }
     const privacy = await (await ctx.app.request("/privacy")).text();
     expect(privacy).toContain("Limited Use");
+    expect(privacy).toContain("<code>email</code>");
     expect(privacy).toContain("mailto:help@example.com");
     // The signed-in API still asks for a token.
     expect((await ctx.app.request("/tasks")).status).toBe(401);

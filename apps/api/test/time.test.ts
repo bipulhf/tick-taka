@@ -148,10 +148,12 @@ describe("tasks", () => {
       status: "open",
       doAt: startOfLocalDay("2026-10-01", TZ),
     });
-    const res = await request<{ moved: number }>("POST", "/tasks/rescue-overdue", {
+    const res = await request<{ moved: number; before: Row[] }>("POST", "/tasks/rescue-overdue", {
       target: "today",
     });
     expect(res.body.moved).toBe(2);
+    // What each task was before, so the phone can name them and undo the move.
+    expect(res.body.before.find((t) => t.id === timed.body.id)?.doAt).toBe(yesterday5pm);
     const a = await request<Row>("GET", `/tasks/${timed.body.id}`);
     expect(a.body.doAt).toBe(zonedTimeToUtc({ year: 2026, month: 10, day: 4, hour: 17 }, TZ));
     const b = await request<Row>("GET", `/tasks/${dated.body.id}`);
@@ -177,12 +179,13 @@ describe("tasks", () => {
       estimateMin: 90,
       top3Date: "2026-10-04",
     });
-    const res = await request<{ moved: Row[] }>("POST", "/tasks/move-low-priority", {
+    const res = await request<{ moved: Row[]; before: Row[] }>("POST", "/tasks/move-low-priority", {
       date: "2026-10-04",
       minutesToFree: 100,
     });
     expect(res.body.moved.map((t) => t.title)).toEqual(["Low B", "Low A"]);
     expect(toLocalDate(res.body.moved[0]!.doAt as number, TZ)).toBe("2026-10-05");
+    expect(res.body.before.map((t) => t.doAt)).toEqual([today, today]);
   });
 
   test("logbook search over finished tasks", async () => {

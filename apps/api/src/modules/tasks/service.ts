@@ -36,6 +36,22 @@ export type Task = typeof tasks.$inferSelect;
 
 const OPEN_STATUSES = ["inbox", "open"] as const;
 const PRIORITY_RANK = { low: 0, normal: 1, high: 2 } as const;
+
+/** A moved task as it was before a bulk move, so the phone can name it and undo the move. */
+export type TaskBefore = Pick<
+  Task,
+  "id" | "title" | "status" | "doAt" | "hasTime" | "reminderAt" | "top3Date"
+>;
+
+const before = (task: Task): TaskBefore => ({
+  id: task.id,
+  title: task.title,
+  status: task.status,
+  doAt: task.doAt,
+  hasTime: task.hasTime,
+  reminderAt: task.reminderAt,
+  top3Date: task.top3Date,
+});
 /** Subtasks stamped this soon after their parent's deletion were deleted with it. */
 const CASCADE_WINDOW_MS = 5_000;
 
@@ -300,7 +316,10 @@ export function taskService(deps: Deps) {
     },
 
     /** One tap moves every overdue task to today, tomorrow or back to the inbox. */
-    rescueOverdue(target: "today" | "tomorrow" | "inbox", date?: LocalDate): { moved: number } {
+    rescueOverdue(
+      target: "today" | "tomorrow" | "inbox",
+      date?: LocalDate,
+    ): { moved: number; before: TaskBefore[] } {
       const { timeZone, today: localToday } = userTime(deps);
       const today = date ?? localToday;
       const startOfToday = startOfLocalDay(today, timeZone);
@@ -352,14 +371,17 @@ export function taskService(deps: Deps) {
             .run();
         }
       });
-      return { moved: overdue.length };
+      return { moved: overdue.length, before: overdue.map(before) };
     },
 
     /**
      * "Does my day fit?" overflow: moves the lowest-priority tasks planned for `date`
      * (never the top three) to the next day until enough minutes are freed.
      */
-    moveLowPriority(date: LocalDate, minutesToFree: number): { moved: Task[] } {
+    moveLowPriority(
+      date: LocalDate,
+      minutesToFree: number,
+    ): { moved: Task[]; before: TaskBefore[] } {
       const { timeZone } = userTime(deps);
       const from = startOfLocalDay(date, timeZone);
       const candidates = db
@@ -383,6 +405,7 @@ export function taskService(deps: Deps) {
             (b.estimateMin ?? 30) - (a.estimateMin ?? 30),
         );
       const moved: Task[] = [];
+      const previous: TaskBefore[] = [];
       let freed = 0;
       const time = deps.now();
       const nextDayStart = startOfLocalDay(addDays(date, 1), timeZone);
@@ -401,9 +424,10 @@ export function taskService(deps: Deps) {
             .run();
           freed += task.estimateMin ?? 30;
           moved.push({ ...task, doAt, updatedAt: time });
+          previous.push(before(task));
         }
       });
-      return { moved };
+      return { moved, before: previous };
     },
   };
 }

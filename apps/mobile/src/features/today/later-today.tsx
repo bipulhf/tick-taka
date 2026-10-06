@@ -1,3 +1,4 @@
+import { onlineManager } from "@tanstack/react-query";
 import { weekdayOf } from "@tick-taka/shared/dates";
 import { formatAmount } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
@@ -11,8 +12,11 @@ import { TaskRow } from "@/features/tasks/task-row";
 import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
+import type { OutboxRequest } from "@/lib/outbox-policy";
 import { usePrivacy } from "@/lib/privacy";
 import type { TodayData } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
+import { movedBefore, movedMessage, undoMoves } from "./bulk-move";
 
 /**
  * Everything that isn't "now": one quiet line each, opening into detail. Keeps the
@@ -28,6 +32,29 @@ export function LaterToday({ data }: { data: TodayData }) {
   const overflow = data.dayFit.overflowMinutes;
   const friday = weekdayOf(data.date) === 5;
 
+  // The server picks the tasks; once it answers, name them and offer Undo.
+  const bulkMove = (request: OutboxRequest, where: string) => {
+    if (!onlineManager.isOnline()) notify(`They'll move to ${where} once you're back online`);
+    send
+      .async(request)
+      .then((reply) => {
+        const before = movedBefore(reply);
+        notify(
+          movedMessage(before, where),
+          before.length
+            ? {
+                label: "Undo",
+                onPress: () => {
+                  for (const undo of undoMoves(before, editTime())) send(undo);
+                },
+              }
+            : undefined,
+        );
+      })
+      // A refusal is reported by the outbox.
+      .catch(() => {});
+  };
+
   const rows = [
     overflow > 0 ? (
       <ListRow
@@ -41,15 +68,17 @@ export function LaterToday({ data }: { data: TodayData }) {
             label="Move"
             size="sm"
             variant="secondary"
-            onPress={() => {
-              send({
-                method: "POST",
-                path: "/tasks/move-low-priority",
-                body: { date: data.date, minutesToFree: overflow },
-                label: "Couldn't move tasks",
-              });
-              notify("Moved the lowest-priority tasks to tomorrow");
-            }}
+            onPress={() =>
+              bulkMove(
+                {
+                  method: "POST",
+                  path: "/tasks/move-low-priority",
+                  body: { date: data.date, minutesToFree: overflow },
+                  label: "Couldn't move tasks",
+                },
+                "tomorrow",
+              )
+            }
           />
         }
       />
@@ -76,15 +105,17 @@ export function LaterToday({ data }: { data: TodayData }) {
             label="Today"
             size="sm"
             variant="secondary"
-            onPress={() => {
-              send({
-                method: "POST",
-                path: "/tasks/rescue-overdue",
-                body: { target: "today", date: data.date },
-                label: "Couldn't move tasks",
-              });
-              notify(`Moved ${plural(overdue, "task")} to today`);
-            }}
+            onPress={() =>
+              bulkMove(
+                {
+                  method: "POST",
+                  path: "/tasks/rescue-overdue",
+                  body: { target: "today", date: data.date },
+                  label: "Couldn't move tasks",
+                },
+                "today",
+              )
+            }
           />
         }
       />

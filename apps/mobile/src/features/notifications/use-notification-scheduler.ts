@@ -104,6 +104,7 @@ export function useNotificationScheduler() {
     latest.current = settings;
   }, [settings]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on start and again each time Today's data refreshes (dataUpdatedAt), not only when settings change.
   useEffect(() => {
     if (!settings) return;
     const timer = setTimeout(() => {

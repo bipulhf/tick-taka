@@ -60,7 +60,7 @@ export default function TodayScreen() {
         {data.date < localToday ? (
           // Past midnight with yesterday's numbers on screen: say so until today's load.
           <Text variant="caption" tone="muted" accessibilityRole="alert">
-            {`Showing ${formatLocalDate(data.date, "long")} · today's numbers load once the server answers`}
+            {`Showing ${formatLocalDate(data.date, "long")} · today's numbers load once you're back online`}
           </Text>
         ) : null}
         {/* "What now?" and "can I afford it?" first; shortcuts repeat the + button, so they go last. */}

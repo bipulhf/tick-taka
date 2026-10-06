@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import {
-  errorMessage,
   ISSUED_KEY,
   mustWipeBeforeSignIn,
   needsRefresh,
@@ -62,7 +61,5 @@ describe("session lifetime", () => {
       false,
     );
     expect(sessionResponseSchema.safeParse({ token: "", user: profile }).success).toBe(false);
-    expect(errorMessage({ error: { code: "x", message: "Nope" } })).toBe("Nope");
-    expect(errorMessage("<html>")).toBeNull();
   });
 });

@@ -16,7 +16,7 @@ import { SkeletonList } from "@/components/ui/skeleton";
 import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
-import { formatAmount } from "@/lib/format";
+import { formatAmount, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAccounts, useCategories } from "@/lib/queries";
@@ -192,8 +192,7 @@ export function ShoppingScreen() {
       {checked.length > 0 ? (
         <Card className="gap-2">
           <Text variant="strong">
-            Checkout · {checked.length} item{checked.length === 1 ? "" : "s"} · est.{" "}
-            {formatAmount(checkedTotal)}
+            Checkout · {plural(checked.length, "item")} · est. {formatAmount(checkedTotal)}
           </Text>
           <TextField
             value={paid}

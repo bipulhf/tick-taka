@@ -4,6 +4,7 @@ import type { IconName } from "@/components/ui/icon";
 import { ListRow } from "@/components/ui/list-row";
 import { Screen } from "@/components/ui/screen";
 import { useFeedbackPrefs } from "@/lib/feedback-prefs";
+import { plural } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import { useAccounts, useAiStatus, useSettings } from "@/lib/queries";
 import type { ColorName } from "@/theme/colors";
@@ -53,7 +54,7 @@ export function SettingsScreen() {
         title: "Today and planning",
         subtitle: s
           ? join(
-              s.dailyTaskGoal ? `${s.dailyTaskGoal} tasks a day` : "No daily goal",
+              s.dailyTaskGoal ? `${plural(s.dailyTaskGoal, "task")} a day` : "No daily goal",
               `week starts ${DAYS[s.weekStartsOn]}`,
               s.vacationMode && "on vacation",
             )

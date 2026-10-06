@@ -90,7 +90,7 @@ export function LaterToday({ data }: { data: TodayData }) {
         title={
           overdue === 1 && data.counts.latestOverdue
             ? data.counts.latestOverdue
-            : `${overdue} tasks from earlier`
+            : `${plural(overdue, "task")} from earlier`
         }
         subtitle={
           overdue === 1

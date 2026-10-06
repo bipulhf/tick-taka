@@ -1,5 +1,6 @@
 import * as LocalAuthentication from "expo-local-authentication";
 import { Card } from "@/components/ui/card";
+import { plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { togglePrivacy, usePrivacy } from "@/lib/privacy";
 import { ToggleRow } from "./setting-row";
@@ -29,7 +30,7 @@ export function PrivacySettings() {
         <Card className="gap-1">
           <ToggleRow
             label="Fingerprint lock"
-            hint={`After ${s.lockAfterMinutes} minutes in the background`}
+            hint={`After ${plural(s.lockAfterMinutes, "minute")} in the background`}
             value={s.appLock}
             onChange={enableLock}
           />

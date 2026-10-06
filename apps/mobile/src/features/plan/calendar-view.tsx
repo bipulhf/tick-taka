@@ -23,7 +23,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
-import { formatLocalDate, formatMonth } from "@/lib/format";
+import { formatLocalDate, formatMonth, plural } from "@/lib/format";
 import { useSettings } from "@/lib/queries";
 import { userTime } from "@/lib/user-time";
 import { useRecurring, useTasks } from "./queries";
@@ -132,7 +132,7 @@ export function CalendarView() {
                 onPress={() => setSelected(date)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
-                accessibilityLabel={`${formatLocalDate(date)}, ${count} tasks${hasBills ? ", bills due" : ""}`}
+                accessibilityLabel={`${formatLocalDate(date)}, ${plural(count, "task")}${hasBills ? ", bills due" : ""}`}
                 className={`min-h-14 w-[14.28%] items-center justify-center rounded-xl py-1 ${isSelected ? "bg-ink" : date === today ? "bg-sky/15" : ""}`}
               >
                 <Text

@@ -1,6 +1,7 @@
 import { Alert } from "react-native";
 import { editDelete, type RowAction } from "@/components/ui/swipe-row";
 import { api, unwrap } from "@/lib/api";
+import { plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useRemove } from "@/lib/use-remove";
@@ -44,7 +45,7 @@ export function useAccountActions() {
     const found = await countTransactions(account.id);
     if (found?.count !== 0) {
       const what = found
-        ? `Its ${found.count}${found.more ? "+" : ""} ${found.count === 1 ? "transaction" : "transactions"}`
+        ? `Its ${found.more ? `${found.count}+ transactions` : plural(found.count, "transaction")}`
         : "Any transactions in it";
       const confirmed = await new Promise<boolean>((resolve) =>
         Alert.alert(

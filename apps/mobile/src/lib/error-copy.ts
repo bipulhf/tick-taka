@@ -8,20 +8,23 @@
  * What was going on when it failed:
  * - save: a write that the outbox keeps and retries,
  * - load: reading a screen's data,
- * - action: anything run once, now (AI, uploads, exports).
+ * - action: anything run once, now (AI, uploads, exports, deleting the account),
+ * - signIn: trading Google's sign-in for a session on the login screen.
  */
-export type ErrorContext = "save" | "load" | "action";
+export type ErrorContext = "save" | "load" | "action" | "signIn";
 
 const OFFLINE: Record<ErrorContext, string> = {
   save: "Saved on this phone. It'll sync when you're back online.",
   load: "Can't connect right now. Pull down to try again.",
   action: "Can't connect right now. Check your internet and try again.",
+  signIn: "Can't connect right now. Check your internet and try again.",
 };
 
 const SERVER: Record<ErrorContext, string> = {
   save: "Something went wrong on our side. Your change is kept and will retry.",
   load: "Something went wrong on our side. Try again in a moment.",
   action: "Something went wrong on our side. Try again in a moment.",
+  signIn: "Something went wrong on our side. Try signing in again in a moment.",
 };
 
 /** API error codes (`error.code` in the body) and what to say for each. */
@@ -42,6 +45,7 @@ const BY_CODE: Record<string, string> = {
 const HUMAN_MESSAGE = new Set(["bad_request"]);
 
 const UNKNOWN = "Something went wrong. Try again.";
+const SIGN_IN_REFUSED = "Google sign-in didn't check out. Try again.";
 
 function field(error: unknown, key: string): unknown {
   return typeof error === "object" && error !== null
@@ -57,6 +61,9 @@ export function friendlyError(error: unknown, context: ErrorContext = "action"):
   // No answer, or an answer from something that isn't our API (a captive portal).
   if (name === "ServerUnreachableError" || code === "http_error") return OFFLINE[context];
   if (typeof code === "string" && typeof status === "number") {
+    // At sign-in there is no session to expire: a refusal is Google's check, already in words.
+    if (context === "signIn" && code === "unauthorized")
+      return typeof message === "string" && message ? message : SIGN_IN_REFUSED;
     if (BY_CODE[code]) return BY_CODE[code];
     if (HUMAN_MESSAGE.has(code) && typeof message === "string" && message) return message;
     if (status >= 500) return SERVER[context];

@@ -1,4 +1,4 @@
-import { formatAmount } from "@/lib/format";
+import { formatAmount, plural } from "@/lib/format";
 
 export interface SafeToSpendNumbers {
   leftTodayMinor: number;
@@ -22,7 +22,7 @@ export function safeToSpendLabel(
       ? `Over today's amount by ${amount(Math.abs(money.leftTodayMinor))}`
       : `Safe to spend today, ${amount(money.leftTodayMinor)}`,
     `${amount(money.spentTodayMinor)} spent of ${amount(money.dailyMinor)}`,
-    `${money.daysLeft} ${money.daysLeft === 1 ? "day" : "days"} left`,
+    `${plural(money.daysLeft, "day")} left`,
   ];
   if (options.paceAlert) parts.push(options.paceAlert);
   return `${parts.join(". ")}.`;

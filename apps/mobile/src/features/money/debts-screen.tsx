@@ -18,7 +18,7 @@ import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-r
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
-import { formatAmount, formatMonth } from "@/lib/format";
+import { formatAmount, formatMonth, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAccounts } from "@/lib/queries";
@@ -51,8 +51,8 @@ function Forecast({ debt }: { debt: Debt }) {
       />
       {forecast.data ? (
         <Text variant="caption" tone="sky">
-          Cleared in {formatMonth(forecast.data.clearedIn)} · {forecast.data.months} payment
-          {forecast.data.months === 1 ? "" : "s"}
+          Cleared in {formatMonth(forecast.data.clearedIn)} ·{" "}
+          {plural(forecast.data.months, "payment")}
         </Text>
       ) : null}
     </View>

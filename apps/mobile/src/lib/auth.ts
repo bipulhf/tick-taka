@@ -10,7 +10,7 @@ import { apiErrorFrom } from "./api";
 import { GOOGLE_WEB_CLIENT_ID } from "./config";
 import { apiUrl, connectAuth, request } from "./http";
 import { outbox } from "./outbox";
-import { errorMessage, mustWipeBeforeSignIn, sessionResponseSchema } from "./session";
+import { mustWipeBeforeSignIn, sessionResponseSchema } from "./session";
 import { createSessionManager } from "./session-manager";
 import { createStore } from "./store";
 import { clearUserData } from "./user-data";
@@ -95,7 +95,8 @@ export async function signInWithGoogle(): Promise<void> {
   if (!session?.success) {
     // Let them pick a different account next time instead of reusing this one.
     await GoogleSignin.signOut().catch(() => {});
-    throw new Error(errorMessage(body) ?? "Couldn't reach the server");
+    // An ApiError, so the login screen words it through lib/error-copy.ts.
+    throw apiErrorFrom(response.ok ? 502 : response.status, body);
   }
   const previousUserId = profileStore.get()?.id ?? outbox.owner;
   if (mustWipeBeforeSignIn(previousUserId, session.data.user.id)) await clearUserData();

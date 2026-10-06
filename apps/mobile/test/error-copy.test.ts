@@ -49,6 +49,19 @@ describe("friendlyError", () => {
     );
   });
 
+  test("sign-in: Google's refusal keeps its words, never 'You're signed out'", () => {
+    const refused = apiError(401, "unauthorized", "Verify this Google account's email first");
+    expect(friendlyError(refused, "signIn")).toBe("Verify this Google account's email first");
+    expect(friendlyError(apiError(401, "unauthorized", ""), "signIn")).toContain("Google sign-in");
+    expect(friendlyError(apiError(503, "internal_error", "Request failed (503)"), "signIn")).toBe(
+      "Something went wrong on our side. Try signing in again in a moment.",
+    );
+    expect(friendlyError(unreachable, "signIn")).toContain("Check your internet");
+    expect(friendlyError(apiError(429, "too_many_attempts", "Too many"), "signIn")).toContain(
+      "Too many tries",
+    );
+  });
+
   test("anything else falls back to a calm generic line", () => {
     expect(friendlyError(new TypeError("undefined is not a function"))).toBe(
       "Something went wrong. Try again.",

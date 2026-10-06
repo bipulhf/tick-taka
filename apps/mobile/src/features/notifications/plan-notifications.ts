@@ -1,6 +1,6 @@
 import { addDays, parseLocalDate, toLocalDate, zonedTimeToUtc } from "@tick-taka/shared/dates";
 import { deferPastQuietHours, type QuietHours } from "@tick-taka/shared/quiet-hours";
-import { formatAmount } from "@/lib/format";
+import { formatAmount, plural } from "@/lib/format";
 
 export interface PlannedNotification {
   id: string;
@@ -72,7 +72,7 @@ export function planNotifications(input: NotificationInputs): PlannedNotificatio
       push({
         id: `tt-bill-early-${item.id}`,
         at: atClock(addDays(item.dueDate, -item.remindDays), "09:00", timeZone),
-        title: `${item.name} ${verb} in ${item.remindDays} day${item.remindDays === 1 ? "" : "s"}`,
+        title: `${item.name} ${verb} in ${plural(item.remindDays, "day")}`,
         body: amount,
         url: `/money/recurring/${item.id}`,
       });

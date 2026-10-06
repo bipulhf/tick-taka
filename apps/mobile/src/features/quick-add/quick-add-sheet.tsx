@@ -8,7 +8,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
-import { formatAmount, formatWhen } from "@/lib/format";
+import { formatAmount, formatWhen, plural } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
@@ -152,7 +152,7 @@ export function QuickAddSheet({
       </View>
       {qa.hoursOfWork ? (
         <Text variant="callout" tone="muted" className="-mt-2 px-1">
-          ≈ {qa.hoursOfWork} {qa.hoursOfWork === 1 ? "hour" : "hours"} of work
+          ≈ {plural(qa.hoursOfWork, "hour")} of work
         </Text>
       ) : null}
 

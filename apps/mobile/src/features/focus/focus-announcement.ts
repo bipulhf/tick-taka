@@ -1,3 +1,5 @@
+import { plural } from "@/lib/format";
+
 const STEP_MS = 5 * 60_000;
 
 /**
@@ -11,6 +13,6 @@ export function focusAnnouncement(phase: "work" | "break" | null, remainingMs: n
   const bucket = remainingMs <= 60_000 ? "last" : String(Math.ceil(remainingMs / STEP_MS));
   return {
     key: `${phase}:${bucket}`,
-    text: `${phase === "work" ? "Focus" : "Break"}, ${minutes} ${minutes === 1 ? "minute" : "minutes"} left`,
+    text: `${phase === "work" ? "Focus" : "Break"}, ${plural(minutes, "minute")} left`,
   };
 }

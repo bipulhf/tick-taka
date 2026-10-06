@@ -90,9 +90,3 @@ export function needsRefresh(issuedAt: number | null, now: number): boolean {
 export function mustWipeBeforeSignIn(previousUserId: string | null, nextUserId: string): boolean {
   return previousUserId !== null && previousUserId !== nextUserId;
 }
-
-/** The error message in an API error body, if it has one. */
-export function errorMessage(body: unknown): string | null {
-  const parsed = z.object({ error: z.object({ message: z.string() }) }).safeParse(body);
-  return parsed.success ? parsed.data.error.message : null;
-}

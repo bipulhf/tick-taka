@@ -7,6 +7,7 @@ import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { ShortcutRow } from "@/components/ui/shortcut-row";
 import { SkeletonCard } from "@/components/ui/skeleton";
+import { plural } from "@/lib/format";
 import { bestText, streakText } from "@/lib/gentle-progress";
 import { useAiStatus } from "@/lib/queries";
 import type { ColorName } from "@/theme/colors";
@@ -96,7 +97,7 @@ export function ReviewHome() {
                 iconColor="mango"
                 title={streakText("Daily goal", progress.dailyGoal.streak.current)}
                 subtitle={[
-                  `${progress.dailyGoal.goal} tasks a day`,
+                  `${plural(progress.dailyGoal.goal, "task")} a day`,
                   bestText(progress.dailyGoal.streak.best),
                 ]
                   .filter(Boolean)

@@ -55,7 +55,8 @@ export default function LoginScreen() {
       await signInWithGoogle();
     } catch (e) {
       // Google's errors are already in words; the API's go through the shared copy.
-      if (e instanceof ApiError || e instanceof ServerUnreachableError) setError(friendlyError(e));
+      if (e instanceof ApiError || e instanceof ServerUnreachableError)
+        setError(friendlyError(e, "signIn"));
       else if (!(e instanceof SignInCancelled)) setError((e as Error).message);
     } finally {
       setBusy(false);

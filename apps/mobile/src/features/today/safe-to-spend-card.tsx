@@ -4,6 +4,7 @@ import { Amount } from "@/components/ui/amount";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Text } from "@/components/ui/text";
+import { plural } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import type { TodayData } from "@/lib/queries";
 import { safeToSpendLabel } from "./safe-to-spend-label";
@@ -57,7 +58,7 @@ export function SafeToSpendCard({ data }: { data: TodayData }) {
           spent of <Amount minor={money.dailyMinor} variant="callout" tone="ink" animate={false} />
         </Text>
         <Text variant="callout" tone="muted">
-          {money.daysLeft} days left
+          {`${plural(money.daysLeft, "day")} left`}
         </Text>
       </View>
       {data.paceAlert ? (

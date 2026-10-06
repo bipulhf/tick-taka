@@ -8,6 +8,7 @@ import { Screen } from "@/components/ui/screen";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
+import { plural } from "@/lib/format";
 import { bestText, weekProgressText } from "@/lib/gentle-progress";
 import { useRemove } from "@/lib/use-remove";
 import { useHabits } from "./queries";
@@ -120,8 +121,7 @@ export function HabitList() {
                   </View>
                   <Text variant="caption" tone="muted">
                     {weekProgressText(habit.weekDoneDays, weekTarget, habit.schedule === "daily")} ·{" "}
-                    {habit.streak.freezesLeftThisMonth} freeze day
-                    {habit.streak.freezesLeftThisMonth === 1 ? "" : "s"} left this month
+                    {plural(habit.streak.freezesLeftThisMonth, "freeze day")} left this month
                   </Text>
                 </Card>
               </SwipeRow>

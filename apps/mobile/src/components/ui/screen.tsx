@@ -16,6 +16,8 @@ export interface ScreenProps {
   onRefresh?: () => void;
   /** Extra space for the tab bar; screens pushed on top of the tabs get a back button instead. */
   tabBarPadding?: boolean;
+  /** More room at the end for something floating above the tab bar (the running timer). */
+  extraBottom?: number;
   scroll?: boolean;
 }
 
@@ -27,6 +29,7 @@ export function Screen({
   refreshing,
   onRefresh,
   tabBarPadding = true,
+  extraBottom = 0,
   scroll = true,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
@@ -62,7 +65,7 @@ export function Screen({
   const padding = {
     paddingTop: insets.top + 12,
     // Room for the floating tab bar.
-    paddingBottom: (tabBarPadding ? 120 : 32) + insets.bottom,
+    paddingBottom: (tabBarPadding ? 120 : 32) + extraBottom + insets.bottom,
   };
   // Content scrolls under a solid strip, so it never collides with the status bar.
   const statusBackdrop = (

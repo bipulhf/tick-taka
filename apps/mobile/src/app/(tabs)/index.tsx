@@ -4,7 +4,7 @@ import { ErrorState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Text } from "@/components/ui/text";
 import { HabitChips } from "@/features/habits/habit-chips";
-import { RunningTimerBar } from "@/features/timer/running-timer-bar";
+import { RUNNING_TIMER_SPACE, RunningTimerBar } from "@/features/timer/running-timer-bar";
 import { LaterToday } from "@/features/today/later-today";
 import { NextUp } from "@/features/today/next-up";
 import { QuickActions } from "@/features/today/quick-actions";
@@ -45,7 +45,12 @@ export default function TodayScreen() {
 
   return (
     <View className="flex-1">
-      <Screen refreshing={today.isRefetching} onRefresh={() => void today.refetch()}>
+      <Screen
+        refreshing={today.isRefetching}
+        onRefresh={() => void today.refetch()}
+        // The running-timer bar floats over the end of the list; let it scroll clear.
+        extraBottom={running ? RUNNING_TIMER_SPACE : 0}
+      >
         <TodayHeader data={data} outfit={(settings?.tikiOutfit ?? null) as TikiOutfit} />
         {data.date < localToday ? (
           // Past midnight with yesterday's numbers on screen: say so until today's load.

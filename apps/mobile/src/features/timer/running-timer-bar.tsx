@@ -12,6 +12,9 @@ import { editTime } from "@/lib/server-clock";
 import { updateToday } from "@/lib/today-cache";
 import { useNow } from "./use-now";
 
+/** Height the bar takes above the tab bar, with its gap: screens add it as extra scroll room. */
+export const RUNNING_TIMER_SPACE = 72;
+
 /** Sticky bar while a focus session or time entry is running. */
 export function RunningTimerBar({
   entry,

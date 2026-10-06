@@ -1,6 +1,6 @@
 import { toLocalMonth } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
-import { formatAmount, parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
+import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
@@ -14,6 +14,7 @@ import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { useBudgets, useGoals } from "@/features/money/queries";
+import { formatAmount } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useSettings } from "@/lib/queries";

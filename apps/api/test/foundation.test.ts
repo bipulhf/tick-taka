@@ -94,6 +94,17 @@ describe("foundation", () => {
     expect(after.body).toMatchObject({ vacationMode: true, dailyTaskGoal: 3 });
   });
 
+  test("the numbers setting accepts English or Bangla digits only", async () => {
+    const { request } = await createTestContext();
+    const initial = await request<{ numerals: string }>("GET", "/settings");
+    expect(initial.body.numerals).toBe("latn");
+    const set = await request<{ numerals: string }>("PATCH", "/settings", { numerals: "beng" });
+    expect(set.status).toBe(200);
+    expect(set.body.numerals).toBe("beng");
+    const bad = await request("PATCH", "/settings", { numerals: "roman" });
+    expect(bad.status).toBe(400);
+  });
+
   test("a nullable setting can be cleared again", async () => {
     const { request } = await createTestContext();
     await request("PATCH", "/settings", { tikiOutfit: "cap", rewardTheme: "mint-breeze" });

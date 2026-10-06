@@ -1,5 +1,5 @@
 import { newId } from "@tick-taka/shared/ids";
-import { formatAmount, parseAmountToMinor } from "@tick-taka/shared/money";
+import { parseAmountToMinor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
@@ -16,6 +16,7 @@ import { SkeletonList } from "@/components/ui/skeleton";
 import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { formatAmount } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAccounts, useCategories } from "@/lib/queries";

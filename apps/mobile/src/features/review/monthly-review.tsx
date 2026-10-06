@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 import { addMonths, toLocalMonth } from "@tick-taka/shared/dates";
-import { formatAmount } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { api, unwrap } from "@/lib/api";
 import { friendlyError } from "@/lib/error-copy";
-import { formatMinutes, formatMonth } from "@/lib/format";
+import { formatAmount, formatMinutes, formatMonth } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { usePrivacy } from "@/lib/privacy";

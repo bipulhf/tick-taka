@@ -1,6 +1,5 @@
 import { onlineManager } from "@tanstack/react-query";
 import { weekdayOf } from "@tick-taka/shared/dates";
-import { formatAmount } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { ListRow } from "@/components/ui/list-row";
 import { Section } from "@/components/ui/section";
 import { TaskRow } from "@/features/tasks/task-row";
-import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
+import { formatAmount, formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import type { OutboxRequest } from "@/lib/outbox-policy";

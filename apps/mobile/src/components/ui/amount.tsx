@@ -1,7 +1,8 @@
-import { formatAmount } from "@tick-taka/shared/money";
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "react-native-reanimated";
+import { formatAmount, numeralsStore } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
+import { useStore } from "@/lib/store";
 import { Text, type TextProps } from "./text";
 
 export interface AmountProps extends Omit<TextProps, "children"> {
@@ -17,6 +18,8 @@ const DURATION_MS = 600;
 /** Every amount shows the ৳ sign, uses tabular digits and hides in privacy mode. */
 export function Amount({ minor, currency, signed, animate = true, ...props }: AmountProps) {
   const hidden = usePrivacy();
+  // Redraw when the numbers setting changes; formatAmount reads it.
+  useStore(numeralsStore);
   const reduceMotion = useReducedMotion();
   const [shown, setShown] = useState(minor);
   const from = useRef(minor);
@@ -42,7 +45,7 @@ export function Amount({ minor, currency, signed, animate = true, ...props }: Am
   }, [minor, animate, reduceMotion]);
 
   const text = hidden
-    ? `${formatAmount(0, { currency }).replace(/[\d.,]+/, "")}•••`
+    ? `${formatAmount(0, { currency, numerals: "latn" }).replace(/[\d.,]+/, "")}•••`
     : formatAmount(shown, { currency, signed });
   return (
     <Text

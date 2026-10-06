@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { newId } from "@tick-taka/shared/ids";
-import { formatAmount, parseAmountToMinor } from "@tick-taka/shared/money";
+import { parseAmountToMinor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -18,7 +18,7 @@ import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-r
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
-import { formatMonth } from "@/lib/format";
+import { formatAmount, formatMonth } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAccounts } from "@/lib/queries";

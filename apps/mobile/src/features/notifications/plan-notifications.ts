@@ -1,6 +1,6 @@
 import { addDays, parseLocalDate, toLocalDate, zonedTimeToUtc } from "@tick-taka/shared/dates";
-import { formatAmount } from "@tick-taka/shared/money";
 import { deferPastQuietHours, type QuietHours } from "@tick-taka/shared/quiet-hours";
+import { formatAmount } from "@/lib/format";
 
 export interface PlannedNotification {
   id: string;

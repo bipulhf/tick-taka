@@ -6,7 +6,7 @@ import {
 } from "@tick-taka/shared/dates";
 import { toAsciiDigits } from "@tick-taka/shared/digits";
 import { newId } from "@tick-taka/shared/ids";
-import { formatAmount, parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
+import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { describeRRule, parseRecurrence } from "@tick-taka/shared/recurrence";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
@@ -22,7 +22,7 @@ import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { useRecurring } from "@/features/plan/queries";
-import { formatLocalDate } from "@/lib/format";
+import { formatAmount, formatLocalDate } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";

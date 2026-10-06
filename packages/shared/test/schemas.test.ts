@@ -19,6 +19,12 @@ describe("schemas", () => {
     expect(settingsSchema.parse({ dailyTaskGoal: 3 }).dailyTaskGoal).toBe(3);
   });
 
+  test("amounts default to English digits; Bangla digits are a setting", () => {
+    expect(DEFAULT_SETTINGS.numerals).toBe("latn");
+    expect(settingsPatchSchema.parse({ numerals: "beng" })).toEqual({ numerals: "beng" });
+    expect(settingsPatchSchema.safeParse({ numerals: "arab" }).success).toBe(false);
+  });
+
   test("settings patch only contains the keys sent", () => {
     expect(settingsPatchSchema.parse({ vacationMode: true })).toEqual({ vacationMode: true });
   });

@@ -1,4 +1,4 @@
-import { formatAmount } from "@tick-taka/shared/money";
+import { formatAmount } from "@/lib/format";
 
 export interface SafeToSpendNumbers {
   leftTodayMinor: number;

@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colorScheme } from "nativewind";
 import { type ReactNode, useEffect } from "react";
 import { useColorScheme, View } from "react-native";
+import { numeralsStore } from "@/lib/format";
 import { useSettings } from "@/lib/queries";
 import { RewardThemeContext } from "@/theme/colors";
 import { rewardThemeStyle } from "./reward-theme";
@@ -16,7 +17,7 @@ export async function loadThemeChoice() {
 }
 
 /**
- * Pins the colour scheme from settings and applies the chosen accent theme, both to the
+ * Pins the colour scheme and the digits for amounts from settings, and applies the chosen accent theme, both to the
  * CSS variables (class names) and to useColors() (icons, gradients, SVG).
  */
 export function ThemedRoot({ children }: { children: ReactNode }) {
@@ -27,6 +28,9 @@ export function ThemedRoot({ children }: { children: ReactNode }) {
     colorScheme.set(choice);
     void AsyncStorage.setItem(THEME_KEY, choice);
   }, [choice]);
+  // English or Bangla digits for every amount on screen (Settings › Appearance › Numbers).
+  const numerals = settings?.numerals ?? "latn";
+  useEffect(() => numeralsStore.set(numerals), [numerals]);
   const scheme = useColorScheme() === "dark" ? "dark" : "light";
   return (
     <RewardThemeContext.Provider value={settings?.rewardTheme ?? null}>

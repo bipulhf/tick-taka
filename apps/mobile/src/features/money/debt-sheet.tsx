@@ -1,6 +1,6 @@
 import { parseLocalDate, toLocalDate, zonedTimeToUtc } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
-import { formatAmount, parseAmountToMinor } from "@tick-taka/shared/money";
+import { parseAmountToMinor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Switch, View } from "react-native";
@@ -13,7 +13,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
-import { formatLocalDate } from "@/lib/format";
+import { formatAmount, formatLocalDate } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { useAccounts } from "@/lib/queries";

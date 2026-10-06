@@ -26,6 +26,8 @@ export const settingsSchema = z.object({
   defaultAccountId: idSchema.nullable().default(null),
   cashAccountId: idSchema.nullable().default(null),
   theme: z.enum(["system", "light", "dark"]).default("system"),
+  /** Digits amounts are shown in: "latn" 1,250 or "beng" ১,২৫০. Typing accepts both. */
+  numerals: z.enum(["latn", "beng"]).default("latn"),
   /** Accent tint for the surfaces ("mint-breeze", "grape-dusk"); the key predates its name. */
   rewardTheme: z.string().nullable().default(null),
   /** Tiki's outfit: "cap", "scarf", "crown" or none. */

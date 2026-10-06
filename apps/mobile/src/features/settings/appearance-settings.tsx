@@ -1,6 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Segmented } from "@/components/ui/segmented";
+import { Text } from "@/components/ui/text";
+import { formatAmount } from "@/lib/format";
 import { ChoiceRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
@@ -17,7 +19,7 @@ const OUTFITS = [
   { id: "crown", label: "👑 Crown" },
 ];
 
-/** Theme, accent colour and Tiki's outfit. */
+/** Theme, digits for amounts, accent colour and Tiki's outfit. */
 export function AppearanceSettings() {
   const update = useUpdateSettings();
   return (
@@ -33,6 +35,20 @@ export function AppearanceSettings() {
               { value: "dark", label: "Dark" },
             ]}
           />
+          <Card className="gap-2">
+            <Text>Numbers</Text>
+            <Segmented<"latn" | "beng">
+              value={s.numerals}
+              onChange={(numerals) => update({ numerals })}
+              options={[
+                { value: "latn", label: "English 123" },
+                { value: "beng", label: "বাংলা ১২৩" },
+              ]}
+            />
+            <Text variant="caption" tone="muted">
+              {`How amounts are shown, like ${formatAmount(125_000, { numerals: s.numerals })}. You can type either.`}
+            </Text>
+          </Card>
           <Card className="gap-1">
             <ChoiceRow label="Accent">
               {ACCENTS.map((accent) => (

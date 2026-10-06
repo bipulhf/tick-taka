@@ -1,7 +1,18 @@
 import { DEFAULT_TIME_ZONE, localParts, toLocalDate } from "@tick-taka/shared/dates";
-import { formatAmount } from "@tick-taka/shared/money";
+import {
+  type FormatAmountOptions,
+  formatAmount as formatAmountIn,
+  type Numerals,
+} from "@tick-taka/shared/money";
+import { createStore } from "./store";
 
-export { formatAmount };
+/** Digits amounts are shown in, from Settings › Appearance › Numbers. */
+export const numeralsStore = createStore<Numerals>("latn");
+
+/** Follows the user's numbers setting; anything else in `options` wins. */
+export function formatAmount(minor: number, options: FormatAmountOptions = {}): string {
+  return formatAmountIn(minor, { numerals: numeralsStore.get(), ...options });
+}
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

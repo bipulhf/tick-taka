@@ -1,7 +1,8 @@
 import { expressionToMinor, hasOperator } from "@tick-taka/shared/calculator";
-import { currencySymbol, formatAmount } from "@tick-taka/shared/money";
+import { currencySymbol } from "@tick-taka/shared/money";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
+import { formatAmount } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { Text } from "./text";
 

@@ -1,5 +1,4 @@
 import { addMonths, localMonthRange, toLocalMonth } from "@tick-taka/shared/dates";
-import { formatAmount } from "@tick-taka/shared/money";
 import { useState } from "react";
 import { View } from "react-native";
 import { BarChart, LineChart } from "react-native-gifted-charts";
@@ -13,7 +12,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { Skeleton, SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useInsights } from "@/features/money/queries";
-import { formatMinutes, formatMonth } from "@/lib/format";
+import { formatAmount, formatMinutes, formatMonth } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import { useAreas, useCategories, useSettings } from "@/lib/queries";
 import { userTime } from "@/lib/user-time";

@@ -18,7 +18,7 @@ import {
 import { DEFAULT_AREAS, DEFAULT_CATEGORIES } from "./defaults";
 import { toAsciiDigits } from "./digits";
 import { CURRENCY_WORD_RE, DEFAULT_CURRENCY, stripCurrency } from "./money";
-import { firstOccurrence, parseRecurrence } from "./recurrence";
+import { firstOccurrence, type ParsedRecurrence, parseRecurrence } from "./recurrence";
 
 export type QuickAddKind = "expense" | "income" | "task" | "time_entry";
 export type Confidence = "high" | "low";
@@ -89,10 +89,10 @@ export type AnyDraft = QuickAddDraft | TransferDraft;
 const normalize = (value: string) => value.trim().toLowerCase();
 
 const WALLET_ALIASES: Record<string, string[]> = {
-  bkash: ["bkash", "bk"],
-  nagad: ["nagad"],
-  rocket: ["rocket"],
-  cash: ["cash", "wallet"],
+  bkash: ["bkash", "bk", "বিকাশ"],
+  nagad: ["nagad", "নগদ"],
+  rocket: ["rocket", "রকেট"],
+  cash: ["cash", "wallet", "ক্যাশ"],
   card: ["card", "visa", "mastercard"],
 };
 
@@ -223,6 +223,38 @@ function isPartOfDate(tokens: string[], index: number): boolean {
   return false;
 }
 
+/**
+ * Words that make the number after them a label, not a price: "read chapter 5",
+ * "room 302", "lecture 3". Only used when nothing forced the text to be money.
+ */
+const LABEL_WORDS = new Set(
+  [
+    "chapter ch chap page pg p pp room rm lecture lec class section sec unit part episode",
+    "ep season level step no number num question q problem exercise ex lesson module",
+    "assignment hw homework quiz slide figure fig item issue pr version v vol volume floor",
+    "road block sector gate platform row batch group team grade semester sem week day round",
+    "phase sprint task verse surah ayat juz",
+    "অধ্যায় পৃষ্ঠা পাতা রুম ক্লাস লেকচার নম্বর নং",
+  ]
+    .join(" ")
+    .split(" ")
+    .map((word) => word.normalize("NFC")),
+);
+
+/** "Chapter 5", "৩ নম্বর", or a number with a leading zero (a phone number, "007"). */
+function isLabelNumber(plain: string[], index: number): boolean {
+  if (/^0\d/.test(plain[index]!)) return true;
+  const previous = plain[index - 1]
+    ?.toLowerCase()
+    .normalize("NFC")
+    .replace(/[.:#]$/, "");
+  const next = plain[index + 1]?.toLowerCase().normalize("NFC");
+  return (
+    (previous !== undefined && LABEL_WORDS.has(previous)) ||
+    (next !== undefined && (next === "নম্বর" || next === "নং"))
+  );
+}
+
 function parseMoney(
   text: string,
   context: QuickAddContext,
@@ -253,7 +285,8 @@ function parseMoney(
     index >= 0 &&
     index < tokens.length &&
     isAmountExpression(plain[index]!) &&
-    !isPartOfDate(plain, index);
+    !isPartOfDate(plain, index) &&
+    (forced !== undefined || !isLabelNumber(plain, index));
   if (isAmountAt(last)) {
     amountIndex = last;
   } else if (isAmountAt(last - 1) && findAccount(tokens[last]!, context.accounts)) {
@@ -276,6 +309,21 @@ function parseMoney(
   }
   const note = remaining.join(" ");
   const guess = guessCategory(note, context);
+  // A leading number with nothing money-like around it is a count, not a price:
+  // "3 slides for class" is a task, "250 lunch" and "৳300 gift" are expenses.
+  const currencyMarked =
+    words.length !== tokens.length ||
+    (amountIndex >= 0 && plain[amountIndex] !== toAsciiDigits(tokens[amountIndex]!));
+  if (
+    amountIndex === 0 &&
+    tokens.length > 1 &&
+    !forced &&
+    !incomeSign &&
+    !currencyMarked &&
+    accountId === null &&
+    guess.categoryId === null
+  )
+    return null;
   const kind: "expense" | "income" =
     forced ?? (incomeSign || guess.kind === "income" ? "income" : "expense");
   const categoryId = guess.kind === null || guess.kind === kind ? guess.categoryId : null;
@@ -306,6 +354,36 @@ const SOMEDAY_RE = /\b(someday|some day|one day|eventually)\b/i;
 const PRIORITY_HIGH_RE = /(^|\s)(!!?|!high|urgent|asap|important)(?=\s|$)/i;
 const PRIORITY_LOW_RE = /(^|\s)(!low|low priority)(?=\s|$)/i;
 const DEADLINE_PREFIX_RE = /\b(by|due|deadline|before)\s*$/i;
+const BARE_REPEAT_RE = /^(daily|everyday|weekly|monthly|yearly|annually)\b/i;
+const REPEAT_LEAD_RE = /(^|\s)(repeats?|repeating|recurring)\s*$/i;
+
+/**
+ * Finds a repeat phrase and cuts it out of the text. A bare "weekly" or "monthly" is
+ * often just an adjective ("read weekly report"), so it only counts after "repeat",
+ * or at the very start or end of the text. There it stays in the title ("Daily
+ * standup") and the repeat is only a guess, so the draft is "low" confidence.
+ */
+function takeRecurrence(
+  working: string,
+  context: QuickAddContext,
+): { recurrence: ParsedRecurrence | null; working: string; guessed: boolean } {
+  // Read from an ASCII-digit copy ("every ৩ days"). The copy has the same length, so
+  // positions found in it cut the original and the title keeps "৩".
+  const ascii = toAsciiDigits(working);
+  const recurrence = parseRecurrence(ascii, context.workdays ? { workdays: context.workdays } : {});
+  if (!recurrence) return { recurrence: null, working, guessed: false };
+  const at = ascii.indexOf(recurrence.phrase);
+  const end = at + recurrence.phrase.length;
+  const cut = (from: number) => `${working.slice(0, from)} ${working.slice(end)}`;
+  const bare = BARE_REPEAT_RE.exec(recurrence.phrase);
+  if (!bare) return { recurrence, working: cut(at), guessed: false };
+  const lead = REPEAT_LEAD_RE.exec(ascii.slice(0, at));
+  if (lead) return { recurrence, working: cut(lead.index), guessed: false };
+  const atEdge = ascii.slice(0, at).trim() === "" || /^[\s.,!?]*$/.test(ascii.slice(end));
+  if (!atEdge) return { recurrence: null, working, guessed: false };
+  // Keep the word itself; drop only a clock time that followed it ("daily 9am").
+  return { recurrence, working: cut(at + bare[0].length), guessed: true };
+}
 
 function parseTask(text: string, context: QuickAddContext): TaskDraft {
   const timeZone = context.timeZone ?? DEFAULT_TIME_ZONE;
@@ -329,16 +407,9 @@ function parseTask(text: string, context: QuickAddContext): TaskDraft {
     working = working.replace(SOMEDAY_RE, " ");
   }
 
-  // Recurrence and dates are read from an ASCII-digit copy ("every ৩ days"); the copy has
-  // the same length, so positions found in it cut the original and the title keeps "৩".
-  const recurrence = parseRecurrence(
-    toAsciiDigits(working),
-    context.workdays ? { workdays: context.workdays } : {},
-  );
-  if (recurrence) {
-    const at = toAsciiDigits(working).indexOf(recurrence.phrase);
-    working = `${working.slice(0, at)} ${working.slice(at + recurrence.phrase.length)}`;
-  }
+  const repeat = takeRecurrence(working, context);
+  const recurrence = repeat.recurrence;
+  working = repeat.working;
 
   const offsetMinutes = timeZoneOffsetMs(context.now, timeZone) / MINUTE_MS;
   const results = chrono.parse(
@@ -413,7 +484,10 @@ function parseTask(text: string, context: QuickAddContext): TaskDraft {
     status,
     priority,
     areaId: guessArea(text, context),
-    confidence: title.length > 0 && !strayNumber && !hasNonLatinLetters(title) ? "high" : "low",
+    confidence:
+      title.length > 0 && !strayNumber && !repeat.guessed && !hasNonLatinLetters(title)
+        ? "high"
+        : "low",
   };
 }
 

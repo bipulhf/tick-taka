@@ -8,6 +8,7 @@ import { Text } from "@/components/ui/text";
 import { formatTimer } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import type { TodayData } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 import { updateToday } from "@/lib/today-cache";
 import { useNow } from "./use-now";
 
@@ -57,7 +58,7 @@ export function RunningTimerBar({
             send({
               method: "POST",
               path: "/timer/stop",
-              body: { endedAt: Date.now() },
+              body: { endedAt: editTime() },
               label: "Couldn't stop the timer",
             });
           }}

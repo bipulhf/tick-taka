@@ -18,6 +18,7 @@ import { formatClock, formatLocalDate, formatMinutes, formatTimer } from "@/lib/
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useAreas, useSettings } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
 import { useRunningTimer, useTimeEntries } from "./queries";
 
@@ -89,7 +90,7 @@ export function TimeTracking() {
                     send({
                       method: "POST",
                       path: "/timer/stop",
-                      body: { endedAt: Date.now() },
+                      body: { endedAt: editTime() },
                       label: "Couldn't stop",
                     })
                   }
@@ -122,7 +123,14 @@ export function TimeTracking() {
                     send({
                       method: "POST",
                       path: "/timer/start",
-                      body: { id: newId(), areaId, billable, source: "timer" },
+                      // The tap time, not the time the queue gets it to the server.
+                      body: {
+                        id: newId(),
+                        areaId,
+                        billable,
+                        source: "timer",
+                        startedAt: editTime(),
+                      },
                       label: "Couldn't start",
                     });
                     notify("Timer started");

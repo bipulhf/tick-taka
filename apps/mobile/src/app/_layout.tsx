@@ -8,7 +8,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/nunito";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { type ErrorBoundaryProps, Stack, useRouter, useSegments } from "expo-router";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -19,6 +19,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ConfettiLayer } from "@/components/ui/confetti";
 import { Snackbar } from "@/components/ui/snackbar";
 import { AppServices } from "@/features/app/app-services";
+import { ErrorScreen } from "@/features/app/error-screen";
 import { loadFocusSession } from "@/features/focus/focus-session";
 import { AppLock } from "@/features/security/app-lock";
 import { loadAppLockPref } from "@/features/security/app-lock-pref";
@@ -33,6 +34,12 @@ import { useStore } from "@/lib/store";
 import { palette } from "@/theme/palette";
 
 void SplashScreen.preventAutoHideAsync();
+
+/** Any render error below the root shows a way out instead of crashing the app. */
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  void SplashScreen.hideAsync();
+  return <ErrorScreen {...props} />;
+}
 
 const sheet = {
   presentation: "formSheet" as const,

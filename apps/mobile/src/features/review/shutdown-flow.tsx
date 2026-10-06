@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Tiki } from "@/components/tiki/tiki";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -65,25 +65,28 @@ export function ShutdownFlow() {
           />
         ) : (
           <Card className="gap-1">
-            {data.habitsUnchecked.map((habit) => (
-              <View key={habit.id} className="flex-row items-center">
-                <Checkbox
-                  tone="grape"
-                  checked={false}
-                  label={habit.name}
-                  onChange={() =>
-                    send({
-                      method: "PUT",
-                      path: `/habits/${habit.id}/logs/${data.date}`,
-                      body: { count: habit.targetCount },
-                    })
-                  }
-                />
-                <Text>
-                  {habit.emoji} {habit.name}
-                </Text>
-              </View>
-            ))}
+            {data.habitsUnchecked.map((habit) => {
+              const check = () =>
+                send({
+                  method: "PUT",
+                  path: `/habits/${habit.id}/logs/${data.date}`,
+                  body: { count: habit.targetCount },
+                });
+              return (
+                // The whole row is the target; the checkbox stays the screen-reader control.
+                <Pressable
+                  key={habit.id}
+                  onPress={check}
+                  accessible={false}
+                  className="min-h-12 flex-row items-center"
+                >
+                  <Checkbox tone="grape" checked={false} label={habit.name} onChange={check} />
+                  <Text className="flex-1">
+                    {habit.emoji} {habit.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </Card>
         )}
       </Section>
@@ -101,22 +104,23 @@ export function ShutdownFlow() {
             {data.tomorrowTopThree.map((task) => (
               <Text key={task.id}>⭐ {task.title}</Text>
             ))}
-            {data.tomorrowCandidates.slice(0, 8).map((task) => (
-              <View key={task.id} className="flex-row items-center">
-                <Checkbox
-                  checked={false}
-                  label={task.title}
-                  onChange={() =>
-                    picked >= 3
-                      ? notify("Three is enough.")
-                      : actions.setTopThree(task, data.tomorrow)
-                  }
-                />
-                <Text className="flex-1" numberOfLines={1}>
-                  {task.title}
-                </Text>
-              </View>
-            ))}
+            {data.tomorrowCandidates.slice(0, 8).map((task) => {
+              const pick = () =>
+                picked >= 3 ? notify("Three is enough.") : actions.setTopThree(task, data.tomorrow);
+              return (
+                <Pressable
+                  key={task.id}
+                  onPress={pick}
+                  accessible={false}
+                  className="min-h-12 flex-row items-center"
+                >
+                  <Checkbox checked={false} label={task.title} onChange={pick} />
+                  <Text className="flex-1" numberOfLines={1}>
+                    {task.title}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </Card>
         )}
       </Section>

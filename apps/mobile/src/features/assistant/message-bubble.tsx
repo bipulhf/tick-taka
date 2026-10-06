@@ -147,7 +147,7 @@ function DeletionCard({
         <Pressable
           onPress={onKeep}
           accessibilityRole="button"
-          className="h-11 flex-1 items-center justify-center rounded-full border border-line-strong active:bg-line/40"
+          className="min-h-12 flex-1 items-center justify-center rounded-full border border-line-strong active:bg-line/40"
         >
           <Text variant="callout" className="font-nunito-bold">
             Keep
@@ -157,7 +157,7 @@ function DeletionCard({
           onPress={onConfirm}
           accessibilityRole="button"
           accessibilityLabel={`Delete ${items.length === 1 ? "it" : `all ${items.length}`}`}
-          className="h-11 flex-1 items-center justify-center rounded-full bg-coral active:opacity-80"
+          className="min-h-12 flex-1 items-center justify-center rounded-full bg-coral active:opacity-80"
         >
           <Text variant="callout" tone="onAccent" className="font-nunito-bold">
             Delete

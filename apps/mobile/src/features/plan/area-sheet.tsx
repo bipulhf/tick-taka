@@ -119,7 +119,7 @@ function AreaForm({ area, count }: { area: Area | undefined; count: number }) {
             accessibilityRole="radio"
             accessibilityState={{ selected: color === c }}
             accessibilityLabel={`Colour ${c}`}
-            className="h-11 w-11 items-center justify-center rounded-full"
+            className="h-12 w-12 items-center justify-center rounded-full"
             style={{ backgroundColor: c }}
           >
             {color === c ? <Icon name="check" color="onAccent" size={22} /> : null}

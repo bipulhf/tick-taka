@@ -22,7 +22,7 @@ export function Segmented<T extends string>({
             haptic.select();
             onChange(option.value);
           }}
-          className={`min-h-11 flex-1 items-center justify-center rounded-xl ${option.value === value ? "bg-card" : ""}`}
+          className={`min-h-12 flex-1 items-center justify-center rounded-xl ${option.value === value ? "bg-card" : ""}`}
         >
           <Text
             variant="caption"

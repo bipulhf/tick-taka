@@ -502,7 +502,7 @@ export function TaskSheet({ id }: { id: string | null }) {
         <Pressable
           onPress={() => router.replace(`/plan/logbook`)}
           accessibilityRole="link"
-          className="items-center py-2"
+          className="min-h-12 items-center justify-center"
         >
           <Text variant="caption" tone="muted">
             Finished tasks live in the Logbook

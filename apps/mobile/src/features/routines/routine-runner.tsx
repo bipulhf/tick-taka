@@ -36,7 +36,7 @@ function StepTimer({ minutes }: { minutes: number }) {
   return (
     <Pressable
       onPress={() => setStartedAt(startedAt === null ? Date.now() : null)}
-      className="min-h-10 flex-row items-center gap-1 rounded-full bg-sky/15 px-3"
+      className="min-h-12 flex-row items-center gap-1 rounded-full bg-sky/15 px-3"
       accessibilityRole="button"
       accessibilityLabel={startedAt ? "Reset step timer" : "Start step timer"}
     >
@@ -105,7 +105,7 @@ function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
             onPress={() => move(index, -1)}
             accessibilityRole="button"
             accessibilityLabel={`Move step ${index + 1} up`}
-            className="h-12 w-8 items-center justify-center"
+            className="h-12 w-12 items-center justify-center"
           >
             <Icon name="chevron-up" />
           </Pressable>
@@ -113,7 +113,7 @@ function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
             onPress={() => setSteps((list) => list.filter((_, i) => i !== index))}
             accessibilityRole="button"
             accessibilityLabel={`Remove step ${index + 1}`}
-            className="h-12 w-8 items-center justify-center"
+            className="h-12 w-12 items-center justify-center"
           >
             <Icon name="close" color="muted" />
           </Pressable>

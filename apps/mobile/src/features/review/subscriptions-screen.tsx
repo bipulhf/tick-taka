@@ -141,7 +141,7 @@ export function SubscriptionsScreen() {
         <Pressable
           onPress={() => setDismissed([])}
           accessibilityRole="button"
-          className="min-h-11 items-center justify-center"
+          className="min-h-12 items-center justify-center"
         >
           <Text variant="callout" tone="sky">
             Show {plural(hidden, "hidden charge")}

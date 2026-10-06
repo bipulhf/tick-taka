@@ -96,8 +96,9 @@ export const PERSIST_MAX_AGE = 14 * DAY_MS;
  * cached data"). Purely additive fields nothing reads yet don't need a bump.
  *
  * 2: replies changed during the 2026-10 audit fixes (pay replies gained previousDueAt).
+ * 3: Today's bills carry dueAt, which "Paid" and its Undo send.
  */
-export const CACHE_BUSTER = "2";
+export const CACHE_BUSTER = "3";
 
 // Online means "has a network": the API may be on a LAN or VPS that answers even when
 // Android's internet reachability check fails. The outbox retries until the server answers.

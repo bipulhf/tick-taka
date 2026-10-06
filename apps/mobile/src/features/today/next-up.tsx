@@ -48,13 +48,14 @@ function MoneyRow({ item }: { item: Extract<Item, { kind: "bill" | "payday" }> }
             }
             const undo = payRecurring(send, item, {
               transactionId: newId(),
-              // The due time seen here (start of today if overdue): a replay or double tap
-              // then finds the bill already moved past it and changes nothing.
-              dueAt: item.at,
+              // The due date it pays: a replay or double tap then finds the bill already
+              // moved past it and changes nothing, and Undo moves the bill back to it.
+              dueAt: item.dueAt,
             });
             notify(`${item.name} logged`, {
               label: "Undo",
               onPress: () => {
+                // Saved like any change: it holds even if the app closes before syncing.
                 undo();
                 notify(`Took back ${item.name}`);
               },

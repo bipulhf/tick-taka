@@ -1,60 +1,52 @@
 import type { OutboxRequest } from "@/lib/outbox-policy";
 
-/** What POST /recurring/:id/pay replies with, as far as Undo needs it. */
-export interface PayReply {
-  transaction: { id: string } | null;
-  /** The due date the bill moved from; null when the pay changed nothing (a replay). */
-  previousDueAt?: number | null;
+/** What a "Paid" / "Received" / "Skip" sends, as far as its Undo needs it. */
+export interface PayBody extends Record<string, unknown> {
+  /** Made on the phone, so the Undo can name the transaction before the reply. */
+  transactionId: string;
+  /** The due date (next_due_at) this pays; the Undo moves the bill back to it. */
+  dueAt: number;
+  skip?: boolean;
 }
 
 /**
- * The writes that take back a "Paid" / "Received" / "Skip": delete the transaction it
- * logged, then move the due date back. Sent in this order through the outbox.
+ * The write that takes back a pay or skip (POST /recurring/:id/unpay). It needs nothing
+ * from the pay's reply: the server deletes the transaction the pay logged, if any, and
+ * moves the due date back only if that pay is what moved it.
  */
-export function undoPayRequests(
-  recurringId: string,
-  name: string,
-  reply: PayReply,
-): OutboxRequest[] {
-  const label = `Couldn't undo ${name}`;
-  const requests: OutboxRequest[] = [];
-  if (reply.transaction)
-    requests.push({ method: "DELETE", path: `/transactions/${reply.transaction.id}`, label });
-  if (reply.previousDueAt != null)
-    requests.push({
-      method: "PATCH",
-      path: `/recurring/${recurringId}`,
-      body: { nextDueAt: reply.previousDueAt },
-      label,
-    });
-  return requests;
+export function unpayRequest(item: { id: string; name: string }, body: PayBody): OutboxRequest {
+  return {
+    method: "POST",
+    path: `/recurring/${item.id}/unpay`,
+    body: { transactionId: body.transactionId, dueAt: body.dueAt, skip: body.skip ?? false },
+    label: `Couldn't undo ${item.name}`,
+  };
 }
 
+/** Queues a write (saved, sent in order) and can take back one not yet sent. */
 type Send = ((request: OutboxRequest) => void) & {
-  async: (request: OutboxRequest) => Promise<unknown>;
+  cancel: (match: (request: OutboxRequest) => boolean) => boolean;
 };
 
 /**
- * Pays (or skips) a bill or income and returns the Undo for the snackbar. Undo waits
- * for the pay to land, so offline it takes effect once both reach the server.
+ * Pays (or skips) a bill or income and returns the Undo for the snackbar. Both halves go
+ * through the saved queue, so an Undo made offline holds across a restart: if the pay
+ * hasn't gone out it is taken off the queue, otherwise its reversal is queued behind it.
  */
 export function payRecurring(
   send: Send,
   item: { id: string; name: string },
-  body: Record<string, unknown>,
+  body: PayBody,
 ): () => void {
-  const paid = send
-    .async({
-      method: "POST",
-      path: `/recurring/${item.id}/pay`,
-      body,
-      label: `Couldn't log ${item.name}`,
-    })
-    .catch(() => null) as Promise<PayReply | null>;
+  const pay: OutboxRequest = {
+    method: "POST",
+    path: `/recurring/${item.id}/pay`,
+    body,
+    label: `Couldn't log ${item.name}`,
+  };
+  send(pay);
   return () => {
-    void paid.then((reply) => {
-      if (!reply) return;
-      for (const request of undoPayRequests(item.id, item.name, reply)) send(request);
-    });
+    if (send.cancel((request) => request === pay)) return;
+    send(unpayRequest(item, body));
   };
 }

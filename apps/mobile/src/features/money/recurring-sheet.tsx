@@ -21,7 +21,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
-import { payRecurring } from "@/features/money/recurring-pay";
+import { type PayBody, payRecurring } from "@/features/money/recurring-pay";
 import { useRecurring } from "@/features/plan/queries";
 import { formatAmount, formatLocalDate, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -114,7 +114,7 @@ function RecurringForm({ id }: { id: string | null }) {
 
   const pay = (skip = false) => {
     if (!item) return;
-    const body: Record<string, unknown> = {
+    const body: PayBody = {
       transactionId: newId(),
       // The due date this pay is for: a replay or double tap then changes nothing.
       dueAt: item.nextDueAt,

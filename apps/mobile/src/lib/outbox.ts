@@ -124,7 +124,11 @@ export function useOutbox() {
           // Refusals are reported by the queue itself.
           queueWrite(request).catch(() => {});
         },
-        { async: queueWrite },
+        {
+          async: queueWrite,
+          /** Takes back a queued write that hasn't gone out; see OutboxQueue.cancel. */
+          cancel: (match: (request: OutboxRequest) => boolean) => outbox.cancel(match),
+        },
       ),
     [],
   );

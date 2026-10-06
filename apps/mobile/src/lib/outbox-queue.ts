@@ -77,6 +77,8 @@ export class OutboxQueue {
   /** Cleared before the saved queue was read: what's on disk is not to be sent. */
   private discardSaved = false;
   private running = false;
+  /** The write being sent right now; it can't be taken back. */
+  private inFlight: OutboxEntry | null = null;
   private wake: (() => void) | null = null;
   private saving: Promise<void> = Promise.resolve();
   private readonly waiters = new Map<string, Waiter>();
@@ -233,6 +235,23 @@ export class OutboxQueue {
     return done;
   }
 
+  /**
+   * Takes a queued write back before it goes out: it isn't being sent right now and
+   * no earlier try can have reached the server. Returns whether it was taken back; if
+   * not, it may land, and only another write can reverse it.
+   */
+  cancel(match: (request: OutboxRequest) => boolean): boolean {
+    const unsent = (e: OutboxEntry) => e !== this.inFlight && !e.maybeDelivered && match(e.request);
+    const entry = this.entries.find(unsent) ?? this.parked.find(unsent);
+    if (!entry) return false;
+    this.entries = this.entries.filter((e) => e !== entry);
+    this.parked = this.parked.filter((e) => e !== entry);
+    this.persist();
+    this.changed();
+    this.settle(entry.id, null);
+    return true;
+  }
+
   /** Records whose writes these are (the signed-in user). */
   setOwner(userId: string | null): void {
     if (this.userId === userId) return;
@@ -288,8 +307,10 @@ export class OutboxQueue {
       for (let entry = this.entries[0]; entry && this.deps.canSend(); entry = this.entries[0]) {
         let response: unknown;
         try {
+          this.inFlight = entry;
           response = await this.deps.send(entry.request);
         } catch (error) {
+          this.inFlight = null;
           if (this.entries[0] !== entry) continue; // cleared while sending
           const failure = this.deps.describe(error);
           const kind = classifyFailure(entry, failure);
@@ -318,6 +339,7 @@ export class OutboxQueue {
           }
           continue;
         }
+        this.inFlight = null;
         if (this.entries[0] !== entry) continue;
         this.finish(entry, response);
       }

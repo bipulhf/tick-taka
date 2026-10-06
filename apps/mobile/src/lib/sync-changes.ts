@@ -8,7 +8,7 @@ import { currentToken } from "./http";
 import { outbox } from "./outbox";
 import { scheduleRefresh } from "./query-client";
 import { editTime } from "./server-clock";
-import { changedPaths, syncChangesSchema } from "./sync-paths";
+import { changedPathsFromCounts, syncChangesSchema } from "./sync-paths";
 
 const KEY = "tt.last-sync";
 let running = false;
@@ -49,9 +49,12 @@ export async function pullChanges(): Promise<void> {
     }
     // Queued writes land first, so a refetch doesn't hide them; try later if they don't.
     if (!(await outboxEmpty())) return;
-    const reply = syncChangesSchema.safeParse(await send("GET", `/sync/changes?since=${stored}`));
+    // Only which tables changed matters here, so ask for counts, not rows.
+    const reply = syncChangesSchema.safeParse(
+      await send("GET", `/sync/changes?since=${stored}&summary=true`),
+    );
     if (!reply.success) return;
-    for (const path of changedPaths(reply.data.changes)) scheduleRefresh(path);
+    for (const path of changedPathsFromCounts(reply.data.counts ?? {})) scheduleRefresh(path);
     await AsyncStorage.setItem(key, String(reply.data.serverTime));
   } catch (error) {
     // Offline or refused: the next reconnect or foreground tries again.

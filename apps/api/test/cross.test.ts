@@ -323,6 +323,37 @@ describe("sync and export", () => {
     expect(delta.body.changes.tasks).toEqual([]);
   });
 
+  test("sync changes cap rows per table and say when there were more", async () => {
+    const ctx = await createTestContext();
+    const insert = ctx.deps.sqlite.prepare(
+      "insert into tasks (id, title, status, priority, created_at, updated_at) values (?, ?, 'open', 'normal', ?, ?)",
+    );
+    for (let i = 0; i < 5; i++)
+      insert.run(`01K${String(i).padStart(23, "0")}`, `Task ${i}`, DEFAULT_NOW, DEFAULT_NOW + i);
+    type Reply = { changes: Record<string, Row[]>; more: boolean };
+    const capped = await ctx.request<Reply>("GET", "/sync/changes?since=0&limit=3");
+    expect(capped.body.more).toBe(true);
+    expect(capped.body.changes.tasks!.map((t) => t.title)).toEqual(["Task 0", "Task 1", "Task 2"]);
+    const all = await ctx.request<Reply>("GET", "/sync/changes?since=0&limit=1000");
+    expect(all.body.more).toBe(false);
+    expect(all.body.changes.tasks).toHaveLength(5);
+    expect((await ctx.request("GET", "/sync/changes?limit=5000")).status).toBe(400);
+  });
+
+  test("a sync summary counts changes per table without sending rows", async () => {
+    const ctx = await createTestContext();
+    const before = await ctx.request<{ serverTime: number }>("GET", "/sync/changes?summary=true");
+    ctx.clock.advance(1000);
+    await ctx.request("POST", "/tasks", { title: "Call the bank" });
+    const summary = await ctx.request<{
+      counts: Record<string, number>;
+      changes: Record<string, unknown[]>;
+    }>("GET", `/sync/changes?since=${before.body.serverTime}&summary=true`);
+    expect(summary.body.counts.tasks).toBe(1);
+    expect(summary.body.counts.transactions).toBe(0);
+    expect(summary.body.changes).toEqual({});
+  });
+
   test("sync changes reject a bad since", async () => {
     const ctx = await createTestContext();
     expect((await ctx.request("GET", "/sync/changes?since=-5")).status).toBe(400);

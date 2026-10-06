@@ -35,7 +35,15 @@ export const noteSchema = z.string().max(2000);
 export const queryEpochSchema = z.coerce.number().int().nonnegative();
 export const queryBoolSchema = z.enum(["true", "false"]).transform((value) => value === "true");
 
-export const syncQuerySchema = z.object({ since: queryEpochSchema.default(0) });
+/**
+ * GET /sync/changes: rows changed after `since`, at most `limit` per table (the reply
+ * says `more` when a table had more), or with `summary=true` only a count per table.
+ */
+export const syncQuerySchema = z.object({
+  since: queryEpochSchema.default(0),
+  limit: z.coerce.number().int().min(1).max(1000).default(500),
+  summary: queryBoolSchema.optional(),
+});
 
 export const errorBodySchema = z.object({
   error: z.object({ code: z.string(), message: z.string(), details: z.unknown().optional() }),

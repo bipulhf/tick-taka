@@ -41,8 +41,10 @@ export async function recoverDroppedTurns(): Promise<void> {
         content: found.length ? `${m.content}\n\n${NOTE}` : m.content,
         actions: [...(m.actions ?? []), ...found],
       }));
-      // Refresh only the screens the found changes feed.
-      if (found.length)
+      // Refresh only the screens the found changes feed; everything if the reply
+      // was capped, since some changes weren't in it.
+      if (reply.success && reply.data.more) scheduleRefresh("/");
+      else if (found.length)
         for (const path of changedPaths(reply.data?.changes ?? {})) scheduleRefresh(path);
     } catch {
       // Offline or unreachable: try again on the next chance.

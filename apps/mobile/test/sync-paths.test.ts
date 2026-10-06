@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { keysToRefresh } from "../src/lib/invalidation";
-import { changedPaths, syncChangesSchema } from "../src/lib/sync-paths";
+import { changedPaths, changedPathsFromCounts, syncChangesSchema } from "../src/lib/sync-paths";
 
 describe("refreshing after /sync/changes", () => {
   test("tables with rows map to their routes; empty tables are skipped", () => {
@@ -36,5 +36,18 @@ describe("refreshing after /sync/changes", () => {
       true,
     );
     expect(syncChangesSchema.safeParse({ serverTime: "5", changes: {} }).success).toBe(false);
+  });
+});
+
+describe("summary replies", () => {
+  test("counts map to the same paths as rows", () => {
+    expect(changedPathsFromCounts({ tasks: 2, transactions: 0 })).toEqual(
+      changedPaths({ tasks: [{}, {}], transactions: [] }),
+    );
+  });
+
+  test("a summary reply passes the schema", () => {
+    const reply = { serverTime: 1, changes: {}, more: false, counts: { tasks: 1 } };
+    expect(syncChangesSchema.safeParse(reply).success).toBe(true);
   });
 });

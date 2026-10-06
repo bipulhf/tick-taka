@@ -65,7 +65,7 @@ describe("GET /today", () => {
 
     const res = await ctx.request<{
       topThree: Row[];
-      timeline: { kind: string; at: number | null }[];
+      timeline: { kind: string; at: number | null; dueDate?: string }[];
       dayFit: { plannedMinutes: number; capacityMinutes: number; overflowMinutes: number };
       evening: Row[];
       upcoming: Row[];
@@ -77,6 +77,7 @@ describe("GET /today", () => {
     expect(res.status).toBe(200);
     expect(res.body.topThree.map((t) => t.id)).toEqual([top.body.id]);
     expect(res.body.timeline.map((i) => i.kind)).toEqual(["task", "bill", "task", "task"]);
+    expect(res.body.timeline.find((i) => i.kind === "bill")?.dueDate).toBe("2026-10-04");
     expect(res.body.dayFit).toEqual(
       expect.objectContaining({ plannedMinutes: 450, capacityMinutes: 360, overflowMinutes: 90 }),
     );

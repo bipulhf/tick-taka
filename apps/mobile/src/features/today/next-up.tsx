@@ -7,6 +7,7 @@ import { Group } from "@/components/ui/group";
 import { ListRow } from "@/components/ui/list-row";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
+import { billStatusText } from "@/features/money/bill-status";
 import { payRecurring } from "@/features/money/recurring-pay";
 import { TaskRow } from "@/features/tasks/task-row";
 import { formatClock, formatMinutes } from "@/lib/format";
@@ -29,7 +30,9 @@ function MoneyRow({ item }: { item: Extract<Item, { kind: "bill" | "payday" }> }
       icon={isBill ? "receipt" : "cash-plus"}
       iconColor={isBill ? "coral" : "mint"}
       title={item.name}
-      subtitle={item.overdue ? "Overdue" : isBill ? "Due today" : "Payday"}
+      subtitle={
+        item.overdue ? billStatusText("overdue", item.dueDate) : isBill ? "Due today" : "Payday"
+      }
       onPress={() => router.push(`/money/recurring/${item.id}`)}
       right={
         <Button

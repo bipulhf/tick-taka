@@ -34,6 +34,8 @@ export type TimelineItem =
       /** Paid from or into; null means the default account. */
       accountId: string | null;
       overdue: boolean;
+      /** The local date it was due (YYYY-MM-DD), so a late bill can say "Was due Mon 5 Oct". */
+      dueDate: string;
     }
   | {
       kind: "debt";
@@ -116,6 +118,7 @@ export function todayView(deps: Deps, date?: LocalDate) {
       currency: item.currency,
       accountId: item.accountId,
       overdue: item.status === "overdue",
+      dueDate: item.dueDate,
     })),
     ...debtReminders.map((debt) => ({
       kind: "debt" as const,

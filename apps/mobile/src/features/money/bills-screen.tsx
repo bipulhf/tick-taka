@@ -14,13 +14,7 @@ import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { useRecurring } from "@/features/plan/queries";
 import { formatLocalDate } from "@/lib/format";
 import { useRemove } from "@/lib/use-remove";
-
-const STATUS = {
-  overdue: "Overdue",
-  due_today: "Due today",
-  due_soon: "Due soon",
-  upcoming: "",
-} as const;
+import { billStatusText } from "./bill-status";
 
 /** Bills and subscriptions, plus salaries and other expected income. */
 export function BillsScreen() {
@@ -77,8 +71,12 @@ export function BillsScreen() {
                           <ListRow
                             title={item.name}
                             subtitle={[
-                              STATUS[item.status],
-                              formatLocalDate(item.dueDate),
+                              // A late bill names its date once, in muted words.
+                              item.status === "overdue"
+                                ? billStatusText(item.status, item.dueDate)
+                                : [billStatusText(item.status), formatLocalDate(item.dueDate)]
+                                    .filter(Boolean)
+                                    .join(" · "),
                               describeRRule(item.rrule),
                             ]
                               .filter(Boolean)
@@ -89,13 +87,7 @@ export function BillsScreen() {
                                 minor={item.amountMinor}
                                 currency={item.currency}
                                 variant="strong"
-                                tone={
-                                  item.kind === "income"
-                                    ? "mint"
-                                    : item.status === "overdue"
-                                      ? "coral"
-                                      : "ink"
-                                }
+                                tone={item.kind === "income" ? "mint" : "ink"}
                               />
                             }
                           />

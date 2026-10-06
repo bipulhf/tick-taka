@@ -104,13 +104,6 @@ export async function signInWithGoogle(): Promise<void> {
   signedOutNoticeStore.set(null);
 }
 
-/**
- * A 401: the token expired or was revoked. Nothing is wiped. The token goes, the
- * profile and the queued writes stay, the outbox pauses (it needs a token) and the
- * login screen asks the same person to sign in again.
- */
-export const expireSession = sessionManager.expire;
-
 /** Swaps a token older than a day for a fresh one, so an active phone never hits the expiry. */
 export const refreshSessionIfStale = sessionManager.refreshIfStale;
 

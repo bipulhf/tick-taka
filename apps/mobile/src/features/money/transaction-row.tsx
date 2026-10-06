@@ -1,11 +1,13 @@
 import { useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
+import { Icon } from "@/components/ui/icon";
 import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { formatWhen } from "@/lib/format";
 import { useRemove } from "@/lib/use-remove";
 import type { Transaction } from "./queries";
+import { transactionAmount } from "./transaction-amount";
 
 export interface Lookup {
   account: (id: string | null) => { name: string; currency: string } | undefined;
@@ -20,8 +22,8 @@ const PLACEMENT = {
 } as const;
 
 /**
- * One transaction line: coral for money out, mint for money in. Tap to edit;
- * swipe left for edit and delete.
+ * One transaction line: "−৳120" in coral for money out, "+৳45,000" in mint for money in,
+ * transfers neutral with a transfer icon. Tap to edit; swipe left for edit and delete.
  */
 export function TransactionRow({
   tx,
@@ -39,22 +41,13 @@ export function TransactionRow({
   const remove = useRemove();
   const category = lookup.category(tx.categoryId);
   const account = lookup.account(tx.accountId);
-  const incoming =
-    tx.type === "income" ||
-    (tx.type === "transfer" && perspectiveAccountId === tx.toAccountId) ||
-    (tx.type === "adjustment" && tx.amountMinor > 0);
   const title =
     tx.type === "transfer"
       ? `${account?.name ?? "?"} → ${lookup.account(tx.toAccountId)?.name ?? "?"}`
       : tx.type === "adjustment"
         ? "Balance check"
         : tx.note || category?.name || (tx.type === "income" ? "Income" : "Expense");
-  const amount =
-    tx.type === "adjustment"
-      ? Math.abs(tx.amountMinor)
-      : tx.type === "transfer" && incoming
-        ? (tx.toAmountMinor ?? tx.amountMinor)
-        : tx.amountMinor;
+  const amount = transactionAmount(tx, perspectiveAccountId);
   const edit = () => router.push(`/transaction/${tx.id}`);
   return (
     <SwipeRow
@@ -91,14 +84,17 @@ export function TransactionRow({
             {tx.feeMinor > 0 ? " · fee" : ""}
           </Text>
         </View>
-        <Amount
-          minor={amount}
-          currency={account?.currency}
-          signed={incoming}
-          tone={incoming ? "mint" : tx.type === "transfer" ? "ink" : "coral"}
-          variant="strong"
-          animate={false}
-        />
+        <View className="flex-row items-center gap-1">
+          {amount.transfer ? <Icon name="swap-horizontal" size={18} color="muted" /> : null}
+          <Amount
+            minor={amount.minor}
+            currency={account?.currency}
+            signed={amount.signed}
+            tone={amount.tone}
+            variant="strong"
+            animate={false}
+          />
+        </View>
       </Pressable>
     </SwipeRow>
   );

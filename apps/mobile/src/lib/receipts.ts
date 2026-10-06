@@ -1,6 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
-import { tokenStore } from "./auth";
-import { apiUrl, request } from "./http";
+import { apiUrl, authHeaders, request } from "./http";
 
 export interface PickedImage {
   uri: string;
@@ -50,7 +49,10 @@ export async function uploadReceipt(image: PickedImage): Promise<string> {
   return ((await response.json()) as { path: string }).path;
 }
 
-/** Receipt images are served only to signed-in requests. */
-export function receiptUrl(path: string): string {
-  return `${apiUrl(`/uploads/${path}`)}?token=${encodeURIComponent(tokenStore.get() ?? "")}`;
+/**
+ * Receipt images are served only to signed-in requests. The token goes in a header:
+ * in the URL it would land in server access logs and in the image cache's keys.
+ */
+export function receiptSource(path: string): { uri: string; headers: Record<string, string> } {
+  return { uri: apiUrl(`/uploads/${path}`), headers: authHeaders() };
 }

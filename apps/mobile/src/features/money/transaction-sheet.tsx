@@ -32,7 +32,7 @@ import {
   useHourlyRate,
   useSettings,
 } from "@/lib/queries";
-import { pickReceipt, receiptUrl, uploadReceipt } from "@/lib/receipts";
+import { pickReceipt, receiptSource, uploadReceipt } from "@/lib/receipts";
 import { editTime } from "@/lib/server-clock";
 import { playSound } from "@/lib/sounds";
 import { useRemove } from "@/lib/use-remove";
@@ -405,7 +405,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
       </Text>
       {values.receiptPath ? (
         <Image
-          source={{ uri: receiptUrl(values.receiptPath) }}
+          source={receiptSource(values.receiptPath)}
           style={{ height: 180, borderRadius: 16 }}
           contentFit="cover"
           accessibilityLabel="Receipt photo"

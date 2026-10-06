@@ -244,7 +244,8 @@ API (`apps/api/.env`):
 | `OPENAI_MODEL_FAST`, `OPENAI_MODEL_SMART`, `OPENAI_MODEL_TRANSCRIBE` | Model names, so models change without a code change. |
 | `OPENAI_*_MICROS_PER_MTOK` | Prices per million tokens for models missing from the built-in price list (`src/ai/pricing.ts`, which has gpt-6-luna and gpt-4o-mini-transcribe). |
 | `AI_USER_MONTHLY_CAP_MICROS` | Most AI may cost each user other than `OWNER_EMAIL` per month (default 2000000 = $2, 0 = no limit). The owner is never limited. |
-| `HOST`, `PORT`, `JOBS_ENABLED` | Where to listen; whether to run the nightly jobs. |
+| `HOST`, `PORT`, `JOBS_ENABLED` | Where to listen (default `127.0.0.1:3000`, so only Nginx can reach it; use `0.0.0.0` only to test from a phone on your Wi-Fi); whether to run the nightly jobs. |
+| `TRUST_PROXY` | `true` behind Nginx: the sign-in limit (5 tries per 15 minutes) reads Nginx's `X-Real-IP`, and only from a loopback peer. Default `false`, which uses the socket address. |
 | `SITE_OPERATOR`, `CONTACT_EMAIL` | Who runs the service and how to reach them, shown on the public home (`/`), privacy (`/privacy`) and terms (`/terms`) pages used by Google's consent screen. |
 
 App (`apps/mobile/.env`, and `env` in `eas.json` for EAS builds):

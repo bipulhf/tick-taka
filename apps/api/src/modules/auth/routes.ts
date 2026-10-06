@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import type { User } from "../../db/user-registry";
+import { clientIp } from "../../lib/client-ip";
 import type { Deps } from "../../lib/deps";
 import { AppError, unauthorized } from "../../lib/errors";
 import { currentScope } from "../../lib/user-scope";
@@ -29,15 +30,15 @@ function signedIn() {
  * own session token. Refresh swaps a live token for a fresh one; logout ends it.
  */
 export const authRoutes = (deps: Deps) => {
-  // 10 attempts per 15 minutes per IP, read from the X-Real-IP header Nginx sets.
-  const limiter = new SlidingWindowLimiter(10, 15 * 60 * 1000);
+  // 5 attempts per 15 minutes per IP (the spec's limit); see clientIp for which IP.
+  const limiter = new SlidingWindowLimiter(5, 15 * 60 * 1000);
   const issue = (user: User) =>
     issueSession({ secret: deps.env.JWT_SECRET, users: deps.users, now: deps.now() }, user);
 
   return (
     new Hono()
       .post("/google", validate("json", googleSchema), async (c) => {
-        const ip = c.req.header("x-real-ip") ?? "local";
+        const ip = clientIp(c, deps.env.TRUST_PROXY);
         const now = deps.now();
         const waitMs = limiter.attempt(ip, now);
         if (waitMs > 0) {

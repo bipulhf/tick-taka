@@ -56,8 +56,8 @@ describe("foundation", () => {
     expect(settings.status).toBe(200);
   });
 
-  test("Google sign-in is limited to 10 attempts per 15 minutes per IP", async () => {
-    const ctx = await createTestContext();
+  test("Google sign-in is limited to 5 attempts per 15 minutes per IP", async () => {
+    const ctx = await createTestContext({ env: { TRUST_PROXY: "true" } });
     const attempt = (ip: string, idToken = "not-a-google-token-at-all") =>
       ctx.app.request("/auth/google", {
         method: "POST",
@@ -65,7 +65,7 @@ describe("foundation", () => {
         body: JSON.stringify({ idToken }),
       });
     const good = googleToken("sub-1", "a@example.com");
-    for (let i = 0; i < 10; i++) expect((await attempt("1.1.1.1")).status).toBe(401);
+    for (let i = 0; i < 5; i++) expect((await attempt("1.1.1.1")).status).toBe(401);
     const blocked = await attempt("1.1.1.1", good);
     expect(blocked.status).toBe(429);
     expect(blocked.headers.get("retry-after")).toBeTruthy();

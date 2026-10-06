@@ -13,13 +13,16 @@ import {
 import { localMonthSchema } from "@tick-taka/shared/schemas/common";
 import { isAiFeatureEnabled } from "@tick-taka/shared/schemas/settings";
 import { Hono } from "hono";
+import { createMiddleware } from "hono/factory";
 import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 import { monthlyCapMicros, monthSpendMicros, requireAi } from "../../ai/usage";
 import type { Deps } from "../../lib/deps";
 import { AppError } from "../../lib/errors";
+import { currentScope } from "../../lib/user-scope";
 import { userTime } from "../../lib/user-time";
 import { validate } from "../../lib/validate";
+import { SlidingWindowLimiter } from "../../middleware/rate-limit";
 import { aiAsk } from "./ask";
 import { type AssistantEvent, aiAssistant } from "./assistant/agent";
 import type { Dispatch } from "./assistant/dispatch";
@@ -31,6 +34,24 @@ import { aiTranscribe } from "./voice";
 
 /** Proxies drop a connection that stays quiet too long while the model thinks. */
 const KEEPALIVE_MS = 15_000;
+/** AI calls per user per minute; the monthly cap limits cost, this limits bursts. */
+const AI_CALLS_PER_MINUTE = 30;
+
+/** Limits each signed-in user's AI requests (reads like /ai/status are free). */
+function aiRateLimit(deps: Deps) {
+  const limiter = new SlidingWindowLimiter(AI_CALLS_PER_MINUTE, 60_000);
+  return createMiddleware(async (c, next) => {
+    const userId = currentScope()?.user.id;
+    if (c.req.method === "POST" && userId) {
+      const waitMs = limiter.attempt(userId, deps.now());
+      if (waitMs > 0) {
+        c.header("Retry-After", String(Math.ceil(waitMs / 1000)));
+        throw new AppError(429, "too_many_requests", "Too many AI requests. Wait a minute.");
+      }
+    }
+    await next();
+  });
+}
 
 /**
  * /ai/* routes return drafts or text and never write a record, except the chat
@@ -38,6 +59,7 @@ const KEEPALIVE_MS = 15_000;
  */
 export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
   new Hono()
+    .use(aiRateLimit(deps))
     .get("/status", (c) => {
       const { settings } = userTime(deps);
       const spent = monthSpendMicros(deps);

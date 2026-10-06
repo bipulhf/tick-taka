@@ -2,8 +2,17 @@ import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
 
 const envSchema = z.object({
-  HOST: z.string().default("0.0.0.0"),
+  /** Loopback by default, so only Nginx on the same machine can reach the API. */
+  HOST: z.string().default("127.0.0.1"),
   PORT: z.coerce.number().int().positive().default(3000),
+  /**
+   * Believe the X-Real-IP header (set by Nginx) for rate limits. Only honoured for
+   * requests from a loopback peer; leave off when nothing proxies the API.
+   */
+  TRUST_PROXY: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
   /** The single-user database from before sign-in with Google; OWNER_EMAIL inherits it. */
   DB_PATH: z.string().default("./data/app.db"),
   UPLOADS_DIR: z.string().optional(),

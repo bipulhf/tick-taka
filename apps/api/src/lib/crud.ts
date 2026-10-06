@@ -2,7 +2,7 @@ import { newId } from "@tick-taka/shared/ids";
 import { and, asc, eq, type InferSelectModel, isNull, type SQL } from "drizzle-orm";
 import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 import type { Db } from "../db/client";
-import { conflict, notFound } from "./errors";
+import { notFound } from "./errors";
 
 type SoftDeleteTable = SQLiteTable & {
   id: SQLiteColumn;
@@ -91,17 +91,21 @@ export function crud<T extends SoftDeleteTable>(
       return service.get(id);
     },
 
+    /** Deleting an already-deleted row returns it unchanged, so a retried delete succeeds. */
     remove(id: string): Row {
-      service.get(id);
+      const row = service.find(id, true) as (Row & { deletedAt: number | null }) | undefined;
+      if (!row) throw notFound(entity);
+      if (row.deletedAt !== null) return row;
       const time = now();
       db.update(t).set({ deletedAt: time, updatedAt: time }).where(eq(cols.id, id)).run();
       return service.find(id, true) as Row;
     },
 
+    /** Restoring a live row returns it unchanged, so a retried Undo succeeds. */
     restore(id: string): Row {
       const row = service.find(id, true) as (Row & { deletedAt: number | null }) | undefined;
       if (!row) throw notFound(entity);
-      if (row.deletedAt === null) throw conflict(`${entity} is not deleted`);
+      if (row.deletedAt === null) return row;
       db.update(t).set({ deletedAt: null, updatedAt: now() }).where(eq(cols.id, id)).run();
       return service.get(id);
     },

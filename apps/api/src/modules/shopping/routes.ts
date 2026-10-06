@@ -53,6 +53,27 @@ export const shoppingService = (deps: Deps) => {
     },
 
     checkout(input: z.output<typeof shoppingCheckoutSchema>) {
+      // A replay of a checkout that already went through answers with the same result.
+      if (input.transactionId) {
+        const done = deps.db
+          .select()
+          .from(transactions)
+          .where(eq(transactions.id, input.transactionId))
+          .get();
+        if (done) {
+          const items = deps.db
+            .select()
+            .from(shoppingItems)
+            .where(eq(shoppingItems.transactionId, done.id))
+            .all();
+          return {
+            transactionId: done.id,
+            amountMinor: done.amountMinor,
+            estimateMinor: items.reduce((sum, item) => sum + (item.estMinor ?? 0), 0),
+            items: items.length,
+          };
+        }
+      }
       const checked = base.list(
         and(
           eq(shoppingItems.listName, input.listName),

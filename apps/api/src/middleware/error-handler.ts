@@ -1,6 +1,7 @@
 import type { ErrorHandler, NotFoundHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { AppError, errorBody } from "../lib/errors";
+import { errorFields, log, requestIdOf } from "../lib/log";
 
 function sqliteCode(error: unknown): string | undefined {
   for (let current: unknown = error; current; current = (current as { cause?: unknown }).cause) {
@@ -23,7 +24,12 @@ export const onError: ErrorHandler = (error, c) => {
   if (code === "SQLITE_CONSTRAINT_UNIQUE" || code === "SQLITE_CONSTRAINT_PRIMARYKEY") {
     return c.json(errorBody("conflict", "That record already exists"), 409);
   }
-  console.error(error);
+  log("error", "unhandled error", {
+    reqId: requestIdOf(c.req.raw),
+    method: c.req.method,
+    path: c.req.path,
+    ...errorFields(error),
+  });
   return c.json(errorBody("internal_error", "Something went wrong on the server"), 500);
 };
 

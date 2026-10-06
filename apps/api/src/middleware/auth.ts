@@ -3,6 +3,7 @@ import { verify } from "hono/jwt";
 import { JwtTokenExpired } from "hono/utils/jwt/types";
 import type { Deps } from "../lib/deps";
 import { sessionExpired, unauthorized } from "../lib/errors";
+import { setRequestUser } from "../lib/log";
 import { runAsUser } from "../lib/user-scope";
 
 /**
@@ -38,6 +39,7 @@ export const requireAuth = (deps: Deps) =>
       deps.users.sessions.touch(session);
       sessionId = session.id;
     }
+    setRequestUser(c.req.raw, user.id);
     // Leased so the handle stays open for the whole request.
     const lease = deps.users.lease(user);
     try {

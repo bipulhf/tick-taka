@@ -5,6 +5,7 @@ import { and, gte, isNull, lt, sql } from "drizzle-orm";
 import { aiUsage } from "../db/schema/system";
 import type { Deps } from "../lib/deps";
 import { AppError } from "../lib/errors";
+import { errorFields, log } from "../lib/log";
 import { currentScope } from "../lib/user-scope";
 import { userTime } from "../lib/user-time";
 import type { AiClient, AiUsage } from "./client";
@@ -86,7 +87,7 @@ export async function callAi<T>(run: () => Promise<T>): Promise<T> {
     return await run();
   } catch (error) {
     if (error instanceof AppError) throw error;
-    console.error("[ai] call failed", error);
+    log("warn", "ai call failed", errorFields(error));
     throw new AppError(502, "ai_error", "AI didn't answer. Use the form instead.");
   }
 }

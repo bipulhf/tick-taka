@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Deps } from "./lib/deps";
 import { requireAuth } from "./middleware/auth";
 import { onError, onNotFound } from "./middleware/error-handler";
+import { requestLog } from "./middleware/request-log";
 import { accountsRoutes } from "./modules/accounts/routes";
 import type { Dispatch } from "./modules/ai/assistant/dispatch";
 import { aiRoutes } from "./modules/ai/routes";
@@ -66,6 +67,7 @@ export function createApp(deps: Deps) {
     .route("/ai", aiRoutes(deps, dispatch));
 
   const app = new Hono()
+    .use(requestLog(deps))
     // The phone reads this to send edit times in server time, so last-write-wins
     // isn't fooled by a phone clock that runs fast or slow.
     .use(async (c, next) => {

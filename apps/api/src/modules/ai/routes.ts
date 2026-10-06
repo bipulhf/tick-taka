@@ -19,6 +19,7 @@ import { z } from "zod";
 import { monthlyCapMicros, monthSpendMicros, requireAi } from "../../ai/usage";
 import type { Deps } from "../../lib/deps";
 import { AppError } from "../../lib/errors";
+import { errorFields, log, requestIdOf } from "../../lib/log";
 import { currentScope } from "../../lib/user-scope";
 import { userTime } from "../../lib/user-time";
 import { validate } from "../../lib/validate";
@@ -133,7 +134,11 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
           await aiAssistant(deps, ai, dispatch, authorization, messages, emit);
         } catch (error) {
           const known = error instanceof AppError;
-          if (!known) console.error("[ai] assistant failed", error);
+          if (!known)
+            log("error", "assistant failed", {
+              reqId: requestIdOf(c.req.raw),
+              ...errorFields(error),
+            });
           emit({
             type: "error",
             code: known ? error.code : "ai_error",

@@ -1,6 +1,7 @@
 import { localParts } from "@tick-taka/shared/dates";
 import { Cron } from "croner";
 import type { Deps } from "../lib/deps";
+import { errorFields, log, userTag } from "../lib/log";
 import { runAsUser } from "../lib/user-scope";
 import { recurringService } from "../modules/recurring/service";
 import { readSettings } from "../modules/settings/service";
@@ -31,9 +32,13 @@ export async function runHourlyJobs(deps: Deps): Promise<void> {
         const safely = (name: string, job: () => unknown) => {
           try {
             const result = job();
-            console.log(`[job] ${name} for ${user.id}: ${JSON.stringify(result)}`);
+            log("info", "job", { job: name, user: userTag(user.id, deps.env.JWT_SECRET), result });
           } catch (error) {
-            console.error(`[job] ${name} for ${user.id} failed`, error);
+            log("error", "job failed", {
+              job: name,
+              user: userTag(user.id, deps.env.JWT_SECRET),
+              ...errorFields(error),
+            });
           }
         };
         if (hour === OVERDUE_BILLS_HOUR)

@@ -64,7 +64,8 @@ function Editor({ routine, onDone }: { routine: Routine; onDone: () => void }) {
     setSteps((list) => {
       const next = [...list];
       const [item] = next.splice(index, 1);
-      next.splice(Math.max(0, Math.min(next.length, index + by)), 0, item!);
+      if (item === undefined) return list;
+      next.splice(Math.max(0, Math.min(next.length, index + by)), 0, item);
       return next;
     });
   return (

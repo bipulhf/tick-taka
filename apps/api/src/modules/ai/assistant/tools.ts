@@ -376,7 +376,7 @@ export function createToolRunner(
       const name = entity.replace("_", " ");
       pending.push({
         summary:
-          `${name[0]!.toUpperCase()}${name.slice(1)} ${label(found.data as Record<string, unknown>, "")}`.trim(),
+          `${name.charAt(0).toUpperCase()}${name.slice(1)} ${label(found.data as Record<string, unknown>, "")}`.trim(),
         path,
       });
       proposed++;

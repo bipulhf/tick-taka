@@ -147,8 +147,8 @@ export function monthlyReview(deps: Deps, monthInput?: LocalMonth) {
   const summary = insightsSummary(deps, range);
   const worth = netWorthSeries(deps, 13).series;
   const index = worth.findIndex((point) => point.month === month);
-  const end = index >= 0 ? worth[index]!.netWorthMinor : null;
-  const start = index > 0 ? worth[index - 1]!.netWorthMinor : null;
+  const end = worth[index]?.netWorthMinor ?? null;
+  const start = index > 0 ? (worth[index - 1]?.netWorthMinor ?? null) : null;
   const someday = deps.db
     .select()
     .from(tasks)

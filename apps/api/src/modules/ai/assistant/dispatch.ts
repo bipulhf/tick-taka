@@ -17,7 +17,7 @@ export interface Caller {
  * elsewhere (no `..` or `.` segments, backslashes or encoded slashes).
  */
 export function isPlainPath(path: string): boolean {
-  const pathname = path.split("?")[0]!;
+  const pathname = path.split("?", 1)[0] ?? "";
   if (!pathname.startsWith("/") || pathname.startsWith("//") || /%2f|%5c/i.test(pathname))
     return false;
   return new URL(path, "http://localhost").pathname === pathname;

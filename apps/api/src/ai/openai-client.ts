@@ -157,8 +157,8 @@ export function createOpenAiClient(env: Env): AiClient | null {
           request.onText(delta.content);
         }
         for (const part of delta?.tool_calls ?? []) {
-          calls[part.index] ??= { id: "", name: "", arguments: "" };
-          const call = calls[part.index]!;
+          const call = calls[part.index] ?? { id: "", name: "", arguments: "" };
+          calls[part.index] = call;
           if (part.id) call.id = part.id;
           if (part.function?.name) call.name += part.function.name;
           if (part.function?.arguments) call.arguments += part.function.arguments;

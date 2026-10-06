@@ -124,7 +124,7 @@ export function SettingsScreen() {
     <Screen title="Settings" tabBarPadding={false}>
       <ReminderStatusBanner />
       {groups.map((entries) => (
-        <Group key={entries[0]!.href} inset={60}>
+        <Group key={entries[0]?.href} inset={60}>
           {entries.map((entry) => (
             <ListRow
               key={entry.href}

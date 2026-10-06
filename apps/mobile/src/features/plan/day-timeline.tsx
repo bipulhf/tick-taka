@@ -54,7 +54,9 @@ export function DayTimeline({ date }: { date: string }) {
   const all = new Map<string, PlanTask>(
     [...(tasks.data ?? []), ...(top.data ?? [])].map((t) => [t.id, t]),
   );
-  const timed = [...all.values()].filter((t) => t.hasTime && t.doAt !== null);
+  const timed = [...all.values()].filter(
+    (t): t is typeof t & { doAt: number } => t.hasTime && t.doAt !== null,
+  );
   const untimed = [...all.values()].filter(
     (t) => !(t.hasTime && t.doAt !== null) && t.status !== "done",
   );
@@ -186,7 +188,7 @@ export function DayTimeline({ date }: { date: string }) {
                   </View>
                 ))}
                 {timed.map((task) => {
-                  const minute = localMinuteOfDay(task.doAt!, timeZone);
+                  const minute = localMinuteOfDay(task.doAt, timeZone);
                   const top = Math.max(0, (minute - START_HOUR * 60) * PX_PER_MIN);
                   const height = Math.max(48, (task.estimateMin ?? 30) * PX_PER_MIN);
                   return (

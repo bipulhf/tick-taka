@@ -36,7 +36,8 @@ export function LogbookList() {
   });
   const byDay = new Map<string, NonNullable<typeof done.data>>();
   for (const task of done.data ?? []) {
-    const day = toLocalDate(task.doneAt!, timeZone);
+    if (task.doneAt === null) continue;
+    const day = toLocalDate(task.doneAt, timeZone);
     byDay.set(day, [...(byDay.get(day) ?? []), task]);
   }
   const shareTimesheet = () => {
@@ -124,7 +125,7 @@ export function LogbookList() {
                     <View key={task.id} className="flex-row justify-between gap-3">
                       <Text className="flex-1">✓ {task.title}</Text>
                       <Text variant="caption" tone="muted" numeric>
-                        {formatClock(task.doneAt!, timeZone)}
+                        {task.doneAt !== null ? formatClock(task.doneAt, timeZone) : null}
                       </Text>
                     </View>
                   ))}

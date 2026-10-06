@@ -40,17 +40,19 @@ export async function aiPlanDay(deps: Deps, date: LocalDate) {
       ),
     )
     .all();
-  const fixed = candidates.filter((t) => t.hasTime && t.doAt !== null);
+  const fixed = candidates.filter(
+    (t): t is (typeof candidates)[number] & { doAt: number } => t.hasTime && t.doAt !== null,
+  );
   const flexible = candidates.filter((t) => !(t.hasTime && t.doAt !== null));
   const bills = recurringService(deps)
     .listWithStatus()
     .filter((item) => item.dueDate === date);
   // Planning today starts from now (rounded up to the next quarter hour), not 9 am.
   const nowMinute = date === today ? Math.ceil(localMinuteOfDay(now, timeZone) / 15) * 15 : 0;
-  const upcomingFixed = fixed.filter((t) => date !== today || t.doAt! >= now);
+  const upcomingFixed = fixed.filter((t) => date !== today || t.doAt >= now);
   const firstFixed = Math.max(
     nowMinute,
-    Math.min(DAY_START_MINUTES, ...upcomingFixed.map((t) => localMinuteOfDay(t.doAt!, timeZone))),
+    Math.min(DAY_START_MINUTES, ...upcomingFixed.map((t) => localMinuteOfDay(t.doAt, timeZone))),
   );
   const dayEnd = Math.min(23 * 60, firstFixed + settings.dayCapacityMinutes + 120);
 
@@ -66,7 +68,7 @@ export async function aiPlanDay(deps: Deps, date: LocalDate) {
     });
   const user = [
     `Date: ${date}. Plan between ${hhmm(firstFixed)} and ${hhmm(dayEnd)}. Free minutes for tasks: ${settings.dayCapacityMinutes}.`,
-    `Fixed blocks: ${fixed.map((t) => `${hhmm(localMinuteOfDay(t.doAt!, timeZone))} ${describe(t)}`).join("; ") || "none"}`,
+    `Fixed blocks: ${fixed.map((t) => `${hhmm(localMinuteOfDay(t.doAt, timeZone))} ${describe(t)}`).join("; ") || "none"}`,
     `Tasks to place: ${flexible.map(describe).join("; ") || "none"}`,
     `Bills due today: ${bills.map((b) => `${b.name} ${formatAmount(b.amountMinor, { currency: b.currency })}`).join(", ") || "none"}`,
   ].join("\n");

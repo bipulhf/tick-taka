@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { defined } from "@tick-taka/shared/defined";
 
 /** One signed-in device. The JWT's `jti` is the session id, so a session can be revoked. */
 export interface Session {
@@ -84,7 +85,7 @@ export function createSessionStore(registry: Database, now: () => number) {
       const at = now();
       prune.run(at - KEEP_DEAD_MS, at - KEEP_DEAD_MS);
       insert.run(id, userId, at, at, expiresAt, replaces);
-      return toSession(byId.get(id)!);
+      return toSession(defined(byId.get(id), "the new session"));
     },
 
     find(id: string): Session | undefined {

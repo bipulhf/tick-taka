@@ -1,3 +1,4 @@
+import { defined } from "./defined";
 /**
  * Tiki, the coin-with-a-clock mascot. Tiki reacts to the day and never looks sad
  * or angry: overspending gets a calm face and a tip.
@@ -60,7 +61,7 @@ export function greeting(hour: number): string {
 export function calmTip(seed: string): string {
   let hash = 0;
   for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return CALM_TIPS[hash % CALM_TIPS.length]!;
+  return defined(CALM_TIPS[hash % CALM_TIPS.length], "a calm tip");
 }
 
 export function tikiLine(mood: TikiMood, seed: string): string {

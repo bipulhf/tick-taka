@@ -64,7 +64,7 @@ export function PlanningSettings() {
               <PickerField
                 label="Week starts on"
                 value={String(s.weekStartsOn)}
-                options={[6, 0, 1].map((d) => ({ id: String(d), label: LONG_DAYS[d]! }))}
+                options={[6, 0, 1].map((d) => ({ id: String(d), label: LONG_DAYS[d] ?? "" }))}
                 onChange={(d) => update({ weekStartsOn: Number(d) })}
               />
             </Card>

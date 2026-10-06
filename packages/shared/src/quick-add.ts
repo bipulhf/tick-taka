@@ -131,7 +131,7 @@ function containsWord(haystack: string, needle: string): boolean {
 
 /** True for letters outside the Latin script, e.g. Bangla. The AI reads those better. */
 function hasNonLatinLetters(text: string): boolean {
-  return (text.match(/\p{L}/gu) ?? []).some((letter) => letter.codePointAt(0)! > 0x24f);
+  return (text.match(/\p{L}/gu) ?? []).some((letter) => (letter.codePointAt(0) ?? 0) > 0x24f);
 }
 
 interface CategoryGuess {
@@ -217,7 +217,7 @@ function isPartOfDate(tokens: string[], index: number): boolean {
   if (
     next &&
     /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(next) &&
-    /^\d{1,2}$/.test(tokens[index]!)
+    /^\d{1,2}$/.test(tokens[index] ?? "")
   )
     return true;
   return false;
@@ -243,7 +243,7 @@ const LABEL_WORDS = new Set(
 
 /** "Chapter 5", "৩ নম্বর", or a number with a leading zero (a phone number, "007"). */
 function isLabelNumber(plain: string[], index: number): boolean {
-  if (/^0\d/.test(plain[index]!)) return true;
+  if (/^0\d/.test(plain[index] ?? "")) return true;
   const previous = plain[index - 1]
     ?.toLowerCase()
     .normalize("NFC")
@@ -284,14 +284,14 @@ function parseMoney(
   const isAmountAt = (index: number) =>
     index >= 0 &&
     index < tokens.length &&
-    isAmountExpression(plain[index]!) &&
+    isAmountExpression(plain[index] ?? "") &&
     !isPartOfDate(plain, index) &&
     (forced !== undefined || !isLabelNumber(plain, index));
   if (isAmountAt(last)) {
     amountIndex = last;
-  } else if (isAmountAt(last - 1) && findAccount(tokens[last]!, context.accounts)) {
+  } else if (isAmountAt(last - 1) && findAccount(tokens[last] ?? "", context.accounts)) {
     amountIndex = last - 1;
-    accountId = findAccount(tokens[last]!, context.accounts);
+    accountId = findAccount(tokens[last] ?? "", context.accounts);
   } else if (isAmountAt(0)) {
     amountIndex = 0;
   }
@@ -303,7 +303,7 @@ function parseMoney(
   if (!accountId) {
     const idx = remaining.findIndex((t) => findAccount(t, context.accounts));
     if (idx >= 0) {
-      accountId = findAccount(remaining[idx]!, context.accounts);
+      accountId = findAccount(remaining[idx] ?? "", context.accounts);
       remaining.splice(idx, 1);
     }
   }
@@ -313,7 +313,7 @@ function parseMoney(
   // "3 slides for class" is a task, "250 lunch" and "৳300 gift" are expenses.
   const currencyMarked =
     words.length !== tokens.length ||
-    (amountIndex >= 0 && plain[amountIndex] !== toAsciiDigits(tokens[amountIndex]!));
+    (amountIndex >= 0 && plain[amountIndex] !== toAsciiDigits(tokens[amountIndex] ?? ""));
   if (
     amountIndex === 0 &&
     tokens.length > 1 &&
@@ -329,7 +329,8 @@ function parseMoney(
   const categoryId = guess.kind === null || guess.kind === kind ? guess.categoryId : null;
   accountId ??= context.defaultAccountId;
   const currency = context.accounts.find((a) => a.id === accountId)?.currency ?? DEFAULT_CURRENCY;
-  const amountMinor = amountIndex >= 0 ? expressionToMinor(plain[amountIndex]!, currency) : null;
+  const amountMinor =
+    amountIndex >= 0 ? expressionToMinor(plain[amountIndex] ?? "", currency) : null;
   if (amountIndex >= 0 && (amountMinor === null || amountMinor <= 0)) return null;
   const occurredAt = offset === 0 ? context.now : addDaysToInstant(context.now, offset, timeZone);
   // Another price left in the note ("চা ২০ সিঙ্গারা ১০") means only one was taken: let
@@ -381,14 +382,17 @@ function parseMoneyList(
   if (parts.length === 0) return null;
   parts.push(text.slice(start));
   const items = parts.map((part) => parseMoney(part, context, forced));
-  const priced = items.filter((item): item is MoneyDraft => item?.amountMinor != null);
+  const priced = items.filter(
+    (item): item is MoneyDraft & { amountMinor: number } => item?.amountMinor != null,
+  );
   if (priced.length !== items.length || new Set(priced.map((i) => i.kind)).size !== 1) return null;
-  const first = priced[0]!;
+  const [first] = priced;
+  if (!first) return null;
   const named = priced.find((item) => item.accountId !== context.defaultAccountId);
   const categories = new Set(priced.map((item) => item.categoryId));
   return {
     ...first,
-    amountMinor: priced.reduce((sum, item) => sum + item.amountMinor!, 0),
+    amountMinor: priced.reduce((sum, item) => sum + item.amountMinor, 0),
     accountId: named?.accountId ?? first.accountId,
     categoryId: categories.size === 1 ? first.categoryId : null,
     areaId: priced.find((item) => item.areaId !== null)?.areaId ?? null,

@@ -1,4 +1,5 @@
 import { isLocalDate, startOfLocalDay, toLocalDate, zonedTimeToUtc } from "@tick-taka/shared/dates";
+import { defined } from "@tick-taka/shared/defined";
 import { toMajor, toMinor } from "@tick-taka/shared/money";
 import type { Caller } from "./dispatch";
 
@@ -93,8 +94,17 @@ export function createFieldConverter(caller: Caller, timeZone: string, now: numb
     if (value === "now") return now;
     const time = LOCAL_TIME.exec(value);
     if (time) {
-      const [, year, month, day, hour, minute] = time.map(Number) as number[];
-      return zonedTimeToUtc({ year: year!, month: month!, day: day!, hour, minute }, timeZone);
+      const [year, month, day, hour, minute] = time.slice(1).map(Number);
+      return zonedTimeToUtc(
+        {
+          year: defined(year, "the year"),
+          month: defined(month, "the month"),
+          day: defined(day, "the day"),
+          hour,
+          minute,
+        },
+        timeZone,
+      );
     }
     if (isLocalDate(value)) return startOfLocalDay(value, timeZone);
     // A habit's reminder is a clock time and stays as text.
@@ -106,12 +116,13 @@ export function createFieldConverter(caller: Caller, timeZone: string, now: numb
     const body: Record<string, unknown> = {};
     const currency = typeof fields.currency === "string" ? fields.currency : "BDT";
     for (const [key, value] of Object.entries(fields)) {
-      if (key in MONEY) {
+      const moneyKey = MONEY[key];
+      const ref = REFS[key];
+      if (moneyKey !== undefined) {
         if (value !== null && !Number.isFinite(Number(value)))
           throw new FieldError(`${key} must be a number of taka`);
-        body[MONEY[key]!] = value === null ? null : toMinor(Number(value), currency);
-      } else if (key in REFS) {
-        const ref = REFS[key]!;
+        body[moneyKey] = value === null ? null : toMinor(Number(value), currency);
+      } else if (ref !== undefined) {
         body[ref.key] = await resolve(ref.kind, value);
       } else if (EPOCH_KEYS.has(key)) {
         body[key] = epoch(key, value);

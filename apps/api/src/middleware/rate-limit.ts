@@ -20,7 +20,7 @@ export class SlidingWindowLimiter {
     const recent = (this.hits.get(key) ?? []).filter((t) => now - t < this.windowMs);
     if (recent.length >= this.limit) {
       this.hits.set(key, recent);
-      return this.windowMs - (now - recent[0]!);
+      return this.windowMs - (now - (recent[0] ?? now));
     }
     recent.push(now);
     this.hits.set(key, recent);
@@ -38,6 +38,6 @@ export class SlidingWindowLimiter {
 
   private prune(now: number): void {
     for (const [key, times] of this.hits)
-      if (now - times[times.length - 1]! >= this.windowMs) this.hits.delete(key);
+      if (now - (times.at(-1) ?? 0) >= this.windowMs) this.hits.delete(key);
   }
 }

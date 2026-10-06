@@ -97,7 +97,8 @@ export function todayView(deps: Deps, date?: LocalDate) {
         lt(debts.remindAt, to),
       ),
     )
-    .all();
+    .all()
+    .filter((debt): debt is typeof debt & { remindAt: number } => debt.remindAt !== null);
 
   const timeline: TimelineItem[] = [
     ...dayTasks
@@ -122,7 +123,7 @@ export function todayView(deps: Deps, date?: LocalDate) {
     })),
     ...debtReminders.map((debt) => ({
       kind: "debt" as const,
-      at: debt.remindAt!,
+      at: debt.remindAt,
       minutes: 0 as const,
       id: debt.id,
       person: debt.person,

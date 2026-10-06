@@ -5,20 +5,24 @@ import { ON_ACCENT } from "@/theme/palette";
 import { Icon, type IconName } from "./icon";
 import { Text, type TextTone } from "./text";
 
-const VARIANTS: Record<string, { box: string; text: TextTone; icon: "onAccent" | "sky" | "ink" }> =
-  {
-    primary: { box: "bg-mango", text: "onAccent", icon: "onAccent" },
-    /** Time actions: outlined like secondary, marked by a sky icon instead of a large sky fill. */
-    time: { box: "bg-card border border-line-strong", text: "ink", icon: "sky" },
-    money: { box: "bg-mint", text: "onAccent", icon: "onAccent" },
-    secondary: { box: "bg-card border border-line-strong", text: "ink", icon: "ink" },
-    ghost: { box: "bg-transparent", text: "ink", icon: "ink" },
-  };
+export type ButtonVariant = "primary" | "time" | "money" | "secondary" | "ghost";
+
+const VARIANTS: Record<
+  ButtonVariant,
+  { box: string; text: TextTone; icon: "onAccent" | "sky" | "ink" }
+> = {
+  primary: { box: "bg-mango", text: "onAccent", icon: "onAccent" },
+  /** Time actions: outlined like secondary, marked by a sky icon instead of a large sky fill. */
+  time: { box: "bg-card border border-line-strong", text: "ink", icon: "sky" },
+  money: { box: "bg-mint", text: "onAccent", icon: "onAccent" },
+  secondary: { box: "bg-card border border-line-strong", text: "ink", icon: "ink" },
+  ghost: { box: "bg-transparent", text: "ink", icon: "ink" },
+};
 
 export interface ButtonProps {
   label: string;
   onPress: () => void;
-  variant?: "primary" | "time" | "money" | "secondary" | "ghost";
+  variant?: ButtonVariant;
   icon?: IconName;
   disabled?: boolean;
   loading?: boolean;
@@ -37,7 +41,7 @@ export function Button({
   size = "md",
   className,
 }: ButtonProps) {
-  const style = VARIANTS[variant]!;
+  const style = VARIANTS[variant];
   const colors = useColors();
   return (
     <Pressable

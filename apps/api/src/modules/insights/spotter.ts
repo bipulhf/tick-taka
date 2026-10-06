@@ -56,12 +56,13 @@ export function spotSubscriptions(deps: Deps): SubscriptionCandidate[] {
     if (group.length < 2) continue;
     const sorted = group.sort((a, b) => a.occurredAt - b.occurredAt);
     const monthly = sorted.slice(1).every((row, i) => {
-      const gapDays = (row.occurredAt - sorted[i]!.occurredAt) / DAY_MS;
+      const gapDays = (row.occurredAt - (sorted[i]?.occurredAt ?? row.occurredAt)) / DAY_MS;
       return gapDays >= 25 && gapDays <= 35;
     });
     const months = [...new Set(sorted.map((row) => toLocalMonth(row.occurredAt, timeZone)))];
     if (!monthly || months.length < 2) continue;
-    const last = sorted.at(-1)!;
+    const last = sorted.at(-1);
+    if (!last) continue;
     const note = last.note;
     if (
       note &&

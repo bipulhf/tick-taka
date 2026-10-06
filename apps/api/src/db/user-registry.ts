@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { defined } from "@tick-taka/shared/defined";
 import { newId } from "@tick-taka/shared/ids";
 import type { Env } from "../env";
 import { errorFields, log, userTag } from "../lib/log";
@@ -147,7 +148,7 @@ export function createUserRegistry(
             "UPDATE users SET email = ?, name = ?, picture_url = ?, last_seen_at = ? WHERE id = ?",
           )
           .run(email, profile.name, profile.picture, at, existing.id);
-        return { user: toUser(byId.get(existing.id)!), created: false };
+        return { user: toUser(defined(byId.get(existing.id), "the user")), created: false };
       }
       const id = newId(at);
       registry
@@ -165,7 +166,7 @@ export function createUserRegistry(
           at,
           at,
         );
-      return { user: toUser(byId.get(id)!), created: true };
+      return { user: toUser(defined(byId.get(id), "the new user")), created: true };
     },
 
     /**

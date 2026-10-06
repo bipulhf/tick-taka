@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { defined } from "@tick-taka/shared/defined";
 import { api, unwrap } from "@/lib/api";
 
 type TransactionQuery = Omit<
@@ -21,7 +22,8 @@ export function useTransactions(query: TransactionQuery) {
 export function useTransaction(id: string | null) {
   return useQuery({
     queryKey: ["transaction", id],
-    queryFn: () => unwrap(api.transactions[":id"].$get({ param: { id: id! } })),
+    queryFn: () =>
+      unwrap(api.transactions[":id"].$get({ param: { id: defined(id, "the transaction id") } })),
     enabled: Boolean(id),
   });
 }

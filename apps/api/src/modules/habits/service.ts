@@ -1,4 +1,5 @@
 import { addDays, type LocalDate, startOfWeek } from "@tick-taka/shared/dates";
+import { defined } from "@tick-taka/shared/defined";
 import { computeStreak, type StreakResult } from "@tick-taka/shared/gamification";
 import { vacationDates } from "@tick-taka/shared/schemas/settings";
 import type { habitCreateSchema, habitUpdateSchema } from "@tick-taka/shared/schemas/time";
@@ -131,11 +132,12 @@ export function habitService(deps: Deps) {
           set: { count, updatedAt: now, deletedAt: null },
         })
         .run();
-      return db
+      const log = db
         .select()
         .from(habitLogs)
         .where(and(eq(habitLogs.habitId, habitId), eq(habitLogs.date, date)))
-        .get()!;
+        .get();
+      return defined(log, "the habit log just written");
     },
 
     logs: (habitId: string, from: LocalDate, to: LocalDate) => logsBetween(habitId, from, to),

@@ -36,7 +36,8 @@ export function gamificationSummary(deps: Deps): GamificationSummary {
     .all();
   const tasksDoneByDay = new Map<string, number>();
   for (const task of doneTasks) {
-    const date = toLocalDate(task.doneAt!, timeZone);
+    if (task.doneAt === null) continue;
+    const date = toLocalDate(task.doneAt, timeZone);
     tasksDoneByDay.set(date, (tasksDoneByDay.get(date) ?? 0) + 1);
   }
 

@@ -378,7 +378,7 @@ const PATTERNS: Pattern[] = [
     // every 3 days / every other week / every month
     regex: /\bevery\s+(?:(other|\d+)\s+)?(day|week|month|year)s?\b/i,
     build: (m) => ({
-      freq: UNIT_FREQ[(m[2] ?? "day").toLowerCase()]!,
+      freq: UNIT_FREQ[(m[2] ?? "day").toLowerCase()] ?? "DAILY",
       interval: m[1] === "other" ? 2 : Number(m[1] ?? 1),
     }),
   },
@@ -460,7 +460,7 @@ export function describeRRule(rrule: string): string {
       text = `${every} day${plural}`;
       break;
     case "WEEKLY": {
-      const days = rule.byDay?.map((d) => DAY_NAMES[d]!) ?? [];
+      const days = rule.byDay?.flatMap((d) => DAY_NAMES[d] ?? []) ?? [];
       text = days.length
         ? `${every}${rule.interval > 2 ? " weeks on" : ""} ${days.join(", ")}`
         : `${every} week${plural}`;

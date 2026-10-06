@@ -1,3 +1,4 @@
+import { defined } from "@tick-taka/shared/defined";
 import type { AssistantMessage } from "@tick-taka/shared/schemas/ai";
 import type { AiChatMessage, AiClient, AiToolCall } from "../../../ai/client";
 import { callAi, logUsage } from "../../../ai/usage";
@@ -108,7 +109,7 @@ function describe(call: AiToolCall): string {
     }
     case "act":
       return typeof args.action === "string"
-        ? `${args.action[0]!.toUpperCase()}${args.action.slice(1).replaceAll("_", " ")}`
+        ? `${args.action.charAt(0).toUpperCase()}${args.action.slice(1).replaceAll("_", " ")}`
         : "Working on it";
     default:
       return REPORTS[call.name] ?? "Checking your data";
@@ -239,7 +240,7 @@ export async function aiAssistant(
         notes.push(`${call.name} ${call.arguments.slice(0, 200)}${id ? ` -> id ${id}` : ""}`);
       }
       for (; reported < runner.actions.length; reported++)
-        emit({ type: "action", action: runner.actions[reported]! });
+        emit({ type: "action", action: defined(runner.actions[reported], "the action") });
       messages.push({
         role: "tool",
         toolCallId: call.id,

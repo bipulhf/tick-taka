@@ -1,3 +1,4 @@
+import { defined } from "@tick-taka/shared/defined";
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -46,7 +47,9 @@ function AreaForm({ area, count }: { area: Area | undefined; count: number }) {
   const remove = useRemove();
   const [name, setName] = useState(area?.name ?? "");
   const [emoji, setEmoji] = useState(area?.emoji ?? "⭐");
-  const [color, setColor] = useState(area?.color ?? AREA_COLORS[count % AREA_COLORS.length]!);
+  const [color, setColor] = useState(
+    area?.color ?? defined(AREA_COLORS[count % AREA_COLORS.length], "an area colour"),
+  );
   const save = () => {
     if (!name.trim() || !emoji.trim()) return;
     const body = { name: name.trim(), emoji: emoji.trim(), color };

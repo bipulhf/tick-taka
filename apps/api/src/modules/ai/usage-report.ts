@@ -57,10 +57,11 @@ export function aiUsageReport(deps: Deps, month?: LocalMonth) {
     const one = { ...row, calls: 1 };
     add(total, one);
     const date = toLocalDate(row.createdAt, timeZone);
-    add(byDay.get(date) ?? byDay.set(date, zero()).get(date)!, one);
-    const feature =
-      byFeature.get(row.feature) ??
-      byFeature.set(row.feature, { feature: row.feature, ...zero() }).get(row.feature)!;
+    const day = byDay.get(date) ?? zero();
+    byDay.set(date, day);
+    add(day, one);
+    const feature = byFeature.get(row.feature) ?? { feature: row.feature, ...zero() };
+    byFeature.set(row.feature, feature);
     add(feature, one);
   }
 

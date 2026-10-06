@@ -7,6 +7,7 @@ import {
   toLocalDate,
   zonedTimeToUtc,
 } from "@tick-taka/shared/dates";
+import { defined } from "@tick-taka/shared/defined";
 import { newId } from "@tick-taka/shared/ids";
 import { nextOccurrence, parseRRule } from "@tick-taka/shared/recurrence";
 import type { TaskCreate, TaskListQuery, TaskUpdate } from "@tick-taka/shared/schemas/time";
@@ -365,7 +366,7 @@ export function taskService(deps: Deps) {
             const [y, m, d] = day.split("-").map(Number) as [number, number, number];
             doAt = zonedTimeToUtc({ year: y, month: m, day: d, hour, minute }, timeZone);
           }
-          const shift = doAt - task.doAt!;
+          const shift = doAt - defined(task.doAt, "an overdue task's date");
           tx.update(tasks)
             .set({
               doAt,
@@ -420,8 +421,9 @@ export function taskService(deps: Deps) {
       db.transaction((tx) => {
         for (const task of candidates) {
           if (freed >= minutesToFree) break;
-          const doAt = nextDayStart + (task.doAt! - from);
-          const shift = doAt - task.doAt!;
+          const taskDoAt = defined(task.doAt, "a scheduled task's date");
+          const doAt = nextDayStart + (taskDoAt - from);
+          const shift = doAt - taskDoAt;
           tx.update(tasks)
             .set({
               doAt,

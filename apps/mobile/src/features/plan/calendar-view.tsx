@@ -69,7 +69,7 @@ export function CalendarView() {
   const cells = Array.from({ length: mode === "month" ? monthCells : 7 }, (_, i) =>
     mode === "month" ? addDays(gridStart, i) : addDays(startOfWeek(selected, weekStartsOn), i),
   );
-  const headers = Array.from({ length: 7 }, (_, i) => WEEKDAYS[(weekStartsOn + i) % 7]!);
+  const headers = Array.from({ length: 7 }, (_, i) => WEEKDAYS[(weekStartsOn + i) % 7] ?? "");
   const dayTasks = tasksOn(selected);
   const dayBills = bills.get(selected) ?? [];
 

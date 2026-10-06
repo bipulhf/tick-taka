@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { endOfLocalDay, MINUTE_MS, startOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
+import { defined } from "@tick-taka/shared/defined";
 import { newId } from "@tick-taka/shared/ids";
 import { parseRecurrence } from "@tick-taka/shared/recurrence";
 import { useRouter } from "expo-router";
@@ -41,7 +42,7 @@ export function TaskSheet({ id }: { id: string | null }) {
   const today = toLocalDate(Date.now(), timeZone);
   const query = useQuery({
     queryKey: ["task", id],
-    queryFn: () => unwrap(api.tasks[":id"].$get({ param: { id: id! } })),
+    queryFn: () => unwrap(api.tasks[":id"].$get({ param: { id: defined(id, "the task id") } })),
     enabled: Boolean(id),
   });
   const [form, setForm] = useState<Form>(EMPTY);
@@ -75,7 +76,12 @@ export function TaskSheet({ id }: { id: string | null }) {
 
   const projects = useQuery({
     queryKey: ["projects", form.areaId],
-    queryFn: () => unwrap(api.projects.$get({ query: { areaId: form.areaId!, status: "active" } })),
+    queryFn: () =>
+      unwrap(
+        api.projects.$get({
+          query: { areaId: defined(form.areaId, "the area"), status: "active" },
+        }),
+      ),
     enabled: Boolean(form.areaId),
   });
 

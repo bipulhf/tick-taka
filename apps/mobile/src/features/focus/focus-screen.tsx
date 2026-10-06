@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { defined } from "@tick-taka/shared/defined";
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
@@ -35,7 +36,8 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
   const linkedTaskId = session?.taskId ?? taskId;
   const task = useQuery({
     queryKey: ["task", linkedTaskId],
-    queryFn: () => unwrap(api.tasks[":id"].$get({ param: { id: linkedTaskId! } })),
+    queryFn: () =>
+      unwrap(api.tasks[":id"].$get({ param: { id: defined(linkedTaskId, "the linked task id") } })),
     enabled: Boolean(linkedTaskId),
   });
 

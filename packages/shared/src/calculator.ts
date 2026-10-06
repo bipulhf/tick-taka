@@ -19,7 +19,7 @@ function tokenize(input: string): Token[] {
     .replace(/,/g, "");
   let index = 0;
   while (index < source.length) {
-    const char = source[index]!;
+    const char = source.charAt(index);
     if (char === " ") {
       index++;
       continue;

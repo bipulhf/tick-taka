@@ -36,7 +36,8 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const chat = useAssistantAvailable();
   const routes = state.routes.filter((route) => TABS[route.name]);
   const renderTab = (route: (typeof routes)[number]) => {
-    const tab = TABS[route.name]!;
+    const tab = TABS[route.name];
+    if (!tab) return null;
     const focused = state.routes[state.index]?.key === route.key;
     return (
       <Pressable

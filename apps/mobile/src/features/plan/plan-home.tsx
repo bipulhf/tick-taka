@@ -39,7 +39,8 @@ export function PlanHome() {
   const inboxTasks = (inbox.data ?? []).filter((t) => t.doAt === null);
   const byDay = new Map<string, NonNullable<typeof upcoming.data>>();
   for (const task of upcoming.data ?? []) {
-    const day = toLocalDate(task.doAt!, timeZone);
+    if (task.doAt === null) continue;
+    const day = toLocalDate(task.doAt, timeZone);
     byDay.set(day, [...(byDay.get(day) ?? []), task]);
   }
   const emoji = (areaId: string | null) => areas.find((a) => a.id === areaId)?.emoji;

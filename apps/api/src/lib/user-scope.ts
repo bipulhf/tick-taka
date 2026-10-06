@@ -4,6 +4,8 @@ import type { User, UserData } from "../db/user-registry";
 export interface UserScope {
   user: User;
   data: UserData;
+  /** The signed-in session (the token's jti); unset for jobs and tokens from before sessions. */
+  sessionId?: string;
 }
 
 const storage = new AsyncLocalStorage<UserScope>();

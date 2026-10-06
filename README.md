@@ -152,6 +152,10 @@ things you buy often, and buttons to add a task, log an expense or start focusin
 - **One database per user.** Each request runs as its user, against that user's SQLite
   file, so none of the queries filter by user and none can leak another user's rows.
   Receipts and backups get per-user folders too.
+- **Revocable sessions.** Each sign-in is a row in `users.db` (`sessions`), named by the
+  token's `jti`. Tokens last 30 days and slide: `POST /auth/refresh` swaps a live token
+  for a fresh one, and `POST /auth/logout` ends the current session. A 401 says `session_expired` (ran out or signed out) or `unauthorized`
+  (missing or not ours).
 - **Offline first.** Reads come from a persisted cache. Every write goes through one
   queue that replays in order after a restart. IDs are made on the phone, so a retried
   write never duplicates.

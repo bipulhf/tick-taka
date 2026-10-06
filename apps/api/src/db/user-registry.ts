@@ -5,6 +5,7 @@ import { newId } from "@tick-taka/shared/ids";
 import type { Env } from "../env";
 import { type DbHandle, openDatabase } from "./client";
 import { seedDefaults } from "./seed";
+import { createSessionStore } from "./sessions";
 
 export interface User {
   id: string;
@@ -85,6 +86,7 @@ export function createUserRegistry(env: Env, now: () => number, options: { seed?
     "SELECT count(*) AS n FROM users WHERE legacy = 1",
   );
   const open = new Map<string, UserData>();
+  const sessions = createSessionStore(registry, now);
 
   /** The owner inherits the single-user data once, on their first sign-in. */
   const claimsLegacy = (email: string) =>
@@ -103,6 +105,9 @@ export function createUserRegistry(env: Env, now: () => number, options: { seed?
   }
 
   return {
+    /** Signed-in devices; each token's jti names one of these. */
+    sessions,
+
     find(id: string): User | undefined {
       const row = byId.get(id);
       return row ? toUser(row) : undefined;

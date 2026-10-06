@@ -1,12 +1,15 @@
 import { createMiddleware } from "hono/factory";
 import { verify } from "hono/jwt";
+import { JwtTokenExpired } from "hono/utils/jwt/types";
 import type { Deps } from "../lib/deps";
-import { unauthorized } from "../lib/errors";
+import { sessionExpired, unauthorized } from "../lib/errors";
 import { runAsUser } from "../lib/user-scope";
 
 /**
- * Requires `Authorization: Bearer <token>` signed with JWT_SECRET, then runs the
- * rest of the request as that token's user, against their own database.
+ * Requires `Authorization: Bearer <token>` signed with JWT_SECRET for a live
+ * session, then runs the rest of the request as that token's user, against
+ * their own database. 401s say `session_expired` when a real session ran out or
+ * was signed out, and `unauthorized` when the token is missing or not ours.
  */
 export const requireAuth = (deps: Deps) =>
   createMiddleware(async (c, next) => {
@@ -16,14 +19,26 @@ export const requireAuth = (deps: Deps) =>
     const queryToken = c.req.path.startsWith("/uploads/") ? c.req.query("token") : undefined;
     const candidate = token ?? queryToken;
     if (!candidate) throw unauthorized("Missing sign-in token");
-    let userId: unknown;
+    let payload: Record<string, unknown>;
     try {
-      userId = (await verify(candidate, deps.env.JWT_SECRET, "HS256")).sub;
-    } catch {
-      throw unauthorized("Your session has expired. Sign in again.");
+      payload = await verify(candidate, deps.env.JWT_SECRET, "HS256");
+    } catch (error) {
+      if (error instanceof JwtTokenExpired) throw sessionExpired();
+      throw unauthorized("Sign in again");
     }
     // Tokens from the single-user days carry no user, so they sign out once.
-    const user = typeof userId === "string" ? deps.users.find(userId) : undefined;
+    const user = typeof payload.sub === "string" ? deps.users.find(payload.sub) : undefined;
     if (!user) throw unauthorized("Sign in with Google to continue");
-    await runAsUser({ user, data: deps.users.data(user) }, () => next());
+    // Tokens issued before sessions existed have no jti; they run out on their own
+    // (30 days at most) and are swapped for a session token on the next refresh.
+    let sessionId: string | undefined;
+    if (payload.jti !== undefined) {
+      const session =
+        typeof payload.jti === "string" ? deps.users.sessions.find(payload.jti) : null;
+      if (!session || session.userId !== user.id || !deps.users.sessions.isLive(session))
+        throw sessionExpired();
+      deps.users.sessions.touch(session);
+      sessionId = session.id;
+    }
+    await runAsUser({ user, data: deps.users.data(user), sessionId }, () => next());
   });

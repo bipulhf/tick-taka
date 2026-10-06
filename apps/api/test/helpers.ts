@@ -1,11 +1,11 @@
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
-import { sign } from "hono/jwt";
 import type { AiClient } from "../src/ai/client";
 import { createApp } from "../src/app";
 import { createUserRegistry, type GoogleProfile } from "../src/db/user-registry";
 import { loadEnv } from "../src/env";
 import { createDeps, type Deps, type GoogleVerifier } from "../src/lib/deps";
 import { unauthorized } from "../src/lib/errors";
+import { issueSession } from "../src/modules/auth/session-token";
 
 export const TEST_CLIENT_ID = "test-client.apps.googleusercontent.com";
 /** The fake Google verifier accepts `google-test-token:<sub>:<email>` as an ID token. */
@@ -68,8 +68,9 @@ export async function createTestContext(
   const tokenFor = async (sub: string, email: string) => {
     const { user } = users.signIn({ sub, email, name: null, picture: null });
     users.data(user);
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    return sign({ sub: user.id, iat: nowSeconds, exp: nowSeconds + 3600 }, JWT_SECRET, "HS256");
+    // Real time, because the JWT's expiry is checked against the real clock.
+    const { token } = await issueSession({ secret: JWT_SECRET, users, now: Date.now() }, user);
+    return token;
   };
   const token = await tokenFor("test-user", "test@example.com");
   const testUser = users.list()[0]!;

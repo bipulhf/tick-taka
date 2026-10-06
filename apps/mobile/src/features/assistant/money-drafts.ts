@@ -20,6 +20,9 @@ const draftSchema = z.object({
   path: z.string().startsWith("/"),
   body: z.record(z.string(), z.unknown()),
   undo: undoSchema.optional(),
+  /** Shown on the card when the body doesn't say it plainly (a budget line in a month). */
+  amountMinor: z.number().optional(),
+  categoryId: z.string().optional(),
 });
 
 export type MoneyDraft = z.infer<typeof draftSchema>;
@@ -48,7 +51,30 @@ export function draftRequest(draft: MoneyDraft, updatedAt: number): OutboxReques
   };
 }
 
-const AMOUNT_FIELDS = ["amountMinor", "principalMinor", "openingBalanceMinor", "balanceMinor"];
+/**
+ * What the server answers a Save with, when that means nothing happened: a pay draft
+ * for a bill already paid another way (Today's "Paid") finds it moved past the due
+ * date and logs nothing. Null when the save did what the card said.
+ */
+export function draftOutcome(draft: MoneyDraft, response: unknown): string | null {
+  if (draft.method !== "POST" || !/^\/recurring\/[^/]+\/pay$/.test(draft.path)) return null;
+  if (draft.body.skip === true) return null;
+  const reply = response as { transaction?: unknown } | null;
+  return reply && reply.transaction === null
+    ? `${draft.summary}: already done, so nothing changed`
+    : null;
+}
+
+const AMOUNT_FIELDS = [
+  "amountMinor",
+  "principalMinor",
+  "openingMinor",
+  "actualMinor",
+  "targetMinor",
+  "budgetMinor",
+  "estMinor",
+  "limitMinor",
+];
 
 export interface DraftView {
   title: string;
@@ -70,11 +96,13 @@ export function draftView(
 ): DraftView {
   const body = draft.body;
   const field = AMOUNT_FIELDS.find((key) => typeof body[key] === "number");
-  const raw = field ? Math.abs(body[field] as number) : null;
+  const shown = draft.amountMinor ?? (field ? (body[field] as number) : null);
+  const raw = shown === null ? null : Math.abs(shown);
   const type = body.type;
   const amountMinor = raw !== null && type === "expense" ? -raw : raw;
   const accountId = typeof body.accountId === "string" ? body.accountId : null;
-  const categoryId = typeof body.categoryId === "string" ? body.categoryId : null;
+  const categoryId =
+    typeof body.categoryId === "string" ? body.categoryId : (draft.categoryId ?? null);
   const category = lookup.categories.find((c) => c.id === categoryId);
   return {
     title: draft.summary,

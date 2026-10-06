@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { draftRequest, draftView, parseDrafts } from "../src/features/assistant/money-drafts";
+import {
+  draftOutcome,
+  draftRequest,
+  draftView,
+  parseDrafts,
+} from "../src/features/assistant/money-drafts";
 
 const expense = {
   summary: "Add transaction rickshaw",
@@ -82,5 +87,52 @@ describe("assistant money drafts", () => {
       signed: false,
       account: null,
     });
+  });
+
+  // QA-208: budgets and other money fields are drafts now; the card shows their amount.
+  test("a budget draft shows the line's amount and category; targets and budgets show too", () => {
+    const [budget] = parseDrafts([
+      {
+        summary: "Set the Transport budget for 2026-10",
+        method: "PUT",
+        path: "/budgets",
+        body: { month: "2026-10", budgets: [{ categoryId: "transport", limitMinor: 800_000 }] },
+        undo: { method: "PUT", path: "/budgets", body: { month: "2026-10", budgets: [] } },
+        amountMinor: 800_000,
+        categoryId: "transport",
+      },
+    ]);
+    expect(draftView(budget!, lookup)).toMatchObject({
+      amountMinor: 800_000,
+      signed: false,
+      category: "🛺 Transport",
+    });
+    for (const field of ["targetMinor", "budgetMinor", "estMinor", "openingMinor"]) {
+      const [draft] = parseDrafts([
+        { summary: "Change", method: "PATCH", path: "/goals/g", body: { [field]: 9_000 } },
+      ]);
+      expect(draftView(draft!, lookup).amountMinor).toBe(9_000);
+    }
+  });
+
+  // QA-209: a pay draft saved after the bill was paid elsewhere changes nothing; say so.
+  test("saving a pay draft for a bill already paid says nothing changed", () => {
+    const [pay] = parseDrafts([
+      {
+        summary: "Pay “Internet”",
+        method: "POST",
+        path: "/recurring/b/pay",
+        body: { transactionId: "t", dueAt: 5 },
+      },
+    ]);
+    expect(draftOutcome(pay!, { transaction: null, recurring: {} })).toBe(
+      "Pay “Internet”: already done, so nothing changed",
+    );
+    expect(draftOutcome(pay!, { transaction: { id: "t" }, recurring: {} })).toBeNull();
+    const [skip] = parseDrafts([
+      { summary: "Skip", method: "POST", path: "/recurring/b/pay", body: { skip: true } },
+    ]);
+    expect(draftOutcome(skip!, { transaction: null, recurring: {} })).toBeNull();
+    expect(draftOutcome(parseDrafts([expense])[0]!, { id: "tx-1" })).toBeNull();
   });
 });

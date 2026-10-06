@@ -4,6 +4,7 @@ import { useIsOnline } from "@/lib/connection";
 import { friendlyError } from "@/lib/error-copy";
 import { postEventStream } from "@/lib/event-stream";
 import { haptic } from "@/lib/haptics";
+import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { queryClient } from "@/lib/query-client";
 import { editTime } from "@/lib/server-clock";
@@ -20,7 +21,7 @@ import {
   markUndone,
   updateMessage,
 } from "./chat-store";
-import { draftRequest, parseDrafts } from "./money-drafts";
+import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
 import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
 
 const HISTORY = 20;
@@ -219,7 +220,14 @@ export function useAssistant() {
   const saveDraft = (messageId: string, index: number) => {
     const draft = chatStore.get().find((m) => m.id === messageId)?.drafts?.[index];
     if (draft?.state !== "pending") return;
-    send(draftRequest(draft, editTime()));
+    send
+      .async(draftRequest(draft, editTime()))
+      .then((response) => {
+        const note = draftOutcome(draft, response);
+        if (note) notify(note);
+      })
+      // A refusal is reported by the outbox.
+      .catch(() => {});
     updateMessage(messageId, (m) => ({
       ...m,
       drafts: m.drafts?.map((d, i) => (i === index ? { ...d, state: "saved" as const } : d)),

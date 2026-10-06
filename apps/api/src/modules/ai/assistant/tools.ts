@@ -46,12 +46,23 @@ export interface Draft {
   path: string;
   body: Record<string, unknown>;
   undo?: Undo;
+  /** For the card, when the body doesn't show it plainly (a budget line inside a month). */
+  amountMinor?: number;
+  categoryId?: string;
 }
 
 /** Most deletions one message may ask for. */
 const MAX_PENDING_DELETES = 100;
 /** Entities whose create/update moves money (account opening balance, debt principal). */
 const MONEY_ENTITIES = new Set<EntityName>(["transaction", "account", "debt"]);
+/**
+ * Whether a create or update changes money: a money entity, or any amount field of
+ * another one (bill amount, goal target, event budget, shopping estimate), or the
+ * budget type that moves a category in or out of safe-to-spend.
+ */
+const movesMoney = (entity: EntityName, fields: Record<string, unknown>) =>
+  MONEY_ENTITIES.has(entity) ||
+  Object.keys(fields).some((key) => key.endsWith("Minor") || key === "budgetType");
 const DRAFTED = {
   ok: true,
   draft: true,
@@ -275,7 +286,7 @@ export function createToolRunner(
     if (entity === "transaction" && fields.occurredAt === undefined) fields.occurredAt = now;
     if (entity === "time_entry" && fields.source === undefined) fields.source = "manual";
     const id = newId(now);
-    if (drafting && MONEY_ENTITIES.has(entity))
+    if (drafting && movesMoney(entity, fields))
       return propose({
         summary: `Add ${entity.replace("_", " ")} ${label(fields, "")}`.trim(),
         method: "POST",
@@ -308,7 +319,7 @@ export function createToolRunner(
             .map((key) => [key, previous[key]]),
         )
       : null;
-    if (drafting && MONEY_ENTITIES.has(entity)) {
+    if (drafting && movesMoney(entity, fields)) {
       if (def.canGet && !before?.ok) return fail(before?.error);
       return propose({
         summary: `Change ${entity.replace("_", " ")} ${label(previous, "")}`.trim(),
@@ -406,11 +417,21 @@ export function createToolRunner(
         return { ok: true, count };
       }
       case "pay_bill": {
-        const body = { transactionId: newId(now), ...(await convert(raw)) };
-        const path = `/recurring/${needId()}/pay`;
+        const billPath = `/recurring/${needId()}`;
+        const found = await caller.call("GET", billPath);
+        if (!found.ok) return fail(found.error);
+        const bill = found.data as { nextDueAt?: unknown } & Record<string, unknown>;
+        // The due date it pays: saving the draft after the bill was paid another way
+        // (Today's "Paid") then changes nothing instead of paying the next period.
+        const body = {
+          transactionId: newId(now),
+          ...(await convert(raw)),
+          ...(typeof bill.nextDueAt === "number" ? { dueAt: bill.nextDueAt } : {}),
+        };
+        const path = `${billPath}/pay`;
         if (drafting)
           return propose({
-            summary: raw.skip ? "Skip a bill" : "Pay a bill",
+            summary: `${raw.skip ? "Skip" : "Pay"} ${label(bill, "a bill")}`,
             method: "POST",
             path,
             body,
@@ -483,24 +504,42 @@ export function createToolRunner(
         const current = (await caller.call("GET", `/budgets?month=${month}`)).data as {
           lines?: {
             categoryId: string;
+            name?: string;
             limitMinor: number;
             rollover?: boolean;
             hasBudget?: boolean;
           }[];
         } | null;
-        const kept = (current?.lines ?? [])
-          .filter((line) => line.hasBudget && line.categoryId !== categoryId)
-          .map((line) => ({
-            categoryId: line.categoryId,
-            limitMinor: line.limitMinor,
-            rollover: line.rollover ?? false,
-          }));
-        const budgets =
-          Number(limitMinor) > 0 ? [...kept, { categoryId, limitMinor, rollover: false }] : kept;
+        const lines = (current?.lines ?? []).filter((line) => line.hasBudget);
+        const asSent = (line: (typeof lines)[number]) => ({
+          categoryId: line.categoryId,
+          limitMinor: line.limitMinor,
+          rollover: line.rollover ?? false,
+        });
+        const previous = lines.map(asSent);
+        const kept = previous.filter((line) => line.categoryId !== categoryId);
+        // Changing the amount leaves the line's rollover as the user set it.
+        const rollover = previous.find((line) => line.categoryId === categoryId)?.rollover ?? false;
+        const setting = Number(limitMinor) > 0;
+        const budgets = setting ? [...kept, { categoryId, limitMinor, rollover }] : kept;
+        const name = current?.lines?.find((line) => line.categoryId === categoryId)?.name;
+        const summary = `${setting ? "Set" : "Remove"} the ${name ? `${name} ` : ""}budget for ${month}`;
+        const undo: Undo = { method: "PUT", path: "/budgets", body: { month, budgets: previous } };
+        if (drafting)
+          return propose({
+            summary,
+            method: "PUT",
+            path: "/budgets",
+            body: { month, budgets },
+            undo,
+            ...(typeof limitMinor === "number" ? { amountMinor: limitMinor } : {}),
+            ...(typeof categoryId === "string" ? { categoryId } : {}),
+          });
         const result = await caller.call("PUT", "/budgets", { month, budgets });
         if (!result.ok) return fail(result.error);
         actions.push({
-          summary: Number(limitMinor) > 0 ? `Set a ${month} budget` : `Removed a ${month} budget`,
+          summary: setting ? `Set a ${month} budget` : `Removed a ${month} budget`,
+          undo,
         });
         return { ok: true };
       }

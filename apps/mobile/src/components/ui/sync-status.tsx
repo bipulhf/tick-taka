@@ -7,6 +7,7 @@ import {
   useSyncStalled,
 } from "@/lib/connection";
 import { plural } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { outbox } from "@/lib/outbox";
 import type { OutboxEntry } from "@/lib/outbox-policy";
 import { Button } from "./button";
@@ -55,7 +56,8 @@ function StuckWrites({ entries }: { entries: readonly OutboxEntry[] }) {
                 ? `${describeWrite(head)}, and ${plural(rest.length, "later change")} to it`
                 : describeWrite(head)}
             </Text>
-            <View className="flex-row gap-2">
+            {/* Apart, so a tap meant for Retry doesn't land on Discard. */}
+            <View className="flex-row gap-6">
               <Button
                 label="Retry"
                 size="sm"
@@ -66,7 +68,14 @@ function StuckWrites({ entries }: { entries: readonly OutboxEntry[] }) {
                 label="Discard"
                 size="sm"
                 variant="ghost"
-                onPress={() => outbox.discardStuck(head.id)}
+                onPress={() => {
+                  // Undo instead of "Are you sure?", as everywhere else in the app.
+                  const group = outbox.discardStuck(head.id);
+                  notify(`Discarded “${describeWrite(head)}”`, {
+                    label: "Undo",
+                    onPress: () => outbox.restoreStuck(group),
+                  });
+                }}
               />
             </View>
           </View>

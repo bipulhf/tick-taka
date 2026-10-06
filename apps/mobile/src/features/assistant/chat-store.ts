@@ -36,6 +36,11 @@ export interface ChatMessage {
   deletionChoice?: "pending" | "deleted" | "kept";
   /** The request failed; kept on screen but never sent back as context. */
   failed?: boolean;
+  /**
+   * The stream dropped mid-turn: the server may have made changes the phone never
+   * heard about between these server times. Cleared once they have been looked up.
+   */
+  recover?: { since: number; until: number };
   at: number;
 }
 

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { ApiError } from "@/lib/api";
+import { useIsOnline } from "@/lib/connection";
 import { postEventStream } from "@/lib/event-stream";
 import { haptic } from "@/lib/haptics";
 import { useOutbox } from "@/lib/outbox";
@@ -18,6 +19,7 @@ import {
   markUndone,
   updateMessage,
 } from "./chat-store";
+import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
 
 const HISTORY = 20;
 
@@ -64,9 +66,14 @@ export function useAssistant() {
   const messages = useStore(chatStore);
   const live = useStore(liveStore);
   const send = useOutbox();
+  const online = useIsOnline();
   useEffect(() => {
     if (chatStore.get().length === 0) void loadChat();
   }, []);
+  // Look up what a dropped turn changed, once the connection is back.
+  useEffect(() => {
+    if (online) void recoverDroppedTurns();
+  }, [online]);
 
   const ask = async (text: string) => {
     const content = text.trim();
@@ -87,6 +94,8 @@ export function useAssistant() {
       if (turn) liveStore.set(update(turn));
     };
     let finished = false;
+    // Server time the turn began, to find what it changed if the stream drops.
+    const startedAt = editTime();
     /** The steps so far, with any still running marked as cut short. */
     const settled = () => liveStore.get()?.steps.map((step) => ({ ok: false, ...step })) ?? [];
     try {
@@ -139,14 +148,19 @@ export function useAssistant() {
       if (!finished) {
         // Changes made before the stream broke still happened; keep their Undo.
         const done = liveStore.get()?.actions ?? [];
+        // An ApiError came before the stream started: the server did nothing. Anything
+        // else dropped mid-turn, and the server may have gone on making changes.
+        const dropped = !(error instanceof ApiError);
         appendMessage({
           role: "assistant",
           content: errorText(error),
           actions: done,
           steps: settled(),
           failed: true,
+          ...(dropped ? { recover: { since: startedAt, until: editTime() + 180_000 } } : {}),
         });
         if (done.length) void queryClient.invalidateQueries();
+        if (dropped) setTimeout(() => void recoverDroppedTurns(), SETTLE_MS + 500);
       }
     } finally {
       liveStore.set(null);

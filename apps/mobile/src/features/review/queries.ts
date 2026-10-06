@@ -13,9 +13,11 @@ export const useMonthlyReview = (month?: string) =>
     queryFn: () => unwrap(api.reviews.monthly.$get({ query: month ? { month } : {} })),
   });
 
+export const SHUTDOWN_KEY = ["review-shutdown"] as const;
+
 export const useShutdown = () =>
   useQuery({
-    queryKey: ["review-shutdown"],
+    queryKey: SHUTDOWN_KEY,
     queryFn: () => unwrap(api.reviews.shutdown.$get({ query: {} })),
   });
 

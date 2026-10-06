@@ -2,15 +2,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { a11yActionProps } from "@/components/ui/a11y-actions";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { haptic } from "@/lib/haptics";
+import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import type { TodayData } from "@/lib/queries";
 import { playSound } from "@/lib/sounds";
 import { updateToday } from "@/lib/today-cache";
 import { useColors } from "@/theme/colors";
+import { habitTap, takeOneBack } from "./habit-tap";
 
 type Habit = TodayData["habits"][number];
 const SIZE = 64;
@@ -21,10 +24,12 @@ function HabitChip({
   habit,
   onTap,
   onReset,
+  onTakeBack,
 }: {
   habit: Habit;
   onTap: () => void;
   onReset: () => void;
+  onTakeBack: () => void;
 }) {
   const progress = Math.min(1, habit.todayCount / habit.targetCount);
   // Always grape: purple means habits everywhere; the emoji tells habits apart.
@@ -35,7 +40,15 @@ function HabitChip({
       onLongPress={onReset}
       accessibilityRole="button"
       accessibilityLabel={`${habit.name}, ${habit.todayCount} of ${habit.targetCount}${habit.doneToday ? ", done" : ""}`}
-      accessibilityHint="Tap to check off, long-press to reset"
+      accessibilityHint="Tap to count one, long-press to reset"
+      {...a11yActionProps(
+        habit.todayCount > 0
+          ? [
+              { label: "Take one back", run: onTakeBack },
+              { label: "Reset today", run: onReset },
+            ]
+          : [],
+      )}
       className="items-center gap-1"
     >
       <View style={{ width: SIZE, height: SIZE }} className="items-center justify-center">
@@ -124,12 +137,25 @@ export function HabitChips({ data }: { data: TodayData }) {
             <HabitChip
               key={habit.id}
               habit={habit}
-              onTap={() =>
-                setCount(habit, habit.todayCount >= habit.targetCount ? 0 : habit.todayCount + 1)
-              }
-              onReset={() => {
+              onTap={() => {
+                const tap = habitTap(habit.todayCount, habit.targetCount);
+                if (tap.kind === "count") return setCount(habit, tap.next);
+                // Already done: a stray tap changes nothing; taking one back is explicit.
                 haptic.tap();
+                notify(`${habit.name} is done for today`, {
+                  label: "Take one back",
+                  onPress: () => setCount(habit, takeOneBack(habit.todayCount)),
+                });
+              }}
+              onTakeBack={() => setCount(habit, takeOneBack(habit.todayCount))}
+              onReset={() => {
+                if (habit.todayCount === 0) return;
+                const before = habit.todayCount;
                 setCount(habit, 0);
+                notify(`Reset ${habit.name}`, {
+                  label: "Undo",
+                  onPress: () => setCount({ ...habit, todayCount: 0, doneToday: false }, before),
+                });
               }}
             />
           ))}

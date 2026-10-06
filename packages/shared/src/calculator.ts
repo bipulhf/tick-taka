@@ -3,13 +3,19 @@
  * e.g. `1850/3` → 616.666…. Never uses eval; a small recursive-descent parser instead.
  */
 
+import { DEFAULT_CURRENCY, minorFactor, toMinor } from "./money";
+
 type Token = { type: "number"; value: number } | { type: "op"; value: string };
 
 const OPERATORS = new Set(["+", "-", "*", "/", "(", ")"]);
 
 function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
-  const source = input.replace(/[×x]/g, "*").replace(/÷/g, "/").replace(/,/g, "");
+  const source = input
+    .replace(/[×x]/g, "*")
+    .replace(/÷/g, "/")
+    .replace(/−/g, "-")
+    .replace(/,/g, "");
   let index = 0;
   while (index < source.length) {
     const char = source[index]!;
@@ -113,4 +119,27 @@ export function tryEvaluateExpression(input: string): number | null {
 /** True when the text looks like an amount expression (digits with at least one operator allowed). */
 export function isAmountExpression(input: string): boolean {
   return /^[\d.,\s]+([+\-*/×÷][\d.,\s]+)*$/.test(input.trim()) && /\d/.test(input);
+}
+
+/** True when an operator follows the first character, e.g. "1850/3" but not "-50". */
+export function hasOperator(input: string): boolean {
+  return /[+\-*/×÷−]/.test(input.trim().slice(1));
+}
+
+/**
+ * Minor units for a typed amount or expression, or null when it does not evaluate.
+ * An expression whose result does not fit the currency's minor unit is rounded to
+ * the whole major unit: splitting a bill as `1850/3` saves ৳617, not ৳616.67.
+ * Exact results (`12.50+3.25`) and plain typed amounts keep their poisha.
+ */
+export function expressionToMinor(
+  input: string,
+  currency: string = DEFAULT_CURRENCY,
+): number | null {
+  const value = tryEvaluateExpression(input);
+  if (value === null) return null;
+  const scaled = value * minorFactor(currency);
+  const fitsMinorUnit = Math.abs(scaled - Math.round(scaled)) < 1e-6;
+  if (fitsMinorUnit || !hasOperator(input)) return toMinor(value, currency);
+  return toMinor(Math.sign(value) * Math.round(Math.abs(value)), currency);
 }

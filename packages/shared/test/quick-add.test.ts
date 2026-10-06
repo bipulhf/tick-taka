@@ -83,9 +83,9 @@ describe("quick-add parser (spec examples)", () => {
 });
 
 describe("quick-add parser (more cases)", () => {
-  test("calculator keypad in amount", () => {
+  test("calculator keypad in amount rounds an uneven split to whole taka", () => {
     expect(parseQuickAdd("dinner 1850/3", context)).toMatchObject({
-      amountMinor: 61_667,
+      amountMinor: 61_700,
       categoryId: "cat_food",
     });
   });

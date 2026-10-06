@@ -1,5 +1,5 @@
-import { tryEvaluateExpression } from "@tick-taka/shared/calculator";
-import { currencySymbol, toMinor } from "@tick-taka/shared/money";
+import { expressionToMinor, hasOperator } from "@tick-taka/shared/calculator";
+import { currencySymbol, formatAmount } from "@tick-taka/shared/money";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { haptic } from "@/lib/haptics";
@@ -15,7 +15,7 @@ export interface AmountKeypadProps {
   tone?: "coral" | "mint" | "ink";
 }
 
-/** Calculator keypad: typing 1850/3 saves ৳617 (rounded to the poisha). */
+/** Calculator keypad: typing 1850/3 saves ৳617 (an uneven split rounds to whole taka). */
 export function AmountKeypad({
   initial = "",
   currency = "BDT",
@@ -23,9 +23,7 @@ export function AmountKeypad({
   tone = "ink",
 }: AmountKeypadProps) {
   const [expression, setExpression] = useState(initial);
-  const normalized = expression.replace(/÷/g, "/").replace(/×/g, "*").replace(/−/g, "-");
-  const value = tryEvaluateExpression(normalized);
-  const hasOperator = /[+\-*/]/.test(normalized.slice(1));
+  const minor = expressionToMinor(expression, currency);
 
   const press = (key: string) => {
     haptic.select();
@@ -41,10 +39,8 @@ export function AmountKeypad({
       next = expression;
     else next = `${expression}${key}`;
     setExpression(next);
-    const result = tryEvaluateExpression(
-      next.replace(/÷/g, "/").replace(/×/g, "*").replace(/−/g, "-"),
-    );
-    onChange(result !== null && result > 0 ? toMinor(result, currency) : null, next);
+    const result = expressionToMinor(next, currency);
+    onChange(result !== null && result > 0 ? result : null, next);
   };
 
   return (
@@ -54,10 +50,9 @@ export function AmountKeypad({
           {currencySymbol(currency)}
           {expression || "0"}
         </Text>
-        {hasOperator && value !== null ? (
+        {hasOperator(expression) && minor !== null ? (
           <Text tone="muted" numeric>
-            = {currencySymbol(currency)}
-            {(Math.round(value * 100) / 100).toLocaleString("en-US")}
+            = {formatAmount(minor, { currency })}
           </Text>
         ) : null}
       </View>

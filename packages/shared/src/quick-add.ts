@@ -5,7 +5,7 @@
  */
 
 import * as chrono from "chrono-node";
-import { isAmountExpression, tryEvaluateExpression } from "./calculator";
+import { expressionToMinor, isAmountExpression } from "./calculator";
 import {
   addDays,
   DEFAULT_TIME_ZONE,
@@ -16,7 +16,7 @@ import {
   zonedTimeToUtc,
 } from "./dates";
 import { DEFAULT_AREAS, DEFAULT_CATEGORIES } from "./defaults";
-import { DEFAULT_CURRENCY, toMinor } from "./money";
+import { DEFAULT_CURRENCY } from "./money";
 import { firstOccurrence, parseRecurrence } from "./recurrence";
 
 export type QuickAddKind = "expense" | "income" | "task" | "time_entry";
@@ -238,8 +238,6 @@ function parseMoney(
     amountIndex = 0;
   }
   if (amountIndex === -1 && !forced) return null;
-  const value = amountIndex >= 0 ? tryEvaluateExpression(tokens[amountIndex]!) : null;
-  if (amountIndex >= 0 && (value === null || value <= 0)) return null;
   const remaining = tokens.filter(
     (_, i) => i !== amountIndex && !(accountId && i === amountIndex + 1),
   );
@@ -258,16 +256,18 @@ function parseMoney(
   const categoryId = guess.kind === null || guess.kind === kind ? guess.categoryId : null;
   accountId ??= context.defaultAccountId;
   const currency = context.accounts.find((a) => a.id === accountId)?.currency ?? DEFAULT_CURRENCY;
+  const amountMinor = amountIndex >= 0 ? expressionToMinor(tokens[amountIndex]!, currency) : null;
+  if (amountIndex >= 0 && (amountMinor === null || amountMinor <= 0)) return null;
   const occurredAt = offset === 0 ? context.now : addDaysToInstant(context.now, offset, timeZone);
   return {
     kind,
-    amountMinor: value === null ? null : toMinor(value, currency),
+    amountMinor,
     accountId,
     categoryId,
     areaId: guess.areaId ?? guessArea(note, context),
     note,
     occurredAt,
-    confidence: value !== null && categoryId !== null && accountId !== null ? "high" : "low",
+    confidence: amountMinor !== null && categoryId !== null && accountId !== null ? "high" : "low",
   };
 }
 

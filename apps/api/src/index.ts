@@ -6,8 +6,9 @@ import { backupsShareDisk } from "./jobs/backup";
 import { startJobs } from "./jobs/scheduler";
 import { createDeps } from "./lib/deps";
 import { createGoogleVerifier } from "./lib/google";
-import { log } from "./lib/log";
+import { installCrashLogging, log } from "./lib/log";
 
+installCrashLogging();
 const env = loadEnv();
 const deps = createDeps({
   env,

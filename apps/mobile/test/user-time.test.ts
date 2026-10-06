@@ -17,6 +17,10 @@ describe("userTime", () => {
     });
   });
 
+  test("a zone the clock can't use falls back instead of breaking every date", () => {
+    expect(userTime({ timeZone: "Not/AZone", weekStartsOn: 1 }).timeZone).toBe(DEFAULT_TIME_ZONE);
+  });
+
   test("a Sunday start (0) is kept, not replaced by the default", () => {
     expect(userTime({ timeZone: "Asia/Dhaka", weekStartsOn: 0 }).weekStartsOn).toBe(0);
   });

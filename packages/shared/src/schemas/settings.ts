@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { addDays, DEFAULT_TIME_ZONE, DEFAULT_WEEK_STARTS_ON } from "../dates";
+import { addDays, DEFAULT_TIME_ZONE, DEFAULT_WEEK_STARTS_ON, isTimeZone } from "../dates";
 import { DEFAULT_WORKDAYS } from "../recurrence";
 import { clockSchema, currencySchema, idSchema, localDateSchema } from "./common";
 
@@ -21,7 +21,8 @@ export type AiFeature = (typeof AI_FEATURES)[number];
  * reads merge stored values over these defaults.
  */
 export const settingsSchema = z.object({
-  timeZone: z.string().default(DEFAULT_TIME_ZONE),
+  /** An IANA zone the clock can use. A stored value that isn't one falls back on read. */
+  timeZone: z.string().refine(isTimeZone, "Unknown time zone").default(DEFAULT_TIME_ZONE),
   defaultCurrency: currencySchema.default("BDT"),
   defaultAccountId: idSchema.nullable().default(null),
   cashAccountId: idSchema.nullable().default(null),

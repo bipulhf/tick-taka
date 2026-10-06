@@ -25,6 +25,14 @@ describe("schemas", () => {
     expect(settingsPatchSchema.safeParse({ numerals: "arab" }).success).toBe(false);
   });
 
+  test("the time zone must be one the clock can use", () => {
+    expect(settingsPatchSchema.safeParse({ timeZone: "Not/AZone" }).success).toBe(false);
+    expect(settingsPatchSchema.safeParse({ timeZone: "Dhaka" }).success).toBe(false);
+    expect(settingsPatchSchema.parse({ timeZone: "Asia/Kolkata" })).toEqual({
+      timeZone: "Asia/Kolkata",
+    });
+  });
+
   test("settings patch only contains the keys sent", () => {
     expect(settingsPatchSchema.parse({ vacationMode: true })).toEqual({ vacationMode: true });
   });

@@ -44,6 +44,22 @@ function formatterFor(timeZone: string): Intl.DateTimeFormat {
   return formatter;
 }
 
+/** True for a zone this runtime's Intl can format in ("Asia/Dhaka", "UTC"); false for "Dhaka". */
+export function isTimeZone(timeZone: string): boolean {
+  if (formatterCache.has(timeZone)) return true;
+  try {
+    formatterFor(timeZone);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The zone if it is usable, otherwise the default, so one bad value can't break date maths. */
+export function safeTimeZone(timeZone: string | null | undefined): string {
+  return timeZone && isTimeZone(timeZone) ? timeZone : DEFAULT_TIME_ZONE;
+}
+
 const pad = (value: number, length = 2) => String(value).padStart(length, "0");
 
 export function localParts(ms: number, timeZone: string = DEFAULT_TIME_ZONE): LocalParts {

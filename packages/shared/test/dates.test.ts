@@ -13,6 +13,7 @@ import {
   HOUR_MS,
   isLocalDate,
   isLocalMonth,
+  isTimeZone,
   lastDayOfMonth,
   localDayRange,
   localMinuteOfDay,
@@ -21,6 +22,7 @@ import {
   MINUTE_MS,
   monthOf,
   parseLocalDate,
+  safeTimeZone,
   startOfLocalDay,
   startOfWeek,
   timeZoneOffsetMs,
@@ -35,6 +37,17 @@ const TZ = "Asia/Dhaka";
 const SUNDAY_MORNING = Date.UTC(2026, 9, 4, 4, 15, 30);
 
 describe("dates", () => {
+  test("only zones the clock can use count as time zones", () => {
+    expect(isTimeZone("Asia/Dhaka")).toBe(true);
+    expect(isTimeZone("UTC")).toBe(true);
+    expect(isTimeZone("Not/AZone")).toBe(false);
+    expect(isTimeZone("Dhaka")).toBe(false);
+    expect(isTimeZone("")).toBe(false);
+    expect(safeTimeZone("Europe/London")).toBe("Europe/London");
+    expect(safeTimeZone("Not/AZone")).toBe(DEFAULT_TIME_ZONE);
+    expect(safeTimeZone(null)).toBe(DEFAULT_TIME_ZONE);
+  });
+
   test("local date respects Asia/Dhaka (+06:00)", () => {
     // 2026-10-03T19:30Z is 01:30 on 4 October in Dhaka
     expect(toLocalDate(Date.UTC(2026, 9, 3, 19, 30), TZ)).toBe("2026-10-04");

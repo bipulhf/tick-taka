@@ -36,6 +36,21 @@ export function userTag(userId: string, secret: string): string {
   return createHmac("sha256", secret).update(userId).digest("hex").slice(0, 12);
 }
 
+/**
+ * Logs a promise rejection nobody handled instead of letting Bun exit on it. With
+ * pm2 restarting into the same failure, one bad value would otherwise keep the
+ * API down for everyone.
+ */
+export function installCrashLogging(
+  target: {
+    on(event: "unhandledRejection", handler: (reason: unknown) => void): unknown;
+  } = process,
+): void {
+  target.on("unhandledRejection", (reason) =>
+    log("error", "unhandled rejection", errorFields(reason)),
+  );
+}
+
 // Per-request facts the request logger needs from deeper middleware.
 const requestIds = new WeakMap<Request, string>();
 const requestUsers = new WeakMap<Request, string>();

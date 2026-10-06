@@ -1,4 +1,4 @@
-import { DEFAULT_TIME_ZONE, DEFAULT_WEEK_STARTS_ON } from "@tick-taka/shared/dates";
+import { DEFAULT_WEEK_STARTS_ON, safeTimeZone } from "@tick-taka/shared/dates";
 
 export interface UserTime {
   timeZone: string;
@@ -7,13 +7,14 @@ export interface UserTime {
 
 /**
  * The user's time zone and first weekday, with the shared defaults while settings
- * are still loading. The one place the fallback lives (the server's userTime(deps)).
+ * are still loading, or when a stored zone isn't one the clock can use. The one
+ * place the fallback lives (the server's userTime(deps)).
  */
 export function userTime(
   settings?: { timeZone?: string | null; weekStartsOn?: number | null } | null,
 ): UserTime {
   return {
-    timeZone: settings?.timeZone || DEFAULT_TIME_ZONE,
+    timeZone: safeTimeZone(settings?.timeZone),
     weekStartsOn: settings?.weekStartsOn ?? DEFAULT_WEEK_STARTS_ON,
   };
 }

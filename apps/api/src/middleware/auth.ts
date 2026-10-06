@@ -7,12 +7,6 @@ import { setRequestUser } from "../lib/log";
 import { runAsUser } from "../lib/user-scope";
 
 /**
- * Requires `Authorization: Bearer <token>` signed with JWT_SECRET for a live
- * session, then runs the rest of the request as that token's user, against
- * their own database. 401s say `session_expired` when a real session ran out or
- * was signed out, and `unauthorized` when the token is missing or not ours.
- */
-/**
  * Tokens issued before sessions existed (no jti) can't be revoked. They are honoured
  * until this date, 30 days after sessions shipped, so every installed phone gets the
  * chance to refresh into a session; after it they get `session_expired`, and the app
@@ -20,6 +14,12 @@ import { runAsUser } from "../lib/user-scope";
  */
 export const LEGACY_TOKENS_UNTIL = Date.UTC(2026, 10, 7);
 
+/**
+ * Requires `Authorization: Bearer <token>` signed with JWT_SECRET for a live
+ * session, then runs the rest of the request as that token's user, against
+ * their own database. 401s say `session_expired` when a real session ran out or
+ * was signed out, and `unauthorized` when the token is missing or not ours.
+ */
 export const requireAuth = (deps: Deps) =>
   createMiddleware(async (c, next) => {
     const header = c.req.header("authorization");

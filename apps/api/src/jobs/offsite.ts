@@ -1,5 +1,5 @@
 import type { Env } from "../env";
-import { log } from "../lib/log";
+import { errorFields, log } from "../lib/log";
 
 /** Long enough for an rsync of every user's backups over a slow link. */
 const OFFSITE_TIMEOUT_MS = 10 * 60_000;
@@ -34,6 +34,6 @@ export async function copyBackupsOffsite(
         stderr: stderr.slice(-500),
       });
   } catch (error) {
-    log("error", "offsite backup failed", { message: (error as Error).message });
+    log("error", "offsite backup failed", errorFields(error));
   }
 }

@@ -29,6 +29,13 @@
       "when": 1791291248498,
       "tag": "0003_task_next_id",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791293891082,
+      "tag": "0004_constraints",
+      "breakpoints": true
     }
   ]
 }

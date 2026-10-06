@@ -117,6 +117,9 @@ export function transactionService(deps: Deps) {
     /** Changing the category of a noted transaction teaches a rule for next time. */
     update(id: string, input: TransactionUpdate): Transaction {
       const current = base.get(id);
+      const type = input.type ?? current.type;
+      if (type !== "adjustment" && (input.amountMinor ?? current.amountMinor) <= 0)
+        throw badRequest("Amount must be more than zero");
       checkTransfer({
         type: input.type ?? current.type,
         accountId: input.accountId ?? current.accountId,

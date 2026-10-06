@@ -1,72 +1,119 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { baseColumns, bool } from "../columns";
+import {
+  type AnySQLiteColumn,
+  check,
+  index,
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
+import { baseColumns, bool, isLocalDate, isLocalMonth, oneOf, rule } from "../columns";
 import { areas } from "./time";
 
-export const accounts = sqliteTable("accounts", {
-  ...baseColumns(),
-  name: text("name").notNull(),
-  type: text("type", { enum: ["cash", "bank", "mobile_wallet", "card", "savings"] }).notNull(),
-  currency: text("currency").notNull().default("BDT"),
-  openingMinor: integer("opening_minor").notNull().default(0),
-  icon: text("icon"),
-  sort: integer("sort").notNull().default(0),
-  archivedAt: integer("archived_at"),
-});
+const ACCOUNT_TYPES = ["cash", "bank", "mobile_wallet", "card", "savings"] as const;
+const CATEGORY_KINDS = ["expense", "income"] as const;
+const BUDGET_TYPES = ["fixed", "non_monthly", "flexible"] as const;
+const DEBT_DIRECTIONS = ["owed_to_me", "i_owe"] as const;
+const RECURRING_KINDS = ["bill", "income"] as const;
+const TRANSACTION_TYPES = ["expense", "income", "transfer", "adjustment"] as const;
+const SMS_DIRECTIONS = ["in", "out", "cash_out"] as const;
+const SMS_STATUSES = ["pending", "added", "ignored"] as const;
+
+export const accounts = sqliteTable(
+  "accounts",
+  {
+    ...baseColumns(),
+    name: text("name").notNull(),
+    type: text("type", { enum: ACCOUNT_TYPES }).notNull(),
+    currency: text("currency").notNull().default("BDT"),
+    openingMinor: integer("opening_minor").notNull().default(0),
+    icon: text("icon"),
+    sort: integer("sort").notNull().default(0),
+    archivedAt: integer("archived_at"),
+  },
+  () => [check("accounts_type_check", oneOf("type", ACCOUNT_TYPES))],
+);
 
 export const categories = sqliteTable(
   "categories",
   {
     ...baseColumns(),
-    parentId: text("parent_id"),
+    parentId: text("parent_id").references((): AnySQLiteColumn => categories.id),
     name: text("name").notNull(),
     emoji: text("emoji").notNull(),
-    kind: text("kind", { enum: ["expense", "income"] }).notNull(),
-    budgetType: text("budget_type", { enum: ["fixed", "non_monthly", "flexible"] })
-      .notNull()
-      .default("flexible"),
+    kind: text("kind", { enum: CATEGORY_KINDS }).notNull(),
+    budgetType: text("budget_type", { enum: BUDGET_TYPES }).notNull().default("flexible"),
     sort: integer("sort").notNull().default(0),
   },
-  (t) => [index("categories_parent_idx").on(t.parentId)],
+  (t) => [
+    index("categories_parent_idx").on(t.parentId),
+    check("categories_kind_check", oneOf("kind", CATEGORY_KINDS)),
+    check("categories_budget_type_check", oneOf("budget_type", BUDGET_TYPES)),
+    check("categories_parent_self_check", rule(`"parent_id" <> "id"`)),
+  ],
 );
 
-export const goals = sqliteTable("goals", {
-  ...baseColumns(),
-  name: text("name").notNull(),
-  emoji: text("emoji").notNull(),
-  targetMinor: integer("target_minor").notNull(),
-  /** Local date YYYY-MM-DD */
-  deadline: text("deadline"),
-  accountId: text("account_id").references(() => accounts.id),
-  createTasks: bool("create_tasks").notNull().default(true),
-  doneAt: integer("done_at"),
-});
+export const goals = sqliteTable(
+  "goals",
+  {
+    ...baseColumns(),
+    name: text("name").notNull(),
+    emoji: text("emoji").notNull(),
+    targetMinor: integer("target_minor").notNull(),
+    /** Local date YYYY-MM-DD */
+    deadline: text("deadline"),
+    accountId: text("account_id").references(() => accounts.id),
+    createTasks: bool("create_tasks").notNull().default(true),
+    doneAt: integer("done_at"),
+  },
+  () => [
+    check("goals_target_check", rule(`"target_minor" > 0`)),
+    check("goals_deadline_check", isLocalDate("deadline")),
+  ],
+);
 
-export const debts = sqliteTable("debts", {
-  ...baseColumns(),
-  person: text("person").notNull(),
-  direction: text("direction", { enum: ["owed_to_me", "i_owe"] }).notNull(),
-  principalMinor: integer("principal_minor").notNull(),
-  currency: text("currency").notNull().default("BDT"),
-  dueAt: integer("due_at"),
-  remindAt: integer("remind_at"),
-  note: text("note"),
-  closedAt: integer("closed_at"),
-});
+export const debts = sqliteTable(
+  "debts",
+  {
+    ...baseColumns(),
+    person: text("person").notNull(),
+    direction: text("direction", { enum: DEBT_DIRECTIONS }).notNull(),
+    principalMinor: integer("principal_minor").notNull(),
+    currency: text("currency").notNull().default("BDT"),
+    dueAt: integer("due_at"),
+    remindAt: integer("remind_at"),
+    note: text("note"),
+    closedAt: integer("closed_at"),
+  },
+  () => [
+    check("debts_direction_check", oneOf("direction", DEBT_DIRECTIONS)),
+    check("debts_principal_check", rule(`"principal_minor" > 0`)),
+  ],
+);
 
-export const events = sqliteTable("events", {
-  ...baseColumns(),
-  name: text("name").notNull(),
-  emoji: text("emoji").notNull(),
-  budgetMinor: integer("budget_minor"),
-  startsOn: text("starts_on").notNull(),
-  endsOn: text("ends_on").notNull(),
-});
+export const events = sqliteTable(
+  "events",
+  {
+    ...baseColumns(),
+    name: text("name").notNull(),
+    emoji: text("emoji").notNull(),
+    budgetMinor: integer("budget_minor"),
+    startsOn: text("starts_on").notNull(),
+    endsOn: text("ends_on").notNull(),
+  },
+  () => [
+    check("events_budget_check", rule(`"budget_minor" >= 0`)),
+    check("events_starts_on_check", isLocalDate("starts_on")),
+    check("events_ends_on_check", isLocalDate("ends_on")),
+    check("events_range_check", rule(`"ends_on" >= "starts_on"`)),
+  ],
+);
 
 export const recurring = sqliteTable(
   "recurring",
   {
     ...baseColumns(),
-    kind: text("kind", { enum: ["bill", "income"] }).notNull(),
+    kind: text("kind", { enum: RECURRING_KINDS }).notNull(),
     name: text("name").notNull(),
     amountMinor: integer("amount_minor").notNull(),
     currency: text("currency").notNull().default("BDT"),
@@ -80,14 +127,19 @@ export const recurring = sqliteTable(
     /** Set by the midnight job when next_due_at passes unpaid */
     overdueAt: integer("overdue_at"),
   },
-  (t) => [index("recurring_next_due_idx").on(t.nextDueAt)],
+  (t) => [
+    index("recurring_next_due_idx").on(t.nextDueAt),
+    check("recurring_kind_check", oneOf("kind", RECURRING_KINDS)),
+    check("recurring_amount_check", rule(`"amount_minor" > 0`)),
+    check("recurring_remind_days_check", rule(`"remind_days" >= 0`)),
+  ],
 );
 
 export const transactions = sqliteTable(
   "transactions",
   {
     ...baseColumns(),
-    type: text("type", { enum: ["expense", "income", "transfer", "adjustment"] }).notNull(),
+    type: text("type", { enum: TRANSACTION_TYPES }).notNull(),
     accountId: text("account_id")
       .notNull()
       .references(() => accounts.id),
@@ -113,6 +165,10 @@ export const transactions = sqliteTable(
     index("transactions_to_account_idx").on(t.toAccountId),
     index("transactions_category_idx").on(t.categoryId),
     index("transactions_updated_at_idx").on(t.updatedAt),
+    check("transactions_type_check", oneOf("type", TRANSACTION_TYPES)),
+    check("transactions_amount_check", rule(`"type" = 'adjustment' OR "amount_minor" > 0`)),
+    check("transactions_to_amount_check", rule(`"to_amount_minor" > 0`)),
+    check("transactions_fee_check", rule(`"fee_minor" >= 0`)),
   ],
 );
 
@@ -128,7 +184,11 @@ export const budgets = sqliteTable(
     limitMinor: integer("limit_minor").notNull(),
     rollover: bool("rollover").notNull().default(false),
   },
-  (t) => [uniqueIndex("budgets_category_month_uq").on(t.categoryId, t.month)],
+  (t) => [
+    uniqueIndex("budgets_category_month_uq").on(t.categoryId, t.month),
+    check("budgets_month_check", isLocalMonth("month")),
+    check("budgets_limit_check", rule(`"limit_minor" >= 0`)),
+  ],
 );
 
 export const shoppingItems = sqliteTable(
@@ -142,7 +202,10 @@ export const shoppingItems = sqliteTable(
     transactionId: text("transaction_id").references(() => transactions.id),
     sort: integer("sort").notNull().default(0),
   },
-  (t) => [index("shopping_items_list_idx").on(t.listName)],
+  (t) => [
+    index("shopping_items_list_idx").on(t.listName),
+    check("shopping_items_estimate_check", rule(`"est_minor" >= 0`)),
+  ],
 );
 
 export const categoryRules = sqliteTable(
@@ -165,11 +228,13 @@ export const smsImports = sqliteTable(
     sender: text("sender").notNull(),
     receivedAt: integer("received_at").notNull(),
     amountMinor: integer("amount_minor").notNull(),
-    direction: text("direction", { enum: ["in", "out", "cash_out"] }).notNull(),
-    status: text("status", { enum: ["pending", "added", "ignored"] })
-      .notNull()
-      .default("pending"),
+    direction: text("direction", { enum: SMS_DIRECTIONS }).notNull(),
+    status: text("status", { enum: SMS_STATUSES }).notNull().default("pending"),
     transactionId: text("transaction_id").references(() => transactions.id),
   },
-  (t) => [uniqueIndex("sms_imports_fingerprint_uq").on(t.fingerprint)],
+  (t) => [
+    uniqueIndex("sms_imports_fingerprint_uq").on(t.fingerprint),
+    check("sms_imports_direction_check", oneOf("direction", SMS_DIRECTIONS)),
+    check("sms_imports_status_check", oneOf("status", SMS_STATUSES)),
+  ],
 );

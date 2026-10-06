@@ -132,6 +132,7 @@ export function recurringService(deps: Deps) {
               amountMinor / minorFactor(account.currency) / (planned / minorFactor(item.currency));
             note = `${item.name} · ${formatAmount(planned, { currency: item.currency })} @ ${rate.toFixed(2)}`;
           }
+          if (amountMinor <= 0) throw badRequest("Enter the amount received");
           const now = deps.now();
           const transactionId = input.transactionId ?? newId(now);
           db.insert(transactions)

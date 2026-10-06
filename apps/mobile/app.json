@@ -10,6 +10,7 @@
     "platforms": ["android"],
     "android": {
       "package": "com.mehedismathacademy.ticktaka",
+      "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#FFF8EE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

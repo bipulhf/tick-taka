@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { HttpMethod } from "@/lib/api";
+import { secureStorage } from "@/lib/secure-storage";
 import { createStore } from "@/lib/store";
 import { resetOnSignOut } from "@/lib/user-data";
 
@@ -51,14 +51,14 @@ export const chatStore = createStore<ChatMessage[]>([]);
 resetOnSignOut(() => chatStore.set([]));
 
 export async function loadChat() {
-  const raw = await AsyncStorage.getItem(KEY);
+  const raw = await secureStorage.getItem(KEY);
   if (raw) chatStore.set(JSON.parse(raw) as ChatMessage[]);
 }
 
 function save(messages: ChatMessage[]) {
   const kept = messages.slice(-KEEP);
   chatStore.set(kept);
-  void AsyncStorage.setItem(KEY, JSON.stringify(kept));
+  void secureStorage.setItem(KEY, JSON.stringify(kept));
 }
 
 export function appendMessage(message: Omit<ChatMessage, "id" | "at">) {

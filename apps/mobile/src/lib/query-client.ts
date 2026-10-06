@@ -7,6 +7,7 @@ import { AppState } from "react-native";
 import { ApiError } from "./api";
 import { keysToRefresh } from "./invalidation";
 import { legacyOutboxRequests, type OutboxRequest } from "./outbox-policy";
+import { secureStorage } from "./secure-storage";
 
 const DAY_MS = 86_400_000;
 const CACHE_KEY = "tt.query-cache";
@@ -72,7 +73,8 @@ export function takeLegacyOutbox(): Promise<OutboxRequest[]> {
 }
 
 const cachePersister = createAsyncStoragePersister({
-  storage: AsyncStorage,
+  // Balances, transactions and notes: encrypted at rest.
+  storage: secureStorage,
   key: CACHE_KEY,
   throttleTime: 1000,
 });

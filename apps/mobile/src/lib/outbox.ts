@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { onlineManager } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { AppState } from "react-native";
@@ -10,6 +9,7 @@ import type { FailureInfo, OutboxRequest } from "./outbox-policy";
 import { OutboxQueue } from "./outbox-queue";
 import { keys, type TodayData } from "./queries";
 import { queryClient, scheduleRefresh, takeLegacyOutbox } from "./query-client";
+import { secureStorage } from "./secure-storage";
 import { updateToday } from "./today-cache";
 
 export type { OutboxRequest } from "./outbox-policy";
@@ -34,10 +34,10 @@ export const outbox = new OutboxQueue({
   describe,
   canSend: () => onlineManager.isOnline() && Boolean(currentToken()),
   load: async () => {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await secureStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   },
-  save: (state) => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)),
+  save: (state) => secureStorage.setItem(STORAGE_KEY, JSON.stringify(state)),
   onSent: (request) => scheduleRefresh(request.path),
   onRejected: (request, error) => {
     const message = error instanceof Error ? error.message : "The server refused the change";

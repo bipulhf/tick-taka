@@ -20,6 +20,7 @@ import {
   markUndone,
   updateMessage,
 } from "./chat-store";
+import { draftRequest, parseDrafts } from "./money-drafts";
 import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
 
 const HISTORY = 20;
@@ -42,6 +43,8 @@ type StreamEvent =
       reply: string;
       actions: ChatAction[];
       deletions: ChatDeletion[];
+      /** Proposed money changes (we always ask for drafts); older servers omit it. */
+      drafts?: unknown;
       memo: string;
     }
   | { type: "error"; code: string; message: string };
@@ -96,7 +99,8 @@ export function useAssistant() {
     /** The steps so far, with any still running marked as cut short. */
     const settled = () => liveStore.get()?.steps.map((step) => ({ ok: false, ...step })) ?? [];
     try {
-      await postEventStream("/ai/assistant", { messages: history }, (data) => {
+      // Money is never written by the AI on its own: it comes back as drafts to confirm.
+      await postEventStream("/ai/assistant", { messages: history, draftMoney: true }, (data) => {
         const event = data as StreamEvent;
         switch (event.type) {
           case "status":
@@ -122,8 +126,9 @@ export function useAssistant() {
               steps: settled(),
               failed: true,
             });
-          case "done":
+          case "done": {
             finished = true;
+            const drafts = parseDrafts(event.drafts);
             appendMessage({
               role: "assistant",
               content: event.reply,
@@ -133,11 +138,14 @@ export function useAssistant() {
               ...(event.deletions.length
                 ? { deletions: event.deletions, deletionChoice: "pending" as const }
                 : {}),
+              ...(drafts.length ? { drafts } : {}),
             });
             if (event.actions.length) {
               haptic.success();
               void queryClient.invalidateQueries();
             }
+            return;
+          }
         }
       });
       if (!finished) throw new Error("The reply stopped part way");
@@ -207,6 +215,38 @@ export function useAssistant() {
     haptic.success();
   };
 
+  /** The user tapped Save on a proposed money change: the phone sends it, with Undo. */
+  const saveDraft = (messageId: string, index: number) => {
+    const draft = chatStore.get().find((m) => m.id === messageId)?.drafts?.[index];
+    if (draft?.state !== "pending") return;
+    send(draftRequest(draft, editTime()));
+    updateMessage(messageId, (m) => ({
+      ...m,
+      drafts: m.drafts?.map((d, i) => (i === index ? { ...d, state: "saved" as const } : d)),
+      actions: [
+        ...(m.actions ?? []),
+        { summary: `Saved: ${lowerFirst(draft.summary)}`, undo: draft.undo },
+      ],
+      memo: [m.memo, `the user saved the draft "${draft.summary}" (${draft.method} ${draft.path})`]
+        .filter(Boolean)
+        .join("; "),
+    }));
+    haptic.success();
+  };
+
+  const discardDraft = (messageId: string, index: number) => {
+    const draft = chatStore.get().find((m) => m.id === messageId)?.drafts?.[index];
+    if (draft?.state !== "pending") return;
+    updateMessage(messageId, (m) => ({
+      ...m,
+      drafts: m.drafts?.map((d, i) => (i === index ? { ...d, state: "discarded" as const } : d)),
+      memo: [m.memo, `the user discarded the draft "${draft.summary}"; nothing was saved`]
+        .filter(Boolean)
+        .join("; "),
+    }));
+    haptic.tap();
+  };
+
   const keepAll = (messageId: string) => {
     updateMessage(messageId, (m) => ({
       ...m,
@@ -225,6 +265,8 @@ export function useAssistant() {
     undo,
     confirmDeletions,
     keepAll,
+    saveDraft,
+    discardDraft,
     clear: clearChat,
     thinking: live !== null,
   };

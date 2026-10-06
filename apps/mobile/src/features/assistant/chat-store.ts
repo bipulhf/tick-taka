@@ -2,6 +2,7 @@ import type { HttpMethod } from "@/lib/api";
 import { secureStorage } from "@/lib/secure-storage";
 import { createStore } from "@/lib/store";
 import { resetOnSignOut } from "@/lib/user-data";
+import type { ChatDraft } from "./money-drafts";
 
 export interface ChatAction {
   summary: string;
@@ -34,6 +35,8 @@ export interface ChatMessage {
   /** Deletions waiting for the user's yes or no, and what they chose. */
   deletions?: ChatDeletion[];
   deletionChoice?: "pending" | "deleted" | "kept";
+  /** Money changes Tiki proposed; each is saved only when the user taps Save. */
+  drafts?: ChatDraft[];
   /** The request failed; kept on screen but never sent back as context. */
   failed?: boolean;
   /**

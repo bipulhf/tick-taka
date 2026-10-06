@@ -25,7 +25,18 @@ export function AssistantSheet({ start }: { start?: "talk" }) {
   const router = useRouter();
   const keyboard = useKeyboardHeight();
   const scroll = useRef<ScrollView>(null);
-  const { messages, live, ask, undo, confirmDeletions, keepAll, clear, thinking } = useAssistant();
+  const {
+    messages,
+    live,
+    ask,
+    undo,
+    confirmDeletions,
+    keepAll,
+    saveDraft,
+    discardDraft,
+    clear,
+    thinking,
+  } = useAssistant();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingBottom: keyboard }}>
@@ -88,6 +99,8 @@ export function AssistantSheet({ start }: { start?: "talk" }) {
             onUndo={(index) => undo(message.id, index)}
             onConfirmDeletions={() => confirmDeletions(message.id)}
             onKeep={() => keepAll(message.id)}
+            onSaveDraft={(index) => saveDraft(message.id, index)}
+            onDiscardDraft={(index) => discardDraft(message.id, index)}
           />
         ))}
         {live ? <LiveBubble turn={live} /> : null}

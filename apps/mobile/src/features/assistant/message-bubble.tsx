@@ -5,6 +5,7 @@ import { Text } from "@/components/ui/text";
 import { plural } from "@/lib/format";
 import { useColors } from "@/theme/colors";
 import type { ChatAction, ChatMessage, ChatStep } from "./chat-store";
+import { DraftCard } from "./draft-card";
 import { StreamingCaret, ThinkingIndicator } from "./thinking-indicator";
 import type { LiveTurn } from "./use-assistant";
 
@@ -168,17 +169,24 @@ function DeletionCard({
   );
 }
 
-/** One chat turn; Tiki's turns list what changed and ask before deleting anything. */
+/**
+ * One chat turn; Tiki's turns list what changed, ask before deleting anything and
+ * hold proposed money changes until Save.
+ */
 export function MessageBubble({
   message,
   onUndo,
   onConfirmDeletions,
   onKeep,
+  onSaveDraft,
+  onDiscardDraft,
 }: {
   message: ChatMessage;
   onUndo: (index: number) => void;
   onConfirmDeletions: () => void;
   onKeep: () => void;
+  onSaveDraft: (index: number) => void;
+  onDiscardDraft: (index: number) => void;
 }) {
   if (message.role === "user") {
     return (
@@ -198,6 +206,15 @@ export function MessageBubble({
         </Text>
       </View>
       {message.actions?.length ? <ActionList actions={message.actions} onUndo={onUndo} /> : null}
+      {message.drafts?.map((draft, index) => (
+        <DraftCard
+          // biome-ignore lint/suspicious/noArrayIndexKey: a turn's drafts never reorder.
+          key={`${draft.path}-${index}`}
+          draft={draft}
+          onSave={() => onSaveDraft(index)}
+          onDiscard={() => onDiscardDraft(index)}
+        />
+      ))}
       {message.deletionChoice === "pending" ? (
         <DeletionCard message={message} onConfirm={onConfirmDeletions} onKeep={onKeep} />
       ) : message.deletionChoice === "kept" ? (

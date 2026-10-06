@@ -5,6 +5,10 @@ import { isValidRRule } from "../recurrence";
 /** ULIDs are generated on the phone so records can be created offline. */
 export const idSchema = z.string().regex(/^[0-9A-HJKMNP-TV-Z]{26}$/, "Expected a ULID");
 export const epochMsSchema = z.number().int().nonnegative();
+/** An instant the phone recorded, as ISO 8601 text ("2026-10-04T04:00:00.000Z"); parsed to epoch ms. */
+export const tapTimeSchema = z.iso
+  .datetime({ offset: true })
+  .transform((value) => Date.parse(value));
 export const minorSchema = z.number().int();
 export const positiveMinorSchema = z.number().int().positive();
 export const localDateSchema = z.string().refine(isLocalDate, "Expected a date like 2026-10-04");

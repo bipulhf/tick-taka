@@ -21,7 +21,7 @@ export const timerRoutes = (deps: Deps) => {
       c.json(service().start(c.req.valid("json")), 201),
     )
     .post("/stop", validate("json", timerStopSchema), (c) =>
-      c.json(service().stop(c.req.valid("json").endedAt)),
+      c.json(service().stop(c.req.valid("json"))),
     );
 };
 

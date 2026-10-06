@@ -242,7 +242,13 @@ describe("timer and time entries", () => {
     ctx.clock.advance(5 * MINUTE_MS);
     const stopped = await ctx.request<Row>("POST", "/timer/stop", {});
     expect(stopped.body.endedAt).toBe(DEFAULT_NOW + 30 * MINUTE_MS);
+    // A double tap on Stop answers with the entry that just stopped.
+    const doubleTap = await ctx.request<Row>("POST", "/timer/stop", {});
+    expect(doubleTap.status).toBe(200);
+    expect(doubleTap.body.id).toBe(stopped.body.id);
+    ctx.clock.advance(10 * MINUTE_MS);
     expect((await ctx.request("POST", "/timer/stop", {})).status).toBe(409);
+    ctx.clock.advance(-10 * MINUTE_MS);
 
     const range = `from=${DEFAULT_NOW - HOUR_MS}&to=${DEFAULT_NOW + HOUR_MS}`;
     const stats = await ctx.request<{ totalMinutes: number; sessions: number; byArea: Row[] }>(

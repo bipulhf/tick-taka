@@ -1,18 +1,34 @@
-import { type InstantRange, MINUTE_MS, toLocalDate } from "@tick-taka/shared/dates";
+import { DAY_MS, type InstantRange, MINUTE_MS, toLocalDate } from "@tick-taka/shared/dates";
 import type {
   timeEntryCreateSchema,
   timeEntryListQuerySchema,
   timeEntryUpdateSchema,
   timerStartSchema,
+  timerStopSchema,
 } from "@tick-taka/shared/schemas/time";
-import { and, asc, desc, eq, gte, isNull, lt, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNotNull, isNull, lt, or, type SQL } from "drizzle-orm";
 import type { z } from "zod";
 import { tasks, timeEntries } from "../../db/schema/time";
 import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
-import { badRequest, conflict } from "../../lib/errors";
+import { badRequest, conflict, notFound } from "../../lib/errors";
 
 export type TimeEntry = typeof timeEntries.$inferSelect;
+
+/** How far ahead of the server a phone's clock may run. */
+const MAX_CLOCK_SKEW_MS = 5 * MINUTE_MS;
+/** Oldest tap time accepted: an outbox can hold writes for days, not months. */
+const MAX_TAP_AGE_MS = 30 * DAY_MS;
+/** A stop arriving this soon after the timer stopped is a retry or a double tap. */
+const STOP_REPLAY_WINDOW_MS = 2 * MINUTE_MS;
+
+/** The phone's tap time when it sent one, checked against the server clock. */
+function tapTime(value: number | undefined, now: number): number | undefined {
+  if (value === undefined) return undefined;
+  if (value > now + MAX_CLOCK_SKEW_MS) throw badRequest("That time is in the future");
+  if (value < now - MAX_TAP_AGE_MS) throw badRequest("That time is too long ago");
+  return value;
+}
 
 /** Minutes of `entry` that fall inside `range`; running entries count up to `now`. */
 export function overlapMinutes(
@@ -81,9 +97,10 @@ export function timeEntryService(deps: Deps) {
           if (existing) return { started: existing, stopped: null };
         }
         const now = deps.now();
+        const startedAt = tapTime(input.at ?? input.startedAt, now) ?? now;
         const current = service.running();
         const stopped = current
-          ? base.update(current.id, { endedAt: Math.max(now, current.startedAt) })
+          ? base.update(current.id, { endedAt: Math.max(startedAt, current.startedAt) })
           : null;
         const link = linkFromTask(input.taskId);
         const started = base.create({
@@ -91,7 +108,7 @@ export function timeEntryService(deps: Deps) {
           taskId: input.taskId ?? null,
           areaId: input.areaId ?? link.areaId ?? null,
           projectId: input.projectId ?? link.projectId ?? null,
-          startedAt: input.startedAt ?? now,
+          startedAt,
           endedAt: null,
           source: input.source,
           billable: input.billable,
@@ -101,10 +118,34 @@ export function timeEntryService(deps: Deps) {
       });
     },
 
-    stop(endedAt?: number): TimeEntry {
-      const current = service.running();
-      if (!current) throw conflict("No timer is running");
-      const end = endedAt ?? deps.now();
+    /**
+     * Stops the running entry (or the one named by `id`). Replays succeed: a stop for an
+     * entry that already stopped, or one matching the last stop, returns that entry.
+     */
+    stop(input: z.output<typeof timerStopSchema> = {}): TimeEntry {
+      const now = deps.now();
+      const tapped = tapTime(input.at ?? input.endedAt, now);
+      const end = tapped ?? now;
+      let current: TimeEntry | null;
+      if (input.id) {
+        current = base.find(input.id, true) ?? null;
+        if (!current) throw notFound("Time entry");
+        if (current.endedAt !== null) return current;
+      } else {
+        current = service.running();
+      }
+      if (!current) {
+        const last = db
+          .select()
+          .from(timeEntries)
+          .where(and(isNull(timeEntries.deletedAt), isNotNull(timeEntries.endedAt)))
+          .orderBy(desc(timeEntries.updatedAt))
+          .get();
+        const replay =
+          last && (last.endedAt === tapped || now - last.updatedAt <= STOP_REPLAY_WINDOW_MS);
+        if (last && replay) return last;
+        throw conflict("No timer is running");
+      }
       if (end <= current.startedAt) throw badRequest("Stop time must be after the start");
       return base.update(current.id, { endedAt: end });
     },

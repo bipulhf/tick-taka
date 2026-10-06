@@ -12,6 +12,7 @@ import {
   queryBoolSchema,
   queryEpochSchema,
   rruleSchema,
+  tapTimeSchema,
 } from "./common";
 
 export const PROJECT_STATUSES = ["active", "paused", "done"] as const;
@@ -168,8 +169,16 @@ export const timerStartSchema = z.object({
   billable: z.boolean().default(false),
   note: noteSchema.nullable().optional(),
   startedAt: epochMsSchema.optional(),
+  /** When Start was tapped on the phone; wins over startedAt so an offline start keeps its time. */
+  at: tapTimeSchema.optional(),
 });
-export const timerStopSchema = z.object({ endedAt: epochMsSchema.optional() });
+export const timerStopSchema = z.object({
+  /** The entry to stop; a replay for an entry that already stopped returns it. */
+  id: idSchema.optional(),
+  endedAt: epochMsSchema.optional(),
+  /** When Stop was tapped on the phone; wins over endedAt. */
+  at: tapTimeSchema.optional(),
+});
 
 export const timeEntryCreateSchema = z
   .object({

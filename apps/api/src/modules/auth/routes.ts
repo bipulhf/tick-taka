@@ -34,38 +34,45 @@ export const authRoutes = (deps: Deps) => {
   const issue = (user: User) =>
     issueSession({ secret: deps.env.JWT_SECRET, users: deps.users, now: deps.now() }, user);
 
-  return new Hono()
-    .post("/google", validate("json", googleSchema), async (c) => {
-      const ip = c.req.header("x-real-ip") ?? "local";
-      const now = deps.now();
-      const waitMs = limiter.attempt(ip, now);
-      if (waitMs > 0) {
-        c.header("Retry-After", String(Math.ceil(waitMs / 1000)));
-        throw new AppError(
-          429,
-          "too_many_attempts",
-          "Too many attempts. Try again in a few minutes.",
-        );
-      }
-      const profile = await deps.verifyGoogle(c.req.valid("json").idToken);
-      const { user, created } = deps.users.signIn(profile);
-      limiter.reset(ip);
-      // Open (and seed) the new user's database now, so their first screen is ready.
-      deps.users.data(user);
-      const { token, expiresAt } = await issue(user);
-      return c.json({ token, expiresAt, user: profileOf(user), created });
-    })
-    .post("/refresh", requireAuth(deps), async (c) => {
-      const { user, sessionId } = signedIn();
-      const { token, expiresAt } = await issue(user);
-      if (sessionId) deps.users.sessions.revoke(sessionId);
-      return c.json({ token, expiresAt, user: profileOf(user) });
-    })
-    .post("/logout", requireAuth(deps), (c) => {
-      const { sessionId } = signedIn();
-      if (sessionId) deps.users.sessions.revoke(sessionId);
-      return c.body(null, 204);
-    });
+  return (
+    new Hono()
+      .post("/google", validate("json", googleSchema), async (c) => {
+        const ip = c.req.header("x-real-ip") ?? "local";
+        const now = deps.now();
+        const waitMs = limiter.attempt(ip, now);
+        if (waitMs > 0) {
+          c.header("Retry-After", String(Math.ceil(waitMs / 1000)));
+          throw new AppError(
+            429,
+            "too_many_attempts",
+            "Too many attempts. Try again in a few minutes.",
+          );
+        }
+        const profile = await deps.verifyGoogle(c.req.valid("json").idToken);
+        const { user, created } = deps.users.signIn(profile);
+        limiter.reset(ip);
+        // Open (and seed) the new user's database now, so their first screen is ready.
+        deps.users.data(user);
+        const { token, expiresAt } = await issue(user);
+        return c.json({ token, expiresAt, user: profileOf(user), created });
+      })
+      .post("/refresh", requireAuth(deps), async (c) => {
+        const { user, sessionId } = signedIn();
+        const { token, expiresAt } = await issue(user);
+        if (sessionId) deps.users.sessions.revoke(sessionId);
+        return c.json({ token, expiresAt, user: profileOf(user) });
+      })
+      .post("/logout", requireAuth(deps), (c) => {
+        const { sessionId } = signedIn();
+        if (sessionId) deps.users.sessions.revoke(sessionId);
+        return c.body(null, 204);
+      })
+      /** Deletes the account and everything stored for it, at once and for good. */
+      .delete("/account", requireAuth(deps), (c) => {
+        deps.users.remove(signedIn().user);
+        return c.body(null, 204);
+      })
+  );
 };
 
 /** GET /me: who is signed in. */

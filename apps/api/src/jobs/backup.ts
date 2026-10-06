@@ -3,7 +3,8 @@ import { mkdirSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { toLocalDate } from "@tick-taka/shared/dates";
 
-const BACKUP_RE = /^app-\d{4}-\d{2}-\d{2}\.db$/;
+/** A nightly backup's file name. */
+export const BACKUP_RE = /^app-\d{4}-\d{2}-\d{2}\.db$/;
 
 /**
  * Writes a clean copy of the database with VACUUM INTO and keeps the newest `keep`

@@ -92,14 +92,14 @@ export const privacyPage = (site: SiteInfo) =>
   <li>Your account and records are kept until you delete them or ask us to delete your account.</li>
   <li>When you delete a record in the app it disappears at once; it is kept marked as deleted (so Undo works) until your account is deleted.</li>
   <li>A backup copy is made each night and only the newest 14 are kept, so backups are gone within 14 days of being replaced.</li>
-  <li>When you ask us to delete your account, we delete your account, records, receipt photos and backups within 30 days.</li>
+  <li>When you delete your account in the app, your account, records, receipt photos, backups and sign-in sessions are removed from our server at once. If you ask us by email instead, we do the same within 30 days.</li>
 </ul>
 
 <h2>8. Your rights and choices</h2>
 <ul>
   <li><strong>Access and export:</strong> Settings › Your data exports all your records as one file.</li>
   <li><strong>Correct or delete records:</strong> edit or delete anything in the app at any time.</li>
-  <li><strong>Delete your account:</strong> email ${contact(site)} from the email address you sign in with and we will delete everything within 30 days.</li>
+  <li><strong>Delete your account:</strong> delete it from Settings in the app, which removes everything at once, or email ${contact(site)} from the email address you sign in with and we will delete everything within 30 days.</li>
   <li><strong>Revoke Google access:</strong> remove ${APP_NAME} from <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a> at any time.</li>
   <li><strong>Turn off AI:</strong> Settings › AI.</li>
 </ul>

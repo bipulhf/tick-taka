@@ -13,7 +13,9 @@ const EXTENSIONS: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
 };
-const nameParam = z.object({ name: z.string().regex(/^[0-9A-HJKMNP-TV-Z]{26}\.(jpg|png|webp)$/) });
+/** A stored receipt's file name: a ULID and an image extension. */
+export const RECEIPT_NAME_RE = /^[0-9A-HJKMNP-TV-Z]{26}\.(jpg|png|webp)$/;
+const nameParam = z.object({ name: z.string().regex(RECEIPT_NAME_RE) });
 
 /** Receipt photos live in the user's own folder and are served only to that user. */
 export const uploadsRoutes = (deps: Deps) =>

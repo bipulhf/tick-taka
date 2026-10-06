@@ -21,6 +21,8 @@ describe("public pages", () => {
     expect(privacy).toContain("Limited Use");
     expect(privacy).toContain("<code>email</code>");
     expect(privacy).toContain("mailto:help@example.com");
+    // DELETE /auth/account removes everything at once; the page must say so.
+    expect(privacy).toContain("removed from our server at once");
     // The signed-in API still asks for a token.
     expect((await ctx.app.request("/tasks")).status).toBe(401);
   });

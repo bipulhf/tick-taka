@@ -7,6 +7,7 @@ import { type DbHandle, openDatabase } from "./client";
 import { createHandleCache } from "./handle-cache";
 import { seedDefaults } from "./seed";
 import { createSessionStore } from "./sessions";
+import { deleteUserFiles } from "./user-files";
 
 /** Open user databases: at most 50, each closed after 10 idle minutes. */
 const HANDLE_LIMITS = { max: 50, idleMs: 10 * 60_000, minIdleMs: 30_000 };
@@ -93,6 +94,7 @@ export function createUserRegistry(
   const legacyTaken = registry.query<{ n: number }, []>(
     "SELECT count(*) AS n FROM users WHERE legacy = 1",
   );
+  const removeUser = registry.query("DELETE FROM users WHERE id = ?");
   const open = createHandleCache<UserData>({ ...HANDLE_LIMITS, ...options.handles, now });
   const sessions = createSessionStore(registry, now);
 
@@ -193,6 +195,17 @@ export function createUserRegistry(
           if (opened && opts.closeIfOpened) open.closeIfIdle(user.id);
         },
       };
+    },
+
+    /**
+     * Deletes the account: its sessions, its database files, receipt photos and
+     * backups, and the users row. Tokens for it stop working at once.
+     */
+    remove(user: User): void {
+      sessions.removeForUser(user.id);
+      open.close(user.id);
+      deleteUserFiles(dataPaths(user), user.legacy);
+      removeUser.run(user.id);
     },
 
     /** Closes handles nobody has used for a while. Called on a timer and after jobs. */

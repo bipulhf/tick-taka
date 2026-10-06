@@ -1,5 +1,6 @@
 import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
+import { defined } from "@tick-taka/shared/defined";
 import { decode, sign } from "hono/jwt";
 import { createSessionStore } from "../src/db/sessions";
 import { LEGACY_TOKENS_UNTIL } from "../src/middleware/auth";
@@ -196,5 +197,47 @@ describe("sessions", () => {
     expect(sessions.find("s1")).toMatchObject({ userId: "u1", replaces: null });
     sessions.create("s2", "u1", 9999999999999, "s1");
     expect(sessions.find("s2")?.replaces).toBe("s1");
+  });
+
+  // CQ-041: a refreshed session used to run an UPDATE on every request.
+  test("using a refreshed session writes once to shorten the old one, then only reads", () => {
+    const db = new Database(":memory:");
+    let updates = 0;
+    const bind = <T extends object>(target: T, key: string | symbol) => {
+      const value = Reflect.get(target, key);
+      return typeof value === "function" ? value.bind(target) : value;
+    };
+    const counted = new Proxy(db, {
+      get(target, key) {
+        if (key !== "query") return bind(target, key);
+        return (sql: string) => {
+          const statement = target.query(sql);
+          if (!/^\s*UPDATE/i.test(sql)) return statement;
+          return new Proxy(statement, {
+            get(inner, name) {
+              if (name !== "run") return bind(inner, name);
+              return (...args: never[]) => {
+                updates += 1;
+                return inner.run(...args);
+              };
+            },
+          });
+        };
+      },
+    });
+    let at = 1_000_000;
+    const sessions = createSessionStore(counted, () => at);
+    sessions.create("old", "u1", at + 30 * DAY_MS);
+    sessions.create("new", "u1", at + 30 * DAY_MS, "old");
+    const use = () => sessions.touch(defined(sessions.find("new"), "the new session"));
+    use();
+    expect(updates).toBe(1);
+    expect(sessions.find("old")?.expiresAt).toBe(at + 60_000);
+    for (let i = 0; i < 5; i++) {
+      at += 1_000;
+      use();
+    }
+    expect(updates).toBe(1);
+    expect(sessions.find("old")?.expiresAt).toBe(1_000_000 + 60_000);
   });
 });

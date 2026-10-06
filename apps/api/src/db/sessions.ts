@@ -68,6 +68,9 @@ export function createSessionStore(registry: Database, now: () => number) {
      VALUES (?, ?, ?, ?, ?, NULL, ?)`,
   );
   const touch = registry.query("UPDATE sessions SET last_used_at = ? WHERE id = ?");
+  const expiryOf = registry.query<{ expires_at: number }, [string]>(
+    "SELECT expires_at FROM sessions WHERE id = ?",
+  );
   const shorten = registry.query(
     "UPDATE sessions SET expires_at = ? WHERE id = ? AND expires_at > ?",
   );
@@ -107,8 +110,12 @@ export function createSessionStore(registry: Database, now: () => number) {
     touch(session: Session): void {
       const at = now();
       if (at - session.lastUsedAt >= TOUCH_EVERY_MS) touch.run(at, session.id);
+      if (!session.replaces) return;
+      // Read first: after the first use the old token is already short, and every
+      // later request would otherwise still open a write.
       const until = at + REFRESH_GRACE_MS;
-      if (session.replaces) shorten.run(until, session.replaces, until);
+      const replaced = expiryOf.get(session.replaces);
+      if (replaced && replaced.expires_at > until) shorten.run(until, session.replaces, until);
     },
 
     /** Ends the session at once, and the one it was refreshed from (logout). */

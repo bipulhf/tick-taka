@@ -109,6 +109,28 @@ describe("GET /today", () => {
     const tasks = await ctx.request<Row[]>("GET", "/tasks");
     expect(tasks.body.map((t) => t.title)).toEqual(["Move ৳1,000 to the Bike jar"]);
   });
+
+  test("an overdue bill sits at the start of today but names the due date it pays", async () => {
+    const ctx = await createTestContext();
+    const { cash } = await setupMoney(ctx);
+    const dueAt = today - 2 * DAY_MS + 9 * HOUR_MS;
+    await ctx.request("POST", "/recurring", {
+      kind: "bill",
+      name: "Internet",
+      amountMinor: 120_000,
+      accountId: cash.id,
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=2",
+      nextDueAt: dueAt,
+    });
+    const res = await ctx.request<{ timeline: { kind: string; at: number; dueAt?: number }[] }>(
+      "GET",
+      "/today",
+    );
+    const bill = res.body.timeline.find((i) => i.kind === "bill");
+    expect(bill?.at).toBe(today);
+    // "Paid" sends it, and Undo moves the bill back to it (QA-303, UX-042).
+    expect(bill?.dueAt).toBe(dueAt);
+  });
 });
 
 describe("insights", () => {

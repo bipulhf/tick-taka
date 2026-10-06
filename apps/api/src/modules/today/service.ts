@@ -36,6 +36,8 @@ export type TimelineItem =
       overdue: boolean;
       /** The local date it was due (YYYY-MM-DD), so a late bill can say "Was due Mon 5 Oct". */
       dueDate: string;
+      /** next_due_at itself: what "Paid" pays, and the date its Undo moves the bill back to. */
+      dueAt: number;
     }
   | {
       kind: "debt";
@@ -120,6 +122,7 @@ export function todayView(deps: Deps, date?: LocalDate) {
       accountId: item.accountId,
       overdue: item.status === "overdue",
       dueDate: item.dueDate,
+      dueAt: item.nextDueAt,
     })),
     ...debtReminders.map((debt) => ({
       kind: "debt" as const,

@@ -66,17 +66,21 @@ export function aiUsageReport(deps: Deps, month?: LocalMonth) {
 
   const me = currentScope()?.user;
   const owner = !!me && !!deps.env.OWNER_EMAIL && me.email === deps.env.OWNER_EMAIL;
-  const users = owner
-    ? deps.users
-        .list()
-        .map((user) => {
-          const sum = zero();
-          for (const row of rowsFor(deps.users.data(user).db, range))
-            add(sum, { ...row, calls: 1 });
-          return { name: user.name, email: user.email, me: user.id === me.id, ...sum };
-        })
-        .sort((a, b) => b.costMicros - a.costMicros)
-    : null;
+  // From users.db's per-user monthly totals (each user's own local month), so the
+  // report never opens anyone else's database.
+  const totals = owner ? deps.users.usageTotals.forMonth(selected) : null;
+  const users =
+    owner && totals
+      ? deps.users
+          .list()
+          .map((user) => ({
+            name: user.name,
+            email: user.email,
+            me: user.id === me.id,
+            ...(totals.get(user.id) ?? zero()),
+          }))
+          .sort((a, b) => b.costMicros - a.costMicros)
+      : null;
 
   return {
     month: selected,

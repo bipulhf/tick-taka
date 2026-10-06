@@ -9,6 +9,7 @@ import { createHandleCache } from "./handle-cache";
 import { createJobRunStore } from "./job-runs";
 import { seedDefaults } from "./seed";
 import { createSessionStore } from "./sessions";
+import { createUsageTotalStore } from "./usage-totals";
 import { deleteUserFiles } from "./user-files";
 
 /** Open user databases: at most 50, each closed after 10 idle minutes. */
@@ -100,6 +101,7 @@ export function createUserRegistry(
   const open = createHandleCache<UserData>({ ...HANDLE_LIMITS, ...options.handles, now });
   const sessions = createSessionStore(registry, now);
   const jobRuns = createJobRunStore(registry);
+  const usageTotals = createUsageTotalStore(registry);
 
   /** The owner inherits the single-user data once, on their first sign-in. */
   const claimsLegacy = (email: string) =>
@@ -122,6 +124,8 @@ export function createUserRegistry(
     sessions,
     /** When each nightly job last ran for each user. */
     jobRuns,
+    /** Each user's AI use per month, for the owner's report. */
+    usageTotals,
 
     find(id: string): User | undefined {
       const row = byId.get(id);
@@ -221,6 +225,7 @@ export function createUserRegistry(
     remove(user: User): void {
       sessions.removeForUser(user.id);
       jobRuns.removeForUser(user.id);
+      usageTotals.removeForUser(user.id);
       open.close(user.id);
       deleteUserFiles(dataPaths(user), user.legacy);
       removeUser.run(user.id);

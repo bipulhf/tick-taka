@@ -3,7 +3,9 @@ import { newId } from "@tick-taka/shared/ids";
 import { type AiFeature, isAiFeatureEnabled } from "@tick-taka/shared/schemas/settings";
 import { and, gte, isNull, lt, sql } from "drizzle-orm";
 import type { z } from "zod";
+import type { Db } from "../db/client";
 import { aiUsage } from "../db/schema/system";
+import type { UsageTotals } from "../db/usage-totals";
 import type { Deps } from "../lib/deps";
 import { AppError } from "../lib/errors";
 import { errorFields, log } from "../lib/log";
@@ -37,7 +39,8 @@ export function logUsage(
   model: string,
   usage: AiUsage,
 ) {
-  const now = deps.now();
+  const { now, timeZone } = userTime(deps);
+  const cost = costMicros(deps.env, model, tier, usage);
   deps.db
     .insert(aiUsage)
     .values({
@@ -46,11 +49,36 @@ export function logUsage(
       model,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
-      costMicros: costMicros(deps.env, model, tier, usage),
+      costMicros: cost,
       createdAt: now,
       updatedAt: now,
     })
     .run();
+  // The owner's report reads these totals instead of every user's database.
+  const user = currentScope()?.user;
+  if (user)
+    deps.users.usageTotals.add(user.id, toLocalMonth(now, timeZone), {
+      calls: 1,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      costMicros: cost,
+    });
+}
+
+/** Every month's totals from this user's own ai_usage rows (to rebuild users.db's copy). */
+export function usageTotalsByMonth(db: Db, timeZone: string): Map<string, UsageTotals> {
+  const months = new Map<string, UsageTotals>();
+  const rows = db.select().from(aiUsage).where(isNull(aiUsage.deletedAt)).all();
+  for (const row of rows) {
+    const month = toLocalMonth(row.createdAt, timeZone);
+    const sum = months.get(month) ?? { calls: 0, inputTokens: 0, outputTokens: 0, costMicros: 0 };
+    sum.calls += 1;
+    sum.inputTokens += row.inputTokens;
+    sum.outputTokens += row.outputTokens;
+    sum.costMicros += row.costMicros;
+    months.set(month, sum);
+  }
+  return months;
 }
 
 /**

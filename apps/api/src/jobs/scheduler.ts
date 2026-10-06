@@ -1,5 +1,6 @@
 import { localParts, safeTimeZone, toLocalDate } from "@tick-taka/shared/dates";
 import { Cron } from "croner";
+import { usageTotalsByMonth } from "../ai/usage";
 import type { User, UserData } from "../db/user-registry";
 import type { Deps } from "../lib/deps";
 import { errorFields, log, userTag } from "../lib/log";
@@ -12,11 +13,19 @@ interface NightlyJob {
   name: string;
   /** Local hour, in the user's own time zone, from which the job is due each day. */
   hour: number;
-  run(deps: Deps, data: UserData, now: number, timeZone: string): unknown;
+  run(deps: Deps, data: UserData, now: number, timeZone: string, user: User): unknown;
 }
 
 const JOBS: NightlyJob[] = [
   { name: "overdue-bills", hour: 0, run: (deps) => recurringService(deps).markOverdue() },
+  {
+    // Recounts users.db's AI totals from the user's own rows: fills in months from
+    // before the totals existed, and any call whose total failed to record.
+    name: "usage-totals",
+    hour: 0,
+    run: (deps, data, _now, timeZone, user) =>
+      deps.users.usageTotals.replace(user.id, usageTotalsByMonth(data.db, timeZone)),
+  },
   {
     name: "nightly-backup",
     hour: 3,
@@ -40,7 +49,7 @@ function runJobsFor(deps: Deps, user: User, now: number): void {
       for (const job of JOBS) {
         if (hour < job.hour || deps.users.jobRuns.lastDate(user.id, job.name) === today) continue;
         try {
-          const result = job.run(deps, data, now, timeZone);
+          const result = job.run(deps, data, now, timeZone, user);
           deps.users.jobRuns.record(user.id, job.name, today, now);
           log("info", "job", { job: job.name, user: tag, result });
         } catch (error) {

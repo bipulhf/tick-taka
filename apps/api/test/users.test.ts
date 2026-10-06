@@ -217,6 +217,44 @@ describe("AI budget", () => {
   });
 });
 
+describe("AI usage totals", () => {
+  test("the owner's report reads users.db totals, not other users' databases", async () => {
+    const ai = new FakeAi();
+    const ctx = await createTestContext({ ai, env: { OWNER_EMAIL: "test@example.com" } });
+    const other = await ctx.tokenFor("sub-other", "other@example.com");
+    ai.queueJson({ subtasks: [] });
+    await ctx.request("POST", "/ai/breakdown", { title: "y" }, as(other));
+    const otherUser = ctx.deps.users.list().find((u) => u.email === "other@example.com")!;
+    expect(ctx.deps.users.usageTotals.forMonth("2026-10").get(otherUser.id)?.calls).toBe(1);
+
+    // Drop the other user's open database: the report must not reopen it.
+    const opened: string[] = [];
+    const data = ctx.deps.users.data.bind(ctx.deps.users);
+    ctx.deps.users.data = (user) => {
+      opened.push(user.email);
+      return data(user);
+    };
+    const report = await ctx.request<{ users: { email: string; calls: number }[] }>(
+      "GET",
+      "/ai/usage",
+    );
+    expect(report.body.users.find((u) => u.email === "other@example.com")?.calls).toBe(1);
+    expect(opened).not.toContain("other@example.com");
+  });
+
+  test("the nightly recount rebuilds totals from each user's own rows", async () => {
+    const ai = new FakeAi();
+    const ctx = await createTestContext({ ai });
+    ai.queueJson({ subtasks: [] });
+    await ctx.request("POST", "/ai/breakdown", { title: "x" });
+    const me = ctx.deps.users.list()[0]!;
+    ctx.deps.users.usageTotals.removeForUser(me.id);
+    expect(ctx.deps.users.usageTotals.forMonth("2026-10").get(me.id)).toBeUndefined();
+    await runHourlyJobs(ctx.deps);
+    expect(ctx.deps.users.usageTotals.forMonth("2026-10").get(me.id)?.calls).toBe(1);
+  });
+});
+
 describe("nightly jobs", () => {
   test("back up each user at 3 am in their own time zone, once a day", async () => {
     const backups = mkdtempSync(join(tmpdir(), "tt-jobs-"));

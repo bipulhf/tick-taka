@@ -22,6 +22,7 @@ import { useOutbox } from "@/lib/outbox";
 import { pickDate, pickTime } from "@/lib/pick-date";
 import { useAiStatus, useAreas, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
+import { userTime } from "@/lib/user-time";
 import { useTaskActions } from "./use-task-actions";
 
 type Priority = "low" | "normal" | "high";
@@ -71,7 +72,7 @@ export function TaskSheet({ id }: { id: string | null }) {
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
   const ai = useAiStatus();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const today = toLocalDate(Date.now(), timeZone);
   const query = useQuery({
     queryKey: ["task", id],

@@ -25,6 +25,7 @@ import { Text } from "@/components/ui/text";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { formatLocalDate, formatMonth } from "@/lib/format";
 import { useSettings } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 import { useRecurring, useTasks } from "./queries";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -32,8 +33,8 @@ const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 /** Month and week views showing tasks, time blocks and bills together. */
 export function CalendarView() {
   const { data: settings } = useSettings();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
-  const weekStartsOn = settings?.weekStartsOn ?? 6;
+  const timeZone = userTime(settings).timeZone;
+  const weekStartsOn = userTime(settings).weekStartsOn;
   const today = toLocalDate(Date.now(), timeZone);
   const [mode, setMode] = useState<"month" | "week">("month");
   const [month, setMonth] = useState(today.slice(0, 7));

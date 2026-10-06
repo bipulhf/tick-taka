@@ -11,6 +11,7 @@ import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useAreas, useSettings } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 import { useColors } from "@/theme/colors";
 import { useFocusStats } from "./queries";
 
@@ -19,10 +20,10 @@ export function FocusStats() {
   const colors = useColors();
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const [weeksBack, setWeeksBack] = useState(0);
   const weekStart = addDays(
-    startOfWeek(toLocalDate(Date.now(), timeZone), settings?.weekStartsOn ?? 6),
+    startOfWeek(toLocalDate(Date.now(), timeZone), userTime(settings).weekStartsOn),
     -7 * weeksBack,
   );
   const stats = useFocusStats(

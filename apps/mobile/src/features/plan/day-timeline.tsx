@@ -17,6 +17,7 @@ import { useOutbox } from "@/lib/outbox";
 import { pickTime } from "@/lib/pick-date";
 import { useAiStatus, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
+import { userTime } from "@/lib/user-time";
 import { CompactTask, type PlanAction } from "./compact-task";
 import { type PlanTask, useTasks } from "./queries";
 import { useMoveTask } from "./use-move-task";
@@ -34,7 +35,7 @@ export function DayTimeline({ date }: { date: string }) {
   const { data: settings } = useSettings();
   const ai = useAiStatus();
   const send = useOutbox();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const tasks = useTasks({
     status: "inbox,open,done",
     from: String(startOfLocalDay(date, timeZone)),

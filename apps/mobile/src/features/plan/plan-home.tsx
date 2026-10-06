@@ -16,6 +16,7 @@ import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { formatLocalDate, plural } from "@/lib/format";
 import { useAreas, useSettings } from "@/lib/queries";
 import { useRemove } from "@/lib/use-remove";
+import { userTime } from "@/lib/user-time";
 import { useProjects, useTasks } from "./queries";
 
 type Tab = "inbox" | "upcoming" | "projects";
@@ -26,7 +27,7 @@ export function PlanHome() {
   const [tab, setTab] = useState<Tab>("inbox");
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const today = toLocalDate(Date.now(), timeZone);
   const inbox = useTasks({ status: "inbox" });
   const upcoming = useTasks({

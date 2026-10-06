@@ -13,6 +13,7 @@ import { api, unwrap } from "@/lib/api";
 import { formatLocalDate } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useSettings } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 import { useTaskActions } from "./use-task-actions";
 
 /** Pick the three tasks that matter most for a day. Three is small enough to say no to the rest. */
@@ -20,7 +21,7 @@ export function PickTopThreeSheet({ date }: { date: string }) {
   const router = useRouter();
   const actions = useTaskActions();
   const { data: settings } = useSettings();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const candidates = useQuery({
     queryKey: ["tasks", "top3-candidates", date],
     queryFn: () =>

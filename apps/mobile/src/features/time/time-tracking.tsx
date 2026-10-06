@@ -20,6 +20,7 @@ import { useOutbox } from "@/lib/outbox";
 import { useAreas, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { userTime } from "@/lib/user-time";
 import { useRunningTimer, useTimeEntries } from "./queries";
 
 /** Start/stop timer or manual entry, per area, with a billable flag. */
@@ -29,9 +30,9 @@ export function TimeTracking() {
   const remove = useRemove();
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const today = toLocalDate(Date.now(), timeZone);
-  const weekStart = startOfWeek(today, settings?.weekStartsOn ?? 6);
+  const weekStart = startOfWeek(today, userTime(settings).weekStartsOn);
   const from = startOfLocalDay(weekStart, timeZone);
   const to = startOfLocalDay(addDays(weekStart, 7), timeZone);
   const entries = useTimeEntries(from, to);

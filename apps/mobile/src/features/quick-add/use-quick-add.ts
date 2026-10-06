@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api, unwrap } from "@/lib/api";
 import type { OutboxRequest } from "@/lib/outbox-policy";
 import { useAiStatus, useHourlyRate, useReference } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 
 export type DayChoice = "inbox" | "today" | "tomorrow" | "evening" | "someday";
 
@@ -39,7 +40,7 @@ export function useQuickAdd(initialText = "", initialKind: QuickAddKind | null =
   const [aiBusy, setAiBusy] = useState(false);
   const requestSeq = useRef(0);
 
-  const timeZone = reference.settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(reference.settings).timeZone;
   const context = useMemo<QuickAddContext>(
     () => ({
       now: Date.now(),

@@ -12,6 +12,7 @@ import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatMonth, plural } from "@/lib/format";
 import { useSettings } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 import { useColors } from "@/theme/colors";
 import { useAiUsage } from "./queries";
 
@@ -56,7 +57,7 @@ function Row({ title, detail, value }: { title: string; detail: string; value: s
 export function AiUsageScreen() {
   const colors = useColors();
   const { data: settings } = useSettings();
-  const current = toLocalMonth(Date.now(), settings?.timeZone ?? "Asia/Dhaka");
+  const current = toLocalMonth(Date.now(), userTime(settings).timeZone);
   const [monthsBack, setMonthsBack] = useState(0);
   const month = addMonths(current, -monthsBack);
   const usage = useAiUsage(isLocalMonth(month) ? month : undefined);

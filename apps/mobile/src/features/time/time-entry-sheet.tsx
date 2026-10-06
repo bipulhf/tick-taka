@@ -17,6 +17,7 @@ import { pickTime } from "@/lib/pick-date";
 import { useAreas, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { userTime } from "@/lib/user-time";
 import type { useTimeEntries } from "./queries";
 
 type TimeEntry = NonNullable<ReturnType<typeof useTimeEntries>["data"]>[number];
@@ -49,7 +50,7 @@ function TimeEntryForm({ entry }: { entry: TimeEntry | null }) {
   const remove = useRemove();
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const [minutes, setMinutes] = useState(() =>
     entry?.endedAt ? Math.max(1, Math.round((entry.endedAt - entry.startedAt) / 60_000)) : 60,
   );

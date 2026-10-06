@@ -17,6 +17,7 @@ import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMinutes } from "@/lib/format";
 import { pickDate } from "@/lib/pick-date";
 import { useSettings } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 import { CompactTask, type PlanAction } from "./compact-task";
 import { type PlanTask, useTasks } from "./queries";
 import { useMoveTask } from "./use-move-task";
@@ -25,9 +26,11 @@ import { useMoveTask } from "./use-move-task";
 export function WeekPlanner() {
   const router = useRouter();
   const { data: settings } = useSettings();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const today = toLocalDate(Date.now(), timeZone);
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(today, settings?.weekStartsOn ?? 6));
+  const [weekStart, setWeekStart] = useState(() =>
+    startOfWeek(today, userTime(settings).weekStartsOn),
+  );
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const week = useTasks({
     status: "inbox,open,done",

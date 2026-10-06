@@ -24,6 +24,7 @@ import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMonth } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 import { useInsights, useTransactions } from "./queries";
 import { TransactionRow, useLookup } from "./transaction-row";
 
@@ -36,8 +37,8 @@ export function MoneyCalendar() {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const hidden = usePrivacy();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
-  const weekStartsOn = settings?.weekStartsOn ?? 6;
+  const timeZone = userTime(settings).timeZone;
+  const weekStartsOn = userTime(settings).weekStartsOn;
   const today = toLocalDate(Date.now(), timeZone);
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selected, setSelected] = useState(today);

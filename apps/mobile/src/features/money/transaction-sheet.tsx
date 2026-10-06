@@ -36,6 +36,7 @@ import { pickReceipt, receiptSource, uploadReceipt } from "@/lib/receipts";
 import { editTime } from "@/lib/server-clock";
 import { playSound } from "@/lib/sounds";
 import { useRemove } from "@/lib/use-remove";
+import { userTime } from "@/lib/user-time";
 import { useEvents, useTransaction } from "./queries";
 
 type TxType = "expense" | "income" | "transfer";
@@ -74,7 +75,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
   const { data: events = [] } = useEvents();
   const ai = useAiStatus();
   const hourly = useHourlyRate();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const [keypadKey, setKeypadKey] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
 

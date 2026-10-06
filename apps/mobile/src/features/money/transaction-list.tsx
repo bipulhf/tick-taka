@@ -11,6 +11,7 @@ import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatLocalDate } from "@/lib/format";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 import { type Transaction, useTransactions } from "./queries";
 import { TransactionRow, useLookup } from "./transaction-row";
 
@@ -34,7 +35,7 @@ export function TransactionList({ accountId, eventId }: { accountId?: string; ev
     ...(eventId ? { eventId } : {}),
   });
   const filtered = Boolean(q || type || account || eventId);
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
   const sections: { title: string; data: Transaction[] }[] = [];
   for (const tx of items) {

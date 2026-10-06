@@ -28,6 +28,7 @@ import { pickDate } from "@/lib/pick-date";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { userTime } from "@/lib/user-time";
 
 type Kind = "bill" | "income";
 
@@ -52,7 +53,7 @@ function RecurringForm({ id }: { id: string | null }) {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const { data: settings } = useSettings();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const item = id ? list?.find((r) => r.id === id) : undefined;
   const [kind, setKind] = useState<Kind>(item?.kind ?? "bill");
   const [name, setName] = useState(item?.name ?? "");

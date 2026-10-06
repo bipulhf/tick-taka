@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { api, unwrap } from "./api";
 import { latestToday, nextDateCheckMs } from "./local-day";
+import { userTime } from "./user-time";
 
 /** Query keys in one place so writes can invalidate precisely when needed. */
 export const keys = {
@@ -40,7 +41,7 @@ export type TodayData = Awaited<ReturnType<typeof fetchToday>>;
 /** Today's date where the user lives; turns over at local midnight even with the app open. */
 export function useLocalToday(): string {
   const { data: settings } = useSettings();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const [date, setDate] = useState(() => toLocalDate(Date.now(), timeZone));
   useEffect(() => {
     const update = () => setDate(toLocalDate(Date.now(), timeZone));

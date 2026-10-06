@@ -5,6 +5,7 @@ import { useOutbox } from "@/lib/outbox";
 import { useSettings, useToday } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { resetOnSignOut } from "@/lib/user-data";
+import { userTime } from "@/lib/user-time";
 import { SafeToSpendWidget } from "./safe-to-spend-widget";
 import {
   EMPTY_CACHE,
@@ -34,6 +35,7 @@ export function useWidgetSync() {
   const send = useOutbox();
   const today = useToday();
   const { data: settings } = useSettings();
+  const { timeZone } = userTime(settings);
   const recent = useTransactions({ type: "expense", limit: "200" });
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export function useWidgetSync() {
       const previous = await readWidgetCache();
       const cache: WidgetCache = {
         signedIn: true,
-        ...widgetSnapshot(data, Date.now(), settings?.timeZone ?? "Asia/Dhaka"),
+        ...widgetSnapshot(data, Date.now(), timeZone),
         accountId: settings?.defaultAccountId ?? null,
         quick: transactions.length ? pickQuickEntries(transactions) : previous.quick,
         status: null,
@@ -69,5 +71,5 @@ export function useWidgetSync() {
         }),
       }).catch(() => {});
     })();
-  }, [today.data, recent.data, settings?.defaultAccountId, settings?.timeZone]);
+  }, [today.data, recent.data, settings?.defaultAccountId, timeZone]);
 }

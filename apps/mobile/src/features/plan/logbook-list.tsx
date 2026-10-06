@@ -13,18 +13,19 @@ import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatClock, formatLocalDate } from "@/lib/format";
 import { useAreas, useSettings } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 import { useTasks } from "./queries";
 
 /** Everything I finished; doubles as a timesheet when a job asks what I did. */
 export function LogbookList() {
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const today = toLocalDate(Date.now(), timeZone);
   const [q, setQ] = useState("");
   const [areaId, setAreaId] = useState<string | null>(null);
   const [weeksBack, setWeeksBack] = useState(0);
-  const weekStart = addDays(startOfWeek(today, settings?.weekStartsOn ?? 6), -7 * weeksBack);
+  const weekStart = addDays(startOfWeek(today, userTime(settings).weekStartsOn), -7 * weeksBack);
   const done = useTasks({
     status: "done",
     includeSubtasks: "true",

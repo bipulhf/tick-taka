@@ -11,6 +11,7 @@ import { keys, type TodayData } from "./queries";
 import { queryClient, scheduleRefresh, takeLegacyOutbox } from "./query-client";
 import { secureStorage } from "./secure-storage";
 import { updateToday } from "./today-cache";
+import { userTime } from "./user-time";
 
 export type { OutboxRequest } from "./outbox-policy";
 
@@ -72,8 +73,7 @@ function applyOptimistic(request: OutboxRequest) {
   const categories = queryClient.getQueryData<
     { id: string; parentId: string | null; budgetType: string }[]
   >(keys.categories);
-  const timeZone =
-    queryClient.getQueryData<{ timeZone: string }>(keys.settings)?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(queryClient.getQueryData<{ timeZone: string }>(keys.settings)).timeZone;
   updateToday(queryClient, (data: TodayData) =>
     withNewExpense(data, body, categories ?? [], timeZone),
   );

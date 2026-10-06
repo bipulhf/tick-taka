@@ -16,6 +16,7 @@ import { useInsights } from "@/features/money/queries";
 import { formatMinutes, formatMonth } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import { useAreas, useCategories, useSettings } from "@/lib/queries";
+import { userTime } from "@/lib/user-time";
 import { useChartColors, useColors } from "@/theme/colors";
 import { useMonthlySeries, useNetWorth } from "./queries";
 
@@ -47,7 +48,7 @@ export function InsightsScreen() {
   const { data: settings } = useSettings();
   const { data: categories = [] } = useCategories();
   const { data: areas = [] } = useAreas();
-  const timeZone = settings?.timeZone ?? "Asia/Dhaka";
+  const timeZone = userTime(settings).timeZone;
   const [range, setRange] = useState<Range>("this");
   const month = toLocalMonth(Date.now(), timeZone);
   const span =

@@ -279,15 +279,17 @@ nano apps/api/.env                # HOST=127.0.0.1, PORT=3003, TRUST_PROXY=true,
 chmod 600 apps/api/.env
 cd apps/api && pm2 start ecosystem.config.cjs && pm2 save && pm2 startup
 pm2 install pm2-logrotate
+sudo certbot certonly --nginx -d tick.mehedismathacademy.com   # certificate only
 sudo cp ~/tick-taka/deploy/nginx-tick-taka.conf /etc/nginx/sites-available/tick-taka
 sudo ln -s /etc/nginx/sites-available/tick-taka /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d tick.mehedismathacademy.com
 ```
 
-Certbot adds the HTTPS server block and the HTTP→HTTPS redirect to the installed copy;
-keep its `location /ai/` block (a 120 s read timeout and no buffering, for slow AI calls
-and the assistant's event stream) when you edit it later. Logs are one JSON line per
+`deploy/nginx-tick-taka.conf` is the whole site as it runs: the HTTP→HTTPS redirect,
+the TLS block with certbot's certificate paths and HSTS, and 120 s timeouts with no
+buffering for `/ai/` (slow AI calls, the assistant's event stream) and `/export`.
+`certbot certonly` never edits it, and renewals keep the same paths, so change the site
+here and copy it over again rather than editing the installed copy. Logs are one JSON line per
 request (`pm2 logs tick-taka-api`), each with the `x-request-id` the response carries.
 
 Updating: `git pull && bun install --frozen-lockfile && pm2 restart tick-taka-api`.

@@ -9,7 +9,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { confirmSignOut } from "@/features/settings/confirm-sign-out";
 import { ApiError } from "@/lib/api";
-import { profileStore, SignInCancelled, signInWithGoogle } from "@/lib/auth";
+import { profileStore, SignInCancelled, signedOutNoticeStore, signInWithGoogle } from "@/lib/auth";
 import { API_URL } from "@/lib/config";
 import { usePendingWrites } from "@/lib/connection";
 import { friendlyError } from "@/lib/error-copy";
@@ -41,6 +41,8 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
   // A profile without a token: the session expired and this phone still holds their data.
   const expired = useStore(profileStore);
+  // Set after the account was deleted, so the person knows it worked.
+  const notice = useStore(signedOutNoticeStore);
   const pending = usePendingWrites();
   const mood: TikiMood = busy ? "focused" : error ? "calm" : "happy";
 
@@ -102,6 +104,13 @@ export default function LoginScreen() {
               <Text variant="heading">Sign in again</Text>
               <Text variant="callout" tone="muted">
                 {`Your session ended. Sign in as ${expired.email} to carry on${pending > 0 ? ` and send the ${plural(pending, "change")} waiting on this phone` : ""}. Signing in with another account removes ${expired.name ?? expired.email}'s data from this phone.`}
+              </Text>
+            </View>
+          ) : notice ? (
+            <View className="gap-1" accessibilityLiveRegion="polite">
+              <Text variant="heading">Account deleted</Text>
+              <Text variant="callout" tone="muted">
+                {`${notice} Sign in with Google any time to start a new space.`}
               </Text>
             </View>
           ) : (

@@ -121,7 +121,6 @@ export function SettingsScreen() {
 
   return (
     <Screen title="Settings" tabBarPadding={false}>
-      <AccountSection />
       <ReminderStatusBanner />
       {groups.map((entries) => (
         <Group key={entries[0]!.href} inset={60}>
@@ -138,6 +137,8 @@ export function SettingsScreen() {
           ))}
         </Group>
       ))}
+      {/* Signing out and deleting the account come last, away from everyday settings. */}
+      <AccountSection />
     </Screen>
   );
 }

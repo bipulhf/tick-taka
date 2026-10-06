@@ -6,11 +6,13 @@ import {
 } from "@react-native-google-signin/google-signin";
 import * as SecureStore from "expo-secure-store";
 import { AppState } from "react-native";
+import { apiErrorFrom } from "./api";
 import { GOOGLE_WEB_CLIENT_ID } from "./config";
 import { apiUrl, connectAuth, request } from "./http";
 import { outbox } from "./outbox";
 import { errorMessage, mustWipeBeforeSignIn, sessionResponseSchema } from "./session";
 import { createSessionManager } from "./session-manager";
+import { createStore } from "./store";
 import { clearUserData } from "./user-data";
 
 export type { Profile } from "./session";
@@ -98,6 +100,7 @@ export async function signInWithGoogle(): Promise<void> {
   const previousUserId = profileStore.get()?.id ?? outbox.owner;
   if (mustWipeBeforeSignIn(previousUserId, session.data.user.id)) await clearUserData();
   await sessionManager.save(session.data);
+  signedOutNoticeStore.set(null);
 }
 
 /**
@@ -132,18 +135,19 @@ export async function signOut(): Promise<void> {
   await forgetUser();
 }
 
+/** A line for the login screen after the account itself went away (deleted). */
+export const signedOutNoticeStore = createStore<string | null>(null);
+
 /**
  * Deletes the account and all its data on the server (DELETE /auth/account), then
- * wipes the phone. Throws with the server's message if the server didn't delete it;
- * the phone is left untouched in that case.
+ * wipes the phone. Throws an ApiError (for lib/error-copy.ts) if the server didn't
+ * delete it; the phone is left untouched in that case.
  */
 export async function deleteAccount(): Promise<void> {
   const response = await request(apiUrl("/auth/account"), { method: "DELETE", timeout: 30_000 });
-  if (!response.ok) {
-    const body: unknown = await response.json().catch(() => null);
-    throw new Error(errorMessage(body) ?? `Couldn't delete the account (${response.status})`);
-  }
+  if (!response.ok) throw apiErrorFrom(response.status, await response.json().catch(() => null));
   await forgetUser();
+  signedOutNoticeStore.set("Your account and everything in it were deleted.");
 }
 
 connectAuth({ token: () => tokenStore.get(), onUnauthorized: sessionManager.onUnauthorized });

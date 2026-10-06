@@ -1,44 +1,21 @@
 import { Image } from "expo-image";
-import { useState } from "react";
-import { Alert, View } from "react-native";
+import { useRouter } from "expo-router";
+import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
-import { deleteAccount, profileStore } from "@/lib/auth";
-import { friendlyError } from "@/lib/error-copy";
-import { plural } from "@/lib/format";
-import { notify } from "@/lib/notify";
-import { outbox } from "@/lib/outbox";
+import { profileStore } from "@/lib/auth";
 import { useStore } from "@/lib/store";
 import { confirmSignOut } from "./confirm-sign-out";
 
-/** The Google account this space belongs to, and the way out of it. */
+/**
+ * The Google account this space belongs to, and the way out of it. It sits at the end
+ * of Settings; deleting the account opens its own page with export and a typed confirm.
+ */
 export function AccountSection() {
+  const router = useRouter();
   const profile = useStore(profileStore);
-  const [deleting, setDeleting] = useState(false);
-
-  const remove = async () => {
-    setDeleting(true);
-    try {
-      await deleteAccount();
-    } catch (error) {
-      notify(friendlyError(error));
-      setDeleting(false);
-    }
-  };
-
-  const confirmDelete = () => {
-    const pending = outbox.size;
-    Alert.alert(
-      "Delete your account?",
-      `This permanently deletes your account and everything in it from the server: tasks, money records, receipt photos and backups${pending > 0 ? `, plus ${plural(pending, "change")} not yet synced` : ""}. It can't be undone. Export your data first if you want a copy.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete account", style: "destructive", onPress: () => void remove() },
-      ],
-    );
-  };
   return (
     <Card className="gap-4">
       <View className="flex-row items-center gap-3">
@@ -66,12 +43,11 @@ export function AccountSection() {
       </View>
       <Button label="Sign out" icon="logout" variant="secondary" onPress={confirmSignOut} />
       <Button
-        label="Delete account"
+        label="Delete account…"
         icon="delete-outline"
         variant="ghost"
         size="sm"
-        loading={deleting}
-        onPress={confirmDelete}
+        onPress={() => router.push("/settings/delete-account")}
       />
     </Card>
   );

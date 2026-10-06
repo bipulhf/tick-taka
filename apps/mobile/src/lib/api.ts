@@ -24,15 +24,18 @@ interface JsonResponse {
   json(): Promise<unknown>;
 }
 
-async function toError(response: JsonResponse): Promise<ApiError> {
-  const body = (await response.json().catch(() => null)) as {
-    error?: { code: string; message: string };
-  } | null;
+/** An ApiError from a status and an already-read error body (`{ error: { code, message } }`). */
+export function apiErrorFrom(status: number, body: unknown): ApiError {
+  const error = (body as { error?: { code?: string; message?: string } } | null)?.error;
   return new ApiError(
-    response.status,
-    body?.error?.code ?? "http_error",
-    body?.error?.message ?? `Request failed (${response.status})`,
+    status,
+    error?.code ?? "http_error",
+    error?.message ?? `Request failed (${status})`,
   );
+}
+
+async function toError(response: JsonResponse): Promise<ApiError> {
+  return apiErrorFrom(response.status, await response.json().catch(() => null));
 }
 
 /** Body type of the 2xx branches only; validation-error branches are dropped. */

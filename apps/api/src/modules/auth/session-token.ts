@@ -12,11 +12,13 @@ export const TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 export async function issueSession(
   options: { secret: string; users: UserRegistry; now: number },
   user: User,
+  /** The session being refreshed; it keeps working until the new token is used. */
+  replaces: string | null = null,
 ): Promise<{ token: string; expiresAt: number }> {
   const issuedAt = Math.floor(options.now / 1000);
   const exp = issuedAt + TOKEN_TTL_SECONDS;
   const jti = newId(options.now);
-  options.users.sessions.create(jti, user.id, exp * 1000);
+  options.users.sessions.create(jti, user.id, exp * 1000, replaces);
   const token = await sign({ sub: user.id, jti, iat: issuedAt, exp }, options.secret, "HS256");
   return { token, expiresAt: exp * 1000 };
 }

@@ -1,5 +1,7 @@
+import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { decode, sign } from "hono/jwt";
+import { createSessionStore } from "../src/db/sessions";
 import { createTestContext, googleToken, JWT_SECRET } from "./helpers";
 
 const DAY_MS = 86_400_000;
@@ -44,10 +46,49 @@ describe("sessions", () => {
     expect(next.expiresAt).toBeGreaterThanOrEqual(first.expiresAt);
     expect(next.expiresAt - ctx.clock.now).toBeGreaterThan(29 * DAY_MS);
 
+    // Requests already in flight with the old token still land...
+    const inFlight = await ctx.request("GET", "/me", undefined, as(first.token));
+    expect(inFlight.status).toBe(200);
+    expect((await ctx.request("GET", "/me", undefined, as(next.token))).status).toBe(200);
+    // ...and once the new token is in use, the old one has a minute left.
+    ctx.clock.advance(30_000);
+    expect((await ctx.request("GET", "/me", undefined, as(first.token))).status).toBe(200);
+    ctx.clock.advance(31_000);
     const old = await ctx.request("GET", "/me", undefined, as(first.token));
     expect(old.status).toBe(401);
     expect(old.body).toMatchObject({ error: { code: "session_expired" } });
     expect((await ctx.request("GET", "/me", undefined, as(next.token))).status).toBe(200);
+  });
+
+  test("a refresh whose reply was lost leaves the old token working", async () => {
+    const ctx = await context();
+    const first = await signIn(ctx);
+    const lost = await ctx.app.request("/auth/refresh", {
+      method: "POST",
+      headers: as(first.token),
+    });
+    expect(lost.status).toBe(200);
+    // The phone never got the new token, so it never uses it.
+    ctx.clock.advance(DAY_MS);
+    expect((await ctx.request("GET", "/me", undefined, as(first.token))).status).toBe(200);
+    const retry = await ctx.app.request("/auth/refresh", {
+      method: "POST",
+      headers: as(first.token),
+    });
+    expect(retry.status).toBe(200);
+  });
+
+  test("logout with the new token also ends the one it replaced", async () => {
+    const ctx = await context();
+    const first = await signIn(ctx);
+    const res = await ctx.app.request("/auth/refresh", {
+      method: "POST",
+      headers: as(first.token),
+    });
+    const { token } = (await res.json()) as { token: string };
+    await ctx.app.request("/auth/logout", { method: "POST", headers: as(token) });
+    expect((await ctx.request("GET", "/me", undefined, as(first.token))).status).toBe(401);
+    expect((await ctx.request("GET", "/me", undefined, as(token))).status).toBe(401);
   });
 
   test("logout revokes the session", async () => {
@@ -129,5 +170,17 @@ describe("sessions", () => {
       expect(res.status).toBe(401);
       expect(await errorCode(res)).toBe("unauthorized");
     }
+  });
+
+  test("a users.db from before refresh grace gains the column and keeps its sessions", () => {
+    const registry = new Database(":memory:");
+    registry.exec(`CREATE TABLE sessions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL, last_used_at INTEGER NOT NULL, expires_at INTEGER NOT NULL,
+      revoked_at INTEGER)`);
+    registry.exec("INSERT INTO sessions VALUES ('s1', 'u1', 1, 1, 9999999999999, NULL)");
+    const sessions = createSessionStore(registry, () => 2);
+    expect(sessions.find("s1")).toMatchObject({ userId: "u1", replaces: null });
+    sessions.create("s2", "u1", 9999999999999, "s1");
+    expect(sessions.find("s2")?.replaces).toBe("s1");
   });
 });

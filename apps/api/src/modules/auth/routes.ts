@@ -32,8 +32,12 @@ function signedIn() {
 export const authRoutes = (deps: Deps) => {
   // 5 attempts per 15 minutes per IP (the spec's limit); see clientIp for which IP.
   const limiter = new SlidingWindowLimiter(5, 15 * 60 * 1000);
-  const issue = (user: User) =>
-    issueSession({ secret: deps.env.JWT_SECRET, users: deps.users, now: deps.now() }, user);
+  const issue = (user: User, replaces: string | null = null) =>
+    issueSession(
+      { secret: deps.env.JWT_SECRET, users: deps.users, now: deps.now() },
+      user,
+      replaces,
+    );
 
   return (
     new Hono()
@@ -59,8 +63,9 @@ export const authRoutes = (deps: Deps) => {
       })
       .post("/refresh", requireAuth(deps), async (c) => {
         const { user, sessionId } = signedIn();
-        const { token, expiresAt } = await issue(user);
-        if (sessionId) deps.users.sessions.revoke(sessionId);
+        // Not revoked here: requests the phone already sent with the old token would
+        // come back 401. It retires a minute after the new token is first used.
+        const { token, expiresAt } = await issue(user, sessionId ?? null);
         return c.json({ token, expiresAt, user: profileOf(user) });
       })
       .post("/logout", requireAuth(deps), (c) => {

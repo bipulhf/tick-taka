@@ -317,11 +317,15 @@ export function taskService(deps: Deps) {
       });
     },
 
-    /** One tap moves every overdue task to today, tomorrow or back to the inbox. */
+    /**
+     * One tap moves every overdue task to today, tomorrow or back to the inbox. The
+     * reply lists the moved rows with their new stamp, so an edit the phone queued
+     * after the tap can be lifted past it (last write wins).
+     */
     rescueOverdue(
       target: "today" | "tomorrow" | "inbox",
       date?: LocalDate,
-    ): { moved: number; before: TaskBefore[] } {
+    ): { moved: number; before: TaskBefore[]; tasks: Task[] } {
       const { timeZone, today: localToday } = userTime(deps);
       const today = date ?? localToday;
       const startOfToday = startOfLocalDay(today, timeZone);
@@ -373,7 +377,9 @@ export function taskService(deps: Deps) {
             .run();
         }
       });
-      return { moved: overdue.length, before: overdue.map(before) };
+      const ids = overdue.map((task) => task.id);
+      const moved = ids.length ? db.select().from(tasks).where(inArray(tasks.id, ids)).all() : [];
+      return { moved: overdue.length, before: overdue.map(before), tasks: moved };
     },
 
     /**

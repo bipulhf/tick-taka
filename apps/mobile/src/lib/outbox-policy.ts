@@ -92,19 +92,26 @@ function isStampedRow(value: unknown): value is StampedRow {
   return typeof row.id === "string" && typeof row.updatedAt === "number";
 }
 
-/** Records in a create's reply: the reply itself, or rows one level down (`{ started, stopped }`). */
+/** A row, or the rows of a list (bulk moves answer with lists). */
+const rowsIn = (value: unknown): StampedRow[] =>
+  Array.isArray(value) ? value.filter(isStampedRow) : isStampedRow(value) ? [value] : [];
+
+/**
+ * Records in a write's reply: the reply itself, a list of rows, or rows and lists one
+ * level down (`{ started, stopped }`, `{ moved: [...] }`, `{ tasks: [...] }`).
+ */
 export function stampedRows(response: unknown): StampedRow[] {
-  if (isStampedRow(response)) return [response];
-  if (!response || typeof response !== "object" || Array.isArray(response)) return [];
-  return Object.values(response).filter(isStampedRow);
+  if (isStampedRow(response) || Array.isArray(response)) return rowsIn(response);
+  if (!response || typeof response !== "object") return [];
+  return Object.values(response).flatMap(rowsIn);
 }
 
 /**
- * The server stamps a new record with the time the create arrived, which for a write
- * queued offline is the replay time. An edit made on the phone after the create but
- * queued behind it carries an earlier time and would lose to the create (last write
- * wins). Once the create lands, queued edits of that record move up to its stamp.
- * Returns the entries that changed.
+ * The server stamps a record it writes with the time the write arrived, which for a
+ * write queued offline is the replay time. An edit made on the phone after a create or
+ * a bulk move but queued behind it carries an earlier time and would lose to it (last
+ * write wins). Once that write lands, queued edits of the records in its reply move up
+ * to their stamp. Returns the entries that changed.
  */
 export function followCreatedRecords(entries: OutboxEntry[], response: unknown): OutboxEntry[] {
   const rows = stampedRows(response);

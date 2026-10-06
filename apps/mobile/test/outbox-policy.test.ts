@@ -88,6 +88,31 @@ describe("create, then edit, replayed later", () => {
     followCreatedRecords([edit], { started: { id: "s1", updatedAt: 5_000 }, stopped: null });
     expect(edit.request.body).toEqual({ updatedAt: 9_000 });
   });
+
+  // QA-203: bulk moves answer with lists of rows, which must be followed too.
+  test("rows listed in a bulk move's reply lift the edits queued after it", () => {
+    const rename = entry({
+      method: "PATCH",
+      path: "/tasks/t1",
+      body: { title: "Call bank about card", updatedAt: 1_000 },
+    });
+    const untouched = entry({ method: "PATCH", path: "/tasks/t9", body: { updatedAt: 1_000 } });
+    followCreatedRecords([rename, untouched], {
+      moved: 1,
+      before: [{ id: "t1", title: "Call bank" }],
+      tasks: [{ id: "t1", updatedAt: 7_200_000 }],
+    });
+    expect(rename.request.body).toEqual({ title: "Call bank about card", updatedAt: 7_200_000 });
+    expect(untouched.request.body).toEqual({ updatedAt: 1_000 });
+
+    const later = entry({ method: "PATCH", path: "/tasks/t2", body: { updatedAt: 1_000 } });
+    followCreatedRecords([later], { moved: [{ id: "t2", updatedAt: 3_600_000 }], before: [] });
+    expect(later.request.body).toEqual({ updatedAt: 3_600_000 });
+
+    const listed = entry({ method: "PATCH", path: "/tasks/t3", body: { updatedAt: 1_000 } });
+    followCreatedRecords([listed], [{ id: "t3", updatedAt: 5_000 }]);
+    expect(listed.request.body).toEqual({ updatedAt: 5_000 });
+  });
 });
 
 describe("saved queue", () => {

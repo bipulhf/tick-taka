@@ -168,6 +168,32 @@ describe("outbox queue", () => {
     expect(received[1]!.body).toEqual({ title: "Buy milk and eggs", updatedAt: 7_200_000 });
   });
 
+  // QA-203: "bring old tasks into today", then a rename, both made offline.
+  test("an edit queued behind a bulk move is not lost to the move's server time", async () => {
+    const { queue, received, answers, state } = harness({ online: false });
+    await queue.load();
+    // The server's reply shape for /tasks/rescue-overdue, stamped at replay time.
+    answers.push(() => ({
+      moved: 1,
+      before: [{ id: "t1", title: "Call bank" }],
+      tasks: [{ id: "t1", title: "Call bank", updatedAt: 7_200_000 }],
+    }));
+    void queue.enqueue({
+      method: "POST",
+      path: "/tasks/rescue-overdue",
+      body: { target: "today" },
+    });
+    void queue.enqueue({
+      method: "PATCH",
+      path: "/tasks/t1",
+      body: { title: "Call bank about card", updatedAt: 60_000 },
+    });
+    state.online = true;
+    queue.kick();
+    await idle(queue);
+    expect(received[1]!.body).toEqual({ title: "Call bank about card", updatedAt: 7_200_000 });
+  });
+
   test("saved writes go before ones queued while loading, legacy writes before both", async () => {
     const saved: PersistedOutbox = {
       version: 1,

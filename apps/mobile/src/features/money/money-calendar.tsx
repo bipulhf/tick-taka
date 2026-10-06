@@ -13,6 +13,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
+import { CALENDAR_GRID } from "@/components/ui/calendar-grid";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MonthStepper } from "@/components/ui/month-stepper";
@@ -70,7 +71,7 @@ export function MoneyCalendar() {
         skeleton={<Skeleton className="h-[26rem] w-full rounded-3xl" />}
       >
         {() => (
-          <Card className="flex-row flex-wrap p-2">
+          <Card className="flex-row flex-wrap" style={CALENDAR_GRID}>
             {WEEK_OFFSETS.map((i) => (
               <Text
                 key={`weekday-${(weekStartsOn + i) % 7}`}
@@ -92,7 +93,6 @@ export function MoneyCalendar() {
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={`${formatLocalDate(date)}, spent ${hidden ? "amount hidden" : formatAmount(spent)}`}
-                  hitSlop={{ left: 3, right: 3 }}
                   // Neutral cells with a small coral mark sized by the day's spend, not a heat fill.
                   className={`min-h-16 w-[14.28%] items-center justify-center gap-1.5 rounded-xl py-1 ${isSelected ? "bg-ink" : ""}`}
                 >

@@ -65,6 +65,7 @@ Caption (13) is the smallest text; nothing goes below it except tab labels (12).
 - Screen padding 20; 28 between sections; 12 inside a group.
 - Grouped lists (one rounded surface, rows separated by hairlines) instead of many separate cards. A card is used only for a hero (safe to spend, running timer).
 - Rows are at least 60 dp tall with a leading icon or checkbox, a title, an optional subtitle and one trailing value or chevron.
+- Month grids (7 columns) bleed 12 dp into the screen padding and drop the card's side padding, so each day is at least 48 dp wide on a 360 dp phone. Day cells touch, so they never take a hitSlop that would overlap a neighbour.
 - Large title at the top of each tab; pushed screens get a back chevron beside the title.
 
 ## Components

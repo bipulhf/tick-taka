@@ -13,6 +13,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
+import { CALENDAR_GRID } from "@/components/ui/calendar-grid";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
@@ -88,7 +89,7 @@ export function CalendarView() {
           { value: "week", label: "Week" },
         ]}
       />
-      <Card className="p-2">
+      <Card style={CALENDAR_GRID}>
         <View className="flex-row">
           {headers.map((label, i) => (
             <Text
@@ -115,7 +116,6 @@ export function CalendarView() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
                 accessibilityLabel={`${formatLocalDate(date)}, ${plural(count, "task")}${hasBills ? ", bills due" : ""}`}
-                hitSlop={{ left: 3, right: 3 }}
                 className={`min-h-14 w-[14.28%] items-center justify-center rounded-xl py-1 ${isSelected ? "bg-ink" : date === today ? "bg-sky/15" : ""}`}
               >
                 <Text

@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useRef } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Alert, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tiki } from "@/components/tiki/tiki";
 import { Chip } from "@/components/ui/chip";
@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { useKeyboardHeight } from "@/components/ui/use-keyboard-height";
 import { ChatComposer } from "./chat-composer";
+import { clearChatWarning } from "./clear-chat-warning";
 import { LiveBubble, MessageBubble } from "./message-bubble";
 import { useAssistant } from "./use-assistant";
 
@@ -63,7 +64,14 @@ export function AssistantSheet({ start }: { start?: "talk" }) {
         </View>
         {messages.length && !thinking ? (
           <Pressable
-            onPress={clear}
+            onPress={() => {
+              const warning = clearChatWarning(messages);
+              if (!warning) return clear();
+              Alert.alert("Start a new chat?", warning, [
+                { text: "Keep chat", style: "cancel" },
+                { text: "New chat", onPress: clear },
+              ]);
+            }}
             accessibilityRole="button"
             accessibilityLabel="Start a new chat"
             className="h-12 w-12 items-center justify-center rounded-full active:bg-line/40"

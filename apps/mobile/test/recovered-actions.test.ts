@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import {
-  knownIds,
-  recoveredActions,
-  syncChangesSchema,
-} from "../src/features/assistant/recovered-actions";
+import { knownIds, recoveredActions } from "../src/features/assistant/recovered-actions";
+import { syncChangesSchema } from "../src/lib/sync-paths";
 
 const window = { since: 1_000, until: 200_000 };
 const row = (fields: Record<string, unknown>) => ({

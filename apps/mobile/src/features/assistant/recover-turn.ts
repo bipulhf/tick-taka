@@ -1,7 +1,8 @@
 import { send } from "@/lib/api";
-import { queryClient } from "@/lib/query-client";
+import { scheduleRefresh } from "@/lib/query-client";
+import { changedPaths, syncChangesSchema } from "@/lib/sync-paths";
 import { chatStore, updateMessage } from "./chat-store";
-import { knownIds, recoveredActions, syncChangesSchema } from "./recovered-actions";
+import { knownIds, recoveredActions } from "./recovered-actions";
 
 /** Give the server's loop time to notice the phone left and stop before looking. */
 export const SETTLE_MS = 15_000;
@@ -40,7 +41,9 @@ export async function recoverDroppedTurns(): Promise<void> {
         content: found.length ? `${m.content}\n\n${NOTE}` : m.content,
         actions: [...(m.actions ?? []), ...found],
       }));
-      if (found.length) void queryClient.invalidateQueries();
+      // Refresh only the screens the found changes feed.
+      if (found.length)
+        for (const path of changedPaths(reply.data?.changes ?? {})) scheduleRefresh(path);
     } catch {
       // Offline or unreachable: try again on the next chance.
     } finally {

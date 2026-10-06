@@ -7,12 +7,6 @@ import type { ChatAction } from "./chat-store";
  * into chat actions, with Undo for anything added. Pure, so it can be tested.
  */
 
-/** Reply of GET /sync/changes, checked before use. */
-export const syncChangesSchema = z.object({
-  serverTime: z.number(),
-  changes: z.record(z.string(), z.array(z.unknown())),
-});
-
 /** Sync tables the assistant can write, their REST route and what to call a row. */
 const TABLES: Record<string, { path: string; noun: string }> = {
   tasks: { path: "/tasks", noun: "task" },

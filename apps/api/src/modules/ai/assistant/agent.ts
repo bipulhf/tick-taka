@@ -9,13 +9,8 @@ import { ASK_TOOLS, runAskTool } from "../ask";
 import { describeVocabulary, vocabulary } from "../context";
 import { ASSISTANT_DRAFT_MONEY_NOTE, ASSISTANT_PROMPT } from "../prompts";
 import { createCaller, type Dispatch } from "./dispatch";
-import {
-  type Action,
-  createToolRunner,
-  type Draft,
-  type PendingDelete,
-  WRITE_TOOLS,
-} from "./tools";
+import type { Action, Draft, PendingDelete } from "./records";
+import { createToolRunner, WRITE_TOOLS } from "./tools";
 
 /** Model calls per message: enough to look things up, act on several records and check. */
 const MAX_ROUNDS = 12;

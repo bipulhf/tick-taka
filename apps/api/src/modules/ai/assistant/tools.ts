@@ -1,55 +1,20 @@
-import {
-  addDays,
-  isLocalDate,
-  isLocalMonth,
-  type LocalDate,
-  startOfLocalDay,
-} from "@tick-taka/shared/dates";
+import { addDays, isLocalDate, type LocalDate, startOfLocalDay } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
-import { idSchema } from "@tick-taka/shared/schemas/common";
 import type { AiToolDefinition } from "../../../ai/client";
+import { ACTION_HANDLERS, ACTIONS, type ActionName } from "./actions";
 import type { Caller } from "./dispatch";
 import { describeEntities, ENTITIES, ENTITY_NAMES, type EntityName } from "./entities";
 import { createFieldConverter, FieldError, project } from "./fields";
-
-/** How the phone can reverse one change: the request to send, with a fresh edit time for PATCH. */
-export interface Undo {
-  method: "POST" | "PATCH" | "PUT" | "DELETE";
-  path: string;
-  body?: Record<string, unknown>;
-}
-
-export interface Action {
-  summary: string;
-  undo?: Undo;
-}
-
-/**
- * A deletion the assistant asked for. Nothing is deleted on the server's side:
- * the phone shows these and sends the DELETEs only when the user taps Delete.
- */
-export interface PendingDelete {
-  summary: string;
-  /** The record's route; DELETE removes it and POST `${path}/restore` brings it back. */
-  path: string;
-}
-
-/**
- * A money change the assistant proposed (when the phone asked for drafts).
- * Nothing is saved: on the user's tap the phone sends exactly this request
- * (ids are already in the body, so a retry never duplicates; a PATCH gets the
- * edit time added, as for Undo), and `undo` reverses it like an action's.
- */
-export interface Draft {
-  summary: string;
-  method: "POST" | "PATCH" | "PUT";
-  path: string;
-  body: Record<string, unknown>;
-  undo?: Undo;
-  /** For the card, when the body doesn't show it plainly (a budget line inside a month). */
-  amountMinor?: number;
-  categoryId?: string;
-}
+import {
+  type Action,
+  DRAFTED,
+  type Draft,
+  idOf,
+  isId,
+  label,
+  listOf,
+  type PendingDelete,
+} from "./records";
 
 /** Most deletions one message may ask for. */
 const MAX_PENDING_DELETES = 100;
@@ -63,25 +28,6 @@ const MONEY_ENTITIES = new Set<EntityName>(["transaction", "account", "debt"]);
 const movesMoney = (entity: EntityName, fields: Record<string, unknown>) =>
   MONEY_ENTITIES.has(entity) ||
   Object.keys(fields).some((key) => key.endsWith("Minor") || key === "budgetType");
-const DRAFTED = {
-  ok: true,
-  draft: true,
-  note: "Not saved yet. The user confirms it on screen; tell them it is waiting for their tap.",
-};
-
-export const ACTIONS = [
-  "log_habit",
-  "pay_bill",
-  "contribute_goal",
-  "repay_debt",
-  "check_balance",
-  "start_timer",
-  "stop_timer",
-  "set_budget",
-  "checkout_shopping",
-  "update_settings",
-] as const;
-type ActionName = (typeof ACTIONS)[number];
 
 const nullableString = { type: ["string", "null"] };
 const entityParam = { type: "string", enum: ENTITY_NAMES };
@@ -173,19 +119,6 @@ export const WRITE_TOOLS: AiToolDefinition[] = [
   },
 ];
 
-const label = (record: Record<string, unknown> | null | undefined, entity: string): string => {
-  if (!record) return entity.replace("_", " ");
-  const text = record.title ?? record.name ?? record.note ?? record.person;
-  return typeof text === "string" && text ? `“${text.slice(0, 60)}”` : entity.replace("_", " ");
-};
-
-const listOf = (data: unknown): Record<string, unknown>[] =>
-  (Array.isArray(data)
-    ? data
-    : Array.isArray((data as { items?: unknown })?.items)
-      ? (data as { items: unknown[] }).items
-      : []) as Record<string, unknown>[];
-
 function parseFields(raw: string): Record<string, unknown> {
   let parsed: unknown;
   try {
@@ -202,14 +135,6 @@ function entityOf(name: unknown): EntityName {
   if (typeof name !== "string" || !(name in ENTITIES))
     throw new FieldError(`Unknown entity ${String(name)}`);
   return name as EntityName;
-}
-
-const isId = (value: unknown): value is string => idSchema.safeParse(value).success;
-
-/** Ids go into request paths, so only real record ids (ULIDs) are accepted. */
-function idOf(value: unknown): string {
-  if (!isId(value)) throw new FieldError("id must be a record id from find");
-  return value;
 }
 
 /** Status filters go into a query string: a comma list of plain words only. */
@@ -396,174 +321,14 @@ export function createToolRunner(
       if (!id) throw new FieldError(`${action} needs the id of the record`);
       return idOf(id);
     };
-    switch (action) {
-      case "log_habit": {
-        const habitId = needId();
-        const date = typeof raw.date === "string" && isLocalDate(raw.date) ? raw.date : today;
-        const habits = listOf((await caller.call("GET", `/habits?date=${date}`)).data);
-        const habit = habits.find((h) => h.id === habitId);
-        const previous = typeof habit?.todayCount === "number" ? habit.todayCount : 0;
-        const count = typeof raw.count === "number" ? raw.count : previous + 1;
-        const result = await caller.call("PUT", `/habits/${habitId}/logs/${date}`, { count });
-        if (!result.ok) return fail(result.error);
-        actions.push({
-          summary: `Logged ${label(habit, "habit")} (${count}${typeof habit?.targetCount === "number" ? `/${habit.targetCount}` : ""})`,
-          undo: {
-            method: "PUT",
-            path: `/habits/${habitId}/logs/${date}`,
-            body: { count: previous },
-          },
-        });
-        return { ok: true, count };
-      }
-      case "pay_bill": {
-        const billPath = `/recurring/${needId()}`;
-        const found = await caller.call("GET", billPath);
-        if (!found.ok) return fail(found.error);
-        const bill = found.data as { nextDueAt?: unknown } & Record<string, unknown>;
-        // The due date it pays: saving the draft after the bill was paid another way
-        // (Today's "Paid") then changes nothing instead of paying the next period.
-        const body = {
-          transactionId: newId(now),
-          ...(await convert(raw)),
-          ...(typeof bill.nextDueAt === "number" ? { dueAt: bill.nextDueAt } : {}),
-        };
-        const path = `${billPath}/pay`;
-        if (drafting)
-          return propose({
-            summary: `${raw.skip ? "Skip" : "Pay"} ${label(bill, "a bill")}`,
-            method: "POST",
-            path,
-            body,
-          });
-        const result = await caller.call("POST", path, body);
-        if (!result.ok) return fail(result.error);
-        actions.push({
-          summary: raw.skip
-            ? "Skipped this bill"
-            : `Paid ${label(result.data as Record<string, unknown>, "bill")}`,
-        });
-        return { ok: true };
-      }
-      case "contribute_goal": {
-        const body = { id: newId(now), ...(await convert(raw)) };
-        const path = `/goals/${needId()}/contribute`;
-        if (drafting) return propose({ summary: "Add to a goal", method: "POST", path, body });
-        const result = await caller.call("POST", path, body);
-        if (!result.ok) return fail(result.error);
-        actions.push({
-          summary: `Added to goal ${label(result.data as Record<string, unknown>, "")}`.trim(),
-        });
-        return { ok: true };
-      }
-      case "repay_debt": {
-        const body = { id: newId(now), ...(await convert(raw)) };
-        const path = `/debts/${needId()}/repay`;
-        if (drafting)
-          return propose({ summary: "Record a debt repayment", method: "POST", path, body });
-        const result = await caller.call("POST", path, body);
-        if (!result.ok) return fail(result.error);
-        actions.push({ summary: "Recorded a debt repayment" });
-        return { ok: true };
-      }
-      case "check_balance": {
-        const body = { id: newId(now), ...(await convert(raw)) };
-        const path = `/accounts/${needId()}/balance-check`;
-        if (drafting)
-          return propose({ summary: "Match an account balance", method: "POST", path, body });
-        const result = await caller.call("POST", path, body);
-        if (!result.ok) return fail(result.error);
-        actions.push({ summary: "Matched the account balance" });
-        return { ok: true, result: project(result.data, timeZone) };
-      }
-      case "start_timer": {
-        const body = await convert(raw);
-        const result = await caller.call("POST", "/timer/start", {
-          id: newId(now),
-          source: "timer",
-          startedAt: now,
-          ...body,
-        });
-        if (!result.ok) return fail(result.error);
-        actions.push({ summary: "Started the timer" });
-        return { ok: true };
-      }
-      case "stop_timer": {
-        const result = await caller.call("POST", "/timer/stop", { endedAt: now });
-        if (!result.ok) return fail(result.error);
-        actions.push({ summary: "Stopped the timer" });
-        return { ok: true };
-      }
-      case "set_budget": {
-        const month =
-          typeof raw.month === "string" && isLocalMonth(raw.month) ? raw.month : today.slice(0, 7);
-        const { categoryId, limitMinor } = await convert({
-          category: raw.category,
-          limit: raw.limit,
-        });
-        const current = (await caller.call("GET", `/budgets?month=${month}`)).data as {
-          lines?: {
-            categoryId: string;
-            name?: string;
-            limitMinor: number;
-            rollover?: boolean;
-            hasBudget?: boolean;
-          }[];
-        } | null;
-        const lines = (current?.lines ?? []).filter((line) => line.hasBudget);
-        const asSent = (line: (typeof lines)[number]) => ({
-          categoryId: line.categoryId,
-          limitMinor: line.limitMinor,
-          rollover: line.rollover ?? false,
-        });
-        const previous = lines.map(asSent);
-        const kept = previous.filter((line) => line.categoryId !== categoryId);
-        // Changing the amount leaves the line's rollover as the user set it.
-        const rollover = previous.find((line) => line.categoryId === categoryId)?.rollover ?? false;
-        const setting = Number(limitMinor) > 0;
-        const budgets = setting ? [...kept, { categoryId, limitMinor, rollover }] : kept;
-        const name = current?.lines?.find((line) => line.categoryId === categoryId)?.name;
-        const summary = `${setting ? "Set" : "Remove"} the ${name ? `${name} ` : ""}budget for ${month}`;
-        const undo: Undo = { method: "PUT", path: "/budgets", body: { month, budgets: previous } };
-        if (drafting)
-          return propose({
-            summary,
-            method: "PUT",
-            path: "/budgets",
-            body: { month, budgets },
-            undo,
-            ...(typeof limitMinor === "number" ? { amountMinor: limitMinor } : {}),
-            ...(typeof categoryId === "string" ? { categoryId } : {}),
-          });
-        const result = await caller.call("PUT", "/budgets", { month, budgets });
-        if (!result.ok) return fail(result.error);
-        actions.push({
-          summary: setting ? `Set a ${month} budget` : `Removed a ${month} budget`,
-          undo,
-        });
-        return { ok: true };
-      }
-      case "checkout_shopping": {
-        const body = { transactionId: newId(now), ...(await convert(raw)) };
-        const path = "/shopping/checkout";
-        if (drafting)
-          return propose({ summary: "Check out the shopping list", method: "POST", path, body });
-        const result = await caller.call("POST", path, body);
-        if (!result.ok) return fail(result.error);
-        actions.push({ summary: "Checked out the shopping list" });
-        return { ok: true };
-      }
-      case "update_settings": {
-        const result = await caller.call("PATCH", "/settings", raw);
-        if (!result.ok) return fail(result.error);
-        actions.push({ summary: `Changed settings: ${Object.keys(raw).join(", ")}` });
-        return { ok: true };
-      }
-      default:
-        throw new FieldError(`Unknown action ${String(action)}`);
-    }
+    const handler = ACTION_HANDLERS[action];
+    if (!handler) throw new FieldError(`Unknown action ${String(action)}`);
+    return handler(
+      { caller, convert, timeZone, now, today, drafting, propose, fail, actions },
+      raw,
+      needId,
+    );
   }
-
   return {
     actions,
     pending,

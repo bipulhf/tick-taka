@@ -4,6 +4,7 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type BunSQLiteDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import { log } from "../lib/log";
 
 export type Db = BunSQLiteDatabase;
 
@@ -30,6 +31,10 @@ export function openDatabase(path: string): DbHandle {
   sqlite.exec("PRAGMA foreign_keys = ON;");
   const broken = sqlite.query("PRAGMA foreign_key_check").all();
   if (broken.length > 0)
-    console.warn(`${path}: ${broken.length} rows link to records that don't exist`, broken);
+    log("warn", "broken foreign keys after migration", {
+      path,
+      count: broken.length,
+      rows: broken,
+    });
   return { db, sqlite };
 }

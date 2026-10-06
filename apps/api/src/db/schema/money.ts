@@ -223,7 +223,11 @@ export const categoryRules = sqliteTable(
   (t) => [uniqueIndex("category_rules_match_uq").on(t.matchText)],
 );
 
-/** From the SMS capture that was removed; kept so earlier rows stay in exports. */
+/**
+ * From the SMS capture that was dropped (docs/IMPLEMENTATION_PLAN.md, Scope changes).
+ * Nothing writes to it any more, but databases from before the drop hold real rows,
+ * so the table stays and its rows keep appearing in the JSON export.
+ */
 export const smsImports = sqliteTable(
   "sms_imports",
   {

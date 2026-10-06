@@ -35,11 +35,6 @@ export const noteSchema = z.string().max(2000);
 export const queryEpochSchema = z.coerce.number().int().nonnegative();
 export const queryBoolSchema = z.enum(["true", "false"]).transform((value) => value === "true");
 
-export const paginationQuerySchema = z.object({
-  cursor: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-});
-
 export const syncQuerySchema = z.object({ since: queryEpochSchema.default(0) });
 
 export const errorBodySchema = z.object({

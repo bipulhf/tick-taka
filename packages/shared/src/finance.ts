@@ -122,8 +122,3 @@ export interface BudgetLine {
 export function budgetAvailable(line: BudgetLine): number {
   return line.limitMinor + (line.rollover ? line.carriedMinor : 0) - line.spentMinor;
 }
-
-/** Spread a non-monthly yearly amount into a monthly set-aside. */
-export function monthlySetAside(yearlyMinor: number): number {
-  return Math.ceil(yearlyMinor / 12);
-}

@@ -279,8 +279,22 @@ Updating: `git pull && bun install && pm2 restart tick-taka-api`.
 
 Every night at 3 am in each user's time zone, the API writes a `VACUUM INTO` copy of that
 user's database to `backups/users/<id>/` and keeps the newest 14 (the owner's inherited
-database keeps backing up to `backups/` itself). Once a month, restore one locally to
-check it works:
+database keeps backing up to `backups/` itself). Each copy is written to a `.partial`
+file, opened read-only and passed through `PRAGMA integrity_check` before it replaces
+anything; a copy that fails is deleted and the job retried on the next hourly tick. A
+backup missed because the server was down runs on the next tick (and 10 seconds after
+start).
+
+Backups on the same disk as the live data die with it. The API logs a warning at start
+when they share a disk. Either point `BACKUPS_DIR` at another disk or mount, or copy the
+folder off the server nightly, for example with a cron entry on the VPS:
+
+```bash
+# 04:30 every night: push backups to another machine (or `rclone sync` to B2/S3)
+30 4 * * * rsync -a --delete ~/tick-taka-data/backups/ backup@other-host:tick-taka-backups/
+```
+
+Once a month, restore one locally to check it works:
 
 ```bash
 sqlite3 ~/tick-taka-data/backups/users/<id>/app-2026-10-04.db "pragma integrity_check; select count(*) from transactions;"

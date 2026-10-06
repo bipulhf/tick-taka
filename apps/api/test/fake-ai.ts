@@ -9,6 +9,10 @@ export class FakeAi implements AiClient {
   readonly transcribeRequests: AiTranscribeRequest[] = [];
   transcript = "";
   failNext = false;
+  /** The abort signal each chat call was given. */
+  readonly chatSignals: (AbortSignal | undefined)[] = [];
+  /** Runs at the start of each chat call (1-based), e.g. to simulate the phone leaving. */
+  beforeChat?: (call: number) => void | Promise<void>;
 
   queueJson(...data: unknown[]) {
     this.jsonQueue.push(...data);
@@ -35,8 +39,14 @@ export class FakeAi implements AiClient {
   }
 
   async chat(request: Parameters<AiClient["chat"]>[0]): Promise<AiChatResult> {
-    const { onText, ...recorded } = request;
+    const { onText, signal, ...recorded } = request;
     this.chatRequests.push(structuredClone(recorded));
+    this.chatSignals.push(signal);
+    await this.beforeChat?.(this.chatRequests.length);
+    if (this.failNext) {
+      this.failNext = false;
+      throw new Error("provider down");
+    }
     const next = this.chatQueue.shift() ?? { content: "done" };
     // Streams the reply word by word, like the real client.
     if (onText && next.content) for (const word of next.content.split(/(?<= )/)) onText(word);

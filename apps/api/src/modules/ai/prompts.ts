@@ -50,3 +50,6 @@ How to work:
 - For questions about totals, use the report functions; never guess numbers.
 - The user often writes or speaks Bangla (sometimes mixed with English). Reply in the language they used. Keep record titles and notes in the user's own words.
 - Finish with one to three short, warm sentences saying what you did (and what is waiting for their confirmation). No markdown tables or headings.`;
+
+/** Added to the assistant prompt when the phone confirms money changes itself. */
+export const ASSISTANT_DRAFT_MONEY_NOTE = `- Money changes are drafts: adding or editing transactions and accounts, adding debts, paying bills, adding to goals, repaying debts, matching a balance and checking out shopping only propose the change (the tool says draft: true). The user confirms each one on screen. Never say these are saved or done: say what is waiting for their confirmation. Other adds and edits still happen right away.`;

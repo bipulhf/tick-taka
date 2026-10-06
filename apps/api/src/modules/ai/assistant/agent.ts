@@ -2,18 +2,27 @@ import type { AssistantMessage } from "@tick-taka/shared/schemas/ai";
 import type { AiChatMessage, AiClient, AiToolCall } from "../../../ai/client";
 import { callAi, logUsage } from "../../../ai/usage";
 import type { Deps } from "../../../lib/deps";
+import { AppError } from "../../../lib/errors";
 import { userTime } from "../../../lib/user-time";
 import { ASK_TOOLS, runAskTool } from "../ask";
 import { describeVocabulary, vocabulary } from "../context";
-import { ASSISTANT_PROMPT } from "../prompts";
+import { ASSISTANT_DRAFT_MONEY_NOTE, ASSISTANT_PROMPT } from "../prompts";
 import { createCaller, type Dispatch } from "./dispatch";
-import { type Action, createToolRunner, type PendingDelete, WRITE_TOOLS } from "./tools";
+import {
+  type Action,
+  createToolRunner,
+  type Draft,
+  type PendingDelete,
+  WRITE_TOOLS,
+} from "./tools";
 
 /** Model calls per message: enough to look things up, act on several records and check. */
 const MAX_ROUNDS = 12;
 const MAX_WRITES = 40;
 const ASK_NAMES = new Set(ASK_TOOLS.map((tool) => tool.name));
 const WRITE_NAMES = new Set(["create", "update", "act"]);
+const CAP_REACHED_PART_WAY =
+  "This month's AI budget ran out part way through. Here is what I did before it stopped; ask again next month or use the app's forms for the rest.";
 const WRAP_UP =
   "You have used every step for this message. Do not call tools. Tell the user, briefly, what you finished and what is still left for them to ask again.";
 
@@ -31,6 +40,8 @@ export type AssistantEvent =
       reply: string;
       actions: Action[];
       deletions: PendingDelete[];
+      /** Money changes waiting for the user's tap (only when the phone asked for drafts). */
+      drafts: Draft[];
       memo: string;
     };
 
@@ -108,7 +119,10 @@ function describe(call: AiToolCall): string {
  * Chat assistant as an agent: it plans, looks things up, acts through the app's
  * own routes (so writes get the same validation and stay in the signed-in user's
  * database), checks the results and reports back, streaming as it goes.
- * Deletions are only proposed; the user confirms them on the phone.
+ * Deletions are only proposed; the user confirms them on the phone. With
+ * `draftMoney`, money changes are only proposed too (`done.drafts`).
+ * When `signal` aborts (the phone went away), it stops before the next model
+ * call or change, so nothing more is spent or written that nobody will see.
  */
 export async function aiAssistant(
   deps: Deps,
@@ -117,15 +131,22 @@ export async function aiAssistant(
   authorization: string,
   history: AssistantMessage[],
   emit: (event: AssistantEvent) => void,
+  options: { signal?: AbortSignal; draftMoney?: boolean } = {},
 ): Promise<void> {
+  const { signal, draftMoney = false } = options;
+  const stopped = () => signal?.aborted === true;
   const { today, timeZone } = userTime(deps);
   const runner = createToolRunner(createCaller(dispatch, authorization), {
     timeZone,
     now: deps.now(),
     today,
+    draftMoney,
   });
+  const prompt = draftMoney
+    ? `${ASSISTANT_PROMPT}\n${ASSISTANT_DRAFT_MONEY_NOTE}`
+    : ASSISTANT_PROMPT;
   const messages: AiChatMessage[] = [
-    { role: "system", content: `${ASSISTANT_PROMPT}\n\n${context(deps)}` },
+    { role: "system", content: `${prompt}\n\n${context(deps)}` },
     ...history.map(
       (message): AiChatMessage =>
         message.role === "user"
@@ -143,32 +164,59 @@ export async function aiAssistant(
   let reported = 0;
   const notes: string[] = [];
   const onText = (text: string) => emit({ type: "delta", text });
+  const chat = async (withTools: typeof tools) => {
+    const result = await callAi(
+      () => ai.chat({ model: "smart", messages, tools: withTools, onText, signal }),
+      signal,
+    );
+    logUsage(deps, "assistant", "smart", result.model, result.usage);
+    return result;
+  };
 
   const finish = (content: string | null) => {
     const asked = runner.pending.length;
     if (asked) notes.push(`asked to delete ${runner.pending.map((p) => p.path).join(", ")}`);
+    if (runner.drafts.length)
+      notes.push(`proposed for confirmation: ${runner.drafts.map((d) => d.summary).join(", ")}`);
     emit({
       type: "done",
       reply:
         content?.trim() ||
-        (asked
-          ? "Please confirm what to delete."
+        (asked || runner.drafts.length
+          ? "Please confirm on screen."
           : runner.actions.length
             ? "Done."
             : "I'm not sure how to help with that."),
       actions: runner.actions,
       deletions: runner.pending,
+      drafts: runner.drafts,
       memo: notes.join("; ").slice(0, 3900),
     });
   };
+  const didSomething = () =>
+    runner.actions.length > 0 || runner.pending.length > 0 || runner.drafts.length > 0;
+  /** The cap is checked before every call; hitting it part way still reports what was done. */
+  const chatOrStop = async (withTools: typeof tools) => {
+    try {
+      return await chat(withTools);
+    } catch (error) {
+      if (error instanceof AppError && error.code === "ai_cap_reached" && didSomething()) {
+        finish(CAP_REACHED_PART_WAY);
+        return null;
+      }
+      throw error;
+    }
+  };
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    const result = await callAi(() => ai.chat({ model: "smart", messages, tools, onText }));
-    logUsage(deps, "assistant", "smart", result.model, result.usage);
+    if (stopped()) return;
+    const result = await chatOrStop(tools);
+    if (!result || stopped()) return;
     if (result.toolCalls.length === 0) return finish(result.content);
     if (result.content) emit({ type: "reset" });
     messages.push({ role: "assistant", content: result.content, toolCalls: result.toolCalls });
     for (const call of result.toolCalls) {
+      if (stopped()) return;
       emit({ type: "status", text: describe(call) });
       let output: unknown;
       if (WRITE_NAMES.has(call.name) && ++writes > MAX_WRITES) {
@@ -201,8 +249,8 @@ export async function aiAssistant(
   }
 
   // Out of steps: one last call without tools, so the user hears what got done.
+  if (stopped()) return;
   messages.push({ role: "system", content: WRAP_UP });
-  const last = await callAi(() => ai.chat({ model: "smart", messages, tools: [], onText }));
-  logUsage(deps, "assistant", "smart", last.model, last.usage);
-  finish(last.content);
+  const last = await chatOrStop([]);
+  if (last && !stopped()) finish(last.content);
 }

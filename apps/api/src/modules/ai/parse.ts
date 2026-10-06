@@ -19,7 +19,7 @@ import {
 } from "@tick-taka/shared/schemas/ai";
 import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { toStrictJsonSchema } from "../../ai/json-schema";
-import { callAi, logUsage, requireAi } from "../../ai/usage";
+import { callAi, logUsage, parseAiOutput, requireAi } from "../../ai/usage";
 import { categoryRules, transactions } from "../../db/schema/money";
 import type { Deps } from "../../lib/deps";
 import { userTime } from "../../lib/user-time";
@@ -166,7 +166,7 @@ export async function aiParse(deps: Deps, input: { text: string; kind?: string |
     }),
   );
   logUsage(deps, "parse", "fast", result.model, result.usage);
-  const output = aiParseOutputSchema.parse(result.data);
+  const output = parseAiOutput(aiParseOutputSchema, result.data);
   return { draft: toDraft(output, vocab, deps) };
 }
 
@@ -187,7 +187,7 @@ export async function aiReceipt(deps: Deps, input: { imageBase64: string; mimeTy
     }),
   );
   logUsage(deps, "receipt", "fast", result.model, result.usage);
-  const output: AiReceiptOutput = aiReceiptOutputSchema.parse(result.data);
+  const output: AiReceiptOutput = parseAiOutput(aiReceiptOutputSchema, result.data);
   const draft = toDraft(
     {
       kind: "expense",
@@ -269,7 +269,7 @@ export async function aiCategorize(
     }),
   );
   logUsage(deps, "categorize", "fast", result.model, result.usage);
-  const output = aiCategorizeOutputSchema.parse(result.data);
+  const output = parseAiOutput(aiCategorizeOutputSchema, result.data);
   return {
     categoryId:
       findByName(

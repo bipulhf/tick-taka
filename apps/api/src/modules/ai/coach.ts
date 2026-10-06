@@ -10,7 +10,7 @@ import {
   aiWeeklyReviewOutputSchema,
 } from "@tick-taka/shared/schemas/ai";
 import { toStrictJsonSchema } from "../../ai/json-schema";
-import { callAi, logUsage, requireAi } from "../../ai/usage";
+import { callAi, logUsage, parseAiOutput, requireAi } from "../../ai/usage";
 import type { Deps } from "../../lib/deps";
 import { spendingRows, sumBy } from "../../lib/money-queries";
 import { userTime } from "../../lib/user-time";
@@ -57,7 +57,7 @@ export async function aiWeeklyCoach(deps: Deps, weekStart?: LocalDate) {
     }),
   );
   logUsage(deps, "weeklyReview", "smart", result.model, result.usage);
-  const output = aiWeeklyReviewOutputSchema.parse(result.data);
+  const output = parseAiOutput(aiWeeklyReviewOutputSchema, result.data);
   return {
     observations: output.observations.slice(0, 3),
     suggestion: output.suggestion,
@@ -106,7 +106,7 @@ export async function aiBudgetSuggestions(deps: Deps, month: LocalMonth) {
     }),
   );
   logUsage(deps, "budgetSuggestions", "fast", result.model, result.usage);
-  const output = aiBudgetSuggestionsOutputSchema.parse(result.data);
+  const output = parseAiOutput(aiBudgetSuggestionsOutputSchema, result.data);
   const expense = vocab.categories.filter((c) => c.kind === "expense");
   return {
     month,

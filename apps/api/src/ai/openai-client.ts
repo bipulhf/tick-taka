@@ -14,10 +14,19 @@ const EXTENSIONS: Record<string, string> = {
   "audio/3gpp": "mp4",
 };
 
+/** Longest one AI request may take before it is retried once (then fails as ai_error). */
+export const AI_CALL_TIMEOUT_MS = 25_000;
+
 /** OpenAI-backed AI client. The API key lives only in the server's environment. */
 export function createOpenAiClient(env: Env): AiClient | null {
   if (!env.OPENAI_API_KEY) return null;
-  const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 45_000, maxRetries: 1 });
+  // At most 2 × 25 s plus a short back-off, so a reply (or a clean 502) always beats
+  // Nginx's 60 s proxy_read_timeout on the plain JSON routes.
+  const openai = new OpenAI({
+    apiKey: env.OPENAI_API_KEY,
+    timeout: AI_CALL_TIMEOUT_MS,
+    maxRetries: 1,
+  });
   const modelName = (model: "fast" | "smart") =>
     model === "fast" ? env.OPENAI_MODEL_FAST : env.OPENAI_MODEL_SMART;
 
@@ -102,8 +111,9 @@ export function createOpenAiClient(env: Env): AiClient | null {
             }
           : {}),
       };
+      const options = { signal: request.signal };
       if (!request.onText) {
-        const completion = await openai.chat.completions.create(params);
+        const completion = await openai.chat.completions.create(params, options);
         const message = completion.choices[0]?.message;
         return {
           content: message?.content ?? null,
@@ -123,11 +133,10 @@ export function createOpenAiClient(env: Env): AiClient | null {
         };
       }
 
-      const stream = await openai.chat.completions.create({
-        ...params,
-        stream: true,
-        stream_options: { include_usage: true },
-      });
+      const stream = await openai.chat.completions.create(
+        { ...params, stream: true, stream_options: { include_usage: true } },
+        options,
+      );
       let content = "";
       let model = params.model;
       let usage: AiUsage = { inputTokens: 0, outputTokens: 0 };

@@ -2,6 +2,7 @@ import { localMonthRange, toLocalMonth } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
 import { type AiFeature, isAiFeatureEnabled } from "@tick-taka/shared/schemas/settings";
 import { and, gte, isNull, lt, sql } from "drizzle-orm";
+import type { z } from "zod";
 import { aiUsage } from "../db/schema/system";
 import type { Deps } from "../lib/deps";
 import { AppError } from "../lib/errors";
@@ -74,20 +75,79 @@ export function requireAi(deps: Deps, feature: AiFeature): AiClient {
   if (!isAiFeatureEnabled(settings, feature))
     throw new AppError(403, "ai_disabled", "AI is switched off for this");
   if (!deps.ai) throw new AppError(503, "ai_unavailable", "AI isn't set up on the server");
+  assertUnderCap(deps);
+  return capEveryCall(deps, deps.ai);
+}
+
+function assertUnderCap(deps: Deps): void {
   const cap = monthlyCapMicros(deps);
   if (cap !== null && monthSpendMicros(deps) >= cap) {
     throw new AppError(429, "ai_cap_reached", "This month's AI budget is used up");
   }
-  return deps.ai;
 }
 
-/** Wraps provider failures so the client sees a clean, retryable error. */
-export async function callAi<T>(run: () => Promise<T>): Promise<T> {
+/**
+ * The client a feature gets: the cap is checked again before every call, so a
+ * feature that makes several calls (the assistant, ask) stops at the cap
+ * instead of running past it.
+ */
+function capEveryCall(deps: Deps, ai: AiClient): AiClient {
+  return {
+    json(request) {
+      assertUnderCap(deps);
+      return ai.json(request);
+    },
+    chat(request) {
+      assertUnderCap(deps);
+      return ai.chat(request);
+    },
+    transcribe(request) {
+      assertUnderCap(deps);
+      return ai.transcribe(request);
+    },
+  };
+}
+
+const isTimeout = (error: unknown) =>
+  error instanceof Error && /timeout|timed out/i.test(`${error.name} ${error.message}`);
+
+/**
+ * Wraps provider failures so the client sees a clean, retryable 502 `ai_error`
+ * (a timeout included) and falls back to the plain form. A call cancelled
+ * through `signal` (the phone went away) is rethrown as it is.
+ */
+export async function callAi<T>(run: () => Promise<T>, signal?: AbortSignal): Promise<T> {
   try {
     return await run();
   } catch (error) {
-    if (error instanceof AppError) throw error;
+    if (error instanceof AppError || signal?.aborted) throw error;
     log("warn", "ai call failed", errorFields(error));
-    throw new AppError(502, "ai_error", "AI didn't answer. Use the form instead.");
+    throw new AppError(
+      502,
+      "ai_error",
+      isTimeout(error)
+        ? "AI took too long to answer. Use the form instead."
+        : "AI didn't answer. Use the form instead.",
+    );
   }
+}
+
+/**
+ * Checks a model's reply against the feature's schema. Structured Outputs make a
+ * mismatch rare; when one happens it is the AI's failure (502 `ai_error`), not
+ * the server's.
+ */
+export function parseAiOutput<T>(schema: z.ZodType<T>, data: unknown): T {
+  const parsed = schema.safeParse(data);
+  if (parsed.success) return parsed.data;
+  log("warn", "ai output did not match its schema", {
+    issues: parsed.error.issues
+      .slice(0, 5)
+      .map((issue) => `${issue.path.join(".")}: ${issue.message}`),
+  });
+  throw new AppError(
+    502,
+    "ai_error",
+    "AI gave an answer the app couldn't use. Use the form instead.",
+  );
 }

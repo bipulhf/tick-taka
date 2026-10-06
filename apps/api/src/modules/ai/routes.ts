@@ -117,36 +117,57 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
       // Off switch, missing key and cap answer as plain JSON errors, before streaming.
       const ai = requireAi(deps, "assistant");
       const authorization = c.req.header("authorization") ?? "";
-      const { messages } = c.req.valid("json");
+      const { messages, draftMoney } = c.req.valid("json");
+      // When the phone goes away, stop: no more model calls (or cost) and no more writes.
+      const controller = new AbortController();
+      const stop = () => controller.abort();
+      c.req.raw.signal.addEventListener("abort", stop);
+      // The reply outlives this handler, so keep the user's database open until it ends.
+      const scope = currentScope();
+      const lease = scope ? deps.users.lease(scope.user) : null;
       c.header("cache-control", "no-cache");
       c.header("x-accel-buffering", "no");
       return streamSSE(c, async (stream) => {
+        stream.onAbort(stop);
         let queue = Promise.resolve();
-        const emit = (event: AssistantEvent | { type: "error"; code: string; message: string }) => {
-          queue = queue.then(() =>
-            stream.writeSSE({ event: event.type, data: JSON.stringify(event) }),
-          );
+        const send = (write: () => Promise<unknown>) => {
+          queue = queue
+            .then(() => (controller.signal.aborted ? undefined : write()))
+            .then(
+              () => {},
+              () => stop(),
+            );
         };
-        const keepalive = setInterval(() => {
-          queue = queue.then(() => stream.write(": keepalive\n\n").then(() => {}));
-        }, KEEPALIVE_MS);
+        const emit = (event: AssistantEvent | { type: "error"; code: string; message: string }) =>
+          send(() => stream.writeSSE({ event: event.type, data: JSON.stringify(event) }));
+        const keepalive = setInterval(
+          () => send(() => stream.write(": keepalive\n\n")),
+          KEEPALIVE_MS,
+        );
         try {
-          await aiAssistant(deps, ai, dispatch, authorization, messages, emit);
-        } catch (error) {
-          const known = error instanceof AppError;
-          if (!known)
-            log("error", "assistant failed", {
-              reqId: requestIdOf(c.req.raw),
-              ...errorFields(error),
-            });
-          emit({
-            type: "error",
-            code: known ? error.code : "ai_error",
-            message: known ? error.message : "Something went wrong. Try again.",
+          await aiAssistant(deps, ai, dispatch, authorization, messages, emit, {
+            signal: controller.signal,
+            draftMoney: draftMoney === true,
           });
+        } catch (error) {
+          if (!controller.signal.aborted) {
+            const known = error instanceof AppError;
+            if (!known)
+              log("error", "assistant failed", {
+                reqId: requestIdOf(c.req.raw),
+                ...errorFields(error),
+              });
+            emit({
+              type: "error",
+              code: known ? error.code : "ai_error",
+              message: known ? error.message : "Something went wrong. Try again.",
+            });
+          }
         } finally {
           clearInterval(keepalive);
+          c.req.raw.signal.removeEventListener("abort", stop);
           await queue;
+          lease?.release();
         }
       });
     })

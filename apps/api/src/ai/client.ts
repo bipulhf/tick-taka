@@ -61,6 +61,8 @@ export interface AiClient {
     tools: AiToolDefinition[];
     /** When given, the reply streams: called with each piece of text as it arrives. */
     onText?: (delta: string) => void;
+    /** Cancels the call (and stops billing for it) when the caller goes away. */
+    signal?: AbortSignal;
   }): Promise<AiChatResult>;
   transcribe(
     request: AiTranscribeRequest,

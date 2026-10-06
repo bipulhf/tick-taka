@@ -11,7 +11,7 @@ import { parseClock } from "@tick-taka/shared/recurrence";
 import { aiBreakdownOutputSchema, aiPlanDayOutputSchema } from "@tick-taka/shared/schemas/ai";
 import { and, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import { toStrictJsonSchema } from "../../ai/json-schema";
-import { callAi, logUsage, requireAi } from "../../ai/usage";
+import { callAi, logUsage, parseAiOutput, requireAi } from "../../ai/usage";
 import { tasks } from "../../db/schema/time";
 import type { Deps } from "../../lib/deps";
 import { userTime } from "../../lib/user-time";
@@ -81,7 +81,7 @@ export async function aiPlanDay(deps: Deps, date: LocalDate) {
     }),
   );
   logUsage(deps, "planDay", "fast", result.model, result.usage);
-  const output = aiPlanDayOutputSchema.parse(result.data);
+  const output = parseAiOutput(aiPlanDayOutputSchema, result.data);
   const known = new Set(candidates.map((t) => t.id));
   const day = parseLocalDate(date);
   const blocks = output.blocks
@@ -120,8 +120,7 @@ export async function aiBreakdown(
     }),
   );
   logUsage(deps, "breakdown", "fast", result.model, result.usage);
-  const subtasks = aiBreakdownOutputSchema
-    .parse(result.data)
+  const subtasks = parseAiOutput(aiBreakdownOutputSchema, result.data)
     .subtasks.map((s) => s.trim().slice(0, 300))
     .filter(Boolean)
     .slice(0, 7);

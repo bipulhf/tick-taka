@@ -34,8 +34,29 @@ export interface PendingDelete {
   path: string;
 }
 
+/**
+ * A money change the assistant proposed (when the phone asked for drafts).
+ * Nothing is saved: on the user's tap the phone sends exactly this request
+ * (ids are already in the body, so a retry never duplicates; a PATCH gets the
+ * edit time added, as for Undo), and `undo` reverses it like an action's.
+ */
+export interface Draft {
+  summary: string;
+  method: "POST" | "PATCH" | "PUT";
+  path: string;
+  body: Record<string, unknown>;
+  undo?: Undo;
+}
+
 /** Most deletions one message may ask for. */
 const MAX_PENDING_DELETES = 100;
+/** Entities whose create/update moves money (account opening balance, debt principal). */
+const MONEY_ENTITIES = new Set<EntityName>(["transaction", "account", "debt"]);
+const DRAFTED = {
+  ok: true,
+  draft: true,
+  note: "Not saved yet. The user confirms it on screen; tell them it is waiting for their tap.",
+};
 
 export const ACTIONS = [
   "log_habit",
@@ -193,13 +214,20 @@ function statusOf(value: unknown): string | null {
  */
 export function createToolRunner(
   caller: Caller,
-  options: { timeZone: string; now: number; today: LocalDate },
+  options: { timeZone: string; now: number; today: LocalDate; draftMoney?: boolean },
 ) {
   const { timeZone, now, today } = options;
   const convert = createFieldConverter(caller, timeZone, now);
   const actions: Action[] = [];
   const pending: PendingDelete[] = [];
+  const drafts: Draft[] = [];
   const fail = (error: string | undefined) => ({ error: error ?? "That didn't work" });
+  /** With drafts on, a money change is queued for the user's tap instead of sent. */
+  const propose = (draft: Draft) => {
+    drafts.push(draft);
+    return DRAFTED;
+  };
+  const drafting = options.draftMoney === true;
 
   const dayStart = (value: unknown) =>
     typeof value === "string" && isLocalDate(value) ? startOfLocalDay(value, timeZone) : null;
@@ -247,6 +275,14 @@ export function createToolRunner(
     if (entity === "transaction" && fields.occurredAt === undefined) fields.occurredAt = now;
     if (entity === "time_entry" && fields.source === undefined) fields.source = "manual";
     const id = newId(now);
+    if (drafting && MONEY_ENTITIES.has(entity))
+      return propose({
+        summary: `Add ${entity.replace("_", " ")} ${label(fields, "")}`.trim(),
+        method: "POST",
+        path: def.path,
+        body: { id, ...fields },
+        undo: { method: "DELETE", path: `${def.path}/${id}` },
+      });
     const result = await caller.call("POST", def.path, { id, ...fields });
     if (!result.ok) return fail(result.error);
     const record = result.data as Record<string, unknown>;
@@ -264,9 +300,6 @@ export function createToolRunner(
     const id = idOf(args.id);
     const fields = await convert(parseFields(String(args.fields)));
     const before = def.canGet ? await caller.call("GET", `${def.path}/${id}`) : null;
-    const result = await caller.call("PATCH", `${def.path}/${id}`, { ...fields, updatedAt: now });
-    if (!result.ok) return fail(result.error);
-    const record = result.data as Record<string, unknown>;
     const previous = before?.ok ? (before.data as Record<string, unknown>) : null;
     const undoBody = previous
       ? Object.fromEntries(
@@ -275,6 +308,22 @@ export function createToolRunner(
             .map((key) => [key, previous[key]]),
         )
       : null;
+    if (drafting && MONEY_ENTITIES.has(entity)) {
+      if (def.canGet && !before?.ok) return fail(before?.error);
+      return propose({
+        summary: `Change ${entity.replace("_", " ")} ${label(previous, "")}`.trim(),
+        method: "PATCH",
+        path: `${def.path}/${id}`,
+        body: fields,
+        undo:
+          undoBody && Object.keys(undoBody).length
+            ? { method: "PATCH", path: `${def.path}/${id}`, body: undoBody }
+            : undefined,
+      });
+    }
+    const result = await caller.call("PATCH", `${def.path}/${id}`, { ...fields, updatedAt: now });
+    if (!result.ok) return fail(result.error);
+    const record = result.data as Record<string, unknown>;
     const done = entity === "task" && fields.status === "done";
     actions.push({
       summary:
@@ -357,11 +406,16 @@ export function createToolRunner(
         return { ok: true, count };
       }
       case "pay_bill": {
-        const body = await convert(raw);
-        const result = await caller.call("POST", `/recurring/${needId()}/pay`, {
-          transactionId: newId(now),
-          ...body,
-        });
+        const body = { transactionId: newId(now), ...(await convert(raw)) };
+        const path = `/recurring/${needId()}/pay`;
+        if (drafting)
+          return propose({
+            summary: raw.skip ? "Skip a bill" : "Pay a bill",
+            method: "POST",
+            path,
+            body,
+          });
+        const result = await caller.call("POST", path, body);
         if (!result.ok) return fail(result.error);
         actions.push({
           summary: raw.skip
@@ -371,11 +425,10 @@ export function createToolRunner(
         return { ok: true };
       }
       case "contribute_goal": {
-        const body = await convert(raw);
-        const result = await caller.call("POST", `/goals/${needId()}/contribute`, {
-          id: newId(now),
-          ...body,
-        });
+        const body = { id: newId(now), ...(await convert(raw)) };
+        const path = `/goals/${needId()}/contribute`;
+        if (drafting) return propose({ summary: "Add to a goal", method: "POST", path, body });
+        const result = await caller.call("POST", path, body);
         if (!result.ok) return fail(result.error);
         actions.push({
           summary: `Added to goal ${label(result.data as Record<string, unknown>, "")}`.trim(),
@@ -383,21 +436,21 @@ export function createToolRunner(
         return { ok: true };
       }
       case "repay_debt": {
-        const body = await convert(raw);
-        const result = await caller.call("POST", `/debts/${needId()}/repay`, {
-          id: newId(now),
-          ...body,
-        });
+        const body = { id: newId(now), ...(await convert(raw)) };
+        const path = `/debts/${needId()}/repay`;
+        if (drafting)
+          return propose({ summary: "Record a debt repayment", method: "POST", path, body });
+        const result = await caller.call("POST", path, body);
         if (!result.ok) return fail(result.error);
         actions.push({ summary: "Recorded a debt repayment" });
         return { ok: true };
       }
       case "check_balance": {
-        const body = await convert(raw);
-        const result = await caller.call("POST", `/accounts/${needId()}/balance-check`, {
-          id: newId(now),
-          ...body,
-        });
+        const body = { id: newId(now), ...(await convert(raw)) };
+        const path = `/accounts/${needId()}/balance-check`;
+        if (drafting)
+          return propose({ summary: "Match an account balance", method: "POST", path, body });
+        const result = await caller.call("POST", path, body);
         if (!result.ok) return fail(result.error);
         actions.push({ summary: "Matched the account balance" });
         return { ok: true, result: project(result.data, timeZone) };
@@ -452,11 +505,11 @@ export function createToolRunner(
         return { ok: true };
       }
       case "checkout_shopping": {
-        const body = await convert(raw);
-        const result = await caller.call("POST", "/shopping/checkout", {
-          transactionId: newId(now),
-          ...body,
-        });
+        const body = { transactionId: newId(now), ...(await convert(raw)) };
+        const path = "/shopping/checkout";
+        if (drafting)
+          return propose({ summary: "Check out the shopping list", method: "POST", path, body });
+        const result = await caller.call("POST", path, body);
         if (!result.ok) return fail(result.error);
         actions.push({ summary: "Checked out the shopping list" });
         return { ok: true };
@@ -475,6 +528,7 @@ export function createToolRunner(
   return {
     actions,
     pending,
+    drafts,
     async run(name: string, rawArgs: string): Promise<unknown> {
       try {
         const args = JSON.parse(rawArgs || "{}") as Record<string, unknown>;

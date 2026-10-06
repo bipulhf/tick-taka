@@ -11,6 +11,7 @@ import { AccountSection } from "./account-section";
 import { dollars } from "./ai-settings";
 import { ACCENTS } from "./appearance-settings";
 import { DAYS } from "./planning-settings";
+import { ReminderStatusBanner } from "./reminder-status-banner";
 
 interface Entry {
   href: string;
@@ -121,6 +122,7 @@ export function SettingsScreen() {
   return (
     <Screen title="Settings" tabBarPadding={false}>
       <AccountSection />
+      <ReminderStatusBanner />
       {groups.map((entries) => (
         <Group key={entries[0]!.href} inset={60}>
           {entries.map((entry) => (

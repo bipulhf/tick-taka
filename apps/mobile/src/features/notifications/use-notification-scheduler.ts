@@ -1,11 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { endOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
 import * as Notifications from "expo-notifications";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { AppState } from "react-native";
 import { api, unwrap } from "@/lib/api";
-import { ensureNotificationPermission } from "@/lib/notifications";
+import { ensureNotificationPermission, reminderSyncError } from "@/lib/notifications";
 import { useSettings, useToday } from "@/lib/queries";
 import { planNotifications } from "./plan-notifications";
+import { reminderQuery, rescheduleDue } from "./reminder-window";
 
 const PREFIX = "tt-";
 const PACE_KEY = "tt.pace-alerts";
@@ -14,17 +15,8 @@ async function reschedule(settings: NonNullable<ReturnType<typeof useSettings>["
   if (!(await ensureNotificationPermission())) return;
   const now = Date.now();
   const [tasks, recurring, habits, debts] = await Promise.all([
-    unwrap(
-      api.tasks.$get({
-        query: {
-          status: "inbox,open",
-          from: String(now - 86_400_000),
-          to: String(
-            endOfLocalDay(toLocalDate(now + 8 * 86_400_000, settings.timeZone), settings.timeZone),
-          ),
-        },
-      }),
-    ),
+    // By when the reminder rings, not the day the task is planned for.
+    unwrap(api.tasks.$get({ query: reminderQuery(now) })),
     unwrap(api.recurring.$get()),
     unwrap(api.habits.$get({ query: {} })),
     unwrap(api.debts.$get()),
@@ -88,16 +80,48 @@ async function reschedule(settings: NonNullable<ReturnType<typeof useSettings>["
   });
 }
 
-/** Re-schedules local notifications whenever fresh data arrives; no push service needed. */
+/** Runs a reschedule; a failure is logged and shown quietly in Settings, never swallowed. */
+async function rescheduleSafely(settings: Parameters<typeof reschedule>[0]): Promise<void> {
+  try {
+    await reschedule(settings);
+    reminderSyncError.set(null);
+  } catch (error) {
+    console.warn("notifications: reschedule failed", error);
+    reminderSyncError.set(error instanceof Error ? error.message : String(error));
+  }
+}
+
+/**
+ * Re-schedules local notifications on start, whenever fresh data arrives and when
+ * the app comes back to the front; no push service needed.
+ */
 export function useNotificationScheduler() {
   const { data: settings } = useSettings();
   const today = useToday();
+  const lastRun = useRef<number | null>(null);
+  const latest = useRef(settings);
+  useEffect(() => {
+    latest.current = settings;
+  }, [settings]);
 
   useEffect(() => {
-    if (!settings || !today.dataUpdatedAt) return;
-    const timer = setTimeout(() => void reschedule(settings).catch(() => {}), 1500);
+    if (!settings) return;
+    const timer = setTimeout(() => {
+      lastRun.current = Date.now();
+      void rescheduleSafely(settings);
+    }, 1500);
     return () => clearTimeout(timer);
   }, [settings, today.dataUpdatedAt]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (status) => {
+      const current = latest.current;
+      if (status !== "active" || !current || !rescheduleDue(lastRun.current, Date.now())) return;
+      lastRun.current = Date.now();
+      void rescheduleSafely(current);
+    });
+    return () => subscription.remove();
+  }, []);
 
   // Pace alert: one calm heads-up per category per month, never a stream.
   const pace = today.data?.paceAlert;

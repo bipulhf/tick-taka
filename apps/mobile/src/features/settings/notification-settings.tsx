@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Section } from "@/components/ui/section";
 import { setFeedbackPrefs, useFeedbackPrefs } from "@/lib/feedback-prefs";
+import { ReminderStatusBanner } from "./reminder-status-banner";
 import { ChoiceRow, ToggleRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
@@ -14,6 +15,7 @@ export function NotificationSettings() {
     <SettingsPage title="Notifications and sounds">
       {(s) => (
         <>
+          <ReminderStatusBanner />
           <Section title="Notifications">
             <Card className="gap-1">
               <ChoiceRow label="Quiet hours start">

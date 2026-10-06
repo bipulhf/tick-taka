@@ -1,5 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
+import { Linking } from "react-native";
 import { apiUrl, authHeaders, request } from "./http";
+import { notify } from "./notify";
 
 export interface PickedImage {
   uri: string;
@@ -17,7 +19,14 @@ export async function pickReceipt(source: "camera" | "library"): Promise<PickedI
   };
   if (source === "camera") {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) return null;
+    if (!permission.granted) {
+      // Say so, with a way to fix it, instead of a button that silently does nothing.
+      notify("Camera access is off for Tick & Taka.", {
+        label: "Open settings",
+        onPress: () => void Linking.openSettings(),
+      });
+      return null;
+    }
   }
   const result =
     source === "camera"

@@ -121,6 +121,9 @@ export const taskListQuerySchema = z.object({
   parentId: idSchema.optional(),
   from: queryEpochSchema.optional(),
   to: queryEpochSchema.optional(),
+  /** Tasks whose reminder rings in [reminderFrom, reminderTo), dated or not. */
+  reminderFrom: queryEpochSchema.optional(),
+  reminderTo: queryEpochSchema.optional(),
   doneFrom: queryEpochSchema.optional(),
   doneTo: queryEpochSchema.optional(),
   top3Date: localDateSchema.optional(),

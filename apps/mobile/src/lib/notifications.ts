@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications";
+import { createStore } from "./store";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -9,10 +10,26 @@ Notifications.setNotificationHandler({
   }),
 });
 
+/** Whether reminders can ring; "denied" shows a banner with a way to Settings. */
+export const notificationAccess = createStore<"unknown" | "granted" | "denied">("unknown");
+
+/** Why the last reminder refresh failed, if it did; shown quietly in Settings. */
+export const reminderSyncError = createStore<string | null>(null);
+
+/** Reads the permission without asking (it can change in the phone's Settings). */
+export async function refreshNotificationAccess(): Promise<void> {
+  const current = await Notifications.getPermissionsAsync();
+  notificationAccess.set(current.granted ? "granted" : current.canAskAgain ? "unknown" : "denied");
+}
+
 export async function ensureNotificationPermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
-  if (current.granted) return true;
-  const asked = await Notifications.requestPermissionsAsync();
+  if (current.granted) {
+    notificationAccess.set("granted");
+    return true;
+  }
+  const asked = current.canAskAgain ? await Notifications.requestPermissionsAsync() : current;
+  notificationAccess.set(asked.granted ? "granted" : "denied");
   return asked.granted;
 }
 

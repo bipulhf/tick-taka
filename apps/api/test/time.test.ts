@@ -200,6 +200,22 @@ describe("tasks", () => {
     expect(logbook.body.map((r) => r.title)).toEqual(["Fix login bug"]);
   });
 
+  test("tasks can be listed by when their reminder rings, dated or not", async () => {
+    const ctx = await createTestContext();
+    const tomorrow = DEFAULT_NOW + 24 * HOUR_MS;
+    await ctx.request("POST", "/tasks", { title: "Inbox, reminder", reminderAt: tomorrow });
+    await ctx.request("POST", "/tasks", { title: "Inbox, no reminder" });
+    await ctx.request("POST", "/tasks", {
+      title: "Reminder in a month",
+      reminderAt: DEFAULT_NOW + 30 * 24 * HOUR_MS,
+    });
+    const due = await ctx.request<Row[]>(
+      "GET",
+      `/tasks?status=inbox,open&reminderFrom=${DEFAULT_NOW}&reminderTo=${DEFAULT_NOW + 8 * 24 * HOUR_MS}`,
+    );
+    expect(due.body.map((r) => r.title)).toEqual(["Inbox, reminder"]);
+  });
+
   test("delete removes subtasks too", async () => {
     const { request } = await createTestContext();
     const task = await request<Row & { subtasks: Row[] }>("POST", "/tasks", {

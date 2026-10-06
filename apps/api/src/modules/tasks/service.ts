@@ -179,6 +179,8 @@ export function taskService(deps: Deps) {
       else if (!query.includeSubtasks) filters.push(isNull(tasks.parentId));
       if (query.from !== undefined) filters.push(gte(tasks.doAt, query.from));
       if (query.to !== undefined) filters.push(lt(tasks.doAt, query.to));
+      if (query.reminderFrom !== undefined) filters.push(gte(tasks.reminderAt, query.reminderFrom));
+      if (query.reminderTo !== undefined) filters.push(lt(tasks.reminderAt, query.reminderTo));
       if (query.doneFrom !== undefined) filters.push(gte(tasks.doneAt, query.doneFrom));
       if (query.doneTo !== undefined) filters.push(lt(tasks.doneAt, query.doneTo));
       if (query.top3Date) filters.push(eq(tasks.top3Date, query.top3Date));

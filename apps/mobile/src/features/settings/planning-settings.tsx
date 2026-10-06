@@ -10,6 +10,10 @@ import { useUpdateSettings } from "./use-update-settings";
 export const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const LONG_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+// Tiki and the server accept values outside the presets; these label them too.
+const goalLabel = (n: number) => (n === 0 ? "Off" : plural(n, "task"));
+const minutesLabel = (m: string) => plural(Number(m), "minute");
+
 /** The daily goal, days off, focus timer lengths and the optional planning views. */
 export function PlanningSettings() {
   const update = useUpdateSettings();
@@ -22,10 +26,8 @@ export function PlanningSettings() {
               <PickerField
                 label="Daily task goal"
                 value={String(s.dailyTaskGoal)}
-                options={[0, 3, 5, 7, 10].map((n) => ({
-                  id: String(n),
-                  label: n === 0 ? "Off" : plural(n, "task"),
-                }))}
+                options={[0, 3, 5, 7, 10].map((n) => ({ id: String(n), label: goalLabel(n) }))}
+                describe={(n) => goalLabel(Number(n))}
                 onChange={(n) => update({ dailyTaskGoal: Number(n) })}
               />
               {/* Several can be picked, so these stay chips (checkboxes), not a picker. */}
@@ -59,12 +61,14 @@ export function PlanningSettings() {
                   id: String(m),
                   label: formatMinutes(m),
                 }))}
+                describe={(m) => formatMinutes(Number(m))}
                 onChange={(m) => update({ dayCapacityMinutes: Number(m) })}
               />
               <PickerField
                 label="Week starts on"
                 value={String(s.weekStartsOn)}
                 options={[6, 0, 1].map((d) => ({ id: String(d), label: LONG_DAYS[d] ?? "" }))}
+                describe={(d) => LONG_DAYS[Number(d)] ?? d}
                 onChange={(d) => update({ weekStartsOn: Number(d) })}
               />
             </Card>
@@ -78,12 +82,14 @@ export function PlanningSettings() {
                   id: String(m),
                   label: plural(m, "minute"),
                 }))}
+                describe={minutesLabel}
                 onChange={(m) => update({ focus: { ...s.focus, workMinutes: Number(m) } })}
               />
               <PickerField
                 label="Break"
                 value={String(s.focus.breakMinutes)}
                 options={[5, 10, 15].map((m) => ({ id: String(m), label: plural(m, "minute") }))}
+                describe={minutesLabel}
                 onChange={(m) => update({ focus: { ...s.focus, breakMinutes: Number(m) } })}
               />
             </Card>

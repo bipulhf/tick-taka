@@ -2,13 +2,8 @@ import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { haptic } from "@/lib/haptics";
 import { Icon } from "./icon";
+import { type PickerOption, withCurrentOption } from "./picker-options";
 import { Text } from "./text";
-
-export interface PickerOption {
-  id: string;
-  label: string;
-  emoji?: string;
-}
 
 /**
  * - field: a sheet field, caption label over the value ("Account / Cash ▾").
@@ -38,7 +33,9 @@ const NONE = "";
 /**
  * Compact "Cash ▾" field that opens into a short list in place, instead of a row
  * of chips. Tapping an option picks it and closes the list. With `noneLabel`, the
- * list starts with an option that clears the choice (onChange gets null).
+ * list starts with an option that clears the choice (onChange gets null). A value
+ * that isn't one of the options (set elsewhere) is listed first, labelled by
+ * `describe`, so the field never reads "Choose" for something that is set.
  */
 export function PickerField({
   label,
@@ -50,6 +47,7 @@ export function PickerField({
   variant = "field",
   span = "full",
   layout = "list",
+  describe,
 }: {
   label: string;
   value: string | null;
@@ -60,9 +58,12 @@ export function PickerField({
   variant?: PickerFieldVariant;
   span?: PickerFieldSpan;
   layout?: PickerFieldLayout;
+  /** Labels a current value that isn't among the options ("4" → "4 tasks"). */
+  describe?: (id: string) => string;
 }) {
   const [open, setOpen] = useState(false);
-  const all = noneLabel ? [{ id: NONE, label: noneLabel }, ...options] : options;
+  const listed = withCurrentOption(options, value, describe);
+  const all = noneLabel ? [{ id: NONE, label: noneLabel }, ...listed] : listed;
   const selected = value ?? (noneLabel ? NONE : null);
   const current = all.find((o) => o.id === selected);
   const shown = current

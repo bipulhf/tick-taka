@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ErrorState } from "@/components/ui/empty-state";
 import { PickerField } from "@/components/ui/picker-field";
+import { clockLabel, clockOptions } from "@/components/ui/picker-options";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
@@ -132,7 +133,8 @@ function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
         label="Nudge me at"
         value={remindAt}
         noneLabel="No nudge"
-        options={REMIND.map((time) => ({ id: time, label: time }))}
+        options={clockOptions(REMIND)}
+        describe={clockLabel}
         onChange={setRemindAt}
       />
     </Sheet>

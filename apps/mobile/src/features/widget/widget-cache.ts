@@ -1,10 +1,21 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { Numerals } from "@tick-taka/shared/money";
 
 export interface QuickEntry {
   label: string;
   note: string;
   amountMinor: number;
   categoryId: string | null;
+}
+
+/** The last quick-log tapped on the widget, which the widget offers to undo for a while. */
+export interface LastWidgetLog {
+  id: string;
+  label: string;
+  amountMinor: number;
+  at: number;
+  /** Still waiting on this phone (offline), not yet on the server. */
+  queued: boolean;
 }
 
 /** Today in a few numbers, for the home-screen widget (see widget-snapshot.ts). */
@@ -20,6 +31,9 @@ export interface WidgetCache {
   accountId: string | null;
   quick: QuickEntry[];
   status: string | null;
+  lastLog: LastWidgetLog | null;
+  /** Digits amounts are shown in (Settings › Appearance › Numbers). */
+  numerals: Numerals;
   updatedAt: number;
 }
 
@@ -34,6 +48,7 @@ export interface PendingWidgetLog {
 
 const CACHE_KEY = "tt.widget";
 const PENDING_KEY = "tt.widget-pending";
+const PENDING_DELETES_KEY = "tt.widget-pending-deletes";
 
 export const EMPTY_CACHE: WidgetCache = {
   signedIn: false,
@@ -46,6 +61,8 @@ export const EMPTY_CACHE: WidgetCache = {
   accountId: null,
   quick: [],
   status: null,
+  lastLog: null,
+  numerals: "latn",
   updatedAt: 0,
 };
 
@@ -65,6 +82,15 @@ export async function readPendingLogs(): Promise<PendingWidgetLog[]> {
 
 export async function writePendingLogs(logs: PendingWidgetLog[]): Promise<void> {
   await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(logs));
+}
+
+/** Widget logs undone while offline; the app deletes them on next open. */
+export async function readPendingDeletes(): Promise<string[]> {
+  return JSON.parse((await AsyncStorage.getItem(PENDING_DELETES_KEY)) ?? "[]") as string[];
+}
+
+export async function writePendingDeletes(ids: string[]): Promise<void> {
+  await AsyncStorage.setItem(PENDING_DELETES_KEY, JSON.stringify(ids));
 }
 
 /** The three most frequent "note + amount" expenses become one-tap buttons (e.g. "cha ৳20"). */

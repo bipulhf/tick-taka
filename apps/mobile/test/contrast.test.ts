@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { blend, widgetColors } from "../src/features/widget/widget-colors";
 import {
   ON_ACCENT,
   type Palette,
@@ -140,6 +141,44 @@ describe("component boundaries reach 3:1", () => {
       expect(contrast(colors.lineStrong, colors.card)).toBeGreaterThanOrEqual(UI_AA);
     });
   }
+});
+
+describe("home-screen widget reaches WCAG AA", () => {
+  for (const scheme of SCHEMES) {
+    const c = widgetColors(scheme);
+    const check = (pairs: [string, string, string][]) => {
+      for (const [pair, fg, bg] of pairs) {
+        expect({ pair, ok: contrast(fg, bg) >= TEXT_AA }).toEqual({ pair, ok: true });
+      }
+    };
+    test(`${scheme}: labels and amounts on both ends of the gradient`, () => {
+      for (const end of ["from", "to"] as const) {
+        check([
+          [`muted on ${end}`, c.muted, c[end]],
+          [`mint-text hero on ${end}`, c.mintText, c[end]],
+          [`coral-text hero on ${end}`, c.coralText, c[end]],
+        ]);
+      }
+    });
+    test(`${scheme}: next-up card, quick-log and Undo buttons`, () => {
+      check([
+        ["ink on card", c.ink, c.card],
+        ["muted on card", c.muted, c.card],
+        ["sky-text on card", c.skyText, c.card],
+      ]);
+    });
+    test(`${scheme}: action pill labels on their tints`, () => {
+      check([
+        ["sky-text on sky tint", c.skyText, c.skyTint],
+        ["coral-text on coral tint", c.coralText, c.coralTint],
+      ]);
+    });
+  }
+
+  test("blend() flattens like the in-app tints", () => {
+    const expected: string = over("#5B8CFF", "#FFFFFF", 0.15).toUpperCase();
+    expect<string>(blend("#5B8CFF", "#FFFFFF", 0.15)).toBe(expected);
+  });
 });
 
 test("contrast() matches known WCAG values", () => {

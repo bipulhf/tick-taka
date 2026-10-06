@@ -10,9 +10,11 @@ import { SafeToSpendWidget } from "./safe-to-spend-widget";
 import {
   EMPTY_CACHE,
   pickQuickEntries,
+  readPendingDeletes,
   readPendingLogs,
   readWidgetCache,
   type WidgetCache,
+  writePendingDeletes,
   writePendingLogs,
   writeWidgetCache,
 } from "./widget-cache";
@@ -41,10 +43,13 @@ export function useWidgetSync() {
   useEffect(() => {
     void (async () => {
       const pending = await readPendingLogs();
-      if (pending.length === 0) return;
       for (const log of pending)
         send({ method: "POST", path: "/transactions", body: { ...log, type: "expense" } });
-      await writePendingLogs([]);
+      if (pending.length) await writePendingLogs([]);
+      // Quick-logs undone on the widget while it couldn't reach the server.
+      const deletes = await readPendingDeletes();
+      for (const id of deletes) send({ method: "DELETE", path: `/transactions/${id}` });
+      if (deletes.length) await writePendingDeletes([]);
     })();
   }, [send]);
 
@@ -60,6 +65,9 @@ export function useWidgetSync() {
         accountId: settings?.defaultAccountId ?? null,
         quick: transactions.length ? pickQuickEntries(transactions) : previous.quick,
         status: null,
+        // The widget keeps offering Undo for its last quick-log while the app refreshes.
+        lastLog: previous.lastLog,
+        numerals: settings?.numerals ?? "latn",
         updatedAt: editTime(),
       };
       await writeWidgetCache(cache);
@@ -71,5 +79,5 @@ export function useWidgetSync() {
         }),
       }).catch(() => {});
     })();
-  }, [today.data, recent.data, settings?.defaultAccountId, timeZone]);
+  }, [today.data, recent.data, settings?.defaultAccountId, settings?.numerals, timeZone]);
 }

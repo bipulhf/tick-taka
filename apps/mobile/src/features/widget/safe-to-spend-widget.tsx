@@ -1,47 +1,12 @@
 // The widget library walks this tree as plain functions; the React Compiler must not wrap it.
 "use no memo";
 
-import { formatAmount } from "@tick-taka/shared/money";
+import { formatAmount as formatAmountIn } from "@tick-taka/shared/money";
 import { FlexWidget, SvgWidget, TextWidget } from "react-native-android-widget";
 import type { WidgetCache } from "./widget-cache";
+import { type WidgetColors, widgetColors } from "./widget-colors";
+import { canUndo, lastLogText } from "./widget-quick-log";
 
-const COLORS = {
-  light: {
-    from: "#FFF8EE",
-    to: "#FFEFD9",
-    card: "#FFFFFF",
-    ink: "#23202B",
-    muted: "#7D7670",
-    track: "#EEE5D8",
-    mint: "#1E9E80",
-    coral: "#E8604F",
-    sky: "#3F6FE0",
-    skyTint: "#E3EBFF",
-    coralTint: "#FFE6E2",
-    grapeTint: "#EFE6FF",
-    grape: "#7B4FE0",
-    mangoTint: "#FFEBC8",
-    mango: "#8A5A00",
-  },
-  dark: {
-    from: "#22202B",
-    to: "#16151C",
-    card: "#2B2935",
-    ink: "#F4F1EA",
-    muted: "#A09AA6",
-    track: "#34313F",
-    mint: "#4FD8B5",
-    coral: "#FF9385",
-    sky: "#7AA2FF",
-    skyTint: "#28304A",
-    coralTint: "#3D2A2D",
-    grapeTint: "#33294A",
-    grape: "#B996FF",
-    mangoTint: "#3D3222",
-    mango: "#FFC266",
-  },
-} as const;
-type Palette = (typeof COLORS)["light" | "dark"];
 /** The widget library only takes hex colours. */
 type Hex = `#${string}`;
 
@@ -54,10 +19,16 @@ const TIKI = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
 <path d="M45 71 Q60 84 75 71" stroke="#3A2A1A" stroke-width="5" fill="none" stroke-linecap="round"/>
 </svg>`;
 
-/** Below this height (dp) the quick-log chips don't fit. */
-const TALL = 170;
+/** Every tappable part of the widget is at least this tall (dp). */
+const TARGET = 48;
+/** Caption size: the smallest text, as in the app. */
+const CAPTION = 13;
+/** Below this height (dp) only the numbers and the buttons fit. */
+const COMPACT = 160;
+/** At or above this height (dp) there's room for the quick-log row. */
+const TALL = 240;
 
-function Bar({ value, tone, c }: { value: number; tone: Hex; c: Palette }) {
+function Bar({ value, tone, c }: { value: number; tone: Hex; c: WidgetColors }) {
   const filled = Math.round(Math.min(1, Math.max(0, value)) * 100);
   return (
     <FlexWidget
@@ -80,15 +51,32 @@ function Bar({ value, tone, c }: { value: number; tone: Hex; c: Palette }) {
   );
 }
 
-function Action({ label, uri, tint, tone }: { label: string; uri: string; tint: Hex; tone: Hex }) {
+function Pill({
+  label,
+  tint,
+  tone,
+  clickAction,
+  clickActionData,
+  accessibilityLabel,
+  flex,
+}: {
+  label: string;
+  tint: Hex;
+  tone: Hex;
+  clickAction: string;
+  clickActionData?: Record<string, unknown>;
+  accessibilityLabel: string;
+  flex?: number;
+}) {
   return (
     <FlexWidget
-      clickAction="OPEN_URI"
-      clickActionData={{ uri }}
+      clickAction={clickAction}
+      clickActionData={clickActionData}
+      accessibilityLabel={accessibilityLabel}
       style={{
-        flex: 1,
-        height: 36,
-        borderRadius: 18,
+        ...(flex ? { flex } : { paddingHorizontal: 14 }),
+        height: TARGET,
+        borderRadius: TARGET / 2,
         backgroundColor: tint,
         alignItems: "center",
         justifyContent: "center",
@@ -97,13 +85,13 @@ function Action({ label, uri, tint, tone }: { label: string; uri: string; tint: 
       <TextWidget
         text={label}
         maxLines={1}
-        style={{ fontSize: 12, fontWeight: "bold", color: tone }}
+        style={{ fontSize: CAPTION, fontWeight: "bold", color: tone }}
       />
     </FlexWidget>
   );
 }
 
-function SignedOut({ c }: { c: Palette }) {
+function SignedOut({ c }: { c: WidgetColors }) {
   return (
     <FlexWidget
       clickAction="OPEN_APP"
@@ -120,11 +108,11 @@ function SignedOut({ c }: { c: Palette }) {
     >
       <SvgWidget svg={TIKI} style={{ width: 48, height: 48 }} />
       <FlexWidget style={{ flex: 1, flexDirection: "column", flexGap: 2 }}>
-        <TextWidget text="Tick & Taka" style={{ fontSize: 16, fontWeight: "bold", color: c.ink }} />
+        <TextWidget text="Tick & Taka" style={{ fontSize: 17, fontWeight: "bold", color: c.ink }} />
         <TextWidget
           text="Sign in to see your day and what's safe to spend."
           maxLines={2}
-          style={{ fontSize: 12, color: c.muted }}
+          style={{ fontSize: CAPTION, color: c.muted }}
         />
       </FlexWidget>
     </FlexWidget>
@@ -135,19 +123,23 @@ function SignedOut({ c }: { c: Palette }) {
  * Home-screen widget: today at a glance. What's safe to spend (and how much of
  * today's share is gone), what to do next, top-three and habit progress, and
  * one-tap buttons to add a task, log an expense, start focusing or talk to Tiki.
+ * A quick-log can be taken back from the widget for a few minutes.
  */
 export function SafeToSpendWidget({
   cache,
   scheme,
   height = 0,
+  now = Date.now(),
 }: {
   cache: WidgetCache;
   scheme: "light" | "dark";
   height?: number;
+  now?: number;
 }) {
-  const c = COLORS[scheme];
+  const c = widgetColors(scheme);
   if (!cache.signedIn) return <SignedOut c={c} />;
 
+  const money = (minor: number) => formatAmountIn(minor, { numerals: cache.numerals });
   const left = cache.leftTodayMinor;
   const over = left !== null && left < 0;
   const spentShare = cache.dailyMinor > 0 ? cache.spentTodayMinor / cache.dailyMinor : 0;
@@ -157,7 +149,17 @@ export function SafeToSpendWidget({
   ]
     .filter(Boolean)
     .join("  ·  ");
-  const showQuick = height >= TALL && cache.quick.length > 0;
+  const compact = height > 0 && height < COMPACT;
+  const tall = height >= TALL;
+  const undo = canUndo(cache, now) && cache.lastLog ? cache.lastLog : null;
+  const showQuick = tall && !undo && cache.quick.length > 0;
+  const statusLine =
+    cache.status ??
+    (undo && !tall
+      ? lastLogText(undo, money(undo.amountMinor))
+      : left === null
+        ? "Budgets give you a daily number"
+        : `${money(cache.spentTodayMinor)} of ${money(cache.dailyMinor)} spent`);
 
   return (
     <FlexWidget
@@ -167,9 +169,9 @@ export function SafeToSpendWidget({
         width: "match_parent",
         backgroundGradient: { from: c.from, to: c.to, orientation: "TL_BR" },
         borderRadius: 24,
-        padding: 12,
+        padding: compact ? 10 : 12,
         flexDirection: "column",
-        flexGap: 10,
+        flexGap: 8,
       }}
     >
       <FlexWidget style={{ flex: 1, flexDirection: "row", width: "match_parent", flexGap: 10 }}>
@@ -184,31 +186,29 @@ export function SafeToSpendWidget({
         >
           <TextWidget
             text={over ? "Over today's amount by" : "Safe to spend today"}
-            style={{ fontSize: 11, color: c.muted }}
+            maxLines={1}
+            style={{ fontSize: CAPTION, color: c.muted }}
           />
           <TextWidget
-            text={left === null ? "Set a budget" : formatAmount(Math.abs(left))}
+            text={left === null ? "Set a budget" : money(Math.abs(left))}
             maxLines={1}
             style={{
-              fontSize: left === null ? 18 : 26,
+              fontSize: left === null ? 20 : 26,
               fontWeight: "bold",
-              color: over ? c.coral : c.mint,
+              color: over ? c.coralText : c.mintText,
             }}
           />
-          {left === null ? null : (
+          {left === null || compact ? null : (
             <Bar value={over ? 1 : spentShare} tone={over ? c.coral : c.mint} c={c} />
           )}
-          <TextWidget
-            text={
-              cache.status ??
-              (left === null
-                ? "Budgets give you a daily number"
-                : `${formatAmount(cache.spentTodayMinor)} of ${formatAmount(cache.dailyMinor)} spent`)
-            }
-            maxLines={1}
-            truncate="END"
-            style={{ fontSize: 11, color: c.muted }}
-          />
+          {compact ? null : (
+            <TextWidget
+              text={statusLine}
+              maxLines={1}
+              truncate="END"
+              style={{ fontSize: CAPTION, color: c.muted }}
+            />
+          )}
         </FlexWidget>
         <FlexWidget
           clickAction="OPEN_URI"
@@ -223,68 +223,112 @@ export function SafeToSpendWidget({
             justifyContent: "space-between",
           }}
         >
-          <FlexWidget style={{ flexDirection: "row", alignItems: "center", flexGap: 6 }}>
-            <SvgWidget svg={TIKI} style={{ width: 18, height: 18 }} />
-            <TextWidget text="Next up" style={{ fontSize: 11, color: c.muted }} />
-          </FlexWidget>
+          {compact ? null : (
+            <FlexWidget style={{ flexDirection: "row", alignItems: "center", flexGap: 6 }}>
+              <SvgWidget svg={TIKI} style={{ width: 18, height: 18 }} />
+              <TextWidget text="Next up" style={{ fontSize: CAPTION, color: c.muted }} />
+            </FlexWidget>
+          )}
           <TextWidget
             text={cache.nextUp?.title ?? "All clear for today"}
-            maxLines={2}
+            maxLines={compact ? 1 : 2}
             truncate="END"
-            style={{ fontSize: 14, fontWeight: "bold", color: c.ink }}
+            style={{ fontSize: 15, fontWeight: "bold", color: c.ink }}
           />
           <TextWidget
             text={cache.nextUp ? cache.nextUp.when : "Nice work ✨"}
             maxLines={1}
-            style={{ fontSize: 11, fontWeight: "bold", color: c.sky }}
+            style={{ fontSize: CAPTION, fontWeight: "bold", color: c.skyText }}
           />
-          {progress ? (
+          {progress && !compact ? (
             <TextWidget
               text={progress}
               maxLines={1}
               truncate="END"
-              style={{ fontSize: 10, color: c.muted }}
+              style={{ fontSize: CAPTION, color: c.muted }}
             />
           ) : null}
         </FlexWidget>
       </FlexWidget>
+      {tall && undo ? (
+        <FlexWidget
+          style={{ flexDirection: "row", width: "match_parent", alignItems: "center", flexGap: 6 }}
+        >
+          <FlexWidget style={{ flex: 1, paddingHorizontal: 4 }}>
+            <TextWidget
+              text={lastLogText(undo, money(undo.amountMinor))}
+              maxLines={1}
+              truncate="END"
+              style={{ fontSize: CAPTION, color: c.ink }}
+            />
+          </FlexWidget>
+          <Pill
+            label="Undo"
+            tint={c.card}
+            tone={c.ink}
+            clickAction="UNDO_LOG"
+            accessibilityLabel={`Undo: remove ${undo.label} ${money(undo.amountMinor)}`}
+          />
+          <Pill
+            label="Keep"
+            tint={c.card}
+            tone={c.muted}
+            clickAction="KEEP_LOG"
+            accessibilityLabel="Keep it and show the quick-log buttons"
+          />
+        </FlexWidget>
+      ) : null}
       {showQuick ? (
         <FlexWidget style={{ flexDirection: "row", width: "match_parent", flexGap: 6 }}>
           {cache.quick.map((entry, index) => (
-            <FlexWidget
+            <Pill
               key={`${entry.note}-${entry.amountMinor}`}
+              label={`${entry.label} ${money(entry.amountMinor)}`}
+              tint={c.card}
+              tone={c.ink}
               clickAction="LOG"
               clickActionData={{ index }}
-              style={{
-                backgroundColor: c.card,
-                borderRadius: 14,
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-              }}
-            >
-              <TextWidget
-                text={`${entry.label} ${formatAmount(entry.amountMinor)}`}
-                maxLines={1}
-                style={{ fontSize: 12, color: c.ink }}
-              />
-            </FlexWidget>
+              accessibilityLabel={`Log ${entry.label}, ${money(entry.amountMinor)}, as an expense`}
+            />
           ))}
         </FlexWidget>
       ) : null}
       <FlexWidget style={{ flexDirection: "row", width: "match_parent", flexGap: 6 }}>
-        <Action label="＋ Task" uri="ticktaka://add?kind=task" tint={c.skyTint} tone={c.sky} />
-        <Action
-          label="－ Expense"
-          uri="ticktaka://add?kind=expense"
-          tint={c.coralTint}
-          tone={c.coral}
+        <Pill
+          flex={1}
+          label="＋ Task"
+          tint={c.skyTint}
+          tone={c.skyText}
+          clickAction="OPEN_URI"
+          clickActionData={{ uri: "ticktaka://add?kind=task" }}
+          accessibilityLabel="Add a task"
         />
-        <Action label="▶ Focus" uri="ticktaka://focus" tint={c.skyTint} tone={c.sky} />
-        <Action
+        <Pill
+          flex={1}
+          label="－ Expense"
+          tint={c.coralTint}
+          tone={c.coralText}
+          clickAction="OPEN_URI"
+          clickActionData={{ uri: "ticktaka://add?kind=expense" }}
+          accessibilityLabel="Log an expense"
+        />
+        <Pill
+          flex={1}
+          label="▶ Focus"
+          tint={c.skyTint}
+          tone={c.skyText}
+          clickAction="OPEN_URI"
+          clickActionData={{ uri: "ticktaka://focus" }}
+          accessibilityLabel="Start focus"
+        />
+        <Pill
+          flex={1}
           label="🎙 Tiki"
-          uri="ticktaka://assistant?start=talk"
-          tint={c.mangoTint}
-          tone={c.mango}
+          tint={c.card}
+          tone={c.ink}
+          clickAction="OPEN_URI"
+          clickActionData={{ uri: "ticktaka://assistant?start=talk" }}
+          accessibilityLabel="Talk to Tiki"
         />
       </FlexWidget>
     </FlexWidget>

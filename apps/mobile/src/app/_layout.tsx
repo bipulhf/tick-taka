@@ -29,7 +29,7 @@ import { loadToken, tokenStore } from "@/lib/auth";
 import { loadFeedbackPrefs } from "@/lib/feedback-prefs";
 import { startOutbox } from "@/lib/outbox";
 import { loadPrivacy } from "@/lib/privacy";
-import { PERSIST_MAX_AGE, persister, queryClient } from "@/lib/query-client";
+import { CACHE_BUSTER, PERSIST_MAX_AGE, persister, queryClient } from "@/lib/query-client";
 import { restoreServerClock } from "@/lib/server-clock";
 import { preloadSounds } from "@/lib/sounds";
 import { useStore } from "@/lib/store";
@@ -105,7 +105,7 @@ export default function RootLayout() {
           persistOptions={{
             persister,
             maxAge: PERSIST_MAX_AGE,
-            buster: "1",
+            buster: CACHE_BUSTER,
             // Queued writes live in the outbox's own storage, not in this cache.
             dehydrateOptions: { shouldDehydrateMutation: () => false },
           }}

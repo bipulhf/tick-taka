@@ -1,4 +1,5 @@
 import type { AppType } from "@tick-taka/api/app-type";
+import { errorBodySchema } from "@tick-taka/shared/schemas/common";
 import { hc } from "hono/client";
 import type { SuccessStatusCode } from "hono/utils/http-status";
 import { API_URL } from "./config";
@@ -24,14 +25,16 @@ interface JsonResponse {
   json(): Promise<unknown>;
 }
 
-/** An ApiError from a status and an already-read error body (`{ error: { code, message } }`). */
+/**
+ * An ApiError from a status and an already-read error body. Only our API's envelope
+ * (`{ error: { code, message } }`, checked) gives a code; anything else came from
+ * something in front of the server (a proxy, a captive portal) and is `http_error`,
+ * which the outbox treats as "not reached" rather than as a refusal.
+ */
 export function apiErrorFrom(status: number, body: unknown): ApiError {
-  const error = (body as { error?: { code?: string; message?: string } } | null)?.error;
-  return new ApiError(
-    status,
-    error?.code ?? "http_error",
-    error?.message ?? `Request failed (${status})`,
-  );
+  const parsed = errorBodySchema.safeParse(body);
+  if (!parsed.success) return new ApiError(status, "http_error", `Request failed (${status})`);
+  return new ApiError(status, parsed.data.error.code, parsed.data.error.message);
 }
 
 async function toError(response: JsonResponse): Promise<ApiError> {

@@ -1,5 +1,5 @@
 import { fetch } from "expo/fetch";
-import { ApiError } from "./api";
+import { apiErrorFrom } from "./api";
 import { apiUrl, currentToken, reportUnauthorized, ServerUnreachableError } from "./http";
 import { noteServerTime, serverTimeOf } from "./server-clock";
 
@@ -39,14 +39,7 @@ export async function postEventStream(
     noteServerTime(serverTimeOf(response.headers), sentAt, Date.now());
     if (!response.ok || !response.body) {
       if (response.status === 401) reportUnauthorized(sentToken);
-      const error = (await response.json().catch(() => null)) as {
-        error?: { code: string; message: string };
-      } | null;
-      throw new ApiError(
-        response.status,
-        error?.error?.code ?? "http_error",
-        error?.error?.message ?? `Request failed (${response.status})`,
-      );
+      throw apiErrorFrom(response.status, await response.json().catch(() => null));
     }
     const reader = response.body.getReader();
     const decoder = new TextDecoder();

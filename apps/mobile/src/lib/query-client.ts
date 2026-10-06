@@ -88,6 +88,16 @@ export const persister: Persister = {
   },
 };
 export const PERSIST_MAX_AGE = 14 * DAY_MS;
+/**
+ * Version of the cached server replies. Bump it in the same commit as any change to the
+ * shape of a reply a screen reads: a field removed, renamed or retyped, or a new field
+ * the phone now relies on. The cache saved by the older build is then dropped at start
+ * instead of handing a screen data it doesn't expect (and crashing it until "Reset
+ * cached data"). Purely additive fields nothing reads yet don't need a bump.
+ *
+ * 2: replies changed during the 2026-10 audit fixes (pay replies gained previousDueAt).
+ */
+export const CACHE_BUSTER = "2";
 
 // Online means "has a network": the API may be on a LAN or VPS that answers even when
 // Android's internet reachability check fails. The outbox retries until the server answers.

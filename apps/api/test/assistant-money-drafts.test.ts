@@ -49,7 +49,7 @@ const line = async (ctx: TestContext, categoryId: string) =>
 // QA-208: budgets and the money fields of bills, goals, events, shopping items and
 // categories are drafts too.
 describe("assistant budget changes are drafts", () => {
-  test("set_budget proposes, keeps the line's rollover, and its undo puts the old lines back", async () => {
+  test("set_budget proposes one line, keeps its rollover, and its undo puts the old value back", async () => {
     const { ai, ctx } = await setup();
     const { category } = await setupMoney(ctx);
     const food = category("Food");
@@ -82,7 +82,8 @@ describe("assistant budget changes are drafts", () => {
     const draft = done.drafts[0]!;
     expect(draft).toMatchObject({
       method: "PUT",
-      path: "/budgets",
+      path: `/budgets/2026-10/${food.id}`,
+      body: { limitMinor: 800_000 },
       amountMinor: 800_000,
       categoryId: food.id,
     });
@@ -118,9 +119,143 @@ describe("assistant budget changes are drafts", () => {
     const res = await say("set my food budget to 8000");
     expect(await line(ctx, food.id)).toMatchObject({ limitMinor: 800_000, rollover: true });
     const action = res.body.actions[0]!;
-    expect(action.undo).toMatchObject({ method: "PUT", path: "/budgets" });
+    expect(action.undo).toMatchObject({ method: "PUT", path: `/budgets/2026-10/${food.id}` });
     await send(ctx, action.undo as NonNullable<Draft["undo"]>);
     expect(await line(ctx, food.id)).toMatchObject({ limitMinor: 500_000, rollover: true });
+  });
+});
+
+// QA-302: a draft can wait in the chat for days; saving it, or its Undo, must touch
+// only its own line, not write back the month as it was when the draft was made.
+describe("an old set_budget draft", () => {
+  const draftFor = async (
+    ai: Awaited<ReturnType<typeof setup>>["ai"],
+    ctx: TestContext,
+    limit: number,
+    category = "Food",
+  ) => {
+    ai.queueChat(
+      {
+        toolCalls: [
+          call("act", {
+            action: "set_budget",
+            id: null,
+            fields: fields({ month: "2026-10", category, limit }),
+          }),
+        ],
+      },
+      { content: "Waiting for your tap." },
+    );
+    return (await ask(ctx, `set my ${category} budget to ${limit}`)).drafts[0]!;
+  };
+
+  test("saved after other lines changed, it and its Undo leave those lines alone", async () => {
+    const { ai, ctx } = await setup();
+    const { category } = await setupMoney(ctx);
+    const food = category("Food");
+    const fun = category("Fun");
+    const rent = category("Rent");
+    await ctx.request("PUT", "/budgets", {
+      month: "2026-10",
+      budgets: [
+        { categoryId: food.id, limitMinor: 500_000, rollover: true },
+        { categoryId: fun.id, limitMinor: 200_000, rollover: false },
+      ],
+    });
+    const draft = await draftFor(ai, ctx, 8000);
+
+    // An hour later, in the Budgets screen: Fun goes up and Rent gets a budget.
+    await ctx.request("PUT", "/budgets", {
+      month: "2026-10",
+      budgets: [
+        { categoryId: food.id, limitMinor: 500_000, rollover: true },
+        { categoryId: fun.id, limitMinor: 300_000, rollover: false },
+        { categoryId: rent.id, limitMinor: 1_500_000, rollover: false },
+      ],
+    });
+
+    expect((await send(ctx, draft)).status).toBe(200);
+    expect(await line(ctx, food.id)).toMatchObject({ limitMinor: 800_000, rollover: true });
+    expect(await line(ctx, fun.id)).toMatchObject({ limitMinor: 300_000 });
+    expect(await line(ctx, rent.id)).toMatchObject({ hasBudget: true, limitMinor: 1_500_000 });
+
+    // Fun changes again before the Undo.
+    await ctx.request("PUT", "/budgets", {
+      month: "2026-10",
+      budgets: [
+        { categoryId: food.id, limitMinor: 800_000, rollover: true },
+        { categoryId: fun.id, limitMinor: 350_000, rollover: false },
+        { categoryId: rent.id, limitMinor: 1_500_000, rollover: false },
+      ],
+    });
+    expect((await send(ctx, draft.undo!)).status).toBe(200);
+    expect(await line(ctx, food.id)).toMatchObject({ limitMinor: 500_000, rollover: true });
+    expect(await line(ctx, fun.id)).toMatchObject({ limitMinor: 350_000 });
+    expect(await line(ctx, rent.id)).toMatchObject({ hasBudget: true, limitMinor: 1_500_000 });
+  });
+
+  test("for a new line, its Undo removes only that line", async () => {
+    const { ai, ctx } = await setup();
+    const { category } = await setupMoney(ctx);
+    const food = category("Food");
+    const fun = category("Fun");
+    await ctx.request("PUT", "/budgets", {
+      month: "2026-10",
+      budgets: [{ categoryId: fun.id, limitMinor: 200_000, rollover: false }],
+    });
+    const draft = await draftFor(ai, ctx, 8000);
+    await send(ctx, draft);
+    expect(await line(ctx, food.id)).toMatchObject({ hasBudget: true, limitMinor: 800_000 });
+    await send(ctx, draft.undo!);
+    expect(await line(ctx, food.id)).toMatchObject({ hasBudget: false });
+    expect(await line(ctx, fun.id)).toMatchObject({ hasBudget: true, limitMinor: 200_000 });
+  });
+
+  test("removing a line keeps the others, and its Undo brings the line back", async () => {
+    const { ai, ctx } = await setup();
+    const { category } = await setupMoney(ctx);
+    const food = category("Food");
+    const fun = category("Fun");
+    await ctx.request("PUT", "/budgets", {
+      month: "2026-10",
+      budgets: [
+        { categoryId: food.id, limitMinor: 500_000, rollover: true },
+        { categoryId: fun.id, limitMinor: 200_000, rollover: false },
+      ],
+    });
+    const draft = await draftFor(ai, ctx, 0);
+    expect(draft.summary).toContain("Remove");
+    expect(draft.method).toBe("PUT");
+    await send(ctx, draft);
+    expect(await line(ctx, food.id)).toMatchObject({ hasBudget: false });
+    expect(await line(ctx, fun.id)).toMatchObject({ hasBudget: true, limitMinor: 200_000 });
+    await send(ctx, draft.undo!);
+    expect(await line(ctx, food.id)).toMatchObject({ limitMinor: 500_000, rollover: true });
+  });
+
+  test("in a month that inherits last month's budgets, the other inherited lines stay", async () => {
+    const { ai, ctx } = await setup();
+    const { category } = await setupMoney(ctx);
+    const food = category("Food");
+    const fun = category("Fun");
+    await ctx.request("PUT", "/budgets", {
+      month: "2026-09",
+      budgets: [
+        { categoryId: food.id, limitMinor: 500_000, rollover: false },
+        { categoryId: fun.id, limitMinor: 200_000, rollover: true },
+      ],
+    });
+    const draft = await draftFor(ai, ctx, 8000);
+    await send(ctx, draft);
+    expect(await line(ctx, food.id)).toMatchObject({ limitMinor: 800_000 });
+    expect(await line(ctx, fun.id)).toMatchObject({
+      hasBudget: true,
+      limitMinor: 200_000,
+      rollover: true,
+    });
+    await send(ctx, draft.undo!);
+    expect(await line(ctx, food.id)).toMatchObject({ hasBudget: true, limitMinor: 500_000 });
+    expect(await line(ctx, fun.id)).toMatchObject({ hasBudget: true, limitMinor: 200_000 });
   });
 });
 

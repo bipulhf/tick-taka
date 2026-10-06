@@ -155,6 +155,15 @@ export const budgetsPutSchema = z.object({
     )
     .max(200),
 });
+/**
+ * One budget line of a month (PUT /budgets/:month/:categoryId). A null limit removes
+ * the line; rollover left out keeps the line's current setting.
+ */
+export const budgetLinePutSchema = z.object({
+  limitMinor: z.number().int().nonnegative().nullable(),
+  rollover: z.boolean().optional(),
+});
+export const budgetLineParamSchema = z.object({ month: localMonthSchema, categoryId: idSchema });
 
 // Recurring -------------------------------------------------------------------
 export const recurringCreateSchema = z.object({

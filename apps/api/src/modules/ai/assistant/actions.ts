@@ -2,7 +2,7 @@ import { isLocalDate, isLocalMonth, type LocalDate } from "@tick-taka/shared/dat
 import { newId } from "@tick-taka/shared/ids";
 import type { Caller } from "./dispatch";
 import { type createFieldConverter, project } from "./fields";
-import { type Action, type DRAFTED, type Draft, label, listOf, type Undo } from "./records";
+import { type Action, type DRAFTED, type Draft, isId, label, listOf, type Undo } from "./records";
 
 export const ACTIONS = [
   "log_habit",
@@ -157,6 +157,7 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
       category: raw.category,
       limit: raw.limit,
     });
+    if (!isId(categoryId)) return fail("set_budget needs a category");
     const current = (await caller.call("GET", `/budgets?month=${month}`)).data as {
       lines?: {
         categoryId: string;
@@ -166,32 +167,29 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
         hasBudget?: boolean;
       }[];
     } | null;
-    const lines = (current?.lines ?? []).filter((line) => line.hasBudget);
-    const asSent = (line: (typeof lines)[number]) => ({
-      categoryId: line.categoryId,
-      limitMinor: line.limitMinor,
-      rollover: line.rollover ?? false,
-    });
-    const previous = lines.map(asSent);
-    const kept = previous.filter((line) => line.categoryId !== categoryId);
-    // Changing the amount leaves the line's rollover as the user set it.
-    const rollover = previous.find((line) => line.categoryId === categoryId)?.rollover ?? false;
+    const existing = current?.lines?.find((line) => line.categoryId === categoryId);
+    const before = existing?.hasBudget
+      ? { limitMinor: existing.limitMinor, rollover: existing.rollover ?? false }
+      : { limitMinor: null };
     const setting = Number(limitMinor) > 0;
-    const budgets = setting ? [...kept, { categoryId, limitMinor, rollover }] : kept;
-    const name = current?.lines?.find((line) => line.categoryId === categoryId)?.name;
-    const summary = `${setting ? "Set" : "Remove"} the ${name ? `${name} ` : ""}budget for ${month}`;
-    const undo: Undo = { method: "PUT", path: "/budgets", body: { month, budgets: previous } };
+    // Only this line is written, so a draft saved days later (or its Undo) leaves the
+    // month's other lines as they are by then. Changing the amount keeps the line's
+    // rollover as the user set it.
+    const path = `/budgets/${month}/${categoryId}`;
+    const body = { limitMinor: setting ? limitMinor : null };
+    const summary = `${setting ? "Set" : "Remove"} the ${existing?.name ? `${existing.name} ` : ""}budget for ${month}`;
+    const undo: Undo = { method: "PUT", path, body: before };
     if (drafting)
       return propose({
         summary,
         method: "PUT",
-        path: "/budgets",
-        body: { month, budgets },
+        path,
+        body,
         undo,
         ...(typeof limitMinor === "number" ? { amountMinor: limitMinor } : {}),
-        ...(typeof categoryId === "string" ? { categoryId } : {}),
+        categoryId,
       });
-    const result = await caller.call("PUT", "/budgets", { month, budgets });
+    const result = await caller.call("PUT", path, body);
     if (!result.ok) return fail(result.error);
     actions.push({
       summary: setting ? `Set a ${month} budget` : `Removed a ${month} budget`,

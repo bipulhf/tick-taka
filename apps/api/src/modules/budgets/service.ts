@@ -280,3 +280,64 @@ export function putBudgets(
   });
   return budgetMonth(deps, month);
 }
+
+/**
+ * Sets one line of a month, or removes it when the limit is null, and leaves the
+ * other lines as they are: a change prepared earlier (an assistant draft, its Undo)
+ * can't revert lines edited since. Rollover left out keeps the line's own. A month
+ * still showing an earlier month's budgets gets those copied in first, so the other
+ * inherited lines stay.
+ */
+export function putBudgetLine(
+  deps: Deps,
+  month: LocalMonth,
+  categoryId: string,
+  line: { limitMinor: number | null; rollover?: boolean },
+): BudgetMonth {
+  const now = deps.now();
+  deps.db.transaction((tx) => {
+    const { rows, inherited } = effectiveBudgets(deps, month);
+    const current = rows.find((row) => row.categoryId === categoryId);
+    if (inherited) {
+      for (const row of rows) {
+        if (row.categoryId === categoryId) continue;
+        tx.insert(budgets)
+          .values({
+            id: newId(now),
+            month,
+            categoryId: row.categoryId,
+            limitMinor: row.limitMinor,
+            rollover: row.rollover,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .run();
+      }
+    }
+    if (line.limitMinor === null && !current) return;
+    const removing = line.limitMinor === null;
+    const limitMinor = line.limitMinor ?? current?.limitMinor ?? 0;
+    const rollover = line.rollover ?? current?.rollover ?? false;
+    // A removal in an inheriting month still writes its row (deleted), which marks the
+    // month as set so it stops inheriting the line.
+    tx.insert(budgets)
+      .values({
+        id: newId(now),
+        month,
+        categoryId,
+        limitMinor,
+        rollover,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: removing ? now : null,
+      })
+      .onConflictDoUpdate({
+        target: [budgets.categoryId, budgets.month],
+        set: removing
+          ? { updatedAt: now, deletedAt: now }
+          : { limitMinor, rollover, updatedAt: now, deletedAt: null },
+      })
+      .run();
+  });
+  return budgetMonth(deps, month);
+}

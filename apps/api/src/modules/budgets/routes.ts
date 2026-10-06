@@ -1,9 +1,14 @@
-import { budgetMonthQuerySchema, budgetsPutSchema } from "@tick-taka/shared/schemas/money";
+import {
+  budgetLineParamSchema,
+  budgetLinePutSchema,
+  budgetMonthQuerySchema,
+  budgetsPutSchema,
+} from "@tick-taka/shared/schemas/money";
 import { Hono } from "hono";
 import type { Deps } from "../../lib/deps";
 import { dateQuery } from "../../lib/params";
 import { validate } from "../../lib/validate";
-import { budgetMonth, putBudgets, safeToSpend } from "./service";
+import { budgetMonth, putBudgetLine, putBudgets, safeToSpend } from "./service";
 
 export const budgetsRoutes = (deps: Deps) =>
   new Hono()
@@ -14,6 +19,15 @@ export const budgetsRoutes = (deps: Deps) =>
       const { month, budgets } = c.req.valid("json");
       return c.json(putBudgets(deps, month, budgets));
     })
+    .put(
+      "/:month/:categoryId",
+      validate("param", budgetLineParamSchema),
+      validate("json", budgetLinePutSchema),
+      (c) => {
+        const { month, categoryId } = c.req.valid("param");
+        return c.json(putBudgetLine(deps, month, categoryId, c.req.valid("json")));
+      },
+    )
     .get("/safe-to-spend", validate("query", dateQuery), (c) =>
       c.json(safeToSpend(deps, c.req.valid("query").date)),
     );

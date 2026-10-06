@@ -38,6 +38,9 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
     enabled: Boolean(linkedTaskId),
   });
 
+  /** Naming the entry makes a replayed stop a no-op instead of stopping something else. */
+  const stopTarget = (entryId: string | null | undefined) => (entryId ? { id: entryId } : {});
+
   const startWork = () => {
     const startedAt = Date.now();
     const entryId = newId();
@@ -63,7 +66,7 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
     send({
       method: "POST",
       path: "/timer/stop",
-      body: { endedAt },
+      body: { ...stopTarget(focusStore.get()?.entryId), endedAt },
       label: "Couldn't stop the timer",
     });
     haptic.success();
@@ -86,7 +89,7 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
       send({
         method: "POST",
         path: "/timer/stop",
-        body: { endedAt: Date.now() },
+        body: { ...stopTarget(session.entryId), endedAt: Date.now() },
         label: "Couldn't stop the timer",
       });
     void cancelFocusEnd();

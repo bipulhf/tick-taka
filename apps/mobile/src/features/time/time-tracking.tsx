@@ -90,7 +90,7 @@ export function TimeTracking() {
                     send({
                       method: "POST",
                       path: "/timer/stop",
-                      body: { endedAt: editTime() },
+                      body: { id: active.id, endedAt: editTime() },
                       label: "Couldn't stop",
                     })
                   }

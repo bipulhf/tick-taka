@@ -58,7 +58,7 @@ export function RunningTimerBar({
             send({
               method: "POST",
               path: "/timer/stop",
-              body: { endedAt: editTime() },
+              body: { id: entry.id, endedAt: editTime() },
               label: "Couldn't stop the timer",
             });
           }}

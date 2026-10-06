@@ -109,6 +109,8 @@ function RecurringForm({ id }: { id: string | null }) {
     if (!item) return;
     const body: Record<string, unknown> = {
       transactionId: newId(),
+      // The due date this pay is for: a replay or double tap then changes nothing.
+      dueAt: item.nextDueAt,
       skip,
       ...(accountId ? { accountId } : {}),
     };

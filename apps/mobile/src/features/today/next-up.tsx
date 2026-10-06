@@ -40,7 +40,9 @@ function MoneyRow({ item }: { item: Extract<Item, { kind: "bill" | "payday" }> }
             send({
               method: "POST",
               path: `/recurring/${item.id}/pay`,
-              body: { transactionId: newId() },
+              // The due time seen here (start of today if overdue): a replay or double tap
+              // then finds the bill already moved past it and changes nothing.
+              body: { transactionId: newId(), dueAt: item.at },
               label: `Couldn't log ${item.name}`,
             });
             notify(`${item.name} logged`);

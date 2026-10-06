@@ -1,5 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { formatAmount, parseAmountToMinor, splitEvenly, toMajor, toMinor } from "../src/money";
+import {
+  currencySymbol,
+  DEFAULT_CURRENCY,
+  formatAmount,
+  minorDigits,
+  minorFactor,
+  parseAmountToMinor,
+  splitEvenly,
+  toMajor,
+  toMinor,
+} from "../src/money";
 
 describe("money", () => {
   test("converts to and from minor units", () => {
@@ -30,5 +40,41 @@ describe("money", () => {
     const parts = splitEvenly(185_000, 3);
     expect(parts.reduce((a, b) => a + b, 0)).toBe(185_000);
     expect(parts).toEqual([61_667, 61_667, 61_666]);
+  });
+
+  test("minor units per currency", () => {
+    expect(DEFAULT_CURRENCY).toBe("BDT");
+    expect(minorDigits("BDT")).toBe(2);
+    expect(minorDigits("jpy")).toBe(0);
+    expect(minorFactor("USD")).toBe(100);
+    expect(minorFactor("KRW")).toBe(1);
+    expect(toMajor(1000, "JPY")).toBe(1000);
+    expect(toMinor(0)).toBe(0);
+    expect(Object.is(toMinor(-0.001), 0)).toBe(true);
+    expect(toMinor(0.1 + 0.2)).toBe(30);
+  });
+
+  test("currency symbols fall back to the code", () => {
+    expect(currencySymbol("bdt")).toBe("৳");
+    expect(currencySymbol("GBP")).toBe("£");
+    expect(currencySymbol("chf")).toBe("CHF ");
+    expect(formatAmount(1050, { currency: "CHF" })).toBe("CHF 10.50");
+    expect(formatAmount(1500, { currency: "JPY", forceDecimals: true })).toBe("¥1,500");
+  });
+
+  test("parses negatives and rejects junk", () => {
+    expect(parseAmountToMinor("-60")).toBe(-6_000);
+    expect(parseAmountToMinor("0.5")).toBe(50);
+    expect(parseAmountToMinor("1500", "JPY")).toBe(1500);
+    expect(parseAmountToMinor("")).toBeNull();
+    expect(parseAmountToMinor("12.")).toBeNull();
+    expect(parseAmountToMinor("1e3")).toBeNull();
+  });
+
+  test("splitEvenly handles negatives and rejects bad part counts", () => {
+    expect(splitEvenly(-100, 3)).toEqual([-34, -33, -33]);
+    expect(splitEvenly(100, 1)).toEqual([100]);
+    expect(() => splitEvenly(100, 0)).toThrow("parts must be a positive integer");
+    expect(() => splitEvenly(100, 1.5)).toThrow("parts must be a positive integer");
   });
 });

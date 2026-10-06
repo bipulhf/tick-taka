@@ -5,6 +5,7 @@ import { BarChart, LineChart } from "react-native-gifted-charts";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Card } from "@/components/ui/card";
+import { useChartAxis } from "@/components/ui/chart-axis";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
@@ -16,7 +17,7 @@ import { formatAmount, formatMinutes, formatMonth } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import { useAreas, useCategories, useSettings } from "@/lib/queries";
 import { userTime } from "@/lib/user-time";
-import { useChartColors, useColors } from "@/theme/colors";
+import { useChartColors } from "@/theme/colors";
 import { useMonthlySeries, useNetWorth } from "./queries";
 
 type Range = "this" | "last" | "quarter";
@@ -41,8 +42,8 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 
 /** Spending by category, income vs expense by month, net worth over time, spending by area. */
 export function InsightsScreen() {
-  const colors = useColors();
   const chart = useChartColors();
+  const axis = useChartAxis();
   const hidden = usePrivacy();
   const { data: settings } = useSettings();
   const { data: categories = [] } = useCategories();
@@ -96,13 +97,6 @@ export function InsightsScreen() {
     value: p.netWorthMinor / 100,
     label: formatMonth(p.month).slice(0, 3),
   }));
-  const axis = {
-    yAxisThickness: 0,
-    xAxisColor: colors.line,
-    yAxisTextStyle: { color: colors.muted, fontSize: 10 },
-    xAxisLabelTextStyle: { color: colors.muted, fontSize: 10 },
-    rulesColor: colors.line,
-  };
 
   return (
     <Screen title="Reports" tabBarPadding={false}>
@@ -201,7 +195,7 @@ export function InsightsScreen() {
                   data={monthBars}
                   formatYLabel={compactLabel}
                   yAxisLabelWidth={44}
-                  labelWidth={30}
+                  labelWidth={32}
                   barWidth={12}
                   spacing={18}
                   roundedTop

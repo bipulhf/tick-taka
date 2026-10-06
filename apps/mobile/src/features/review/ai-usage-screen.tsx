@@ -5,6 +5,7 @@ import { BarChart } from "react-native-gifted-charts";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useChartAxis } from "@/components/ui/chart-axis";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
@@ -56,6 +57,7 @@ function Row({ title, detail, value }: { title: string; detail: string; value: s
 /** What AI cost this month: by day, by feature and, for the owner, by user. */
 export function AiUsageScreen() {
   const colors = useColors();
+  const axis = useChartAxis();
   const { data: settings } = useSettings();
   const current = toLocalMonth(Date.now(), userTime(settings).timeZone);
   const [monthsBack, setMonthsBack] = useState(0);
@@ -125,10 +127,9 @@ export function AiUsageScreen() {
                 spacing={3}
                 roundedTop
                 noOfSections={3}
-                yAxisThickness={0}
-                xAxisColor={colors.line}
-                yAxisTextStyle={{ color: colors.muted }}
-                xAxisLabelTextStyle={{ color: colors.muted, width: 24 }}
+                {...axis}
+                yAxisLabelWidth={40}
+                xAxisLabelTextStyle={{ ...axis.xAxisLabelTextStyle, width: 24 }}
                 hideRules
               />
             </Card>

@@ -5,6 +5,7 @@ import { BarChart } from "react-native-gifted-charts";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useChartAxis } from "@/components/ui/chart-axis";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
@@ -18,6 +19,7 @@ import { useFocusStats } from "./queries";
 /** Weekly focus minutes per area, e.g. how much deep work Research actually got. */
 export function FocusStats() {
   const colors = useColors();
+  const axis = useChartAxis();
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
   const timeZone = userTime(settings).timeZone;
@@ -71,10 +73,7 @@ export function FocusStats() {
                 spacing={18}
                 roundedTop
                 noOfSections={3}
-                yAxisThickness={0}
-                xAxisColor={colors.line}
-                yAxisTextStyle={{ color: colors.muted }}
-                xAxisLabelTextStyle={{ color: colors.muted }}
+                {...axis}
                 hideRules
               />
             </Card>

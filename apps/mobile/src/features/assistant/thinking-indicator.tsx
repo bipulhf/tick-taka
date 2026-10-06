@@ -14,9 +14,10 @@ import Animated, {
 } from "react-native-reanimated";
 import { Tiki } from "@/components/tiki/tiki";
 import { Text } from "@/components/ui/text";
-import { type ColorName, useColors } from "@/theme/colors";
+import { useColors } from "@/theme/colors";
 
-const DOTS: ColorName[] = ["mango", "sky", "grape"];
+/** Three neutral dots: purple means habits and mango the primary action, so neither waves here. */
+const DOTS = ["first", "second", "third"];
 const THINKING = ["Thinking", "Reading your day", "Doing the sums", "Almost there"];
 const WORKING = ["Working on it", "Checking the results", "Tidying up"];
 
@@ -50,7 +51,7 @@ function Dot({ color, index }: { color: string; index: number }) {
   );
 }
 
-/** Tiki at work: a little wave of colour and a line that changes as it goes. */
+/** Tiki at work: a little wave of dots and a line that changes as it goes. */
 export function ThinkingIndicator({ working = false }: { working?: boolean }) {
   const colors = useColors();
   const reduceMotion = useReducedMotion();
@@ -70,7 +71,7 @@ export function ThinkingIndicator({ working = false }: { working?: boolean }) {
       <Tiki mood="focused" size={28} />
       <View className="h-4 flex-row items-end gap-1.5">
         {DOTS.map((dot, i) => (
-          <Dot key={dot} color={colors[dot]} index={i} />
+          <Dot key={dot} color={colors.muted} index={i} />
         ))}
       </View>
       <Animated.View

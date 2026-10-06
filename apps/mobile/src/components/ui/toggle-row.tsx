@@ -28,7 +28,10 @@ export function ToggleRow({
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ true: colors.mango, false: colors.lineStrong }}
+        // On reads like a selected chip (ink, with a background-coloured thumb); mango is
+        // kept for the one primary action on the screen.
+        trackColor={{ true: colors.ink, false: colors.lineStrong }}
+        thumbColor={value ? colors.background : undefined}
         accessibilityLabel={label}
       />
     </View>

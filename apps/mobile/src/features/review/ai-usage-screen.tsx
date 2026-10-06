@@ -71,7 +71,8 @@ export function AiUsageScreen() {
           return {
             value: Math.round(cents * 100) / 100,
             label: (i + 1) % 5 === 1 ? String(i + 1) : "",
-            frontColor: colors.grape,
+            // Neutral: AI cost isn't a habit, so it doesn't borrow habit purple.
+            frontColor: colors.muted,
           };
         },
       )
@@ -110,7 +111,7 @@ export function AiUsageScreen() {
               {report.capMicros === null ? null : (
                 <ProgressBar
                   value={report.costMicros / report.capMicros}
-                  tone={report.costMicros >= report.capMicros ? "coral" : "grape"}
+                  tone={report.costMicros >= report.capMicros ? "coral" : "ink"}
                 />
               )}
             </Card>

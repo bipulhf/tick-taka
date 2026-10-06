@@ -1,6 +1,5 @@
 import {
   addDays,
-  addMonths,
   daysInMonth,
   endOfLocalDay,
   firstDayOfMonth,
@@ -16,7 +15,7 @@ import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Icon } from "@/components/ui/icon";
+import { MonthStepper } from "@/components/ui/month-stepper";
 import { Screen } from "@/components/ui/screen";
 import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -64,26 +63,7 @@ export function MoneyCalendar() {
           : undefined
       }
       tabBarPadding={false}
-      right={
-        <View className="flex-row">
-          <Pressable
-            accessibilityRole="button"
-            className="h-12 w-12 items-center justify-center"
-            onPress={() => setMonth(addMonths(month, -1))}
-            accessibilityLabel="Previous month"
-          >
-            <Icon name="chevron-left" />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            className="h-12 w-12 items-center justify-center"
-            onPress={() => setMonth(addMonths(month, 1))}
-            accessibilityLabel="Next month"
-          >
-            <Icon name="chevron-right" />
-          </Pressable>
-        </View>
-      }
+      right={<MonthStepper month={month} onChange={setMonth} />}
     >
       <AsyncContent
         query={insights}

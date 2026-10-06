@@ -1,6 +1,5 @@
 import {
   addDays,
-  addMonths,
   daysInMonth,
   firstDayOfMonth,
   lastDayOfMonth,
@@ -18,6 +17,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Group } from "@/components/ui/group";
 import { Icon } from "@/components/ui/icon";
+import { MonthStepper } from "@/components/ui/month-stepper";
 import { Screen } from "@/components/ui/screen";
 import { Segmented } from "@/components/ui/segmented";
 import { SkeletonList } from "@/components/ui/skeleton";
@@ -77,26 +77,7 @@ export function CalendarView() {
     <Screen
       title={formatMonth(month)}
       tabBarPadding={false}
-      right={
-        <View className="flex-row">
-          <Pressable
-            accessibilityRole="button"
-            className="h-12 w-12 items-center justify-center"
-            onPress={() => setMonth(addMonths(month, -1))}
-            accessibilityLabel="Previous month"
-          >
-            <Icon name="chevron-left" />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            className="h-12 w-12 items-center justify-center"
-            onPress={() => setMonth(addMonths(month, 1))}
-            accessibilityLabel="Next month"
-          >
-            <Icon name="chevron-right" />
-          </Pressable>
-        </View>
-      }
+      right={<MonthStepper month={month} onChange={setMonth} />}
     >
       <Segmented
         kind="tabs"

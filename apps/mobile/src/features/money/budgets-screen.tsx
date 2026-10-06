@@ -1,13 +1,13 @@
-import { addMonths, toLocalMonth } from "@tick-taka/shared/dates";
+import { toLocalMonth } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Icon } from "@/components/ui/icon";
+import { MonthStepper } from "@/components/ui/month-stepper";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
@@ -57,26 +57,7 @@ export function BudgetsScreen() {
       title="Budgets"
       subtitle={formatMonth(month)}
       tabBarPadding={false}
-      right={
-        <View className="flex-row">
-          <Pressable
-            accessibilityRole="button"
-            className="h-12 w-12 items-center justify-center"
-            onPress={() => setMonth(addMonths(month, -1))}
-            accessibilityLabel="Previous month"
-          >
-            <Icon name="chevron-left" />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            className="h-12 w-12 items-center justify-center"
-            onPress={() => setMonth(addMonths(month, 1))}
-            accessibilityLabel="Next month"
-          >
-            <Icon name="chevron-right" />
-          </Pressable>
-        </View>
-      }
+      right={<MonthStepper month={month} onChange={setMonth} />}
     >
       {data?.inherited ? (
         <Text tone="muted">

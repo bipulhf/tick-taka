@@ -28,7 +28,7 @@ export function ToggleRow({
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ true: colors.mango, false: colors.line }}
+        trackColor={{ true: colors.mango, false: colors.lineStrong }}
         accessibilityLabel={label}
       />
     </View>

@@ -1,41 +1,9 @@
 import { useColorScheme } from "react-native";
+import { type Palette, palette } from "./palette";
 
-/** Raw palette for places that need a colour value (icons, charts, SVG). Matches global.css. */
-type PaletteShape = Record<
-  "mango" | "sky" | "mint" | "coral" | "grape" | "background" | "card" | "ink" | "muted" | "line",
-  string
->;
+export type { ColorName, Palette } from "./palette";
 
-export const palette: { light: PaletteShape; dark: PaletteShape } = {
-  light: {
-    mango: "#FFB547",
-    sky: "#5B8CFF",
-    mint: "#2EC4A0",
-    coral: "#FF7A6B",
-    grape: "#A57BFF",
-    background: "#FFF8EE",
-    card: "#FFFFFF",
-    ink: "#23202B",
-    muted: "#7D7670",
-    line: "#EEE5D8",
-  },
-  dark: {
-    mango: "#FFC266",
-    sky: "#7AA2FF",
-    mint: "#4FD8B5",
-    coral: "#FF9385",
-    grape: "#B996FF",
-    background: "#16151C",
-    card: "#22202B",
-    ink: "#F4F1EA",
-    muted: "#A09AA6",
-    line: "#34313F",
-  },
-};
-
-export type Palette = PaletteShape;
-export type ColorName = keyof Palette;
-
+/** Colour values for places that need one (icons, charts, SVG). Matches global.css. */
 export function useColors(): Palette {
   return useColorScheme() === "dark" ? palette.dark : palette.light;
 }

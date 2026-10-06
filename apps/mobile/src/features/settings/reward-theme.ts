@@ -1,18 +1,25 @@
 import { vars } from "nativewind";
+import { type RewardThemeId, rewardThemes } from "@/theme/palette";
+
+const rgb = (hex: string) =>
+  [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16)).join(" ");
+
+/** The CSS variables an accent theme overrides, built from the shared palette. */
+function cssVars(overrides: Record<string, string>) {
+  return vars(
+    Object.fromEntries(Object.entries(overrides).map(([name, hex]) => [`--${name}`, rgb(hex)])),
+  );
+}
 
 /** Accent themes picked in Settings: they only tint the surfaces. */
-export const REWARD_THEMES = {
-  "mint-breeze": {
-    light: vars({ "--background": "236 250 245", "--line": "214 238 229" }),
-    dark: vars({ "--background": "16 28 26", "--card": "26 40 37" }),
-  },
-  "grape-dusk": {
-    light: vars({ "--background": "246 241 255", "--line": "230 222 246" }),
-    dark: vars({ "--background": "24 20 36", "--card": "36 30 52" }),
-  },
-} as const;
+export const REWARD_THEMES = Object.fromEntries(
+  Object.entries(rewardThemes).map(([id, theme]) => [
+    id,
+    { light: cssVars(theme.light), dark: cssVars(theme.dark) },
+  ]),
+) as Record<RewardThemeId, { light: ReturnType<typeof vars>; dark: ReturnType<typeof vars> }>;
 
 export function rewardThemeStyle(theme: string | null | undefined, scheme: "light" | "dark") {
-  const entry = theme ? REWARD_THEMES[theme as keyof typeof REWARD_THEMES] : undefined;
+  const entry = theme ? REWARD_THEMES[theme as RewardThemeId] : undefined;
   return entry ? entry[scheme] : undefined;
 }

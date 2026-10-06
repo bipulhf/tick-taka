@@ -10,7 +10,7 @@ const VARIANTS: Record<
   primary: { box: "bg-mango", text: "onAccent", icon: "onAccent" },
   time: { box: "bg-sky", text: "inverse", icon: "white" },
   money: { box: "bg-mint", text: "onAccent", icon: "onAccent" },
-  secondary: { box: "bg-card border border-line", text: "ink", icon: "ink" },
+  secondary: { box: "bg-card border border-line-strong", text: "ink", icon: "ink" },
   ghost: { box: "bg-transparent", text: "ink", icon: "ink" },
 };
 

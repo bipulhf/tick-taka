@@ -15,16 +15,30 @@ Strategy: **Restrained.** Tinted neutrals plus one accent used for the primary a
 | background | #FFF8EE | #16151C | Screen |
 | surface (card) | #FFFFFF | #22202B | Grouped lists, hero card, sheets |
 | ink | #23202B | #F4F1EA | Primary text |
-| muted | #7D7670 | #A09AA6 | Secondary text |
-| line | #EEE5D8 | #34313F | Separators, borders |
+| muted | #6B655F | #A09AA6 | Secondary text |
+| line | #EEE5D8 | #34313F | Hairline separators |
+| line-strong | #8F8475 | #7A748C | Input, outlined-button and switch-track boundaries |
 | mango | #FFB547 | #FFC266 | Primary action, FAB, selected state |
-| on-mango | #23202B | #23202B | Text and icons on mango, always dark |
+| on-mango | #23202B | #23202B | Text and icons on mango and every other semantic fill, always dark |
 | sky | #5B8CFF | #7AA2FF | Time: tasks, focus, calendar |
 | mint | #2EC4A0 | #4FD8B5 | Money in, under budget |
 | coral | #FF7A6B | #FF9385 | Money out (soft, never alarm red) |
 | grape | #A57BFF | #B996FF | Habits, streaks |
+| mango-text | #8A5A00 | #FFC266 | Mango as text |
+| sky-text | #2C5BCB | #7AA2FF | Sky as text (links, time labels) |
+| mint-text | #11725D | #4FD8B5 | Mint as text (money in, safe to spend) |
+| coral-text | #B23A2A | #FF9385 | Coral as text (money out, errors) |
+| grape-text | #6E44D6 | #B996FF | Grape as text (habit counts) |
+| mango-inverse | #FFB547 | #8A5A00 | Action text on an ink surface (snackbar Undo) |
 
-Rules: semantic colours appear as small marks (dots, rings, amounts, icons), not as large fills. Selected chips use the ink colour inverted (ink fill, background-coloured text) so they read in both themes; mango is reserved for the one primary action per screen.
+Rules: semantic colours appear as small marks (dots, rings, amounts, icons), not as large fills. The bright tokens are for marks; whenever a semantic colour is used for words, it uses its `-text` token, which the `Text` component's tones do automatically. Text and icons on a semantic fill (a mango button, a swipe-tray action) are always on-mango. Selected chips use the ink colour inverted (ink fill, background-coloured text) so they read in both themes; mango is reserved for the one primary action per screen.
+
+Contrast (WCAG 2.x, checked by `apps/mobile/test/contrast.test.ts` against both themes and both accent themes):
+
+- Every text token on background and on surface: at least 4.5:1. Light: ink 15.2 / 16.0, muted 5.45 / 5.75, sky-text 5.75 / 6.06, mint-text 5.55 / 5.85, coral-text 5.64 / 5.95, grape-text 5.75 / 6.07, mango-text 5.62 / 5.93. Dark: ink 16.1 / 14.2, muted 6.62 / 5.86, sky 7.29 / 6.44, mint 10.2 / 9.03, coral 8.43 / 7.46, grape 7.66 / 6.77, mango 11.4 / 10.1.
+- on-mango on each fill: mango 9.10 / 10.0, sky 5.06 / 6.43, mint 7.25 / 9.00, coral 6.28 / 7.44, grape 5.24 / 6.76 (light / dark).
+- Snackbar: mango-inverse on ink 9.10 (light), 5.25 (dark).
+- line-strong (UI boundaries, 3:1): 3.48 on background and 3.67 on surface in light; 4.06 and 3.59 in dark.
 
 ## Typography
 

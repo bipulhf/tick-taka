@@ -32,7 +32,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           secureTextEntry={secret && !revealed}
           autoCapitalize={secret ? "none" : props.autoCapitalize}
           autoCorrect={secret ? false : props.autoCorrect}
-          className={`min-h-12 rounded-2xl border border-line bg-card px-4 font-nunito text-base text-ink ${secret ? "pr-14" : ""}`}
+          className={`min-h-12 rounded-2xl border border-line-strong bg-card px-4 font-nunito text-base text-ink ${secret ? "pr-14" : ""}`}
           {...props}
         />
         {secret ? (

@@ -30,7 +30,7 @@ export function PickerField({
   const [open, setOpen] = useState(false);
   const current = options.find((o) => o.id === value);
   return (
-    <View className="flex-1 overflow-hidden rounded-2xl border border-line bg-card">
+    <View className="flex-1 overflow-hidden rounded-2xl border border-line-strong bg-card">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${current?.label ?? placeholder}`}

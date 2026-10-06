@@ -14,19 +14,22 @@ const VARIANTS = {
   label: "font-nunito-semibold text-[13px] leading-[18px]",
 } as const;
 
+/** Semantic tones use the "-text" tier, which reaches WCAG AA on background and cards. */
 const TONES = {
   ink: "text-ink",
   muted: "text-muted",
-  sky: "text-sky",
-  mint: "text-mint",
-  coral: "text-coral",
-  grape: "text-grape",
-  mango: "text-mango",
+  sky: "text-sky-text",
+  mint: "text-mint-text",
+  coral: "text-coral-text",
+  grape: "text-grape-text",
+  mango: "text-mango-text",
   /** On mango or other light accent fills: always dark. */
   onAccent: "text-on-mango",
   inverse: "text-white",
   /** For text on an ink-coloured surface; flips with the theme. */
   background: "text-background",
+  /** Mango action text on an ink-coloured surface (snackbar Undo). */
+  mangoOnInk: "text-mango-inverse",
 } as const;
 
 export type TextVariant = keyof typeof VARIANTS;

@@ -28,7 +28,7 @@ import { loadPrivacy } from "@/lib/privacy";
 import { PERSIST_MAX_AGE, persister, queryClient } from "@/lib/query-client";
 import { preloadSounds } from "@/lib/sounds";
 import { useStore } from "@/lib/store";
-import { palette } from "@/theme/colors";
+import { palette } from "@/theme/palette";
 
 void SplashScreen.preventAutoHideAsync();
 

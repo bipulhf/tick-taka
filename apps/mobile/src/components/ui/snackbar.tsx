@@ -49,7 +49,7 @@ export function Snackbar() {
               snackStore.set(null);
             }}
           >
-            <Text variant="strong" tone="mango">
+            <Text variant="strong" tone="mangoOnInk">
               {snack.actionLabel}
             </Text>
           </Pressable>

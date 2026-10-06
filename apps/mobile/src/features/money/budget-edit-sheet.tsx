@@ -100,7 +100,7 @@ export function BudgetEditSheet({
                   [line.categoryId]: { limit: l[line.categoryId]?.limit ?? "", rollover },
                 }))
               }
-              trackColor={{ true: colors.mint, false: colors.line }}
+              trackColor={{ true: colors.mint, false: colors.lineStrong }}
               accessibilityLabel={`Roll over unspent ${line.name}`}
             />
           </View>

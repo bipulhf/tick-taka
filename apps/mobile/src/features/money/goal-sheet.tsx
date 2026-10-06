@@ -135,7 +135,7 @@ function GoalForm({ id }: { id: string | null }) {
         <Switch
           value={createTasks}
           onValueChange={setCreateTasks}
-          trackColor={{ true: colors.mint, false: colors.line }}
+          trackColor={{ true: colors.mint, false: colors.lineStrong }}
         />
       </View>
     </Sheet>

@@ -191,7 +191,7 @@ function DebtForm({ id }: { id: string | null }) {
           <Switch
             value={closed}
             onValueChange={setClosed}
-            trackColor={{ true: colors.mint, false: colors.line }}
+            trackColor={{ true: colors.mint, false: colors.lineStrong }}
           />
         </View>
       ) : null}

@@ -119,7 +119,7 @@ export function ChatComposer({
         placeholderTextColor={colors.muted}
         multiline
         accessibilityLabel="Message"
-        className="max-h-32 min-h-12 flex-1 rounded-3xl border border-line bg-card px-4 py-3 font-nunito text-[17px] text-ink"
+        className="max-h-32 min-h-12 flex-1 rounded-3xl border border-line-strong bg-card px-4 py-3 font-nunito text-[17px] text-ink"
       />
       {text.trim() ? (
         <RoundButton

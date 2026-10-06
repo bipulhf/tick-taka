@@ -2,17 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Same values as src/theme/palette.ts; test/contrast.test.ts checks they match and pass AA. */
 :root {
   --mango: 255 181 71;
   --sky: 91 140 255;
   --mint: 46 196 160;
   --coral: 255 122 107;
   --grape: 165 123 255;
+  --mango-text: 138 90 0;
+  --sky-text: 44 91 203;
+  --mint-text: 17 114 93;
+  --coral-text: 178 58 42;
+  --grape-text: 110 68 214;
+  --mango-inverse: 255 181 71;
   --background: 255 248 238;
   --card: 255 255 255;
   --ink: 35 32 43;
-  --muted: 125 118 112;
+  --muted: 107 101 95;
   --line: 238 229 216;
+  --line-strong: 143 132 117;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,10 +30,17 @@
     --mint: 79 216 181;
     --coral: 255 147 133;
     --grape: 185 150 255;
+    --mango-text: 255 194 102;
+    --sky-text: 122 162 255;
+    --mint-text: 79 216 181;
+    --coral-text: 255 147 133;
+    --grape-text: 185 150 255;
+    --mango-inverse: 138 90 0;
     --background: 22 21 28;
     --card: 34 32 43;
     --ink: 244 241 234;
     --muted: 160 154 166;
     --line: 52 49 63;
+    --line-strong: 122 116 140;
   }
 }

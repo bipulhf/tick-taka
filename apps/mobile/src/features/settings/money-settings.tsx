@@ -1,7 +1,8 @@
+import { View } from "react-native";
 import { Card } from "@/components/ui/card";
-import { Chip } from "@/components/ui/chip";
+import { PickerField } from "@/components/ui/picker-field";
 import { useAccounts } from "@/lib/queries";
-import { ChoiceRow, ToggleRow } from "./setting-row";
+import { ToggleRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
 
@@ -9,32 +10,25 @@ import { useUpdateSettings } from "./use-update-settings";
 export function MoneySettings() {
   const { data: accounts = [] } = useAccounts();
   const update = useUpdateSettings();
+  const options = accounts.map((a) => ({ id: a.id, label: a.name }));
   return (
     <SettingsPage title="Money">
       {(s) => (
         <Card className="gap-1">
-          <ChoiceRow label="Default account">
-            {accounts.map((a) => (
-              <Chip
-                key={a.id}
-                label={a.name}
-                tone="mint"
-                selected={s.defaultAccountId === a.id}
-                onPress={() => update({ defaultAccountId: a.id })}
-              />
-            ))}
-          </ChoiceRow>
-          <ChoiceRow label="Cash account (for cash-outs)">
-            {accounts.map((a) => (
-              <Chip
-                key={a.id}
-                label={a.name}
-                tone="mint"
-                selected={s.cashAccountId === a.id}
-                onPress={() => update({ cashAccountId: a.id })}
-              />
-            ))}
-          </ChoiceRow>
+          <View className="gap-3 py-1">
+            <PickerField
+              label="Default account"
+              value={s.defaultAccountId}
+              options={options}
+              onChange={(id) => id && update({ defaultAccountId: id })}
+            />
+            <PickerField
+              label="Cash account (for cash-outs)"
+              value={s.cashAccountId}
+              options={options}
+              onChange={(id) => id && update({ cashAccountId: id })}
+            />
+          </View>
           <ToggleRow
             label="Cost in hours"
             hint="Show big expenses as hours of work"

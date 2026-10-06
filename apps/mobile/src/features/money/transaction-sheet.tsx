@@ -13,6 +13,7 @@ import { AmountKeypad } from "@/components/ui/amount-keypad";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
+import { PickerField } from "@/components/ui/picker-field";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
@@ -202,6 +203,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
     router.back();
   };
 
+  const accountOptions = accounts.map((a) => ({ id: a.id, label: a.name }));
   const kindCategories = categories.filter(
     (c) => c.kind === (values.type === "income" ? "income" : "expense"),
   );
@@ -258,38 +260,35 @@ export function TransactionSheet({ id }: { id: string | null }) {
         </Text>
       ) : null}
 
-      <Text variant="label" tone="muted">
-        {values.type === "transfer" ? "From" : "Account"}
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {accounts.map((a) => (
-          <Chip
-            key={a.id}
-            label={a.name}
-            tone="mint"
-            selected={values.accountId === a.id}
-            onPress={() => form.setValue("accountId", a.id)}
+      <View className="flex-row gap-3">
+        <PickerField
+          label={values.type === "transfer" ? "From" : "Account"}
+          span="half"
+          value={values.accountId || null}
+          options={accountOptions}
+          onChange={(accountId) => accountId && form.setValue("accountId", accountId)}
+        />
+        {values.type === "transfer" ? (
+          <PickerField
+            label="To"
+            span="half"
+            value={values.toAccountId}
+            options={accountOptions.filter((a) => a.id !== values.accountId)}
+            onChange={(toAccountId) => form.setValue("toAccountId", toAccountId)}
           />
-        ))}
+        ) : (
+          <PickerField
+            label="Category"
+            span="half"
+            value={values.categoryId}
+            noneLabel="No category"
+            options={kindCategories.map((c) => ({ id: c.id, label: c.name, emoji: c.emoji }))}
+            onChange={(categoryId) => form.setValue("categoryId", categoryId)}
+          />
+        )}
       </View>
       {values.type === "transfer" ? (
         <>
-          <Text variant="label" tone="muted">
-            To
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {accounts
-              .filter((a) => a.id !== values.accountId)
-              .map((a) => (
-                <Chip
-                  key={a.id}
-                  label={a.name}
-                  tone="mint"
-                  selected={values.toAccountId === a.id}
-                  onPress={() => form.setValue("toAccountId", a.id)}
-                />
-              ))}
-          </View>
           {errors.toAccountId ? (
             <Text tone="coral" variant="caption">
               {errors.toAccountId.message}
@@ -319,26 +318,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
             }
           />
         </>
-      ) : (
-        <>
-          <Text variant="label" tone="muted">
-            Category
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {kindCategories.map((c) => (
-              <Chip
-                key={c.id}
-                label={`${c.emoji} ${c.name}`}
-                tone={values.type === "income" ? "mint" : "coral"}
-                selected={values.categoryId === c.id}
-                onPress={() =>
-                  form.setValue("categoryId", values.categoryId === c.id ? null : c.id)
-                }
-              />
-            ))}
-          </View>
-        </>
-      )}
+      ) : null}
       <Controller
         control={form.control}
         name="note"
@@ -369,38 +349,26 @@ export function TransactionSheet({ id }: { id: string | null }) {
           selected={toLocalDate(values.occurredAt, timeZone) === toLocalDate(Date.now(), timeZone)}
         />
       </View>
-      <Text variant="label" tone="muted">
-        Area
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {areas.map((a) => (
-          <Chip
-            key={a.id}
-            label={`${a.emoji} ${a.name}`}
-            tone="sky"
-            selected={values.areaId === a.id}
-            onPress={() => form.setValue("areaId", values.areaId === a.id ? null : a.id)}
+      <View className="flex-row gap-3">
+        <PickerField
+          label="Area"
+          span="half"
+          value={values.areaId}
+          noneLabel="No area"
+          options={areas.map((a) => ({ id: a.id, label: a.name, emoji: a.emoji }))}
+          onChange={(areaId) => form.setValue("areaId", areaId)}
+        />
+        {events.length > 0 ? (
+          <PickerField
+            label="Event"
+            span="half"
+            value={values.eventId}
+            noneLabel="No event"
+            options={events.map((e) => ({ id: e.id, label: e.name, emoji: e.emoji }))}
+            onChange={(eventId) => form.setValue("eventId", eventId)}
           />
-        ))}
+        ) : null}
       </View>
-      {events.length > 0 ? (
-        <>
-          <Text variant="label" tone="muted">
-            Event
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {events.map((e) => (
-              <Chip
-                key={e.id}
-                label={`${e.emoji} ${e.name}`}
-                tone="grape"
-                selected={values.eventId === e.id}
-                onPress={() => form.setValue("eventId", values.eventId === e.id ? null : e.id)}
-              />
-            ))}
-          </View>
-        </>
-      ) : null}
       <Text variant="label" tone="muted">
         Receipt
       </Text>

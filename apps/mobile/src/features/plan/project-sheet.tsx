@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ErrorState } from "@/components/ui/empty-state";
+import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -92,19 +93,13 @@ function ProjectForm({ project }: { project: Project | null }) {
       }
     >
       <TextField label="Name" value={name} onChangeText={setName} autoFocus={!project} />
-      <Text variant="label" tone="muted">
-        Area
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {areas.map((area) => (
-          <Chip
-            key={area.id}
-            label={`${area.emoji} ${area.name}`}
-            selected={areaId === area.id}
-            onPress={() => setAreaId(area.id)}
-          />
-        ))}
-      </View>
+      <PickerField
+        label="Area"
+        value={areaId}
+        placeholder="Pick an area"
+        options={areas.map((area) => ({ id: area.id, label: area.name, emoji: area.emoji }))}
+        onChange={(id) => id && setAreaId(id)}
+      />
       <Text variant="label" tone="muted">
         Status
       </Text>

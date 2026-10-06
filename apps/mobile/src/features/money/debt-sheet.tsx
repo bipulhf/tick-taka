@@ -7,6 +7,7 @@ import { Switch, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
+import { PickerField } from "@/components/ui/picker-field";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
@@ -151,27 +152,13 @@ function DebtForm({ id }: { id: string | null }) {
         placeholder="For the bike repair"
       />
       {debt ? null : (
-        <>
-          <Text variant="label" tone="muted">
-            {direction === "owed_to_me" ? "Paid from (optional)" : "Received into (optional)"}
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            <Chip
-              label="Don't log money"
-              selected={!accountId}
-              onPress={() => setAccountId(null)}
-            />
-            {accounts.map((a) => (
-              <Chip
-                key={a.id}
-                label={a.name}
-                tone="mint"
-                selected={accountId === a.id}
-                onPress={() => setAccountId(a.id)}
-              />
-            ))}
-          </View>
-        </>
+        <PickerField
+          label={direction === "owed_to_me" ? "Paid from (optional)" : "Received into (optional)"}
+          value={accountId}
+          noneLabel="Don't log money"
+          options={accounts.map((a) => ({ id: a.id, label: a.name }))}
+          onChange={setAccountId}
+        />
       )}
       <View className="flex-row gap-2">
         <Chip

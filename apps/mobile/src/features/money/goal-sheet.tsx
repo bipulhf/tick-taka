@@ -7,6 +7,7 @@ import { Switch, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
+import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -115,21 +116,13 @@ function GoalForm({ id }: { id: string | null }) {
         />
         {deadline ? <Chip label="No deadline" onPress={() => setDeadline(null)} /> : null}
       </View>
-      <Text variant="label" tone="muted">
-        Jar account (optional)
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        <Chip label="Virtual jar" selected={!accountId} onPress={() => setAccountId(null)} />
-        {accounts.map((a) => (
-          <Chip
-            key={a.id}
-            label={a.name}
-            tone="mint"
-            selected={accountId === a.id}
-            onPress={() => setAccountId(a.id)}
-          />
-        ))}
-      </View>
+      <PickerField
+        label="Jar account (optional)"
+        value={accountId}
+        noneLabel="Virtual jar"
+        options={accounts.map((a) => ({ id: a.id, label: a.name }))}
+        onChange={setAccountId}
+      />
       <View className="flex-row items-center justify-between">
         <Text className="flex-1">Add a monthly “move money to the jar” task</Text>
         <Switch

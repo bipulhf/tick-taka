@@ -2,9 +2,8 @@ import type { QuickAddKind } from "@tick-taka/shared/quick-add";
 import { describeDraft } from "@tick-taka/shared/quick-add";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
@@ -18,20 +17,28 @@ import type { ColorName } from "@/theme/colors";
 import { useColors } from "@/theme/colors";
 import { type DayChoice, useQuickAdd } from "./use-quick-add";
 
-const KINDS: { value: QuickAddKind | null; label: string }[] = [
-  { value: null, label: "Auto" },
-  { value: "task", label: "Task" },
-  { value: "expense", label: "Expense" },
-  { value: "income", label: "Income" },
-  { value: "time_entry", label: "Time" },
+const KINDS: { id: QuickAddKind; label: string }[] = [
+  { id: "task", label: "Task" },
+  { id: "expense", label: "Expense" },
+  { id: "income", label: "Income" },
+  { id: "time_entry", label: "Time" },
 ];
 
-const DAYS: { value: DayChoice; label: string }[] = [
-  { value: "today", label: "Today" },
-  { value: "tomorrow", label: "Tomorrow" },
-  { value: "evening", label: "Evening" },
-  { value: "inbox", label: "Inbox" },
-  { value: "someday", label: "Someday" },
+/** What "Auto" understood, shown in the Kind field. */
+const KIND_NAME: Record<string, string> = {
+  task: "Task",
+  expense: "Expense",
+  income: "Income",
+  transfer: "Transfer",
+  time_entry: "Time",
+};
+
+const DAYS: { id: DayChoice; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "tomorrow", label: "Tomorrow" },
+  { id: "evening", label: "Evening" },
+  { id: "inbox", label: "Inbox" },
+  { id: "someday", label: "Someday" },
 ];
 
 const KIND_LOOK: Record<string, { icon: IconName; color: ColorName }> = {
@@ -41,19 +48,6 @@ const KIND_LOOK: Record<string, { icon: IconName; color: ColorName }> = {
   task: { icon: "checkbox-blank-circle-outline", color: "sky" },
   time_entry: { icon: "timer-outline", color: "sky" },
 };
-
-function ChipRow({ children }: { children: React.ReactNode }) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      contentContainerClassName="gap-2"
-    >
-      {children}
-    </ScrollView>
-  );
-}
 
 /** One text field, one Save button. Choices appear only when the parser needs help. */
 export function QuickAddSheet({
@@ -156,27 +150,41 @@ export function QuickAddSheet({
         </Text>
       ) : null}
 
-      <ChipRow>
-        {KINDS.map((option) => (
-          <Chip
-            key={option.label}
-            label={option.label}
-            selected={qa.kind === option.value}
-            onPress={() => qa.setKind(option.value)}
+      <View className="flex-row gap-3">
+        <PickerField
+          label="Kind"
+          span="half"
+          value={qa.kind}
+          noneLabel={draft ? `Auto · ${KIND_NAME[draft.kind] ?? "Auto"}` : "Auto"}
+          options={KINDS}
+          onChange={(kind) => qa.setKind(kind as QuickAddKind | null)}
+        />
+        {draft?.kind === "task" ? (
+          <PickerField
+            label="When"
+            span="half"
+            value={qa.overrides.day ?? null}
+            noneLabel="As typed"
+            options={DAYS}
+            onChange={(day) =>
+              qa.setOverrides({ ...qa.overrides, day: (day ?? undefined) as DayChoice | undefined })
+            }
           />
-        ))}
-      </ChipRow>
+        ) : null}
+      </View>
 
       {moneyKind ? (
         <View className="flex-row gap-3">
           <PickerField
             label="Account"
+            span="half"
             value={draft && "accountId" in draft ? draft.accountId : null}
             options={reference.accounts.map((a) => ({ id: a.id, label: a.name }))}
             onChange={(id) => qa.setOverrides({ ...qa.overrides, accountId: id })}
           />
           <PickerField
             label="Category"
+            span="half"
             value={draft && "categoryId" in draft ? draft.categoryId : null}
             options={reference.categories
               .filter((c) => c.kind === moneyKind)
@@ -186,30 +194,15 @@ export function QuickAddSheet({
         </View>
       ) : null}
 
-      {draft?.kind === "task" ? (
-        <ChipRow>
-          {DAYS.map((day) => (
-            <Chip
-              key={day.value}
-              label={day.label}
-              selected={qa.overrides.day === day.value}
-              onPress={() => qa.setOverrides({ ...qa.overrides, day: day.value })}
-            />
-          ))}
-        </ChipRow>
-      ) : null}
-
       {draft && draft.kind !== "transfer" ? (
         moreOpen || draft.kind === "time_entry" ? (
-          <View className="flex-row">
-            <PickerField
-              label="Area"
-              value={areaId}
-              options={areaOptions}
-              placeholder="No area"
-              onChange={(id) => qa.setOverrides({ ...qa.overrides, areaId: id })}
-            />
-          </View>
+          <PickerField
+            label="Area"
+            value={areaId}
+            options={areaOptions}
+            noneLabel="No area"
+            onChange={(id) => qa.setOverrides({ ...qa.overrides, areaId: id })}
+          />
         ) : (
           <Pressable
             onPress={() => setMoreOpen(true)}

@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ActivityIndicator, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
+import { PickerField } from "@/components/ui/picker-field";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
@@ -71,24 +71,29 @@ export function TransactionList({ accountId, eventId }: { accountId?: string; ev
             />
           </View>
           <TextField value={q} onChangeText={setQ} placeholder="Search notes" />
-          <View className="flex-row flex-wrap gap-2">
-            {(["expense", "income", "transfer"] as const).map((t) => (
-              <Chip
-                key={t}
-                label={t[0]!.toUpperCase() + t.slice(1)}
-                tone="mint"
-                selected={type === t}
-                onPress={() => setType(type === t ? undefined : t)}
-              />
-            ))}
-            {accounts.map((a) => (
-              <Chip
-                key={a.id}
-                label={a.name}
-                selected={account === a.id}
-                onPress={() => setAccount(account === a.id ? undefined : a.id)}
-              />
-            ))}
+          <View className="flex-row gap-2">
+            <PickerField
+              label="Type"
+              variant="filter"
+              span="half"
+              value={type ?? null}
+              noneLabel="All"
+              options={[
+                { id: "expense", label: "Expense" },
+                { id: "income", label: "Income" },
+                { id: "transfer", label: "Transfer" },
+              ]}
+              onChange={(t) => setType((t ?? undefined) as TypeFilter)}
+            />
+            <PickerField
+              label="Account"
+              variant="filter"
+              span="half"
+              value={account ?? null}
+              noneLabel="All"
+              options={accounts.map((a) => ({ id: a.id, label: a.name }))}
+              onChange={(id) => setAccount(id ?? undefined)}
+            />
           </View>
         </View>
       }

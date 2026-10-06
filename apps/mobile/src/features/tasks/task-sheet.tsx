@@ -10,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ErrorState } from "@/components/ui/empty-state";
+import { Icon } from "@/components/ui/icon";
+import { PickerField } from "@/components/ui/picker-field";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
@@ -26,7 +28,11 @@ import { userTime } from "@/lib/user-time";
 import { useTaskActions } from "./use-task-actions";
 
 type Priority = "low" | "normal" | "high";
+type WhenChoice = "today" | "evening" | "tomorrow" | "pick" | "someday" | "none";
 const ESTIMATES = [15, 30, 60, 90, 120, 180];
+
+/** "More options" stays open or closed the way it was last left. */
+let moreOpenLastTime = false;
 
 interface Form {
   title: string;
@@ -123,14 +129,17 @@ export function TaskSheet({ id }: { id: string | null }) {
   const set = <K extends keyof Form>(key: K, value: Form[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const setDay = async (choice: "today" | "tomorrow" | "pick" | "none") => {
+  const setWhen = async (choice: WhenChoice) => {
     if (choice === "none")
       return setForm((f) => ({
         ...f,
         doAt: null,
         hasTime: false,
-        status: f.status === "open" ? "inbox" : f.status,
+        whenSlot: "day",
+        status: f.status === "open" || f.status === "someday" ? "inbox" : f.status,
       }));
+    if (choice === "someday")
+      return setForm((f) => ({ ...f, status: "someday", doAt: null, hasTime: false }));
     let date = today;
     if (choice === "tomorrow") date = toLocalDate(Date.now() + 86_400_000, timeZone);
     if (choice === "pick") {
@@ -142,8 +151,15 @@ export function TaskSheet({ id }: { id: string | null }) {
       ...f,
       doAt: startOfLocalDay(date, timeZone),
       hasTime: false,
+      whenSlot: choice === "evening" ? "evening" : "day",
       status: f.status === "inbox" || f.status === "someday" ? "open" : f.status,
     }));
+  };
+
+  const [moreOpen, setMoreOpen] = useState(moreOpenLastTime);
+  const toggleMore = (open: boolean) => {
+    moreOpenLastTime = open;
+    setMoreOpen(open);
   };
 
   const setTime = async () => {
@@ -226,6 +242,28 @@ export function TaskSheet({ id }: { id: string | null }) {
 
   const doDate = form.doAt ? toLocalDate(form.doAt, timeZone) : null;
   const advanced = settings?.advancedViews;
+  const whenValue: WhenChoice | null =
+    form.status === "someday"
+      ? "someday"
+      : !form.doAt
+        ? null
+        : doDate === today
+          ? form.whenSlot === "evening"
+            ? "evening"
+            : "today"
+          : doDate === toLocalDate(Date.now() + 86_400_000, timeZone)
+            ? "tomorrow"
+            : "pick";
+  // What's set behind "More", so a closed disclosure still says so.
+  const moreSummary = [
+    form.deadlineAt ? `Deadline ${formatWhen(form.deadlineAt, false)}` : null,
+    form.top3Date === today ? "Top three" : null,
+    form.rrule || parsedRepeat ? "Repeats" : null,
+    form.priority !== "normal" ? `${form.priority === "high" ? "High" : "Low"} priority` : null,
+    areas.find((a) => a.id === form.areaId)?.name ?? null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   // Editing: hold the form back until the task has filled it (any edit replaces EMPTY).
   if (id && form === EMPTY)
@@ -270,185 +308,161 @@ export function TaskSheet({ id }: { id: string | null }) {
         multiline
       />
 
-      <Text variant="label" tone="muted">
-        Do it
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        <Chip
-          label="Today"
-          tone="sky"
-          selected={doDate === today}
-          onPress={() => setDay("today")}
+      <View className="flex-row gap-3">
+        <PickerField
+          label="When"
+          span="half"
+          value={whenValue}
+          noneLabel="No date"
+          options={[
+            { id: "today", label: "Today" },
+            { id: "evening", label: "This evening" },
+            { id: "tomorrow", label: "Tomorrow" },
+            {
+              id: "pick",
+              label:
+                whenValue === "pick" && form.doAt
+                  ? `${formatWhen(form.doAt, false)}${form.whenSlot === "evening" ? " · evening" : ""}`
+                  : "Pick a date…",
+            },
+            { id: "someday", label: "Someday" },
+          ]}
+          onChange={(choice) => void setWhen((choice ?? "none") as WhenChoice)}
         />
-        <Chip
-          label="Tomorrow"
-          tone="sky"
-          selected={doDate === toLocalDate(Date.now() + 86_400_000, timeZone)}
-          onPress={() => setDay("tomorrow")}
+        <PickerField
+          label="Estimate"
+          span="half"
+          value={form.estimateMin === null ? null : String(form.estimateMin)}
+          noneLabel="No estimate"
+          options={ESTIMATES.map((minutes) => ({
+            id: String(minutes),
+            label: formatMinutes(minutes),
+          }))}
+          onChange={(minutes) => set("estimateMin", minutes === null ? null : Number(minutes))}
         />
-        <Chip
-          label={form.doAt && doDate !== today ? formatWhen(form.doAt, false) : "Pick date"}
-          tone="sky"
-          selected={Boolean(form.doAt) && doDate !== today}
-          onPress={() => setDay("pick")}
-        />
-        <Chip
+      </View>
+      {form.doAt ? (
+        <Button
           label={
-            form.hasTime && form.doAt
-              ? (formatWhen(form.doAt, true).split(", ")[1] ?? "Time")
-              : "Add time"
+            form.hasTime
+              ? `At ${formatWhen(form.doAt, true).split(", ")[1] ?? "a set time"}`
+              : "Add a time"
           }
-          tone="sky"
-          selected={form.hasTime}
+          icon="clock-outline"
+          variant="secondary"
+          size="sm"
           onPress={setTime}
+          className="self-start"
         />
-        <Chip
-          label="Evening"
-          tone="sky"
-          selected={form.whenSlot === "evening"}
-          onPress={() => set("whenSlot", form.whenSlot === "evening" ? "day" : "evening")}
-        />
-        <Chip
-          label="Someday"
-          tone="sky"
-          selected={form.status === "someday"}
-          onPress={() =>
-            setForm((f) => ({
-              ...f,
-              status: f.status === "someday" ? "inbox" : "someday",
-              doAt: null,
-              hasTime: false,
-            }))
-          }
-        />
-        <Chip
-          label="No date"
-          selected={!form.doAt && form.status !== "someday"}
-          onPress={() => setDay("none")}
-        />
-      </View>
-      <View className="flex-row flex-wrap gap-2">
-        <Chip
-          label={
-            form.deadlineAt ? `Deadline ${formatWhen(form.deadlineAt, false)}` : "Add deadline"
-          }
-          tone="coral"
-          selected={Boolean(form.deadlineAt)}
-          onPress={setDeadline}
-        />
-        {form.deadlineAt ? (
-          <Chip label="Clear deadline" onPress={() => set("deadlineAt", null)} />
-        ) : null}
-        <Chip
-          label={form.top3Date === today ? "In top three" : "Add to top three"}
-          tone="mango"
-          selected={form.top3Date === today}
-          onPress={() => set("top3Date", form.top3Date === today ? null : today)}
-        />
-      </View>
+      ) : null}
 
-      <TextField
-        label="Repeat"
-        value={repeatText}
-        onChangeText={setRepeatText}
-        placeholder={form.rrule ? describeRRule(form.rrule) : "e.g. every other Tuesday"}
-        error={repeatText && !parsedRepeat ? "Try “every month on the 5th”" : undefined}
-      />
-      {parsedRepeat ? (
-        <Text variant="caption" tone="sky">
-          ↻ {describeRRule(parsedRepeat.rrule)}
+      <Pressable
+        onPress={() => toggleMore(!moreOpen)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: moreOpen }}
+        className="min-h-12 flex-row items-center gap-2 px-1"
+      >
+        <Icon name="tune-variant" size={20} color="muted" />
+        <Text variant="callout" tone="muted" numberOfLines={1} className="flex-1">
+          {moreOpen ? "Fewer options" : moreSummary || "More options"}
         </Text>
-      ) : null}
-      {form.rrule && !repeatText ? (
-        <Chip label="Stop repeating" onPress={() => set("rrule", null)} />
-      ) : null}
+        <Icon name={moreOpen ? "chevron-up" : "chevron-down"} size={20} color="muted" />
+      </Pressable>
 
-      <Text variant="label" tone="muted">
-        Priority
-      </Text>
-      <Segmented<Priority>
-        value={form.priority}
-        onChange={(v) => set("priority", v)}
-        options={[
-          { value: "low", label: "Low" },
-          { value: "normal", label: "Normal" },
-          { value: "high", label: "High" },
-        ]}
-      />
-      {advanced?.eisenhower ? (
-        <Chip
-          label={form.urgent ? "Urgent" : "Not urgent"}
-          tone="coral"
-          selected={form.urgent}
-          onPress={() => set("urgent", !form.urgent)}
-        />
-      ) : null}
-      {advanced?.energy ? (
-        <View className="flex-row gap-2">
-          <Chip
-            label="⚡ High energy"
-            tone="grape"
-            selected={form.energy === "high"}
-            onPress={() => set("energy", form.energy === "high" ? null : "high")}
+      {moreOpen ? (
+        <>
+          <PickerField
+            label="Deadline"
+            value={form.deadlineAt ? "pick" : null}
+            noneLabel="No deadline"
+            options={[
+              {
+                id: "pick",
+                label: form.deadlineAt ? formatWhen(form.deadlineAt, false) : "Pick a date…",
+              },
+            ]}
+            onChange={(choice) => (choice === null ? set("deadlineAt", null) : void setDeadline())}
           />
           <Chip
-            label="🌙 Low energy"
-            tone="grape"
-            selected={form.energy === "low"}
-            onPress={() => set("energy", form.energy === "low" ? null : "low")}
+            label={form.top3Date === today ? "In top three" : "Add to top three"}
+            tone="mango"
+            selected={form.top3Date === today}
+            onPress={() => set("top3Date", form.top3Date === today ? null : today)}
+            className="self-start"
           />
-        </View>
-      ) : null}
 
-      <Text variant="label" tone="muted">
-        Estimate
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {ESTIMATES.map((minutes) => (
-          <Chip
-            key={minutes}
-            label={formatMinutes(minutes)}
-            tone="sky"
-            selected={form.estimateMin === minutes}
-            onPress={() => set("estimateMin", form.estimateMin === minutes ? null : minutes)}
+          <TextField
+            label="Repeat"
+            value={repeatText}
+            onChangeText={setRepeatText}
+            placeholder={form.rrule ? describeRRule(form.rrule) : "e.g. every other Tuesday"}
+            error={repeatText && !parsedRepeat ? "Try “every month on the 5th”" : undefined}
           />
-        ))}
-      </View>
+          {parsedRepeat ? (
+            <Text variant="caption" tone="sky">
+              ↻ {describeRRule(parsedRepeat.rrule)}
+            </Text>
+          ) : null}
+          {form.rrule && !repeatText ? (
+            <Chip label="Stop repeating" onPress={() => set("rrule", null)} />
+          ) : null}
 
-      <Text variant="label" tone="muted">
-        Area
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {areas.map((area) => (
-          <Chip
-            key={area.id}
-            label={`${area.emoji} ${area.name}`}
-            tone="sky"
-            selected={form.areaId === area.id}
-            onPress={() =>
-              setForm((f) => ({
-                ...f,
-                areaId: f.areaId === area.id ? null : area.id,
-                projectId: null,
-              }))
-            }
+          <Text variant="label" tone="muted">
+            Priority
+          </Text>
+          <Segmented<Priority>
+            value={form.priority}
+            onChange={(v) => set("priority", v)}
+            options={[
+              { value: "low", label: "Low" },
+              { value: "normal", label: "Normal" },
+              { value: "high", label: "High" },
+            ]}
           />
-        ))}
-      </View>
-      {projects.data?.length ? (
-        <View className="flex-row flex-wrap gap-2">
-          {projects.data.map((project) => (
+          {advanced?.eisenhower ? (
             <Chip
-              key={project.id}
-              label={project.name}
-              tone="grape"
-              selected={form.projectId === project.id}
-              onPress={() => set("projectId", form.projectId === project.id ? null : project.id)}
+              label={form.urgent ? "Urgent" : "Not urgent"}
+              tone="coral"
+              selected={form.urgent}
+              onPress={() => set("urgent", !form.urgent)}
+              className="self-start"
             />
-          ))}
-        </View>
-      ) : null}
+          ) : null}
+          {advanced?.energy ? (
+            <PickerField
+              label="Energy"
+              value={form.energy}
+              noneLabel="Any energy"
+              options={[
+                { id: "high", label: "High energy", emoji: "⚡" },
+                { id: "low", label: "Low energy", emoji: "🌙" },
+              ]}
+              onChange={(energy) => set("energy", energy as Form["energy"])}
+            />
+          ) : null}
 
+          <View className="flex-row gap-3">
+            <PickerField
+              label="Area"
+              span="half"
+              value={form.areaId}
+              noneLabel="No area"
+              options={areas.map((area) => ({ id: area.id, label: area.name, emoji: area.emoji }))}
+              onChange={(areaId) => setForm((f) => ({ ...f, areaId, projectId: null }))}
+            />
+            {projects.data?.length ? (
+              <PickerField
+                label="Project"
+                span="half"
+                value={form.projectId}
+                noneLabel="No project"
+                options={projects.data.map((project) => ({ id: project.id, label: project.name }))}
+                onChange={(projectId) => set("projectId", projectId)}
+              />
+            ) : null}
+          </View>
+        </>
+      ) : null}
       {id && task ? (
         <>
           <Text variant="label" tone="muted">

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
@@ -131,20 +132,13 @@ function TimeEntryForm({ entry }: { entry: TimeEntry | null }) {
           if (picked) setStartedAt(picked);
         }}
       />
-      <Text variant="label" tone="muted">
-        Area
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {areas.map((area) => (
-          <Chip
-            key={area.id}
-            label={`${area.emoji} ${area.name}`}
-            tone="sky"
-            selected={areaId === area.id}
-            onPress={() => setAreaId(area.id)}
-          />
-        ))}
-      </View>
+      <PickerField
+        label="Area"
+        value={areaId}
+        placeholder="No area"
+        options={areas.map((area) => ({ id: area.id, label: area.name, emoji: area.emoji }))}
+        onChange={(id) => id && setAreaId(id)}
+      />
       <Chip
         label={billable ? "Billable" : "Not billable"}
         tone="mint"

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
+import { PickerField } from "@/components/ui/picker-field";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
@@ -252,35 +253,24 @@ function RecurringForm({ id }: { id: string | null }) {
           />
         ))}
       </View>
-      <Text variant="label" tone="muted">
-        Account
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {accounts.map((a) => (
-          <Chip
-            key={a.id}
-            label={a.name}
-            tone="mint"
-            selected={accountId === a.id}
-            onPress={() => setAccountId(a.id)}
-          />
-        ))}
-      </View>
-      <Text variant="label" tone="muted">
-        Category
-      </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {categories
-          .filter((c) => c.kind === (kind === "bill" ? "expense" : "income"))
-          .map((c) => (
-            <Chip
-              key={c.id}
-              label={`${c.emoji} ${c.name}`}
-              tone="coral"
-              selected={categoryId === c.id}
-              onPress={() => setCategoryId(categoryId === c.id ? null : c.id)}
-            />
-          ))}
+      <View className="flex-row gap-3">
+        <PickerField
+          label="Account"
+          span="half"
+          value={accountId}
+          options={accounts.map((a) => ({ id: a.id, label: a.name }))}
+          onChange={(id) => id && setAccountId(id)}
+        />
+        <PickerField
+          label="Category"
+          span="half"
+          value={categoryId}
+          noneLabel="No category"
+          options={categories
+            .filter((c) => c.kind === (kind === "bill" ? "expense" : "income"))
+            .map((c) => ({ id: c.id, label: c.name, emoji: c.emoji }))}
+          onChange={setCategoryId}
+        />
       </View>
     </Sheet>
   );

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ErrorState } from "@/components/ui/empty-state";
+import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -140,26 +141,13 @@ function CategoryForm({ category }: { category: Category | undefined }) {
         {BUCKETS.find((b) => b.value === budgetType)?.hint}
       </Text>
       {hasChildren ? null : (
-        <>
-          <Text variant="label" tone="muted">
-            Sits under
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            <Chip
-              label="Nothing (top level)"
-              selected={!parentId}
-              onPress={() => setParentId(null)}
-            />
-            {parents.map((p) => (
-              <Chip
-                key={p.id}
-                label={`${p.emoji} ${p.name}`}
-                selected={parentId === p.id}
-                onPress={() => setParentId(p.id)}
-              />
-            ))}
-          </View>
-        </>
+        <PickerField
+          label="Sits under"
+          value={parentId}
+          noneLabel="Nothing (top level)"
+          options={parents.map((p) => ({ id: p.id, label: p.name, emoji: p.emoji }))}
+          onChange={setParentId}
+        />
       )}
     </Sheet>
   );

@@ -15,6 +15,7 @@ import { haptic } from "@/lib/haptics";
 import { cancelFocusEnd, scheduleFocusEnd } from "@/lib/notifications";
 import { useOutbox } from "@/lib/outbox";
 import { useSettings } from "@/lib/queries";
+import { editTime, toServerTime } from "@/lib/server-clock";
 import { playSound } from "@/lib/sounds";
 import { useStore } from "@/lib/store";
 import { focusAnnouncement } from "./focus-announcement";
@@ -41,13 +42,20 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
   /** Naming the entry makes a replayed stop a no-op instead of stopping something else. */
   const stopTarget = (entryId: string | null | undefined) => (entryId ? { id: entryId } : {});
 
+  // The session runs on the phone's clock (countdown, notification); the server gets
+  // the same moments in server time, like every other write.
   const startWork = () => {
     const startedAt = Date.now();
     const entryId = newId();
     send({
       method: "POST",
       path: "/timer/start",
-      body: { id: entryId, taskId: linkedTaskId, source: "focus", startedAt },
+      body: {
+        id: entryId,
+        taskId: linkedTaskId,
+        source: "focus",
+        startedAt: toServerTime(startedAt),
+      },
       label: "Couldn't start the timer",
     });
     setFocusSession({
@@ -66,7 +74,7 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
     send({
       method: "POST",
       path: "/timer/stop",
-      body: { ...stopTarget(focusStore.get()?.entryId), endedAt },
+      body: { ...stopTarget(focusStore.get()?.entryId), endedAt: toServerTime(endedAt) },
       label: "Couldn't stop the timer",
     });
     haptic.success();
@@ -89,7 +97,7 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
       send({
         method: "POST",
         path: "/timer/stop",
-        body: { ...stopTarget(session.entryId), endedAt: Date.now() },
+        body: { ...stopTarget(session.entryId), endedAt: editTime() },
         label: "Couldn't stop the timer",
       });
     void cancelFocusEnd();

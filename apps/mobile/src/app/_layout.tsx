@@ -7,6 +7,7 @@ import {
   Nunito_800ExtraBold,
   useFonts,
 } from "@expo-google-fonts/nunito";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { type ErrorBoundaryProps, Stack, useRouter, useSegments } from "expo-router";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
@@ -29,6 +30,7 @@ import { loadFeedbackPrefs } from "@/lib/feedback-prefs";
 import { startOutbox } from "@/lib/outbox";
 import { loadPrivacy } from "@/lib/privacy";
 import { PERSIST_MAX_AGE, persister, queryClient } from "@/lib/query-client";
+import { restoreServerClock } from "@/lib/server-clock";
 import { preloadSounds } from "@/lib/sounds";
 import { useStore } from "@/lib/store";
 import { palette } from "@/theme/palette";
@@ -78,6 +80,7 @@ export default function RootLayout() {
   useEffect(() => {
     // Belt and braces: whatever happens, leave the splash screen for login.
     loadToken().catch(() => tokenStore.set(null));
+    void restoreServerClock(AsyncStorage);
     void startOutbox();
     void loadAppLockPref();
     void loadPrivacy();

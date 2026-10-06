@@ -15,19 +15,22 @@ import { badRequest, conflict, notFound } from "../../lib/errors";
 
 export type TimeEntry = typeof timeEntries.$inferSelect;
 
-/** How far ahead of the server a phone's clock may run. */
-const MAX_CLOCK_SKEW_MS = 5 * MINUTE_MS;
+/** How far ahead of the server a phone's clock may run; such tap times count as now. */
+const MAX_CLOCK_SKEW_MS = 30 * MINUTE_MS;
 /** Oldest tap time accepted: an outbox can hold writes for days, not months. */
 const MAX_TAP_AGE_MS = 30 * DAY_MS;
 /** A stop arriving this soon after the timer stopped is a retry or a double tap. */
 const STOP_REPLAY_WINDOW_MS = 2 * MINUTE_MS;
 
-/** The phone's tap time when it sent one, checked against the server clock. */
+/**
+ * The phone's tap time when it sent one, checked against the server clock. A tap
+ * can't be in the future, so a phone clock running some minutes fast means "now".
+ */
 function tapTime(value: number | undefined, now: number): number | undefined {
   if (value === undefined) return undefined;
   if (value > now + MAX_CLOCK_SKEW_MS) throw badRequest("That time is in the future");
   if (value < now - MAX_TAP_AGE_MS) throw badRequest("That time is too long ago");
-  return value;
+  return Math.min(value, now);
 }
 
 /** Minutes of `entry` that fall inside `range`; running entries count up to `now`. */

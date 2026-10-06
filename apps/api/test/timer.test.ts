@@ -52,6 +52,26 @@ describe("timer honours the phone's tap time", () => {
     expect(skewed.status).toBe(201);
   });
 
+  // QA-212: a phone 6 minutes fast must not lose its focus session.
+  test("a tap time a few minutes ahead counts as now", async () => {
+    const ctx = await createTestContext();
+    const id = newId();
+    const started = await ctx.request<{ started: Row }>("POST", "/timer/start", {
+      id,
+      startedAt: DEFAULT_NOW + 6 * MINUTE_MS,
+      source: "focus",
+    });
+    expect(started.status).toBe(201);
+    expect(started.body.started.startedAt).toBe(DEFAULT_NOW);
+    ctx.clock.advance(25 * MINUTE_MS);
+    const stopped = await ctx.request<Row>("POST", "/timer/stop", {
+      id,
+      endedAt: DEFAULT_NOW + 31 * MINUTE_MS,
+    });
+    expect(stopped.status).toBe(200);
+    expect(stopped.body.endedAt).toBe(DEFAULT_NOW + 25 * MINUTE_MS);
+  });
+
   test("a replayed stop returns the stopped entry instead of an error", async () => {
     const ctx = await createTestContext();
     const id = newId();

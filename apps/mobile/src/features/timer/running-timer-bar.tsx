@@ -1,11 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback } from "react";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TAB_BAR_GAP, TAB_BAR_HEIGHT } from "@/components/navigation/tab-bar";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { formatTimer } from "@/lib/format";
+import { snackLiftStore } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import type { TodayData } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
@@ -29,6 +31,13 @@ export function RunningTimerBar({
   const send = useOutbox();
   const now = useNow();
   const focus = entry.source === "focus";
+  // While the bar shows, snackbars sit above it instead of covering its Stop button.
+  useFocusEffect(
+    useCallback(() => {
+      snackLiftStore.set(RUNNING_TIMER_SPACE);
+      return () => snackLiftStore.set(0);
+    }, []),
+  );
   return (
     // Sits just above the floating tab bar.
     <View

@@ -333,3 +333,68 @@ describe("quick-add parser (Bangla)", () => {
     });
   });
 });
+
+// QA-214: a line with two prices, a closing danda and "2x150" must not lose money.
+describe("quick-add parser (several amounts and punctuation)", () => {
+  test("items listed with commas add up, and the AI gets a look", () => {
+    expect(parseQuickAdd("চা ২০, সিঙ্গারা ১০", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 3_000,
+      note: "চা, সিঙ্গারা",
+      confidence: "low",
+    });
+    expect(parseQuickAdd("tea 20, snacks 30 bkash", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 5_000,
+      note: "tea, snacks",
+      accountId: "acc_bkash",
+      confidence: "low",
+    });
+    expect(parseQuickAdd("tea 20 + snacks 30", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 5_000,
+      confidence: "low",
+    });
+  });
+
+  test("a thousands comma is not a list", () => {
+    expect(parseQuickAdd("rent 1,250", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 125_000,
+    });
+  });
+
+  test("a second price left in the note makes the draft low confidence", () => {
+    expect(parseQuickAdd("চা ২০ সিঙ্গারা ১০", context)).toMatchObject({
+      kind: "expense",
+      confidence: "low",
+    });
+    expect(parseQuickAdd("lunch 120 dinner 250", context)).toMatchObject({
+      kind: "expense",
+      confidence: "low",
+    });
+  });
+
+  test("a closing danda, full stop or ! doesn't turn an expense into a task", () => {
+    expect(parseQuickAdd("চা ২০।", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 2_000,
+      note: "চা",
+    });
+    expect(parseQuickAdd("lunch 250.", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 25_000,
+    });
+    expect(parseQuickAdd("call mom!", context)).toMatchObject({ kind: "task" });
+  });
+
+  test("“lunch 2x150” is ৳300 for lunch", () => {
+    expect(parseQuickAdd("lunch 2x150", context)).toMatchObject({
+      kind: "expense",
+      amountMinor: 30_000,
+      note: "lunch",
+      categoryId: "cat_food",
+    });
+    expect(parseQuickAdd("lunch 2×150", context)).toMatchObject({ amountMinor: 30_000 });
+  });
+});

@@ -119,16 +119,17 @@ export function tryEvaluateExpression(input: string): number | null {
 
 /**
  * True when the text looks like an amount expression (digits with at least one operator
- * allowed). Bangla digits count: "২৫০" and "১৮৫০/৩" are amounts.
+ * allowed). Bangla digits count: "২৫০" and "১৮৫০/৩" are amounts, and so is "2x150",
+ * since the keypad reads x as multiply.
  */
 export function isAmountExpression(input: string): boolean {
   const text = toAsciiDigits(input).trim();
-  return /^[\d.,\s]+([+\-*/×÷−][\d.,\s]+)*$/.test(text) && /\d/.test(text);
+  return /^[\d.,\s]+([+\-*/×x÷−][\d.,\s]+)*$/.test(text) && /\d/.test(text);
 }
 
 /** True when an operator follows the first character, e.g. "1850/3" but not "-50". */
 export function hasOperator(input: string): boolean {
-  return /[+\-*/×÷−]/.test(input.trim().slice(1));
+  return /[+\-*/×x÷−]/.test(input.trim().slice(1));
 }
 
 /**

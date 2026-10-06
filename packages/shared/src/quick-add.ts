@@ -332,6 +332,15 @@ function parseMoney(
   const amountMinor = amountIndex >= 0 ? expressionToMinor(plain[amountIndex]!, currency) : null;
   if (amountIndex >= 0 && (amountMinor === null || amountMinor <= 0)) return null;
   const occurredAt = offset === 0 ? context.now : addDaysToInstant(context.now, offset, timeZone);
+  // Another price left in the note ("চা ২০ সিঙ্গারা ১০") means only one was taken: let
+  // the AI (or the preview) have a look rather than save half at high confidence.
+  const strayAmount = plain.some(
+    (token, i) =>
+      i !== amountIndex &&
+      isAmountExpression(token) &&
+      !isPartOfDate(plain, i) &&
+      !isLabelNumber(plain, i),
+  );
   return {
     kind,
     amountMinor,
@@ -340,9 +349,59 @@ function parseMoney(
     areaId: guess.areaId ?? guessArea(note, context),
     note,
     occurredAt,
-    confidence: amountMinor !== null && categoryId !== null && accountId !== null ? "high" : "low",
+    confidence:
+      amountMinor !== null && categoryId !== null && accountId !== null && !strayAmount
+        ? "high"
+        : "low",
   };
 }
+
+/** A comma or "+" between items, not inside a number: "চা ২০, সিঙ্গারা ১০", "tea 20 + bun 15". */
+const ITEM_SEPARATOR_RE = /\s*[,+]\s*(?=[^\d\s.,+])/g;
+
+/**
+ * Several priced items on one line become one expense for their total, with the
+ * item names as the note. It stays low confidence, so the AI can split it when it
+ * is on; offline nothing typed is dropped. Null unless every item has a price.
+ */
+function parseMoneyList(
+  text: string,
+  context: QuickAddContext,
+  forced?: "expense" | "income",
+): MoneyDraft | null {
+  // Split on an ASCII-digit copy (same length) so "২০, সিঙ্গারা" is seen as a number.
+  const ascii = toAsciiDigits(text);
+  const parts: string[] = [];
+  let start = 0;
+  for (const match of ascii.matchAll(ITEM_SEPARATOR_RE)) {
+    if (match.index === 0) continue;
+    parts.push(text.slice(start, match.index));
+    start = match.index + match[0].length;
+  }
+  if (parts.length === 0) return null;
+  parts.push(text.slice(start));
+  const items = parts.map((part) => parseMoney(part, context, forced));
+  const priced = items.filter((item): item is MoneyDraft => item?.amountMinor != null);
+  if (priced.length !== items.length || new Set(priced.map((i) => i.kind)).size !== 1) return null;
+  const first = priced[0]!;
+  const named = priced.find((item) => item.accountId !== context.defaultAccountId);
+  const categories = new Set(priced.map((item) => item.categoryId));
+  return {
+    ...first,
+    amountMinor: priced.reduce((sum, item) => sum + item.amountMinor!, 0),
+    accountId: named?.accountId ?? first.accountId,
+    categoryId: categories.size === 1 ? first.categoryId : null,
+    areaId: priced.find((item) => item.areaId !== null)?.areaId ?? null,
+    note: priced
+      .map((item) => item.note)
+      .filter(Boolean)
+      .join(", "),
+    confidence: "low",
+  };
+}
+
+/** A closing danda, full stop or "!" after an amount ("চা ২০।") is punctuation, not text. */
+const TRAILING_PUNCTUATION_RE = /[\s।.!]+$/u;
 
 function addDaysToInstant(ms: number, days: number, timeZone: string): number {
   const localDate = addDays(toLocalDate(ms, timeZone), days);
@@ -534,12 +593,15 @@ export function parseQuickAdd(
       }
     );
   }
+  const moneyText = input.replace(TRAILING_PUNCTUATION_RE, "");
   if (forceKind === "expense" || forceKind === "income")
-    return parseMoney(input, context, forceKind);
+    return (
+      parseMoneyList(moneyText, context, forceKind) ?? parseMoney(moneyText, context, forceKind)
+    );
 
   const timeEntry = parseTimeEntry(input, context);
   if (timeEntry) return timeEntry;
-  const money = parseMoney(input, context);
+  const money = parseMoneyList(moneyText, context) ?? parseMoney(moneyText, context);
   if (money) return money;
   return parseTask(input, context);
 }

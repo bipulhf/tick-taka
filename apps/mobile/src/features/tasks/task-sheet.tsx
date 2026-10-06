@@ -1,74 +1,33 @@
 import { useQuery } from "@tanstack/react-query";
 import { endOfLocalDay, MINUTE_MS, startOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
-import { describeRRule, parseRecurrence } from "@tick-taka/shared/recurrence";
+import { parseRecurrence } from "@tick-taka/shared/recurrence";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Chip } from "@/components/ui/chip";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ErrorState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { PickerField } from "@/components/ui/picker-field";
-import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
 import { formatMinutes, formatWhen } from "@/lib/format";
-import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate, pickTime } from "@/lib/pick-date";
 import { useAiStatus, useAreas, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { userTime } from "@/lib/user-time";
+import { EMPTY, ESTIMATES, type Form, type WhenChoice } from "./task-form";
+import { TaskMoreFields } from "./task-more-fields";
+import { TaskSubtasks } from "./task-subtasks";
 import { useTaskActions } from "./use-task-actions";
-
-type Priority = "low" | "normal" | "high";
-type WhenChoice = "today" | "evening" | "tomorrow" | "pick" | "someday" | "none";
-const ESTIMATES = [15, 30, 60, 90, 120, 180];
 
 /** "More options" stays open or closed the way it was last left. */
 let moreOpenLastTime = false;
-
-interface Form {
-  title: string;
-  notes: string;
-  areaId: string | null;
-  projectId: string | null;
-  doAt: number | null;
-  hasTime: boolean;
-  whenSlot: "day" | "evening";
-  status: "inbox" | "open" | "someday" | "done";
-  deadlineAt: number | null;
-  priority: Priority;
-  energy: "high" | "low" | null;
-  estimateMin: number | null;
-  urgent: boolean;
-  rrule: string | null;
-  top3Date: string | null;
-}
-
-const EMPTY: Form = {
-  title: "",
-  notes: "",
-  areaId: null,
-  projectId: null,
-  doAt: null,
-  hasTime: false,
-  whenSlot: "day",
-  status: "inbox",
-  deadlineAt: null,
-  priority: "normal",
-  energy: null,
-  estimateMin: null,
-  urgent: false,
-  rrule: null,
-  top3Date: null,
-};
 
 /** Create or edit a task in a bottom sheet. */
 export function TaskSheet({ id }: { id: string | null }) {
@@ -77,7 +36,7 @@ export function TaskSheet({ id }: { id: string | null }) {
   const actions = useTaskActions();
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
-  const ai = useAiStatus();
+  const _ai = useAiStatus();
   const timeZone = userTime(settings).timeZone;
   const today = toLocalDate(Date.now(), timeZone);
   const query = useQuery({
@@ -87,8 +46,6 @@ export function TaskSheet({ id }: { id: string | null }) {
   });
   const [form, setForm] = useState<Form>(EMPTY);
   const [repeatText, setRepeatText] = useState("");
-  const [newSubtask, setNewSubtask] = useState("");
-  const [breaking, setBreaking] = useState(false);
   const task = query.data;
 
   // Fill the form once per task; later refetches (after a subtask is added) must not
@@ -204,40 +161,6 @@ export function TaskSheet({ id }: { id: string | null }) {
         label: "Couldn't save the task",
       });
     router.back();
-  };
-
-  const nextSort = useRef(0);
-  const addSubtask = (title: string) => {
-    if (!id || !title.trim()) return;
-    // New subtasks go to the end of the list.
-    nextSort.current = Math.max(nextSort.current, task?.subtasks.length ?? 0) + 1;
-    send({
-      method: "POST",
-      path: "/tasks",
-      body: {
-        id: newId(),
-        title: title.trim(),
-        parentId: id,
-        status: "open",
-        sort: nextSort.current,
-      },
-      label: "Couldn't add the subtask",
-    });
-  };
-
-  const breakDown = async () => {
-    setBreaking(true);
-    try {
-      const result = await unwrap(
-        api.ai.breakdown.$post({ json: { title: form.title, notes: form.notes || undefined } }),
-      );
-      for (const title of result.subtasks) addSubtask(title);
-      notify(`Added ${result.subtasks.length} subtasks`);
-    } catch (error) {
-      notify((error as Error).message);
-    } finally {
-      setBreaking(false);
-    }
   };
 
   const doDate = form.doAt ? toLocalDate(form.doAt, timeZone) : null;
@@ -370,149 +293,21 @@ export function TaskSheet({ id }: { id: string | null }) {
       </Pressable>
 
       {moreOpen ? (
-        <>
-          <PickerField
-            label="Deadline"
-            value={form.deadlineAt ? "pick" : null}
-            noneLabel="No deadline"
-            options={[
-              {
-                id: "pick",
-                label: form.deadlineAt ? formatWhen(form.deadlineAt, false) : "Pick a date…",
-              },
-            ]}
-            onChange={(choice) => (choice === null ? set("deadlineAt", null) : void setDeadline())}
-          />
-          <Chip
-            label={form.top3Date === today ? "In top three" : "Add to top three"}
-            tone="mango"
-            selected={form.top3Date === today}
-            onPress={() => set("top3Date", form.top3Date === today ? null : today)}
-            className="self-start"
-          />
-
-          <TextField
-            label="Repeat"
-            value={repeatText}
-            onChangeText={setRepeatText}
-            placeholder={form.rrule ? describeRRule(form.rrule) : "e.g. every other Tuesday"}
-            error={repeatText && !parsedRepeat ? "Try “every month on the 5th”" : undefined}
-          />
-          {parsedRepeat ? (
-            <Text variant="caption" tone="sky">
-              ↻ {describeRRule(parsedRepeat.rrule)}
-            </Text>
-          ) : null}
-          {form.rrule && !repeatText ? (
-            <Chip label="Stop repeating" onPress={() => set("rrule", null)} />
-          ) : null}
-
-          <Text variant="label" tone="muted">
-            Priority
-          </Text>
-          <Segmented<Priority>
-            value={form.priority}
-            onChange={(v) => set("priority", v)}
-            options={[
-              { value: "low", label: "Low" },
-              { value: "normal", label: "Normal" },
-              { value: "high", label: "High" },
-            ]}
-          />
-          {advanced?.eisenhower ? (
-            <Chip
-              label={form.urgent ? "Urgent" : "Not urgent"}
-              tone="coral"
-              selected={form.urgent}
-              onPress={() => set("urgent", !form.urgent)}
-              className="self-start"
-            />
-          ) : null}
-          {advanced?.energy ? (
-            <PickerField
-              label="Energy"
-              value={form.energy}
-              noneLabel="Any energy"
-              options={[
-                { id: "high", label: "High energy", emoji: "⚡" },
-                { id: "low", label: "Low energy", emoji: "🌙" },
-              ]}
-              onChange={(energy) => set("energy", energy as Form["energy"])}
-            />
-          ) : null}
-
-          <View className="flex-row gap-3">
-            <PickerField
-              label="Area"
-              span="half"
-              value={form.areaId}
-              noneLabel="No area"
-              options={areas.map((area) => ({ id: area.id, label: area.name, emoji: area.emoji }))}
-              onChange={(areaId) => setForm((f) => ({ ...f, areaId, projectId: null }))}
-            />
-            {projects.data?.length ? (
-              <PickerField
-                label="Project"
-                span="half"
-                value={form.projectId}
-                noneLabel="No project"
-                options={projects.data.map((project) => ({ id: project.id, label: project.name }))}
-                onChange={(projectId) => set("projectId", projectId)}
-              />
-            ) : null}
-          </View>
-        </>
+        <TaskMoreFields
+          form={form}
+          set={set}
+          setForm={setForm}
+          today={today}
+          repeatText={repeatText}
+          setRepeatText={setRepeatText}
+          parsedRepeat={parsedRepeat}
+          advanced={advanced}
+          areas={areas}
+          projects={projects}
+          setDeadline={setDeadline}
+        />
       ) : null}
-      {id && task ? (
-        <>
-          <Text variant="label" tone="muted">
-            Subtasks
-          </Text>
-          {task.subtasks.map((sub) => (
-            <View key={sub.id} className="flex-row items-center">
-              <Checkbox
-                checked={sub.status === "done"}
-                onChange={() => actions.toggleDone(sub)}
-                label={sub.title}
-              />
-              <Text className={`flex-1 ${sub.status === "done" ? "text-muted line-through" : ""}`}>
-                {sub.title}
-              </Text>
-            </View>
-          ))}
-          <TextField
-            value={newSubtask}
-            onChangeText={setNewSubtask}
-            placeholder="Add a subtask"
-            returnKeyType="done"
-            onSubmitEditing={() => {
-              addSubtask(newSubtask);
-              setNewSubtask("");
-            }}
-          />
-          <View className="flex-row gap-2">
-            {ai.data?.configured && ai.data.features.breakdown ? (
-              <Button
-                label="Break it down"
-                icon="auto-fix"
-                variant="secondary"
-                size="sm"
-                loading={breaking}
-                onPress={breakDown}
-                className="flex-1"
-              />
-            ) : null}
-            <Button
-              label="Focus"
-              icon="sprout"
-              variant="time"
-              size="sm"
-              onPress={() => router.replace(`/focus?taskId=${id}`)}
-              className="flex-1"
-            />
-          </View>
-        </>
-      ) : null}
+      {id && task ? <TaskSubtasks id={id} task={task} form={form} /> : null}
       {id ? (
         <Pressable
           onPress={() => router.replace(`/plan/logbook`)}

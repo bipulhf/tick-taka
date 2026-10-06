@@ -15,7 +15,8 @@ import { useOutbox } from "@/lib/outbox";
 import { playSound } from "@/lib/sounds";
 import type { ColorName } from "@/theme/colors";
 import { useColors } from "@/theme/colors";
-import { type DayChoice, useQuickAdd } from "./use-quick-add";
+import type { DayChoice } from "./quick-add-requests";
+import { useQuickAdd } from "./use-quick-add";
 
 const KINDS: { id: QuickAddKind; label: string }[] = [
   { id: "task", label: "Task" },

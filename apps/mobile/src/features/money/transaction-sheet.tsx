@@ -3,12 +3,10 @@ import { toLocalDate } from "@tick-taka/shared/dates";
 import { costInHours } from "@tick-taka/shared/finance";
 import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View } from "react-native";
-import { z } from "zod";
 import { AmountKeypad } from "@/components/ui/amount-keypad";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
@@ -19,49 +17,19 @@ import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
-import { api, unwrap } from "@/lib/api";
 import { formatWhen } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate, pickTime } from "@/lib/pick-date";
-import {
-  useAccounts,
-  useAiStatus,
-  useAreas,
-  useCategories,
-  useHourlyRate,
-  useSettings,
-} from "@/lib/queries";
-import { pickReceipt, receiptSource, uploadReceipt } from "@/lib/receipts";
+import { useAccounts, useAreas, useCategories, useHourlyRate, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { playSound } from "@/lib/sounds";
 import { useRemove } from "@/lib/use-remove";
 import { userTime } from "@/lib/user-time";
 import { useEvents, useTransaction } from "./queries";
-
-type TxType = "expense" | "income" | "transfer";
-
-const formSchema = z
-  .object({
-    type: z.enum(["expense", "income", "transfer", "adjustment"]),
-    amountMinor: z.number().int().positive("Enter an amount"),
-    toAmountMinor: z.number().int().positive().nullable(),
-    feeMinor: z.number().int().nonnegative(),
-    accountId: z.string().min(1, "Pick an account"),
-    toAccountId: z.string().nullable(),
-    categoryId: z.string().nullable(),
-    areaId: z.string().nullable(),
-    eventId: z.string().nullable(),
-    note: z.string().max(2000),
-    occurredAt: z.number().int(),
-    receiptPath: z.string().nullable(),
-  })
-  .refine((v) => v.type !== "transfer" || (v.toAccountId && v.toAccountId !== v.accountId), {
-    message: "Pick a different account to move money to",
-    path: ["toAccountId"],
-  });
-type Form = z.infer<typeof formSchema>;
+import { type Form, formSchema, type TxType } from "./transaction-form";
+import { TransactionReceipt } from "./transaction-receipt";
 
 /** Create or edit a transaction in a bottom sheet. */
 export function TransactionSheet({ id }: { id: string | null }) {
@@ -74,11 +42,9 @@ export function TransactionSheet({ id }: { id: string | null }) {
   const { data: categories = [] } = useCategories();
   const { data: areas = [] } = useAreas();
   const { data: events = [] } = useEvents();
-  const ai = useAiStatus();
   const hourly = useHourlyRate();
   const timeZone = userTime(settings).timeZone;
   const [keypadKey, setKeypadKey] = useState(0);
-  const [busy, setBusy] = useState<string | null>(null);
 
   const form = useForm<Form>({
     resolver: zodResolver(formSchema),
@@ -168,34 +134,6 @@ export function TransactionSheet({ id }: { id: string | null }) {
     }
     router.back();
   });
-
-  const attachReceipt = async (source: "camera" | "library") => {
-    const image = await pickReceipt(source);
-    if (!image) return;
-    setBusy("receipt");
-    try {
-      const path = await uploadReceipt(image);
-      form.setValue("receiptPath", path);
-      if (ai.data?.configured && ai.data.features.receipt && !id) {
-        const result = await unwrap(
-          api.ai.receipt.$post({ json: { imageBase64: image.base64, mimeType: image.mimeType } }),
-        );
-        const draft = result.draft;
-        if (draft.kind === "expense") {
-          if (draft.amountMinor) form.setValue("amountMinor", draft.amountMinor);
-          if (draft.categoryId) form.setValue("categoryId", draft.categoryId);
-          if (draft.note) form.setValue("note", draft.note);
-          form.setValue("occurredAt", draft.occurredAt);
-          setKeypadKey((k) => k + 1);
-          notify("✨ Read the receipt. Check it before saving.");
-        }
-      }
-    } catch (error) {
-      notify((error as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const remove = () => {
     if (!id) return;
@@ -369,36 +307,12 @@ export function TransactionSheet({ id }: { id: string | null }) {
           />
         ) : null}
       </View>
-      <Text variant="label" tone="muted">
-        Receipt
-      </Text>
-      {values.receiptPath ? (
-        <Image
-          source={receiptSource(values.receiptPath)}
-          style={{ height: 180, borderRadius: 16 }}
-          contentFit="cover"
-          accessibilityLabel="Receipt photo"
-        />
-      ) : null}
-      <View className="flex-row gap-2">
-        <Button
-          label="Camera"
-          icon="camera-outline"
-          variant="secondary"
-          size="sm"
-          loading={busy === "receipt"}
-          onPress={() => attachReceipt("camera")}
-          className="flex-1"
-        />
-        <Button
-          label="Gallery"
-          icon="image-outline"
-          variant="secondary"
-          size="sm"
-          onPress={() => attachReceipt("library")}
-          className="flex-1"
-        />
-      </View>
+      <TransactionReceipt
+        id={id}
+        form={form}
+        values={values}
+        onRead={() => setKeypadKey((k) => k + 1)}
+      />
     </Sheet>
   );
 }

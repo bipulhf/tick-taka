@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
-import { AppState, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { AccessibilityInfo, AppState, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tiki } from "@/components/tiki/tiki";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { useOutbox } from "@/lib/outbox";
 import { useSettings } from "@/lib/queries";
 import { playSound } from "@/lib/sounds";
 import { useStore } from "@/lib/store";
+import { focusAnnouncement } from "./focus-announcement";
 import { focusStore, REVIVE_WINDOW_MS, setFocusSession } from "./focus-session";
 import { Plant } from "./plant";
 
@@ -126,6 +127,17 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
         : 0;
   const drooping = session?.drooping ?? false;
 
+  // Screen readers hear the timer at milestones only, not every second.
+  const announcement = focusAnnouncement(session?.phase ?? null, remaining);
+  const announcementText = useRef(announcement?.text);
+  announcementText.current = announcement?.text;
+  const announcementKey = announcement?.key;
+  useEffect(() => {
+    // Only the milestone key decides when to speak; the text itself changes every minute.
+    if (announcementKey && announcementText.current)
+      AccessibilityInfo.announceForAccessibility(announcementText.current);
+  }, [announcementKey]);
+
   return (
     <View className="flex-1 bg-background">
       <View
@@ -146,7 +158,7 @@ export function FocusScreen({ taskId }: { taskId: string | null }) {
         </View>
         <View className="items-center">
           <Plant growth={growth} drooping={drooping} />
-          <Text variant="display" className="text-6xl" numeric accessibilityLiveRegion="polite">
+          <Text variant="display" className="text-6xl" numeric maxFontSizeMultiplier={1.3}>
             {formatTimer(remaining)}
           </Text>
           {drooping ? (

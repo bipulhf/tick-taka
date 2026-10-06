@@ -3,6 +3,7 @@ import { colorScheme } from "nativewind";
 import { type ReactNode, useEffect } from "react";
 import { useColorScheme, View } from "react-native";
 import { useSettings } from "@/lib/queries";
+import { RewardThemeContext } from "@/theme/colors";
 import { rewardThemeStyle } from "./reward-theme";
 
 type ThemeChoice = "system" | "light" | "dark";
@@ -14,7 +15,10 @@ export async function loadThemeChoice() {
   if (saved) colorScheme.set(saved);
 }
 
-/** Pins the colour scheme from settings and applies the chosen accent theme. */
+/**
+ * Pins the colour scheme from settings and applies the chosen accent theme, both to the
+ * CSS variables (class names) and to useColors() (icons, gradients, SVG).
+ */
 export function ThemedRoot({ children }: { children: ReactNode }) {
   const { data: settings } = useSettings();
   const choice = settings?.theme;
@@ -25,6 +29,8 @@ export function ThemedRoot({ children }: { children: ReactNode }) {
   }, [choice]);
   const scheme = useColorScheme() === "dark" ? "dark" : "light";
   return (
-    <View style={[{ flex: 1 }, rewardThemeStyle(settings?.rewardTheme, scheme)]}>{children}</View>
+    <RewardThemeContext.Provider value={settings?.rewardTheme ?? null}>
+      <View style={[{ flex: 1 }, rewardThemeStyle(settings?.rewardTheme, scheme)]}>{children}</View>
+    </RewardThemeContext.Provider>
   );
 }

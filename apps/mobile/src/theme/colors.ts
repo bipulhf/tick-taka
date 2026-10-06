@@ -1,11 +1,20 @@
+import { createContext, useContext } from "react";
 import { useColorScheme } from "react-native";
-import { type Palette, palette } from "./palette";
+import { type Palette, themedPalette } from "./palette";
 
 export type { ColorName, Palette } from "./palette";
 
-/** Colour values for places that need one (icons, charts, SVG). Matches global.css. */
+/** The accent theme picked in Settings; ThemedRoot provides it. */
+export const RewardThemeContext = createContext<string | null>(null);
+
+/**
+ * Colour values for places that need one (icons, charts, SVG, gradients). Matches
+ * global.css, including the accent theme's surfaces, so JS colours never drift from
+ * the class-based ones.
+ */
 export function useColors(): Palette {
-  return useColorScheme() === "dark" ? palette.dark : palette.light;
+  const scheme = useColorScheme() === "dark" ? "dark" : "light";
+  return themedPalette(scheme, useContext(RewardThemeContext));
 }
 
 /**

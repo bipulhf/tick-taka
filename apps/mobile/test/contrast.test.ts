@@ -147,3 +147,11 @@ test("contrast() matches known WCAG values", () => {
   expect(contrast("#FFFFFF", "#FFFFFF")).toBeCloseTo(1, 5);
   expect(contrast("#7D7670", "#FFFFFF")).toBeCloseTo(4.47, 2);
 });
+
+test("accent themes reach the JS palette (useColors), not only the CSS variables", () => {
+  expect(themedPalette("light", "mint-breeze").background).toBe("#ECFAF5");
+  expect(themedPalette("dark", "grape-dusk").card).toBe("#241E34");
+  expect(themedPalette("light", "mint-breeze").ink).toBe(palette.light.ink);
+  expect(themedPalette("light", null)).toBe(palette.light);
+  expect(themedPalette("dark", "no-such-theme")).toBe(palette.dark);
+});

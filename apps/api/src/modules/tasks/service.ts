@@ -10,25 +10,12 @@ import {
 import { newId } from "@tick-taka/shared/ids";
 import { nextOccurrence, parseRRule } from "@tick-taka/shared/recurrence";
 import type { TaskCreate, TaskListQuery, TaskUpdate } from "@tick-taka/shared/schemas/time";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gte,
-  inArray,
-  isNull,
-  like,
-  lt,
-  ne,
-  or,
-  type SQL,
-  sql,
-} from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, ne, or, type SQL, sql } from "drizzle-orm";
 import { tasks } from "../../db/schema/time";
 import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
 import { badRequest, conflict } from "../../lib/errors";
+import { likeContains } from "../../lib/sql-like";
 import { userTime } from "../../lib/user-time";
 
 export type Task = typeof tasks.$inferSelect;
@@ -152,10 +139,8 @@ export function taskService(deps: Deps) {
       if (query.doneFrom !== undefined) filters.push(gte(tasks.doneAt, query.doneFrom));
       if (query.doneTo !== undefined) filters.push(lt(tasks.doneAt, query.doneTo));
       if (query.top3Date) filters.push(eq(tasks.top3Date, query.top3Date));
-      if (query.q) {
-        const pattern = `%${query.q.replace(/[%_]/g, (m) => `\\${m}`)}%`;
-        filters.push(or(like(tasks.title, pattern), like(tasks.notes, pattern)));
-      }
+      if (query.q)
+        filters.push(or(likeContains(tasks.title, query.q), likeContains(tasks.notes, query.q)));
       const order =
         query.doneFrom !== undefined || query.status?.includes("done")
           ? desc(tasks.doneAt)

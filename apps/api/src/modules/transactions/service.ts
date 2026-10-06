@@ -3,11 +3,12 @@ import type {
   TransactionListQuery,
   TransactionUpdate,
 } from "@tick-taka/shared/schemas/money";
-import { and, desc, eq, gte, isNull, like, lt, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, or, type SQL } from "drizzle-orm";
 import { accounts, transactions } from "../../db/schema/money";
 import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
 import { badRequest } from "../../lib/errors";
+import { likeContains } from "../../lib/sql-like";
 import { categoryRuleService } from "../category-rules/service";
 
 export type Transaction = typeof transactions.$inferSelect;
@@ -72,8 +73,7 @@ export function transactionService(deps: Deps) {
       if (query.goalId) filters.push(eq(transactions.goalId, query.goalId));
       if (query.debtId) filters.push(eq(transactions.debtId, query.debtId));
       if (query.type) filters.push(eq(transactions.type, query.type));
-      if (query.q)
-        filters.push(like(transactions.note, `%${query.q.replace(/[%_]/g, (m) => `\\${m}`)}%`));
+      if (query.q) filters.push(likeContains(transactions.note, query.q));
       if (query.cursor) {
         const cursor = decodeCursor(query.cursor);
         filters.push(

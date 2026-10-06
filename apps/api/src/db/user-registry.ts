@@ -5,6 +5,7 @@ import { newId } from "@tick-taka/shared/ids";
 import type { Env } from "../env";
 import { type DbHandle, openDatabase } from "./client";
 import { createHandleCache } from "./handle-cache";
+import { createJobRunStore } from "./job-runs";
 import { seedDefaults } from "./seed";
 import { createSessionStore } from "./sessions";
 import { deleteUserFiles } from "./user-files";
@@ -97,6 +98,7 @@ export function createUserRegistry(
   const removeUser = registry.query("DELETE FROM users WHERE id = ?");
   const open = createHandleCache<UserData>({ ...HANDLE_LIMITS, ...options.handles, now });
   const sessions = createSessionStore(registry, now);
+  const jobRuns = createJobRunStore(registry);
 
   /** The owner inherits the single-user data once, on their first sign-in. */
   const claimsLegacy = (email: string) =>
@@ -117,6 +119,8 @@ export function createUserRegistry(
   return {
     /** Signed-in devices; each token's jti names one of these. */
     sessions,
+    /** When each nightly job last ran for each user. */
+    jobRuns,
 
     find(id: string): User | undefined {
       const row = byId.get(id);
@@ -203,6 +207,7 @@ export function createUserRegistry(
      */
     remove(user: User): void {
       sessions.removeForUser(user.id);
+      jobRuns.removeForUser(user.id);
       open.close(user.id);
       deleteUserFiles(dataPaths(user), user.legacy);
       removeUser.run(user.id);

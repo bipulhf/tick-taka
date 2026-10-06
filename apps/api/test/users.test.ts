@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
@@ -218,17 +218,47 @@ describe("AI budget", () => {
 });
 
 describe("nightly jobs", () => {
-  test("back up each user at 3 am in their own time zone", async () => {
+  test("back up each user at 3 am in their own time zone, once a day", async () => {
     const backups = mkdtempSync(join(tmpdir(), "tt-jobs-"));
-    // 3:05 am in Dhaka is 9:05 pm the day before in London.
-    const at = zonedTimeToUtc({ year: 2026, month: 10, day: 4, hour: 3, minute: 5 }, "Asia/Dhaka");
+    // 2:05 am in Dhaka is 8:05 pm the day before in London.
+    const at = zonedTimeToUtc({ year: 2026, month: 10, day: 4, hour: 2, minute: 5 }, "Asia/Dhaka");
     const ctx = await createTestContext({ now: at, env: { BACKUPS_DIR: backups } });
     const london = await ctx.tokenFor("sub-london", "london@example.com");
     await ctx.request("PATCH", "/settings", { timeZone: "Europe/London" }, as(london));
+    const [dhakaUser, londonUser] = ctx.deps.users.list();
+    // London's 3 am backup for its 3 October already ran.
+    ctx.deps.users.jobRuns.record(londonUser!.id, "nightly-backup", "2026-10-03", at);
     await runHourlyJobs(ctx.deps);
-    const dhakaUser = ctx.deps.users.list()[0]!;
-    const londonUser = ctx.deps.users.list()[1]!;
-    expect(readdirSync(join(backups, "users", dhakaUser.id))).toEqual(["app-2026-10-04.db"]);
-    expect(existsSync(join(backups, "users", londonUser.id))).toBe(false);
+    expect(existsSync(join(backups, "users", dhakaUser!.id))).toBe(false);
+
+    ctx.clock.advance(60 * 60_000); // 3:05 am in Dhaka
+    await runHourlyJobs(ctx.deps);
+    await runHourlyJobs(ctx.deps);
+    expect(readdirSync(join(backups, "users", dhakaUser!.id))).toEqual(["app-2026-10-04.db"]);
+    expect(existsSync(join(backups, "users", londonUser!.id))).toBe(false);
+    expect(ctx.deps.users.jobRuns.lastDate(dhakaUser!.id, "nightly-backup")).toBe("2026-10-04");
+  });
+
+  test("catch up after the server was down at 3 am", async () => {
+    const backups = mkdtempSync(join(tmpdir(), "tt-jobs-"));
+    // The first tick after a restart is at 7:05 am; nothing has run today.
+    const at = zonedTimeToUtc({ year: 2026, month: 10, day: 4, hour: 7, minute: 5 }, "Asia/Dhaka");
+    const ctx = await createTestContext({ now: at, env: { BACKUPS_DIR: backups } });
+    const me = ctx.deps.users.list()[0]!;
+    ctx.deps.users.jobRuns.record(me.id, "nightly-backup", "2026-10-03", at - 86_400_000);
+    await runHourlyJobs(ctx.deps);
+    expect(readdirSync(join(backups, "users", me.id))).toEqual(["app-2026-10-04.db"]);
+    expect(ctx.deps.users.jobRuns.lastDate(me.id, "overdue-bills")).toBe("2026-10-04");
+  });
+
+  test("a failed job isn't marked done, so the next tick tries again", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tt-jobs-"));
+    const blocked = join(dir, "not-a-folder");
+    writeFileSync(blocked, "");
+    const at = zonedTimeToUtc({ year: 2026, month: 10, day: 4, hour: 3, minute: 5 }, "Asia/Dhaka");
+    const ctx = await createTestContext({ now: at, env: { BACKUPS_DIR: blocked } });
+    const me = ctx.deps.users.list()[0]!;
+    await runHourlyJobs(ctx.deps);
+    expect(ctx.deps.users.jobRuns.lastDate(me.id, "nightly-backup")).toBeUndefined();
   });
 });

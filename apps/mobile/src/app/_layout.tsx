@@ -24,6 +24,7 @@ import { AppLock } from "@/features/security/app-lock";
 import { loadThemeChoice, ThemedRoot } from "@/features/settings/themed-root";
 import { loadToken, tokenStore } from "@/lib/auth";
 import { loadFeedbackPrefs } from "@/lib/feedback-prefs";
+import { startOutbox } from "@/lib/outbox";
 import { loadPrivacy } from "@/lib/privacy";
 import { PERSIST_MAX_AGE, persister, queryClient } from "@/lib/query-client";
 import { preloadSounds } from "@/lib/sounds";
@@ -68,6 +69,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     void loadToken();
+    void startOutbox();
     void loadPrivacy();
     void loadFeedbackPrefs();
     preloadSounds();
@@ -87,8 +89,13 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <PersistQueryClientProvider
           client={queryClient}
-          persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: "1" }}
-          onSuccess={() => void queryClient.resumePausedMutations()}
+          persistOptions={{
+            persister,
+            maxAge: PERSIST_MAX_AGE,
+            buster: "1",
+            // Queued writes live in the outbox's own storage, not in this cache.
+            dehydrateOptions: { shouldDehydrateMutation: () => false },
+          }}
         >
           <ThemeProvider
             value={{

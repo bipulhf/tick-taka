@@ -1,5 +1,6 @@
-import { onlineManager, useMutationState } from "@tanstack/react-query";
+import { onlineManager } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
+import { outbox } from "./outbox";
 
 /** Whether the phone has a network right now (the outbox waits while it doesn't). */
 export function useIsOnline(): boolean {
@@ -12,5 +13,9 @@ export function useIsOnline(): boolean {
 
 /** Saved changes not yet on the server: queued offline, or still sending. */
 export function usePendingWrites(): number {
-  return useMutationState({ filters: { mutationKey: ["outbox"], status: "pending" } }).length;
+  return useSyncExternalStore(
+    (listener) => outbox.subscribe(listener),
+    () => outbox.size,
+    () => 0,
+  );
 }

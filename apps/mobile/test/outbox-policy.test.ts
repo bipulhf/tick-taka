@@ -1,0 +1,152 @@
+import { describe, expect, test } from "bun:test";
+import {
+  classifyFailure,
+  followCreatedRecords,
+  legacyOutboxRequests,
+  type OutboxEntry,
+  type OutboxRequest,
+  parsePersistedOutbox,
+  retryDelay,
+} from "../src/lib/outbox-policy";
+
+const entry = (request: OutboxRequest, maybeDelivered = false): OutboxEntry => ({
+  id: "e1",
+  request,
+  queuedAt: 0,
+  attempts: 0,
+  maybeDelivered,
+});
+const create = entry({ method: "POST", path: "/transactions", body: { id: "t1" } });
+
+describe("outbox retry policy", () => {
+  test("an unreachable server is retried, however many times it has failed", () => {
+    const tired = { ...create, attempts: 500 };
+    expect(classifyFailure(tired, { unreachable: true })).toBe("retry");
+  });
+
+  test("5xx, 408 and 429 wait and retry", () => {
+    for (const status of [500, 502, 503, 504, 408, 429])
+      expect(classifyFailure(create, { status })).toBe("retry");
+  });
+
+  test("validation and not-found errors are final", () => {
+    for (const status of [400, 404, 409, 422])
+      expect(classifyFailure(create, { status })).toBe("reject");
+  });
+
+  test("401 pauses for the session instead of dropping the write", () => {
+    expect(classifyFailure(create, { status: 401 })).toBe("session");
+  });
+
+  test("an unknown failure with no status is final, so the queue can't spin on a bug", () => {
+    expect(classifyFailure(create, {})).toBe("reject");
+  });
+
+  test("backoff doubles from one second and stops growing at a minute", () => {
+    expect([1, 2, 3, 4].map(retryDelay)).toEqual([1000, 2000, 4000, 8000]);
+    expect(retryDelay(7)).toBe(60_000);
+    expect(retryDelay(40)).toBe(60_000);
+  });
+});
+
+describe("repeats of writes that already landed", () => {
+  test("restoring a live record or deleting a gone one is already done", () => {
+    expect(
+      classifyFailure(entry({ method: "POST", path: "/tasks/a/restore" }), { status: 409 }),
+    ).toBe("applied");
+    expect(classifyFailure(entry({ method: "DELETE", path: "/tasks/a" }), { status: 404 })).toBe(
+      "applied",
+    );
+  });
+
+  test("stop and checkout count as done only when an earlier attempt may have got through", () => {
+    const stop = { method: "POST", path: "/timer/stop" } as const;
+    const checkout = { method: "POST", path: "/shopping/checkout" } as const;
+    expect(classifyFailure(entry(stop, true), { status: 409 })).toBe("applied");
+    expect(classifyFailure(entry(checkout, true), { status: 400 })).toBe("applied");
+    expect(classifyFailure(entry(stop, false), { status: 409 })).toBe("reject");
+    expect(classifyFailure(entry(checkout, false), { status: 400 })).toBe("reject");
+  });
+});
+
+describe("create, then edit, replayed later", () => {
+  test("a queued edit moves up to the time the server stamped the new record", () => {
+    const edit = entry({
+      method: "PATCH",
+      path: "/tasks/t1",
+      body: { title: "Buy milk and eggs", updatedAt: 1_000 },
+    });
+    const other = entry({ method: "PATCH", path: "/tasks/t2", body: { updatedAt: 1_000 } });
+    const changed = followCreatedRecords([edit, other], { id: "t1", updatedAt: 7_200_000 });
+    expect(changed).toEqual([edit]);
+    expect(edit.request.body).toEqual({ title: "Buy milk and eggs", updatedAt: 7_200_000 });
+    expect(other.request.body).toEqual({ updatedAt: 1_000 });
+  });
+
+  test("records nested in the reply count too, and newer edits are left alone", () => {
+    const edit = entry({ method: "PATCH", path: "/time-entries/s1", body: { updatedAt: 9_000 } });
+    followCreatedRecords([edit], { started: { id: "s1", updatedAt: 5_000 }, stopped: null });
+    expect(edit.request.body).toEqual({ updatedAt: 9_000 });
+  });
+});
+
+describe("saved queue", () => {
+  test("bad entries are skipped and good ones kept", () => {
+    const parsed = parsePersistedOutbox({
+      version: 1,
+      userId: "u1",
+      entries: [
+        {
+          id: "a",
+          request: { method: "POST", path: "/tasks" },
+          queuedAt: 1,
+          attempts: 0,
+          maybeDelivered: false,
+        },
+        {
+          id: "b",
+          request: { method: "GET", path: "/tasks" },
+          queuedAt: 1,
+          attempts: 0,
+          maybeDelivered: false,
+        },
+        "junk",
+      ],
+    });
+    expect(parsed?.userId).toBe("u1");
+    expect(parsed?.entries.map((e) => e.id)).toEqual(["a"]);
+  });
+
+  test("anything else is no queue at all", () => {
+    expect(parsePersistedOutbox(null)).toBeNull();
+    expect(parsePersistedOutbox({ version: 2, entries: [] })).toBeNull();
+  });
+
+  test("writes queued by the old TanStack outbox are picked up", () => {
+    const cache = {
+      clientState: {
+        mutations: [
+          {
+            mutationKey: ["outbox"],
+            state: {
+              status: "pending",
+              variables: { method: "POST", path: "/transactions", body: { id: "x" } },
+            },
+          },
+          {
+            mutationKey: ["outbox"],
+            state: { status: "success", variables: { method: "POST", path: "/a" } },
+          },
+          {
+            mutationKey: ["other"],
+            state: { status: "pending", variables: { method: "POST", path: "/b" } },
+          },
+        ],
+      },
+    };
+    expect(legacyOutboxRequests(cache)).toEqual([
+      { method: "POST", path: "/transactions", body: { id: "x" } },
+    ]);
+    expect(legacyOutboxRequests(null)).toEqual([]);
+  });
+});

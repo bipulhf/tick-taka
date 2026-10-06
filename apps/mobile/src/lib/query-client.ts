@@ -1,29 +1,34 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { focusManager, MutationCache, onlineManager, QueryClient } from "@tanstack/react-query";
+import { focusManager, onlineManager, QueryClient } from "@tanstack/react-query";
+import type { Persister } from "@tanstack/react-query-persist-client";
 import { AppState } from "react-native";
-import { ApiError, type HttpMethod, send } from "./api";
-import { notify } from "./notify";
-import { type NewExpense, withNewExpense } from "./optimistic-spend";
-import { keys, type TodayData } from "./queries";
-import { updateToday } from "./today-cache";
-
-export interface OutboxRequest {
-  method: HttpMethod;
-  path: string;
-  body?: unknown;
-  /** Shown if the server rejects the write. */
-  label?: string;
-}
+import { ApiError } from "./api";
+import { keysToRefresh } from "./invalidation";
+import { legacyOutboxRequests, type OutboxRequest } from "./outbox-policy";
 
 const DAY_MS = 86_400_000;
+const CACHE_KEY = "tt.query-cache";
 let invalidateTimer: ReturnType<typeof setTimeout> | undefined;
+let changedPaths = new Set<string>();
 
-/** After writes land, refresh everything once: one user, small data, always consistent. */
-function scheduleRefresh() {
+/**
+ * After writes land, refresh the screens they can change, once, 250 ms after the
+ * last one. A write to an unknown route refreshes everything.
+ */
+export function scheduleRefresh(path = "/") {
+  changedPaths.add(path);
   clearTimeout(invalidateTimer);
-  invalidateTimer = setTimeout(() => void queryClient.invalidateQueries(), 250);
+  invalidateTimer = setTimeout(() => {
+    const keys = keysToRefresh(changedPaths);
+    changedPaths = new Set();
+    if (keys === "all") void queryClient.invalidateQueries();
+    else
+      void queryClient.invalidateQueries({
+        predicate: (query) => keys.has(String(query.queryKey[0])),
+      });
+  }, 250);
 }
 
 export const queryClient = new QueryClient({
@@ -38,48 +43,52 @@ export const queryClient = new QueryClient({
         onlineManager.isOnline() && !(error instanceof ApiError && error.status < 500) && count < 2,
     },
   },
-  mutationCache: new MutationCache({
-    onSuccess: scheduleRefresh,
-    onError: (error, variables) => {
-      const label = (variables as OutboxRequest | undefined)?.label;
-      notify(`${label ? `${label}: ` : ""}${error.message}`);
-      scheduleRefresh();
-    },
-  }),
 });
+
+let legacy: Promise<OutboxRequest[]> | null = null;
 
 /**
- * Offline writes: every change goes through one mutation key, scoped so queued
- * writes replay in order when the connection returns (even after a restart).
+ * Builds before the outbox had its own storage kept queued writes inside the query
+ * cache. Takes them out once, before the cache is restored, so the outbox sends
+ * them and they aren't restored as mutations nothing will ever run.
  */
-queryClient.setMutationDefaults(["outbox"], {
-  mutationFn: (request: OutboxRequest) => send(request.method, request.path, request.body),
-  scope: { id: "outbox" },
-  retry: (count, error) => !(error instanceof ApiError) && count < 3,
-  onMutate: (request: OutboxRequest) => {
-    const body = request.body as (NewExpense & { type?: string }) | undefined;
-    if (request.method !== "POST" || request.path !== "/transactions" || body?.type !== "expense")
-      return;
-    const categories = queryClient.getQueryData<
-      { id: string; parentId: string | null; budgetType: string }[]
-    >(keys.categories);
-    const timeZone =
-      queryClient.getQueryData<{ timeZone: string }>(keys.settings)?.timeZone ?? "Asia/Dhaka";
-    updateToday(queryClient, (data: TodayData) =>
-      withNewExpense(data, body, categories ?? [], timeZone),
-    );
-  },
-});
+export function takeLegacyOutbox(): Promise<OutboxRequest[]> {
+  legacy ??= (async () => {
+    try {
+      const raw = await AsyncStorage.getItem(CACHE_KEY);
+      if (!raw) return [];
+      const cache = JSON.parse(raw) as { clientState?: { mutations?: unknown[] } };
+      const requests = legacyOutboxRequests(cache);
+      if (cache.clientState?.mutations?.length) {
+        cache.clientState.mutations = [];
+        await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+      }
+      return requests;
+    } catch {
+      return [];
+    }
+  })();
+  return legacy;
+}
 
-export const persister = createAsyncStoragePersister({
+const cachePersister = createAsyncStoragePersister({
   storage: AsyncStorage,
-  key: "tt.query-cache",
+  key: CACHE_KEY,
   throttleTime: 1000,
 });
+
+export const persister: Persister = {
+  persistClient: cachePersister.persistClient,
+  removeClient: cachePersister.removeClient,
+  restoreClient: async () => {
+    await takeLegacyOutbox();
+    return cachePersister.restoreClient();
+  },
+};
 export const PERSIST_MAX_AGE = 14 * DAY_MS;
 
 // Online means "has a network": the API may be on a LAN or VPS that answers even when
-// Android's internet reachability check fails. Failed requests retry on their own.
+// Android's internet reachability check fails. The outbox retries until the server answers.
 onlineManager.setEventListener((setOnline) =>
   NetInfo.addEventListener((state) => setOnline(state.isConnected !== false)),
 );
@@ -87,8 +96,6 @@ onlineManager.setEventListener((setOnline) =>
 focusManager.setEventListener((handleFocus) => {
   const subscription = AppState.addEventListener("change", (status) => {
     handleFocus(status === "active");
-    // Safety net: replay any writes still queued from an offline spell.
-    if (status === "active") void queryClient.resumePausedMutations();
   });
   return () => subscription.remove();
 });

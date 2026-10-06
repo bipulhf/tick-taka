@@ -80,6 +80,11 @@ export const kyFetch = (input: RequestInfo | URL, init?: RequestInit): Promise<R
 
 export const apiUrl = (path: string): string => `${API_URL}${path}`;
 
+/** The token requests are sent with now, if signed in. */
+export function currentToken(): string | null {
+  return auth.token() ?? null;
+}
+
 /** For requests that can't go through ky, such as the assistant's event stream. */
 export function authHeaders(): Record<string, string> {
   const token = auth.token();

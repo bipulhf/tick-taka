@@ -10,8 +10,8 @@ import {
 } from "@tick-taka/shared/quick-add";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, unwrap } from "@/lib/api";
+import type { OutboxRequest } from "@/lib/outbox-policy";
 import { useAiStatus, useHourlyRate, useReference } from "@/lib/queries";
-import type { OutboxRequest } from "@/lib/query-client";
 
 export type DayChoice = "inbox" | "today" | "tomorrow" | "evening" | "someday";
 

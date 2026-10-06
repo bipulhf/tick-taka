@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
+import { outbox } from "./outbox";
 import { persister, queryClient } from "./query-client";
 
 /** Phone preferences, not anyone's data: they stay when someone signs out. */
@@ -19,6 +20,7 @@ export function resetOnSignOut(reset: () => void): void {
  */
 export async function clearUserData(): Promise<void> {
   await queryClient.cancelQueries();
+  await outbox.clear();
   queryClient.getMutationCache().clear();
   queryClient.clear();
   for (const reset of resets) reset();

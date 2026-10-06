@@ -16,6 +16,38 @@ export function bestText(best: number, unit = "day"): string | null {
   return best > 0 ? `best ${plural(best, unit)}` : null;
 }
 
+/** A habit's streak for the weekly review: "🔥 3 days · best 5 days", or a fresh start at 0. */
+export function habitStreakText(current: number, best: number, unit = "day"): string {
+  const bestPart = bestText(best, unit);
+  const now = current > 0 ? `🔥 ${plural(current, unit)}` : "A fresh start";
+  return bestPart ? `${now} · ${bestPart}` : now;
+}
+
+/**
+ * The weekly review's wins, said by what got done: a line with a zero in it is left
+ * out, and a week with none of them gets one kind line instead.
+ */
+export function winLines(wins: {
+  tasksDone: number;
+  topThreeDone: number;
+  topThreePlanned: number;
+  focusMinutes: number;
+  focusSessions: number;
+  highlights: number;
+  formatMinutes: (minutes: number) => string;
+}): string[] {
+  const lines = [
+    wins.tasksDone > 0 ? `✓ ${plural(wins.tasksDone, "task")} finished` : null,
+    wins.topThreeDone > 0
+      ? `⭐ ${wins.topThreeDone} of ${plural(wins.topThreePlanned, "top-three task")}`
+      : null,
+    wins.focusSessions > 0
+      ? `🌱 ${wins.formatMinutes(wins.focusMinutes)} of focus in ${plural(wins.focusSessions, "session")}`
+      : null,
+  ].filter((line): line is string => line !== null);
+  return lines.length || wins.highlights ? lines : ["A quiet week. Next week is a fresh start."];
+}
+
 /** A habit's week by days done: "3 days this week"; "1 of 3 this week" for n-per-week. */
 export function weekProgressText(done: number, target: number, daily: boolean): string {
   if (done === 0) return "A fresh week";

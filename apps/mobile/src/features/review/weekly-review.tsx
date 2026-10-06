@@ -12,8 +12,8 @@ import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
 import { friendlyError } from "@/lib/error-copy";
-import { formatAmount, formatLocalDate, formatMinutes, plural } from "@/lib/format";
-import { planShare } from "@/lib/gentle-progress";
+import { formatAmount, formatLocalDate, formatMinutes } from "@/lib/format";
+import { habitStreakText, planShare, winLines } from "@/lib/gentle-progress";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { usePrivacy } from "@/lib/privacy";
@@ -152,7 +152,7 @@ export function WeeklyReview() {
                 {habit.emoji} {habit.name}
               </Text>
               <Text tone="grape" numeric>
-                🔥 {habit.streak} {habit.unit}s · best {habit.best}
+                {habitStreakText(habit.streak, habit.best, habit.unit)}
               </Text>
             </View>
           ))}
@@ -160,14 +160,13 @@ export function WeeklyReview() {
       ) : null}
       {step === 3 ? (
         <Card className="gap-2">
-          <Text>✓ {plural(data.wins.tasksDone, "task")} finished</Text>
-          <Text>
-            ⭐ {data.wins.topThreeDone} of {data.wins.topThreePlanned} top-three tasks
-          </Text>
-          <Text>
-            🌱 {formatMinutes(data.wins.focusMinutes)} of focus in{" "}
-            {plural(data.wins.focusSessions, "session")}
-          </Text>
+          {winLines({
+            ...data.wins,
+            highlights: data.wins.highlights.length,
+            formatMinutes,
+          }).map((line) => (
+            <Text key={line}>{line}</Text>
+          ))}
           {data.wins.highlights.map((title) => (
             <Text key={title} tone="muted">
               • {title}

@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
-import { formatLocalDate, formatMinutes, formatTimer, formatWhen } from "../src/lib/format";
+import {
+  formatAmount,
+  formatLocalDate,
+  formatMinutes,
+  formatTimer,
+  formatWhen,
+} from "../src/lib/format";
 
 const now = zonedTimeToUtc({ year: 2026, month: 10, day: 4, hour: 10 }, "Asia/Dhaka");
 
@@ -26,5 +32,10 @@ describe("format", () => {
   });
   test("local dates", () => {
     expect(formatLocalDate("2026-10-04", "long")).toBe("Sunday, 4 Oct");
+  });
+  test("amounts use lakh grouping for taka", () => {
+    expect(formatAmount(27_249_000)).toBe("৳2,72,490");
+    expect(formatAmount(1_234_567_800)).toBe("৳1,23,45,678");
+    expect(formatAmount(12_345_678, { currency: "USD" })).toBe("$123,456.78");
   });
 });

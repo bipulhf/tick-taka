@@ -3,7 +3,7 @@
  * (poisha for BDT, cents for EUR). These helpers convert at the edges only.
  */
 
-import { toAsciiDigits } from "./digits";
+import { toAsciiDigits, toBanglaDigits } from "./digits";
 
 export const DEFAULT_CURRENCY = "BDT";
 
@@ -42,21 +42,43 @@ export function currencySymbol(currency: string): string {
   return SYMBOLS[currency.toUpperCase()] ?? `${currency.toUpperCase()} `;
 }
 
+/** "lakh" is South Asian grouping (1,23,456); "intl" groups in threes (123,456). */
+export type DigitGrouping = "lakh" | "intl";
+/** "latn" prints 0-9; "beng" prints Bangla digits ০-৯. */
+export type Numerals = "latn" | "beng";
+
+/** Currencies whose users write lakh and crore groups. */
+const LAKH_CURRENCIES = new Set(["BDT", "INR", "NPR", "PKR", "LKR"]);
+
+export function defaultGrouping(currency: string): DigitGrouping {
+  return LAKH_CURRENCIES.has(currency.toUpperCase()) ? "lakh" : "intl";
+}
+
 export interface FormatAmountOptions {
   currency?: string;
   /** Show a leading + for positive values. */
   signed?: boolean;
   /** Always print the fractional part, even when it is zero. */
   forceDecimals?: boolean;
+  /** Digit grouping; lakh for BDT and INR, thousands otherwise. */
+  grouping?: DigitGrouping;
+  /** Bangla digits for display. Stored and typed values are always 0-9. */
+  numerals?: Numerals;
 }
 
-function groupThousands(integerPart: string): string {
-  return integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+/** Inserts commas into a string of digits: lakh "1,23,45,678" or intl "12,345,678". */
+export function groupDigits(integerPart: string, grouping: DigitGrouping): string {
+  if (grouping === "intl" || integerPart.length <= 3) {
+    return integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  const head = integerPart.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  return `${head},${integerPart.slice(-3)}`;
 }
 
 /**
  * Formats minor units for display: `formatAmount(64000) === "৳640"`,
- * `formatAmount(61667) === "৳616.67"`. The fraction is dropped when it is zero.
+ * `formatAmount(61667) === "৳616.67"`, `formatAmount(27249000) === "৳2,72,490"`.
+ * The fraction is dropped when it is zero.
  */
 export function formatAmount(minor: number, options: FormatAmountOptions = {}): string {
   const currency = options.currency ?? DEFAULT_CURRENCY;
@@ -67,10 +89,11 @@ export function formatAmount(minor: number, options: FormatAmountOptions = {}): 
   const fraction = abs % factor;
   const showFraction = digits > 0 && (fraction !== 0 || options.forceDecimals === true);
   const body =
-    groupThousands(String(whole)) +
+    groupDigits(String(whole), options.grouping ?? defaultGrouping(currency)) +
     (showFraction ? `.${String(fraction).padStart(digits, "0")}` : "");
   const sign = minor < 0 ? "−" : options.signed && minor > 0 ? "+" : "";
-  return `${sign}${currencySymbol(currency)}${body}`;
+  const shown = options.numerals === "beng" ? toBanglaDigits(body) : body;
+  return `${sign}${currencySymbol(currency)}${shown}`;
 }
 
 const CURRENCY_WORD = String.raw`(?:৳|tk\.?|taka|টাকা)`;

@@ -3,7 +3,9 @@ import {
   CURRENCY_WORD_RE,
   currencySymbol,
   DEFAULT_CURRENCY,
+  defaultGrouping,
   formatAmount,
+  groupDigits,
   minorDigits,
   minorFactor,
   parseAmountToMinor,
@@ -101,5 +103,49 @@ describe("money", () => {
     expect(CURRENCY_WORD_RE.test("TK")).toBe(true);
     expect(CURRENCY_WORD_RE.test("৳")).toBe(true);
     expect(CURRENCY_WORD_RE.test("tea")).toBe(false);
+  });
+
+  // UX-021: Bangladeshi convention is lakh grouping, "৳2,72,490" not "৳272,490".
+  test("groups taka in lakh and crore", () => {
+    expect(formatAmount(1_000)).toBe("৳10");
+    expect(formatAmount(99_999_00)).toBe("৳99,999");
+    expect(formatAmount(100_000_00)).toBe("৳1,00,000");
+    expect(formatAmount(27_249_000)).toBe("৳2,72,490");
+    expect(formatAmount(27_249_050)).toBe("৳2,72,490.50");
+    expect(formatAmount(1_234_567_800)).toBe("৳1,23,45,678");
+    expect(formatAmount(-100_000_00)).toBe("−৳1,00,000");
+    expect(formatAmount(100_000_00, { signed: true })).toBe("+৳1,00,000");
+  });
+
+  test("other currencies keep thousands unless asked", () => {
+    expect(formatAmount(12_345_678, { currency: "USD" })).toBe("$123,456.78");
+    expect(formatAmount(12_345_678, { currency: "INR" })).toBe("₹1,23,456.78");
+    expect(formatAmount(27_249_000, { grouping: "intl" })).toBe("৳272,490");
+    expect(formatAmount(12_345_678, { currency: "EUR", grouping: "lakh" })).toBe("€1,23,456.78");
+    expect(defaultGrouping("bdt")).toBe("lakh");
+    expect(defaultGrouping("INR")).toBe("lakh");
+    expect(defaultGrouping("EUR")).toBe("intl");
+  });
+
+  test("prints Bangla digits on request", () => {
+    expect(formatAmount(27_249_050, { numerals: "beng" })).toBe("৳২,৭২,৪৯০.৫০");
+    expect(formatAmount(-64_000, { numerals: "beng" })).toBe("−৳৬৪০");
+    expect(formatAmount(64_000, { numerals: "latn" })).toBe("৳640");
+    expect(parseAmountToMinor(formatAmount(27_249_050, { numerals: "beng" }))).toBe(27_249_050);
+  });
+
+  test.each([
+    ["", "lakh", ""],
+    ["7", "lakh", "7"],
+    ["999", "lakh", "999"],
+    ["1000", "lakh", "1,000"],
+    ["12345", "lakh", "12,345"],
+    ["123456", "lakh", "1,23,456"],
+    ["1234567", "lakh", "12,34,567"],
+    ["123456789", "lakh", "12,34,56,789"],
+    ["123456", "intl", "123,456"],
+    ["1234567", "intl", "1,234,567"],
+  ] as const)("groupDigits(%s, %s) → %s", (digits, grouping, expected) => {
+    expect(groupDigits(digits, grouping)).toBe(expected);
   });
 });

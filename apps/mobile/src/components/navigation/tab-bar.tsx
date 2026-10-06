@@ -44,7 +44,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
         accessibilityRole="tab"
         accessibilityState={{ selected: focused }}
         accessibilityLabel={tab.label}
-        className="h-12 flex-1 items-center justify-center gap-0.5"
+        className="min-h-12 flex-1 items-center justify-center gap-0.5"
         onPress={() => {
           haptic.select();
           const event = navigation.emit({
@@ -58,18 +58,22 @@ export function TabBar({ state, navigation }: TabBarProps) {
         <View
           // Remount on focus change: Android keeps square corners when only the fill changes.
           key={focused ? "on" : "off"}
-          className="h-7 w-12 items-center justify-center"
-          style={{ borderRadius: 14, backgroundColor: focused ? colors.line : "transparent" }}
+          className="h-8 w-12 items-center justify-center"
+          style={{ borderRadius: 16, backgroundColor: focused ? colors.line : "transparent" }}
         >
           <Icon
             name={focused ? tab.activeIcon : tab.icon}
             color={focused ? "ink" : "muted"}
-            size={22}
+            size={26}
           />
         </View>
         <Text
           tone={focused ? "ink" : "muted"}
-          className={`${focused ? "font-nunito-bold" : "font-nunito-semibold"} text-[11px] leading-[14px]`}
+          // Chrome: grows with the font size, but only so far, so four labels still fit.
+          maxFontSizeMultiplier={1.3}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          className={`${focused ? "font-nunito-bold" : "font-nunito-semibold"} text-[12px] leading-4`}
         >
           {tab.label}
         </Text>
@@ -108,7 +112,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
               haptic.tap();
               router.push("/add");
             }}
-            className="h-12 w-12 items-center justify-center rounded-full bg-mango active:scale-95"
+            className="h-14 w-14 items-center justify-center rounded-full bg-mango active:scale-95"
           >
             <Icon name="plus" size={30} color="onAccent" />
           </Pressable>

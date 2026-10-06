@@ -65,7 +65,7 @@ Section labels are 13 SemiBold sentence case in muted, not shouting uppercase.
 
 ## Components
 
-- **Tab bar:** 4 tabs plus a centre mango FAB (64 dp, dark plus icon). Icons 26, labels 12.
+- **Tab bar:** a floating capsule (64 dp tall) of 4 equal tabs, each an icon over its name, with the mango quick-add FAB (56 dp, dark plus icon) in the middle of the capsule. The open tab is marked by ink colour and a soft pill, never by growing. When Tiki's chat is available, its 64 dp round button sits beside the capsule on the left, so it never covers content; the FAB is then centred in the capsule rather than on the screen. Icons 26, labels 12 (the one size below Caption, allowed for tab labels only, capped at 1.3x font scale).
 - **Buttons:** 52 dp tall, radius 16. Primary = mango with on-mango text; secondary = surface with hairline border; ghost = text only.
 - **Chips:** 40 dp, radius full, neutral by default; selected = ink fill.
 - **Pickers in sheets:** a compact "Cash ▾" style field that expands into a list, instead of rows of chips.

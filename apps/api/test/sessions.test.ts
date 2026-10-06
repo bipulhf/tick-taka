@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { decode, sign } from "hono/jwt";
 import { createSessionStore } from "../src/db/sessions";
+import { LEGACY_TOKENS_UNTIL } from "../src/middleware/auth";
 import { createTestContext, googleToken, JWT_SECRET } from "./helpers";
 
 const DAY_MS = 86_400_000;
@@ -156,11 +157,24 @@ describe("sessions", () => {
     const { user } = await signIn(ctx);
     const now = Math.floor(Date.now() / 1000);
     const legacy = await sign({ sub: user.id, iat: now, exp: now + 3600 }, JWT_SECRET, "HS256");
+    // Before the cut-off, whatever today's date is when the test runs.
+    ctx.clock.set(LEGACY_TOKENS_UNTIL - 86_400_000);
     expect((await ctx.app.request("/settings", { headers: as(legacy) })).status).toBe(200);
     const res = await ctx.app.request("/auth/refresh", { method: "POST", headers: as(legacy) });
     expect(res.status).toBe(200);
     const { token } = (await res.json()) as { token: string };
     expect(typeof decode(token).payload.jti).toBe("string");
+  });
+
+  test("a token from before sessions is refused after the cut-off", async () => {
+    const ctx = await context();
+    const { user } = await signIn(ctx);
+    const now = Math.floor(Date.now() / 1000);
+    const legacy = await sign({ sub: user.id, iat: now, exp: now + 3600 }, JWT_SECRET, "HS256");
+    ctx.clock.set(LEGACY_TOKENS_UNTIL);
+    const res = await ctx.app.request("/settings", { headers: as(legacy) });
+    expect(res.status).toBe(401);
+    expect(await errorCode(res)).toBe("session_expired");
   });
 
   test("refresh and logout need a token", async () => {

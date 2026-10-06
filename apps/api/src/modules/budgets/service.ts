@@ -13,7 +13,7 @@ import type { BudgetType } from "@tick-taka/shared/schemas/money";
 import { and, desc, eq, isNull, lt } from "drizzle-orm";
 import { budgets, categories } from "../../db/schema/money";
 import type { Deps } from "../../lib/deps";
-import { spendingRows } from "../../lib/money-queries";
+import { foreignSpending, spendingRows } from "../../lib/money-queries";
 import { userTime } from "../../lib/user-time";
 
 type Category = typeof categories.$inferSelect;
@@ -47,6 +47,8 @@ export interface BudgetMonth {
   lines: BudgetLine[];
   buckets: Record<BudgetType, BucketTotals>;
   uncategorizedSpentMinor: number;
+  /** Spending from accounts in other currencies, which budgets can't count. */
+  foreignSpending: { currency: string; amountMinor: number }[];
 }
 
 function expenseCategories(deps: Deps): Category[] {
@@ -199,7 +201,14 @@ export function budgetMonth(
   for (const bucket of Object.values(buckets))
     bucket.availableMinor = bucket.limitMinor - bucket.spentMinor;
 
-  return { month, inherited, lines, buckets, uncategorizedSpentMinor: uncategorized };
+  return {
+    month,
+    inherited,
+    lines,
+    buckets,
+    uncategorizedSpentMinor: uncategorized,
+    foreignSpending: foreignSpending(deps.db, { from: range.from, to }),
+  };
 }
 
 export interface SafeToSpend {

@@ -6,7 +6,8 @@
 import type { InstantRange } from "@tick-taka/shared/dates";
 import { and, eq, gte, isNull, lt, type SQL, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
-import { categories, transactions } from "../db/schema/money";
+import { accounts, categories, transactions } from "../db/schema/money";
+import { readSettings } from "../modules/settings/service";
 
 /** Signed effect of each transaction on its source account. */
 const sourceEffect = sql<number>`case ${transactions.type}
@@ -54,11 +55,45 @@ export interface SpendingRow {
   accountId: string;
 }
 
+/** Amounts in different currencies can't be added up, so totals use the default one. */
+function defaultCurrency(db: Db): string {
+  return readSettings(db).defaultCurrency;
+}
+
 /**
  * Every taka that counts as spending in a range: expenses (excluding money set aside
  * for goals and lent out as debts) plus fees on transfers such as a bKash cash-out.
+ * Only accounts in the default currency count; see foreignSpending for the rest.
  */
 export function spendingRows(db: Db, range: InstantRange, extra?: SQL): SpendingRow[] {
+  const base = defaultCurrency(db);
+  const result: SpendingRow[] = [];
+  for (const { currency, ...row } of allSpendingRows(db, range, extra))
+    if (currency === base) result.push(row);
+  return result;
+}
+
+/** Spending from accounts in other currencies, per currency (shown as "not in budget"). */
+export function foreignSpending(
+  db: Db,
+  range: InstantRange,
+): { currency: string; amountMinor: number }[] {
+  const base = defaultCurrency(db);
+  const totals = new Map<string, number>();
+  for (const row of allSpendingRows(db, range)) {
+    if (row.currency !== base)
+      totals.set(row.currency, (totals.get(row.currency) ?? 0) + row.amountMinor);
+  }
+  return [...totals.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([currency, amountMinor]) => ({ currency, amountMinor }));
+}
+
+function allSpendingRows(
+  db: Db,
+  range: InstantRange,
+  extra?: SQL,
+): (SpendingRow & { currency: string })[] {
   const rows = db
     .select({
       type: transactions.type,
@@ -71,8 +106,10 @@ export function spendingRows(db: Db, range: InstantRange, extra?: SQL): Spending
       goalId: transactions.goalId,
       debtId: transactions.debtId,
       accountId: transactions.accountId,
+      currency: accounts.currency,
     })
     .from(transactions)
+    .innerJoin(accounts, eq(accounts.id, transactions.accountId))
     .where(
       and(
         isNull(transactions.deletedAt),
@@ -83,13 +120,14 @@ export function spendingRows(db: Db, range: InstantRange, extra?: SQL): Spending
     )
     .all();
   const feeCategory = feesCategoryId(db);
-  const result: SpendingRow[] = [];
+  const result: (SpendingRow & { currency: string })[] = [];
   for (const row of rows) {
     const base = {
       areaId: row.areaId,
       eventId: row.eventId,
       occurredAt: row.occurredAt,
       accountId: row.accountId,
+      currency: row.currency,
     };
     if (row.type === "expense" && row.goalId === null && row.debtId === null) {
       result.push({
@@ -115,7 +153,7 @@ export interface IncomeRow {
   amountMinor: number;
 }
 
-/** Income in a range, excluding debt repayments and borrowing. */
+/** Income in a range, excluding debt repayments and borrowing; default currency only. */
 export function incomeRows(db: Db, range: InstantRange): IncomeRow[] {
   return db
     .select({
@@ -125,9 +163,11 @@ export function incomeRows(db: Db, range: InstantRange): IncomeRow[] {
       amountMinor: transactions.amountMinor,
     })
     .from(transactions)
+    .innerJoin(accounts, eq(accounts.id, transactions.accountId))
     .where(
       and(
         isNull(transactions.deletedAt),
+        eq(accounts.currency, defaultCurrency(db)),
         eq(transactions.type, "income"),
         isNull(transactions.debtId),
         gte(transactions.occurredAt, range.from),

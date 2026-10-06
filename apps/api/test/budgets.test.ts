@@ -71,3 +71,38 @@ describe("budget rollover", () => {
     expect(november.body.lines.find((l) => l.categoryId === fun.id)?.carriedMinor).toBe(0);
   });
 });
+
+describe("money totals count only the default currency", () => {
+  test("a USD expense stays out of taka budgets, safe-to-spend and insights", async () => {
+    const ctx = await createTestContext();
+    const { cash, usd, category } = await setupMoney(ctx);
+    const food = category("Food");
+    await ctx.request("PUT", "/budgets", {
+      month: "2026-10",
+      budgets: [{ categoryId: food.id, limitMinor: 1_200_000 }],
+    });
+    const spend = (accountId: string, amountMinor: number) =>
+      ctx.request("POST", "/transactions", {
+        type: "expense",
+        accountId,
+        amountMinor,
+        categoryId: food.id,
+        occurredAt: on(10, 4),
+      });
+    await spend(cash.id, 12_000);
+    await spend(usd.id, 5_000); // $50.00
+    const safe = await ctx.request<Row>("GET", "/budgets/safe-to-spend");
+    expect(safe.body.spentTodayMinor).toBe(12_000);
+    const month = await ctx.request<{ lines: Row[]; foreignSpending: unknown[] }>(
+      "GET",
+      "/budgets?month=2026-10",
+    );
+    expect(month.body.lines.find((l) => l.categoryId === food.id)?.spentMinor).toBe(12_000);
+    expect(month.body.foreignSpending).toEqual([{ currency: "USD", amountMinor: 5_000 }]);
+    const summary = await ctx.request<{ totals: { spentMinor: number } }>(
+      "GET",
+      `/insights/summary?from=${on(10, 1)}&to=${on(10, 30)}`,
+    );
+    expect(summary.body.totals.spentMinor).toBe(12_000);
+  });
+});

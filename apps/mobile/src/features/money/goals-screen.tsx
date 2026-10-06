@@ -18,6 +18,7 @@ import { editDelete, SwipeRow } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
+import { friendlyError } from "@/lib/error-copy";
 import { formatLocalDate } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useAccounts } from "@/lib/queries";
@@ -57,7 +58,7 @@ export function GoalsScreen() {
       setAmount("");
       void client.invalidateQueries();
     } catch (error) {
-      notify((error as Error).message);
+      notify(friendlyError(error, "save"));
     }
   };
 

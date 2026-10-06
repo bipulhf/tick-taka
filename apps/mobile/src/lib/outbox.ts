@@ -2,6 +2,7 @@ import { onlineManager } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { AppState } from "react-native";
 import { ApiError, send } from "./api";
+import { friendlyError } from "./error-copy";
 import { currentToken, ServerUnreachableError } from "./http";
 import { notify } from "./notify";
 import { type NewExpense, withNewExpense } from "./optimistic-spend";
@@ -41,8 +42,7 @@ export const outbox = new OutboxQueue({
   save: (state) => secureStorage.setItem(STORAGE_KEY, JSON.stringify(state)),
   onSent: (request) => scheduleRefresh(request.path),
   onRejected: (request, error) => {
-    const message = error instanceof Error ? error.message : "The server refused the change";
-    notify(`${request.label ? `${request.label}: ` : ""}${message}`);
+    notify(`${request.label ? `${request.label}. ` : ""}${friendlyError(error, "save")}`);
     // Undo the optimistic change on screen.
     scheduleRefresh(request.path);
   },

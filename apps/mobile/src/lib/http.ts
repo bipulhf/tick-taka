@@ -19,9 +19,8 @@ export function connectAuth(handlers: typeof auth): void {
 /** The server can't be reached (offline, timed out, or not running). Writes retry later. */
 export class ServerUnreachableError extends Error {
   constructor() {
-    super(
-      `Can't reach the server at ${API_URL}. Check that it's running and you're on the same network.`,
-    );
+    // Logged, never shown: lib/error-copy.ts says it to people.
+    super(`Can't reach ${API_URL}`);
     this.name = "ServerUnreachableError";
   }
 }

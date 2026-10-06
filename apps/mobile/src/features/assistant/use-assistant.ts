@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { ApiError } from "@/lib/api";
 import { useIsOnline } from "@/lib/connection";
+import { friendlyError } from "@/lib/error-copy";
 import { postEventStream } from "@/lib/event-stream";
 import { haptic } from "@/lib/haptics";
 import { useOutbox } from "@/lib/outbox";
@@ -23,15 +24,11 @@ import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
 
 const HISTORY = 20;
 
-const ERRORS: Record<string, string> = {
-  ai_disabled: "The assistant is switched off in Settings › AI.",
-  ai_unavailable: "AI isn't set up on the server yet.",
-  ai_cap_reached: "This month's AI limit is used up. It resets on the 1st.",
-};
-
 function errorText(error: unknown): string {
-  if (error instanceof ApiError) return ERRORS[error.code] ?? error.message;
-  return "I couldn't reach the server. Check your connection and try again.";
+  if (error instanceof ApiError && error.code === "ai_disabled")
+    return "The assistant is switched off in Settings › AI.";
+  if (error instanceof ApiError) return friendlyError(error);
+  return "I couldn't connect just now. Check your internet and try again.";
 }
 
 type StreamEvent =
@@ -121,7 +118,7 @@ export function useAssistant() {
             finished = true;
             return appendMessage({
               role: "assistant",
-              content: ERRORS[event.code] ?? event.message,
+              content: errorText(new ApiError(500, event.code, event.message)),
               steps: settled(),
               failed: true,
             });

@@ -8,11 +8,14 @@ import { GoogleLogo } from "@/components/ui/google-logo";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { confirmSignOut } from "@/features/settings/confirm-sign-out";
+import { ApiError } from "@/lib/api";
 import { profileStore, SignInCancelled, signInWithGoogle } from "@/lib/auth";
 import { API_URL } from "@/lib/config";
 import { usePendingWrites } from "@/lib/connection";
+import { friendlyError } from "@/lib/error-copy";
 import { plural } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
+import { ServerUnreachableError } from "@/lib/http";
 import { useStore } from "@/lib/store";
 import { type ColorName, useColors } from "@/theme/colors";
 
@@ -49,7 +52,9 @@ export default function LoginScreen() {
     try {
       await signInWithGoogle();
     } catch (e) {
-      if (!(e instanceof SignInCancelled)) setError((e as Error).message);
+      // Google's errors are already in words; the API's go through the shared copy.
+      if (e instanceof ApiError || e instanceof ServerUnreachableError) setError(friendlyError(e));
+      else if (!(e instanceof SignInCancelled)) setError((e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -143,12 +148,15 @@ export default function LoginScreen() {
           ) : null}
         </View>
 
-        <View className="flex-row items-center justify-center gap-1.5">
-          <Icon name="server-network" size={14} color="muted" />
-          <Text variant="caption" tone="muted" numberOfLines={1}>
-            {SERVER_HOST}
-          </Text>
-        </View>
+        {__DEV__ ? (
+          // Which API a development build talks to; release builds don't show it.
+          <View className="flex-row items-center justify-center gap-1.5">
+            <Icon name="server-network" size={14} color="muted" />
+            <Text variant="caption" tone="muted" numberOfLines={1}>
+              {SERVER_HOST}
+            </Text>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );

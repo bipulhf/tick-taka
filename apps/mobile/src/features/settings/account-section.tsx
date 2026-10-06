@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { deleteAccount, profileStore } from "@/lib/auth";
+import { friendlyError } from "@/lib/error-copy";
 import { plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { outbox } from "@/lib/outbox";
@@ -22,7 +23,7 @@ export function AccountSection() {
     try {
       await deleteAccount();
     } catch (error) {
-      notify((error as Error).message);
+      notify(friendlyError(error));
       setDeleting(false);
     }
   };

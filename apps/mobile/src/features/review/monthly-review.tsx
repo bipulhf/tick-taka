@@ -11,6 +11,7 @@ import { Section } from "@/components/ui/section";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { api, unwrap } from "@/lib/api";
+import { friendlyError } from "@/lib/error-copy";
 import { formatMinutes, formatMonth } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
@@ -37,7 +38,7 @@ export function MonthlyReview() {
         `/budget-edit?month=${next}&suggested=${encodeURIComponent(JSON.stringify(suggested))}`,
       );
     },
-    onError: (e) => notify(e.message),
+    onError: (e) => notify(friendlyError(e)),
   });
   const data = review.data;
   const money = (minor: number | null) =>

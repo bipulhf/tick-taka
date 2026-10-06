@@ -13,6 +13,7 @@ import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
+import { friendlyError } from "@/lib/error-copy";
 import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
@@ -35,7 +36,7 @@ export function WeeklyReview() {
   const [focus, setFocus] = useState("");
   const coach = useMutation({
     mutationFn: () => unwrap(api.ai["weekly-review"].$post({ json: {} })),
-    onError: (e) => notify(e.message),
+    onError: (e) => notify(friendlyError(e)),
   });
   const data = review.data;
   if (!data)

@@ -5,6 +5,7 @@ import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { api, unwrap } from "@/lib/api";
+import { friendlyError } from "@/lib/error-copy";
 import { notify } from "@/lib/notify";
 import { useAiStatus } from "@/lib/queries";
 import { pickReceipt, receiptSource, uploadReceipt } from "@/lib/receipts";
@@ -48,7 +49,7 @@ export function TransactionReceipt({
         }
       }
     } catch (error) {
-      notify((error as Error).message);
+      notify(friendlyError(error));
     } finally {
       setBusy(null);
     }

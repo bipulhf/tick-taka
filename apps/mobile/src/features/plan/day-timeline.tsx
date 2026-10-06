@@ -11,6 +11,7 @@ import { Screen } from "@/components/ui/screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { api, unwrap } from "@/lib/api";
+import { friendlyError } from "@/lib/error-copy";
 import { formatLocalDate } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
@@ -47,7 +48,7 @@ export function DayTimeline({ date }: { date: string }) {
   const plan = useMutation({
     mutationFn: () => requestPlan(date),
     onSuccess: setProposal,
-    onError: (e) => notify(e.message),
+    onError: (e) => notify(friendlyError(e)),
   });
 
   const all = new Map<string, PlanTask>(

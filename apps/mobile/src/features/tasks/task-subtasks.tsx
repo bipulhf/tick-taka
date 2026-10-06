@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
+import { friendlyError } from "@/lib/error-copy";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { type TaskRow, useAiStatus } from "@/lib/queries";
@@ -58,7 +59,7 @@ export function TaskSubtasks({
       for (const title of result.subtasks) addSubtask(title);
       notify(`Added ${result.subtasks.length} subtasks`);
     } catch (error) {
-      notify((error as Error).message);
+      notify(friendlyError(error));
     } finally {
       setBreaking(false);
     }

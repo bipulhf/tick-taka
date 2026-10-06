@@ -89,7 +89,7 @@ export function ErrorState({ onRetry, message }: { onRetry: () => void; message?
   return (
     <EmptyState
       title="Couldn't load this"
-      message={message ?? "Check the connection to your server, then try again."}
+      message={message ?? "Can't load this right now. Check your internet, then try again."}
       actionLabel="Try again"
       onAction={onRetry}
       mood="calm"

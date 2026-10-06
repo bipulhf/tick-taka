@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { send } from "@/lib/api";
+import { friendlyError } from "@/lib/error-copy";
 import { notify } from "@/lib/notify";
 
 /** Export downloads the full JSON to the phone: the only copy outside the server. */
@@ -23,7 +24,7 @@ export function DataSection() {
         dialogTitle: "Save your Tick & Taka export",
       });
     } catch (error) {
-      notify((error as Error).message);
+      notify(friendlyError(error));
     } finally {
       setBusy(false);
     }

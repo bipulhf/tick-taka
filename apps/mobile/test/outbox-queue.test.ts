@@ -404,6 +404,84 @@ describe("outbox queue", () => {
     ]);
   });
 
+  // QA-401 / CQ-043: an edit of a record the server already has creates nothing a later
+  // write could miss, so writes that only refer to that record keep going.
+  test("a stuck edit of an account doesn't hold back expenses in that account", async () => {
+    const { queue, received, answers } = harness();
+    await queue.load();
+    const account = newId();
+    answers.push(
+      ...Array.from({ length: STUCK_AFTER }, () => () => new HttpFailure({ status: 500 })),
+    );
+    void queue
+      .enqueue({ method: "PATCH", path: `/accounts/${account}`, body: { name: "bKash" } })
+      .catch(() => {});
+    const first = queue.enqueue({
+      method: "POST",
+      path: "/transactions",
+      body: { id: newId(), type: "expense", accountId: account },
+    });
+    await waitUntil(() => queue.sending === 0);
+    await expect(first).resolves.toEqual({ ok: true });
+    expect(queue.stuck().map((e) => e.request.path)).toEqual([`/accounts/${account}`]);
+
+    // Queued after the edit was set aside: it goes out at once too.
+    const later = queue.enqueue({
+      method: "POST",
+      path: "/transactions",
+      body: { id: newId(), type: "expense", accountId: account },
+    });
+    await expect(later).resolves.toEqual({ ok: true });
+    expect(received.slice(STUCK_AFTER).map((r) => r.path)).toEqual([
+      "/transactions",
+      "/transactions",
+    ]);
+    // Discard drops only the edit.
+    expect(queue.discardStuck(queue.stuck()[0]!.id).map((e) => e.request.path)).toEqual([
+      `/accounts/${account}`,
+    ]);
+  });
+
+  test("a stuck budget line doesn't hold back an expense in its category", async () => {
+    const { queue, answers } = harness();
+    await queue.load();
+    const category = newId();
+    answers.push(
+      ...Array.from({ length: STUCK_AFTER }, () => () => new HttpFailure({ status: 500 })),
+    );
+    void queue
+      .enqueue({ method: "PUT", path: `/budgets/2026-10/${category}`, body: { amountMinor: 1 } })
+      .catch(() => {});
+    await waitUntil(() => queue.stuck().length === 1);
+    const spend = queue.enqueue({
+      method: "POST",
+      path: "/transactions",
+      body: { id: newId(), type: "expense", categoryId: category },
+    });
+    await expect(spend).resolves.toEqual({ ok: true });
+    expect(queue.stuck().map((e) => e.request.path)).toEqual([`/budgets/2026-10/${category}`]);
+  });
+
+  test("later writes to the same record as a stuck edit wait with it, in order", async () => {
+    const { queue, received, answers } = harness();
+    await queue.load();
+    const bill = newId();
+    const other = newId();
+    answers.push(
+      ...Array.from({ length: STUCK_AFTER }, () => () => new HttpFailure({ status: 500 })),
+    );
+    void queue
+      .enqueue({ method: "PATCH", path: `/categories/${bill}`, body: { name: "x" } })
+      .catch(() => {});
+    void queue.enqueue({ method: "DELETE", path: `/categories/${bill}` }).catch(() => {});
+    void queue.enqueue({ method: "PATCH", path: `/categories/${other}`, body: {} });
+    await waitUntil(() => queue.sending === 0);
+    void queue.enqueue({ method: "POST", path: `/categories/${bill}/restore` }).catch(() => {});
+    await waitUntil(() => queue.stuck().length === 3);
+    expect(queue.stuck().map((e) => e.request.method)).toEqual(["PATCH", "DELETE", "POST"]);
+    expect(received.slice(STUCK_AFTER).map((r) => r.path)).toEqual([`/categories/${other}`]);
+  });
+
   test("Retry all sends every stuck write again in the order they were made", async () => {
     const saved: PersistedOutbox = {
       version: 1,

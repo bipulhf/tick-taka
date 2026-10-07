@@ -1,17 +1,18 @@
 import {
+  addTies,
   classifyFailure,
   type FailureInfo,
   followCreatedRecords,
   isServerFault,
   mayHaveReachedServer,
-  mentionsAny,
   type OutboxEntry,
   type OutboxRequest,
   type PersistedOutbox,
   parsePersistedOutbox,
   retryDelay,
   STUCK_AFTER,
-  writtenIds,
+  tiedTo,
+  tiesOf,
 } from "./outbox-policy";
 
 export interface OutboxDeps {
@@ -132,8 +133,8 @@ export class OutboxQueue {
   }
 
   /**
-   * Drops a stuck write for good, with the writes set aside with it (they name its
-   * record, so they can't land without it). Returns them, for an Undo.
+   * Drops a stuck write for good, with the writes set aside with it (they act on its
+   * record or on one it creates, so they can't land without it). Returns them, for an Undo.
    */
   discardStuck(id: string): OutboxEntry[] {
     const group = this.stuckGroup(id);
@@ -265,7 +266,7 @@ export class OutboxQueue {
     });
     const head = this.parkedHeadFor(request);
     if (head) {
-      // It names a record a stuck write creates or edits: sent now it would get 404.
+      // It needs a record a stuck write creates, or acts on the same record: see tiedTo.
       this.parked.push({ ...entry, stuckWith: head });
       this.settle(entry.id, undefined, new SetAsideError());
     } else this.entries.push(entry);
@@ -417,19 +418,18 @@ export class OutboxQueue {
 
   /**
    * Sets a write the server keeps failing on aside, so the ones behind it can go.
-   * Every later write that names a record it creates or edits (or one of theirs) goes
-   * aside with it, in order: sent first, it would get 404 and be lost, and Retry would
-   * then bring the record back without it.
+   * Every later write tied to it (see tiedTo), or to one of those, goes aside with it,
+   * in order: sent first, it would get 404 and be lost, or land out of order.
    */
   private park(entry: OutboxEntry, error: unknown): void {
-    const ids = new Set(writtenIds(entry.request));
+    const ties = tiesOf([entry.request]);
     const group: OutboxEntry[] = [entry];
     const rest: OutboxEntry[] = [];
     for (const later of this.entries) {
       if (later === entry) continue;
-      if (mentionsAny(later.request, ids)) {
+      if (tiedTo(later.request, ties)) {
         group.push(later);
-        for (const id of writtenIds(later.request)) ids.add(id);
+        addTies(ties, later.request);
       } else rest.push(later);
     }
     this.entries = rest;
@@ -442,16 +442,14 @@ export class OutboxQueue {
     for (const e of group) this.settle(e.id, undefined, error);
   }
 
-  /** The stuck group a new write must join, because it names one of the group's records. */
+  /** The stuck group a new write must join, because it is tied to it (see tiedTo). */
   private parkedHeadFor(request: OutboxRequest): string | null {
-    const groups = new Map<string, Set<string>>();
+    const groups = new Map<string, OutboxRequest[]>();
     for (const entry of this.parked) {
       const key = groupKey(entry);
-      const ids = groups.get(key) ?? new Set<string>();
-      for (const id of writtenIds(entry.request)) ids.add(id);
-      groups.set(key, ids);
+      groups.set(key, [...(groups.get(key) ?? []), entry.request]);
     }
-    for (const [key, ids] of groups) if (mentionsAny(request, ids)) return key;
+    for (const [key, requests] of groups) if (tiedTo(request, tiesOf(requests))) return key;
     return null;
   }
 

@@ -6,7 +6,10 @@ import {
   type OutboxEntry,
   type OutboxRequest,
   parsePersistedOutbox,
+  recordPath,
   retryDelay,
+  tiedTo,
+  tiesOf,
 } from "../src/lib/outbox-policy";
 
 const entry = (request: OutboxRequest, maybeDelivered = false): OutboxEntry => ({
@@ -173,5 +176,60 @@ describe("saved queue", () => {
       { method: "POST", path: "/transactions", body: { id: "x" } },
     ]);
     expect(legacyOutboxRequests(null)).toEqual([]);
+  });
+});
+
+// QA-401 / CQ-043: what a stuck group holds back.
+describe("tied to a stuck group", () => {
+  const A = "01J9Z8Y7X6W5V4T3S2R1Q0P9N8";
+  const C = "01J9Z8Y7X6W5V4T3S2R1Q0P9N7";
+  const expense = (body: object): OutboxRequest => ({
+    method: "POST",
+    path: "/transactions",
+    body: { id: "01J9Z8Y7X6W5V4T3S2R1Q0P9N6", type: "expense", ...body },
+  });
+
+  test("the record a write acts on is its path up to the last record id", () => {
+    expect(recordPath({ method: "PATCH", path: `/accounts/${A}` })).toBe(`/accounts/${A}`);
+    expect(recordPath({ method: "POST", path: `/accounts/${A}/balance-check` })).toBe(
+      `/accounts/${A}`,
+    );
+    expect(recordPath({ method: "PUT", path: `/budgets/2026-10/${C}?x=1` })).toBe(
+      `/budgets/2026-10/${C}`,
+    );
+    expect(recordPath({ method: "POST", path: "/transactions" })).toBeNull();
+  });
+
+  test("an edit, a balance check or a budget line holds back only writes to that record", () => {
+    for (const stuck of [
+      { method: "PATCH", path: `/accounts/${A}`, body: { name: "bKash" } },
+      { method: "POST", path: `/accounts/${A}/balance-check`, body: { actualMinor: 1 } },
+    ] as OutboxRequest[]) {
+      const ties = tiesOf([stuck]);
+      expect(tiedTo(expense({ accountId: A }), ties)).toBe(false);
+      expect(tiedTo({ method: "DELETE", path: `/accounts/${A}` }, ties)).toBe(true);
+      expect(tiedTo({ method: "POST", path: `/accounts/${A}/restore` }, ties)).toBe(true);
+      // Another record whose path starts the same way isn't the same record.
+      expect(tiedTo({ method: "PATCH", path: `/accounts/${A}X` }, ties)).toBe(false);
+    }
+    const budget = tiesOf([{ method: "PUT", path: `/budgets/2026-10/${C}`, body: {} }]);
+    expect(tiedTo(expense({ categoryId: C }), budget)).toBe(false);
+    expect(tiedTo({ method: "PATCH", path: `/categories/${C}` }, budget)).toBe(false);
+  });
+
+  test("a create holds back every write that names its record", () => {
+    const ties = tiesOf([{ method: "POST", path: "/accounts", body: { id: A } }]);
+    expect(tiedTo(expense({ accountId: A }), ties)).toBe(true);
+    expect(tiedTo({ method: "PATCH", path: `/accounts/${A}` }, ties)).toBe(true);
+    // Another create in the same collection is not tied to it.
+    expect(tiedTo({ method: "POST", path: "/accounts", body: { id: C } }, ties)).toBe(false);
+  });
+
+  test("a stuck pay holds back its unpay and edits of the expense it logs", () => {
+    const ties = tiesOf([
+      { method: "POST", path: `/recurring/${A}/pay`, body: { transactionId: C, dueAt: 1 } },
+    ]);
+    expect(tiedTo({ method: "POST", path: `/recurring/${A}/unpay`, body: {} }, ties)).toBe(true);
+    expect(tiedTo({ method: "PATCH", path: `/transactions/${C}` }, ties)).toBe(true);
   });
 });

@@ -28,8 +28,8 @@ export interface OutboxEntry {
   /** Server errors in a row (see isServerFault); missing on entries from older builds. */
   serverFailures?: number;
   /**
-   * Set aside together with this stuck write (its entry id), because it names a record
-   * that write creates or edits. Retry and Discard act on the whole group.
+   * Set aside together with this stuck write (its entry id), because it can't go ahead
+   * of it (see tiedTo). Retry and Discard act on the whole group.
    */
   stuckWith?: string;
 }
@@ -103,19 +103,34 @@ export function isServerFault(failure: FailureInfo): boolean {
 /** Record ids are ULIDs, made on the phone. */
 const RECORD_ID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
+const pathOf = (request: OutboxRequest): string => request.path.split("?", 1)[0] ?? "";
+
 /**
- * The records a write creates or edits: record ids in its path (`/tasks/<id>`,
- * `/recurring/<id>/pay`) and the `id` or `transactionId` in its body.
+ * The records a write brings into being: a POST's `id`, or its `transactionId` (a
+ * bill's pay, a checkout). Until it lands the server has never heard of them.
  */
-export function writtenIds(request: OutboxRequest): string[] {
-  const ids = (request.path.split("?", 1)[0] ?? "").split("/").filter((s) => RECORD_ID.test(s));
+export function createdIds(request: OutboxRequest): string[] {
   const body = request.body;
-  if (body && typeof body === "object" && !Array.isArray(body))
-    for (const key of ["id", "transactionId"]) {
-      const id = (body as Record<string, unknown>)[key];
-      if (typeof id === "string" && id) ids.push(id);
-    }
+  if (request.method !== "POST" || !body || typeof body !== "object" || Array.isArray(body))
+    return [];
+  const ids: string[] = [];
+  for (const key of ["id", "transactionId"]) {
+    const id = (body as Record<string, unknown>)[key];
+    if (typeof id === "string" && id) ids.push(id);
+  }
   return ids;
+}
+
+/**
+ * The record a write acts on: its path up to the last record id (`/accounts/<id>`
+ * for an edit, a delete, a restore or `/accounts/<id>/balance-check`;
+ * `/budgets/2026-10/<category>` for a budget line). Null for a write to a collection.
+ */
+export function recordPath(request: OutboxRequest): string | null {
+  const segments = pathOf(request).split("/");
+  for (let i = segments.length - 1; i > 0; i--)
+    if (RECORD_ID.test(segments[i] ?? "")) return segments.slice(0, i + 1).join("/");
+  return null;
 }
 
 function bodyMentions(value: unknown, ids: ReadonlySet<string>, depth: number): boolean {
@@ -124,15 +139,49 @@ function bodyMentions(value: unknown, ids: ReadonlySet<string>, depth: number): 
   return Object.values(value).some((v) => bodyMentions(v, ids, depth + 1));
 }
 
-/**
- * Whether a write names any of these records: in its path, or anywhere in its body
- * (an edit of a parked create, or a transaction in a parked new account). Such a
- * write can't land before them: it would get 404 or invalid_reference and be lost.
- */
-export function mentionsAny(request: OutboxRequest, ids: ReadonlySet<string>): boolean {
+/** Whether a write names any of these records: in its path, or anywhere in its body. */
+function mentionsAny(request: OutboxRequest, ids: ReadonlySet<string>): boolean {
   if (ids.size === 0) return false;
-  const inPath = (request.path.split("?", 1)[0] ?? "").split("/").some((s) => ids.has(s));
+  const inPath = pathOf(request)
+    .split("/")
+    .some((s) => ids.has(s));
   return inPath || bodyMentions(request.body, ids, 0);
+}
+
+/** What a stuck group holds back: the records it creates, and the records it acts on. */
+export interface GroupTies {
+  created: Set<string>;
+  records: Set<string>;
+}
+
+/** The ties of these writes (a stuck group, oldest first). */
+export function tiesOf(requests: readonly OutboxRequest[]): GroupTies {
+  const ties: GroupTies = { created: new Set(), records: new Set() };
+  for (const request of requests) addTies(ties, request);
+  return ties;
+}
+
+export function addTies(ties: GroupTies, request: OutboxRequest): void {
+  for (const id of createdIds(request)) ties.created.add(id);
+  const record = recordPath(request);
+  if (record) ties.records.add(record);
+}
+
+/**
+ * Whether a write can't go ahead of a stuck group. It can't when it names a record the
+ * group creates, anywhere (an edit of a new task, an expense in a new account): sent
+ * first, it would get 404 or invalid_reference and be lost. Nor when it acts on the
+ * same record as the group, or under it (a delete after a stuck edit, a bill's unpay
+ * after its pay): it would land out of order. A write that only refers to a record
+ * the server already has (an expense in an account whose rename is stuck) goes on;
+ * if it fails, it fails on its own.
+ */
+export function tiedTo(request: OutboxRequest, ties: GroupTies): boolean {
+  if (mentionsAny(request, ties.created)) return true;
+  const path = pathOf(request);
+  for (const record of ties.records)
+    if (path === record || path.startsWith(`${record}/`)) return true;
+  return false;
 }
 
 export function mayHaveReachedServer(failure: FailureInfo): boolean {

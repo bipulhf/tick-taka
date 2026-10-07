@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Report — Tick &amp; Taka</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 18mm 16mm;
+    @bottom-left { content: "QA Report — Tick & Taka · commit 3b5438b"; font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #777; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #777; }
+  }
+  @page :first {
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Helvetica Neue", "Noto Sans", "Noto Sans Bengali", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1f2328; margin: 0; }
+  h1, h2, h3, h4 { color: #111; line-height: 1.25; }
+  h1 { font-size: 22pt; margin: 0 0 6mm; }
+  h2 { font-size: 15pt; border-bottom: 2px solid #263238; padding-bottom: 2mm; margin: 0 0 4mm; }
+  h3 { font-size: 12pt; margin: 6mm 0 2mm; color: #263238; }
+  h4 { font-size: 10.5pt; margin: 3mm 0 1mm; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1mm; }
+  .section { page-break-before: always; break-before: page; }
+  code, pre, .mono { font-family: "DejaVu Sans Mono", "Menlo", "Consolas", monospace; font-size: 8.6pt; }
+  code { background: #f3f4f6; padding: 0 1mm; border-radius: 2px; word-break: break-word; }
+  pre { background: #f6f8fa; border: 1px solid #d8dee4; border-left: 3px solid #90a4ae; padding: 2.5mm 3mm; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; margin: 1.5mm 0 3mm; page-break-inside: avoid; break-inside: avoid; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.2pt; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  th, td { border: 1px solid #cfd8dc; padding: 1.4mm 2mm; text-align: left; vertical-align: top; word-break: break-word; }
+  th { background: #eceff1; font-weight: 700; }
+  .badge { display: inline-block; padding: 0.4mm 2.2mm; border-radius: 3mm; color: #fff; font-size: 8.4pt; font-weight: 700; letter-spacing: .2px; white-space: nowrap; }
+  .critical { background: #c62828; } .high { background: #ef6c00; } .medium { background: #f9a825; color: #1f1f1f; } .low { background: #607d8b; }
+  .st { display: inline-block; padding: 0.2mm 1.8mm; border-radius: 2px; font-size: 8.3pt; font-weight: 700; white-space: nowrap; }
+  .st-ok { background: #e8f5e9; color: #1b5e20; } .st-part { background: #fff8e1; color: #8d6e00; } .st-miss { background: #eceff1; color: #37474f; } .st-broken { background: #ffebee; color: #b71c1c; }
+  .unv { display: inline-block; padding: 0.2mm 1.8mm; border: 1px dashed #6a1b9a; color: #6a1b9a; border-radius: 2px; font-size: 8.3pt; font-weight: 700; }
+  .finding { border: 1px solid #cfd8dc; border-radius: 2mm; padding: 3mm 4mm 2mm; margin: 0 0 5mm; }
+  .finding h4 { font-size: 11pt; margin: 0 0 1.5mm; }
+  .meta { font-size: 9pt; color: #455a64; margin-bottom: 2mm; }
+  .meta span { margin-right: 4mm; }
+  .label { font-weight: 700; color: #263238; }
+  .kv { margin: 0 0 1.6mm; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .top { margin-top: 30mm; }
+  .cover .title { font-size: 30pt; font-weight: 800; margin-bottom: 3mm; color: #263238; }
+  .cover .sub { font-size: 14pt; color: #455a64; }
+  .cover table { width: auto; font-size: 10.5pt; }
+  .cover td { border: none; padding: 1mm 6mm 1mm 0; }
+  .scorebox { display: inline-block; border: 2px solid #263238; border-radius: 2mm; padding: 3mm 6mm; font-size: 20pt; font-weight: 800; margin: 1mm 0 3mm; }
+  .scorebox small { font-size: 10pt; font-weight: 400; color: #455a64; }
+  .note { background: #f5f7f8; border-left: 3px solid #607d8b; padding: 2mm 3mm; margin: 2mm 0 3mm; font-size: 9.6pt; }
+  .small { font-size: 9pt; color: #455a64; }
+  .avoid { page-break-inside: avoid; break-inside: avoid; }
+  .gw { font-size: 9.2pt; }
+  .gw b { color: #263238; }
+  .section[style] li { margin-bottom: 0.6mm; }
+</style>
+</head>
+<body>
+
+<!-- ========================= COVER ========================= -->
+<div class="cover">
+  <div class="top">
+    <div class="title">QA Report</div>
+    <div class="sub">Tick &amp; Taka — personal tasks + money app (Android / Bun API)</div>
+  </div>
+  <div>
+    <table>
+      <tr><td class="label">Project</td><td>Tick &amp; Taka (monorepo: apps/api, apps/mobile, packages/shared)</td></tr>
+      <tr><td class="label">Date</td><td>6 October 2026</td></tr>
+      <tr><td class="label">Commit</td><td><code>3b5438b</code> (main) — “feat(api): rewrite public pages for Google OAuth verification”</td></tr>
+      <tr><td class="label">Auditor role</td><td>QA Lead</td></tr>
+      <tr><td class="label">Mode</td><td>Read-only. No source, config, dependency or git state changed.</td></tr>
+      <tr><td class="label">Companion reports</td><td>UX_Report.pdf, Code_Quality_Report.pdf (written separately)</td></tr>
+    </table>
+  </div>
+  <div class="small">Severity scale used in all three reports: <span class="badge critical">Critical</span> data loss, security hole, crash or broken core flow ·
+  <span class="badge high">High</span> major feature broken or a stated principle clearly violated ·
+  <span class="badge medium">Medium</span> real problem with a workaround, notable friction or debt ·
+  <span class="badge low">Low</span> polish, consistency, minor cleanup.</div>
+</div>
+
+<!-- ========================= EXEC SUMMARY ========================= -->
+<div class="section">
+<h2>1. Executive summary</h2>
+<div class="scorebox">58 <small>/ 100 overall QA score</small></div>
+<p>The static gates are clean: Biome reports no diagnostics, TypeScript passes in all three workspaces, and all 185 tests pass (API 100, shared 71, mobile 14). Money is stored as integer minor units, each user has a separate SQLite file, every API route except <code>/health</code>, the public pages and <code>/auth/google</code> requires a token, and the safe-to-spend formula matches the spec's own worked example. Those choices are sound.</p>
+<p>The weak spot is the offline write path, which the product promises and which the tests never touch. Queued writes are dropped after three quick retries when the phone has a network but cannot reach the server, and they are dropped at once on any 5xx. An edit made offline to a record that was also created offline is silently thrown away when the queue replays. An expired 30-day session wipes whatever is still queued. On the capture side, Bangla digits are not parsed, so “চা ২০” is saved as a task and never reaches the AI fallback. Six further High issues (bill pay replay, budget rollover, offline timer, app-lock bypass and two of the above) all go against the spec's “Honest numbers” principle.</p>
+
+<h3>Severity counts</h3>
+<table style="width:60%">
+  <thead><tr><th>Severity</th><th>Count</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge critical">Critical</span></td><td>2</td></tr>
+    <tr><td><span class="badge high">High</span></td><td>6</td></tr>
+    <tr><td><span class="badge medium">Medium</span></td><td>9</td></tr>
+    <tr><td><span class="badge low">Low</span></td><td>9</td></tr>
+    <tr><th>Total</th><th>26</th></tr>
+  </tbody>
+</table>
+
+<h3>Top 5 to fix first</h3>
+<ol>
+  <li><b>QA-001</b> <span class="badge critical">Critical</span> The offline outbox gives up after 3 retries (or at once on 5xx), so writes are lost when the server is unreachable, restarting or behind a captive portal.</li>
+  <li><b>QA-002</b> <span class="badge critical">Critical</span> Create a record offline, then edit it offline: on replay the server stamps the create with “now” and last-write-wins discards the edit. Reproduced.</li>
+  <li><b>QA-011</b> <span class="badge high">High</span> Quick-add ignores Bangla digits. “চা ২০” and “lunch ২৫০” become tasks with high confidence, so the AI fallback is never called. Reproduced.</li>
+  <li><b>QA-007</b> <span class="badge high">High</span> Replaying “Paid” with the same <code>transactionId</code> advances the bill's due date a second time, so a month is silently skipped. Reproduced.</li>
+  <li><b>QA-017</b> <span class="badge high">High</span> On a cold start the fingerprint lock reads its setting before it has loaded, so the app opens unlocked.</li>
+</ol>
+</div>
+
+<!-- ========================= SCOPE ========================= -->
+<div class="section" style="font-size:9.8pt">
+<h2>2. Scope &amp; method</h2>
+<h3>What was reviewed</h3>
+<ul>
+  <li><b>Intent documents:</b> <code>PRODUCT.md</code>, <code>DESIGN.md</code>, <code>README.md</code>, <code>docs/IMPLEMENTATION_PLAN.md</code> and the 37-page spec (<code>tick_taka_spec.pdf</code>, read via <code>_raw/spec.txt</code>). Requirements were turned into the traceability table in section 3.</li>
+  <li><b>Shared logic:</b> <code>packages/shared/src</code> (money, dates, finance, recurrence, quick-add, calculator, gamification, schemas), read in full.</li>
+  <li><b>API:</b> <code>app.ts</code>, middleware, <code>lib/crud.ts</code>, <code>lib/money-queries.ts</code>, and the budgets, today, transactions, accounts, recurring, tasks, time-entries, goals, debts, shopping, sync, auth, uploads and AI modules (usage, client, routes, parse, assistant loop), jobs, the env schema and the Nginx config.</li>
+  <li><b>Mobile:</b> <code>src/lib</code> (query client and outbox, http, api, auth, user-data, server-clock, optimistic-spend), root layout, quick-add, Today screen, task actions, bill pay buttons, timer/focus, app lock, notifications, receipts.</li>
+  <li><b>Tests:</b> all 21 test files were listed, and the money, quick-add and helper tests were read to judge assertion quality.</li>
+</ul>
+<h3>Commands and evidence</h3>
+<table>
+  <thead><tr><th>Command</th><th>Result</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td><code>bunx biome check .</code></td><td>388 files, exit 0, no diagnostics</td><td>_raw/lint.txt (discovery phase)</td></tr>
+    <tr><td><code>bun run typecheck</code></td><td>shared / api / mobile exit 0</td><td>_raw/typecheck.txt</td></tr>
+    <tr><td><code>bun run test</code></td><td>185 pass, 0 fail (api 100, shared 71, mobile 14)</td><td>_raw/test.txt</td></tr>
+    <tr><td>coverage per workspace</td><td>api 93.6% lines, shared 88.8%, mobile 71.6% (pure modules only)</td><td>_raw/coverage-*.txt</td></tr>
+    <tr><td><code>bun audit</code></td><td>6 advisories (2 high, 4 moderate), all transitive via Expo/Tailwind/drizzle-kit</td><td>_raw/audit.txt</td></tr>
+    <tr><td>QA reproduction scripts (Bun, in-memory SQLite via the project's own <code>createTestContext</code>)</td><td>8 behaviours reproduced; output in Appendix B</td><td>temporary <code>_qa_tmp/</code> (deleted)</td></tr>
+  </tbody>
+</table>
+<h3>What could not be verified</h3>
+<ul>
+  <li>Nothing was run on a device or emulator, so on-device behaviour (widget, shortcuts, notifications firing, biometric prompt, the background/foreground lifecycle) was judged from code alone. Findings that depend on it carry the <span class="unv">Unverified</span> tag or say so.</li>
+  <li>The Nginx / pm2 deployment was not exercised; proxy timeouts are judged from <code>deploy/nginx-tick-taka.conf</code> and Nginx defaults.</li>
+  <li>No real OpenAI calls were made. AI behaviour was judged from the code and the project's fake AI client.</li>
+  <li>Whether the <code>bun audit</code> advisories are reachable at runtime was not assessed (see the Code Quality report).</li>
+</ul>
+</div>
+
+<!-- ========================= TRACEABILITY ========================= -->
+<div class="section">
+<h2>3. Requirements traceability</h2>
+<p class="small">Requirements come from the spec's build checklist (pp. 34–37), its technical rules (pp. 17–26) and PRODUCT.md. Status: <span class="st st-ok">Implemented</span> <span class="st st-part">Partial</span> <span class="st st-miss">Missing</span> <span class="st st-broken">Broken</span>. “Implemented” means the code path exists and is covered by API tests or was read end to end. It does not mean it was exercised on a device.</p>
+<table>
+  <thead><tr><th style="width:25%">Requirement</th><th style="width:28%">Implementation</th><th style="width:12%">Status</th><th style="width:35%">Notes / finding</th></tr></thead>
+  <tbody>
+    <tr><td>Sign-in, JWT, per-user SQLite + migrations</td><td>api/modules/auth/routes.ts, middleware/auth.ts, db/user-registry.ts</td><td><span class="st st-ok">Implemented</span></td><td>Google sign-in replaces the spec's password. Session is 30 days with no refresh (QA-003).</td></tr>
+    <tr><td>Auth on every protected route</td><td>app.ts:38-66 (<code>requireAuth</code> on the whole <code>api</code> sub-app)</td><td><span class="st st-ok">Implemented</span></td><td>Reproduced: an unauthenticated <code>/budgets/safe-to-spend</code> returns 401. Public routes: /health, /, /privacy, /terms, /auth/google.</td></tr>
+    <tr><td>Offline cache and queued writes, in order</td><td>mobile/lib/query-client.ts, outbox.ts, _layout.tsx</td><td><span class="st st-broken">Broken</span></td><td>Writes are lost on unreachable server, 5xx or 401, and offline edits get dropped (QA-001, -002, -003, -004).</td></tr>
+    <tr><td>Conflicts: last write wins on updated_at</td><td>api/lib/crud.ts:82-92, mobile/lib/server-clock.ts</td><td><span class="st st-part">Partial</span></td><td>The rule compares a phone edit time with a server create time (QA-002).</td></tr>
+    <tr><td><code>GET /sync/changes?since=</code></td><td>api/modules/sync/routes.ts:11-31</td><td><span class="st st-part">Partial</span></td><td>The endpoint exists but the app never calls it (QA-006).</td></tr>
+    <tr><td>Quick-add on-phone parser (incl. Bangla)</td><td>shared/quick-add.ts, calculator.ts</td><td><span class="st st-part">Partial</span></td><td>English works. Bangla digits fail, and words like “weekly” create false repeats (QA-011, -012).</td></tr>
+    <tr><td>Tasks, inbox, top three, areas/projects, subtasks (1 level)</td><td>api/modules/tasks/service.ts</td><td><span class="st st-ok">Implemented</span></td><td>Undo of delete loses subtasks (QA-016).</td></tr>
+    <tr><td>Repeat on completion</td><td>tasks/service.ts:71-138, 228-250</td><td><span class="st st-part">Partial</span></td><td>Undo of completion leaves a duplicate (QA-015).</td></tr>
+    <tr><td>Recurrence in plain words</td><td>shared/recurrence.ts</td><td><span class="st st-part">Partial</span></td><td>Rules that never occur still pass validation (QA-014).</td></tr>
+    <tr><td>Overdue rescue, does-my-day-fit, evening, someday, logbook, Eisenhower, energy</td><td>tasks/service.ts:265-369; mobile app/plan/*</td><td><span class="st st-ok">Implemented</span></td><td>Not exercised on a device.</td></tr>
+    <tr><td>Focus timer / time tracking</td><td>time-entries/service.ts, features/focus, features/time</td><td><span class="st st-part">Partial</span></td><td>An offline start/stop records the wrong hours (QA-004).</td></tr>
+    <tr><td>Habits, streaks, 2 freeze days a month</td><td>shared/gamification.ts, habits/service.ts</td><td><span class="st st-ok">Implemented</span></td><td>Unit tested.</td></tr>
+    <tr><td>Routines</td><td>routines/service.ts, features/routines</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+    <tr><td>Accounts, computed balances, balance check</td><td>accounts/service.ts, lib/money-queries.ts:11-46</td><td><span class="st st-ok">Implemented</span></td><td>Balances are computed from transactions, never stored.</td></tr>
+    <tr><td>Transactions incl. transfer fees, cross-currency, cursor paging</td><td>transactions/service.ts</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+    <tr><td>Budgets: 3 buckets, rollover</td><td>budgets/service.ts:73-179</td><td><span class="st st-part">Partial</span></td><td>Rollover stops after one inherited month, and foreign-currency spending is mixed in (QA-008, -009).</td></tr>
+    <tr><td>Safe to spend = flexible left ÷ days left incl. today</td><td>shared/finance.ts:20-24, budgets/service.ts:195-214</td><td><span class="st st-ok">Implemented</span></td><td>Matches the spec example (tested). Stale after midnight (QA-013).</td></tr>
+    <tr><td>Pace alert</td><td>shared/finance.ts:40-58, today/service.ts</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+    <tr><td>Bills &amp; subscriptions, “Paid” creates transaction</td><td>recurring/service.ts:95-146</td><td><span class="st st-part">Partial</span></td><td>Not idempotent on replay (QA-007).</td></tr>
+    <tr><td>Expected income with FX conversion</td><td>recurring/service.ts:33-41, 108-120</td><td><span class="st st-ok">Implemented</span></td><td>Tested.</td></tr>
+    <tr><td>Savings goals, goals become tasks</td><td>goals/service.ts</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+    <tr><td>Debts and payoff forecast</td><td>debts/service.ts, shared/finance.ts:88-99</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+    <tr><td>Calculator keypad (“1850/3 saves ৳617”)</td><td>components/ui/amount-keypad.tsx, shared/calculator.ts</td><td><span class="st st-part">Partial</span></td><td>Saves ৳616.67 (QA-010).</td></tr>
+    <tr><td>SMS auto-capture and review panel</td><td>— (no module; README:291 says SMS permissions are blocked)</td><td><span class="st st-miss">Missing</span></td><td>Deliberately dropped, but the plan and spec still list it (QA-024).</td></tr>
+    <tr><td>Events, shopping list, money calendar, spotter, payday plan, recap, reviews, area dashboard, hourly rate, cost in hours</td><td>api modules events, shopping, insights, reviews; mobile app/money/*, app/review/*</td><td><span class="st st-ok">Implemented</span></td><td>Present and wired. Most are API-tested; screens not run.</td></tr>
+    <tr><td>Home-screen widget, launcher shortcuts</td><td>features/widget, features/app/use-app-shortcuts.ts</td><td><span class="st st-ok">Implemented</span> <span class="unv">Unverified</span></td><td>Needs a device.</td></tr>
+    <tr><td>Local notifications, quiet hours, bill reminder 2 days before</td><td>features/notifications/*</td><td><span class="st st-part">Partial</span></td><td>Gaps in what gets scheduled (QA-022).</td></tr>
+    <tr><td>Nightly backup (keep 14) and JSON export</td><td>jobs/backup.ts, sync/routes.ts (export)</td><td><span class="st st-ok">Implemented</span></td><td>No catch-up if the server is down (QA-023).</td></tr>
+    <tr><td>Fingerprint lock after 5 min in background; privacy mode</td><td>features/security/app-lock.tsx, lib/privacy.ts</td><td><span class="st st-broken">Broken</span></td><td>Lock is skipped on cold start (QA-017).</td></tr>
+    <tr><td>Login limited to 5 attempts / 15 min / X-Real-IP; API on 127.0.0.1</td><td>auth/routes.ts:24-27, env.ts:5</td><td><span class="st st-part">Partial</span></td><td>Limit is 10, and HOST defaults to 0.0.0.0 (QA-018).</td></tr>
+    <tr><td>AI features (parse, receipt, categorise, plan day, break down, coach, ask, budget suggestions)</td><td>api/modules/ai/*</td><td><span class="st st-ok">Implemented</span></td><td>Fake-client tested. /ai/ask is reached through the assistant.</td></tr>
+    <tr><td>AI guardrails: cap in Settings, graceful fallback, never saves without confirmation</td><td>ai/usage.ts:59-92, assistant/agent.ts, prompts.ts:46</td><td><span class="st st-part">Partial</span></td><td>Diverges from the spec (QA-019, -020).</td></tr>
+    <tr><td>Tiki, sparks, levels, streak freezes</td><td>shared/tiki.ts, gamification.ts</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ========================= FINDINGS ========================= -->
+<div class="section">
+<h2>4. Findings</h2>
+<p class="small">Findings are grouped by category. Categories are ordered by their worst finding, and findings within a category by severity. Every line reference below was opened and checked at commit 3b5438b. “Reproduced” means a Bun script that calls the project's own code produced the output shown (full output in Appendix B).</p>
+
+<h3>4.1 Offline sync &amp; data integrity</h3>
+
+<div class="finding">
+<h4>QA-001 · The offline outbox gives up and discards writes when the server is unreachable or returns 5xx</h4>
+<div class="meta"><span class="badge critical">Critical</span> <span>Category: Offline / data loss</span> <span>Effort: M</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/lib/query-client.ts:L55-L58</code> (retry policy), <code>:L83-L85</code> (online = “has a network”), <code>apps/mobile/src/lib/http.ts:L69</code>, <code>apps/mobile/src/lib/api.ts:L64</code>; <code>apps/mobile/src/app/_layout.tsx:L88-L91</code> (persistence).</p>
+<p class="kv"><span class="label">What's wrong:</span> Every write goes through the <code>["outbox"]</code> mutation. Its retry policy is <code>!(error instanceof ApiError) &amp;&amp; count &lt; 3</code>. TanStack only <i>pauses</i> a mutation when <code>onlineManager</code> reports offline, and here “online” means <code>state.isConnected !== false</code>. When the phone has Wi-Fi or mobile data but the API can't be reached (VPS down, <code>pm2 restart</code>, captive portal, weak signal), the request fails with <code>ServerUnreachableError</code>, is retried 3 times over about 7 s, then errors for good. The entry leaves the queue and only a toast remains. Any 5xx (Nginx 502 during a restart, a 500) is an <code>ApiError</code>, so it is not retried at all. A mutation that is running or retrying (not paused) is also not persisted by the default <code>shouldDehydrateMutation</code>, so killing the app mid-retry loses it too. The README promises the opposite: “Failed requests retry on their own”, “every write goes through one queue that replays in order after a restart”.</p>
+<pre><code>// query-client.ts L55-58
+queryClient.setMutationDefaults(["outbox"], {
+  mutationFn: (request: OutboxRequest) =&gt; send(request.method, request.path, request.body),
+  scope: { id: "outbox" },
+  retry: (count, error) =&gt; !(error instanceof ApiError) &amp;&amp; count &lt; 3,
+// L83-85
+onlineManager.setEventListener((setOnline) =&gt;
+  NetInfo.addEventListener((state) =&gt; setOnline(state.isConnected !== false)),</code></pre>
+<p class="kv"><span class="label">Evidence:</span> code reading plus TanStack Query 5.104.1's <code>canFetch</code> (<code>node_modules/@tanstack/query-core/build/modern/retryer.js:L9-L11</code>), which only pauses when <code>onlineManager.isOnline()</code> is false. <span class="unv">Unverified on device</span>. Steps: put the phone on Wi-Fi, stop the API (<code>pm2 stop</code>), log “cha 20”, wait 10 s, start the API. Expected: the expense syncs. Predicted: a “Couldn't save the transaction” toast, and the expense never reaches the server.</p>
+<p class="kv"><span class="label">Why it matters:</span> Quick capture is the core flow, and the owner logs in short bursts on rickshaws and at shop counters, exactly where reachability is flaky. Lost expenses break “Honest numbers”, and the user isn't told what was lost beyond a passing toast.</p>
+<p class="kv"><span class="label">Recommendation:</span> Treat network errors, timeouts, 408/429 and 5xx as “pause and retry later”. Retry forever with capped backoff, and give up only on 4xx validation errors. Persist the queue yourself, or set <code>dehydrateOptions.shouldDehydrateMutation: () =&gt; true</code> for the outbox key. Keep any permanently failed write in a “Needs attention” list that the user can retry or edit.</p>
+<pre><code>retry: (count, e) =&gt; !(e instanceof ApiError) || e.status &gt;= 500 || e.status === 429,
+retryDelay: (n) =&gt; Math.min(60_000, 1000 * 2 ** n),</code></pre>
+</div>
+
+<div class="finding">
+<h4>QA-002 · An offline edit to a record created offline is silently discarded on replay</h4>
+<div class="meta"><span class="badge critical">Critical</span> <span>Category: Sync / last-write-wins</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/lib/crud.ts:L71-L92</code>; every sheet that sends <code>updatedAt: editTime()</code>, e.g. <code>apps/mobile/src/features/tasks/task-sheet.tsx:L179</code>, <code>features/money/transaction-sheet.tsx:L152</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> <code>create()</code> stamps <code>updatedAt</code> with the server's clock <i>when the queue replays</i>. The following PATCH carries the phone's edit time from when the user actually made the edit, which is earlier. <code>update()</code> returns the row unchanged when <code>editedAt &lt; current.updatedAt</code>, with status 200 and no error. Create a task or transaction offline, fix a typo or the amount, reconnect later, and the fix is lost. The optimistic cache shows the edit until the next refetch, then it reverts.</p>
+<pre><code>// crud.ts L82-85
+update(id: string, values: UpdateValues&lt;T&gt;): Row {
+  const current = service.get(id) as Row &amp; { updatedAt: number };
+  const { updatedAt: editedAt, ...changes } = values;
+  if (editedAt !== undefined &amp;&amp; editedAt &lt; current.updatedAt) return current;</code></pre>
+<p class="kv"><span class="label">Evidence (reproduced):</span> create task <code>Buy milk</code>, PATCH title with an edit time 1 min after creation, replayed 2 h later → <code>PATCH status: 200</code>, <code>title after replay: "Buy milk"</code>.</p>
+<p class="kv"><span class="label">Why it matters:</span> Corrections to money entries vanish silently, which breaks the reconciliation promise. It happens on the normal path: offline capture, then a fix.</p>
+<p class="kv"><span class="label">Recommendation:</span> Let the client send its own <code>createdAt</code>/<code>updatedAt</code> on create (server time via <code>editTime()</code>) and store it, or have <code>create()</code> set <code>updatedAt = min(now, client edit time)</code>. Add a replay test: create, then edit, then replay much later.</p>
+</div>
+
+<div class="finding">
+<h4>QA-003 · An expired session or tapping “Sign out” wipes queued offline writes</h4>
+<div class="meta"><span class="badge high">High</span> <span>Category: Offline / auth</span> <span>Effort: M</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/auth/routes.ts:L11</code> (30-day token, no refresh); <code>apps/mobile/src/lib/http.ts:L49</code>; <code>apps/mobile/src/lib/auth.ts:L103-L111</code>; <code>apps/mobile/src/lib/user-data.ts:L20-L30</code>; <code>features/settings/account-section.tsx:L38</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> The JWT expires after 30 days and nothing refreshes it. The first 401 calls <code>signOut()</code>, which runs <code>clearUserData()</code>: <code>queryClient.getMutationCache().clear()</code> plus removal of every non-device AsyncStorage key. Any writes still queued (for example after a day offline that happens to cross day 30) are deleted before they are sent. The Settings “Sign out” button does the same with no check of <code>usePendingWrites()</code>.</p>
+<pre><code>// auth.ts (mobile) L111
+connectAuth({ token: () =&gt; tokenStore.get(), onUnauthorized: () =&gt; void signOut() });
+// user-data.ts L21-22
+await queryClient.cancelQueries();
+queryClient.getMutationCache().clear();</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> Silent data loss on a predictable schedule, once a month.</p>
+<p class="kv"><span class="label">Recommendation:</span> Issue a sliding session: refresh when less than 7 days remain, or return a new token in a header. On 401, pause the outbox and ask the user to sign in again <i>without</i> clearing it, and replay after re-authenticating as the same user id. Before a manual sign-out with pending writes, warn the user and offer to sync first.</p>
+</div>
+
+<div class="finding">
+<h4>QA-004 · An offline timer start records the reconnect time, and the matching stop is rejected</h4>
+<div class="meta"><span class="badge high">High</span> <span>Category: Offline / time tracking</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/features/time/time-tracking.tsx:L122-L127</code>; <code>apps/api/src/modules/time-entries/service.ts:L94</code>, <code>:L104-L110</code>; also <code>features/timer/running-timer-bar.tsx:L53-L58</code> (stop uses the phone's <code>Date.now()</code>, not <code>editTime()</code>).</p>
+<p class="kv"><span class="label">What's wrong:</span> The time-tracking Start button sends no <code>startedAt</code>, so the server uses its own <code>now</code>, which is the replay time. The Stop that follows carries the real tap time. That is earlier than the server's start, so the server answers <code>400 Stop time must be after the start</code>, the outbox drops the stop, and the timer keeps running on the server. The focus screen does send <code>startedAt</code>, so only manual time tracking is affected.</p>
+<p class="kv"><span class="label">Evidence (reproduced):</span> start offline, stop 45 min later, replay 2 h later → <code>start 201 startedAt - tapStart (min): 120</code>; <code>stop 400 {"error":{"code":"bad_request","message":"Stop time must be after the start"}}</code>; <code>still running on server: true</code>.</p>
+<p class="kv"><span class="label">Why it matters:</span> Tracked hours feed the effective hourly rate and cost-in-hours. The spec says “tracked hours always reconcile”.</p>
+<p class="kv"><span class="label">Recommendation:</span> Always send <code>startedAt: editTime()</code> on start and <code>endedAt: editTime()</code> on stop. Make stop target the entry id (<code>POST /time-entries/:id/stop</code>) so a replay is idempotent.</p>
+</div>
+
+<div class="finding">
+<h4>QA-005 · Retried action endpoints aren't idempotent and show false error toasts</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Sync / idempotency</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/shopping/routes.ts:L55-L66</code> (checkout → 400 “Tick at least one item first” on replay); <code>time-entries/service.ts:L106</code> (stop → 409); <code>lib/crud.ts:L101-L104</code> (restore → 409 “is not deleted”).</p>
+<p class="kv"><span class="label">What's wrong:</span> If the request reached the server but the response was lost to a timeout, the outbox (or a double tap) sends it again. These endpoints reject the second call with a 4xx, and <code>MutationCache.onError</code> shows “Couldn't …” even though the first call succeeded.</p>
+<p class="kv"><span class="label">Why it matters:</span> The user is told something failed when it didn't, may redo it by hand, and ends up with duplicates.</p>
+<p class="kv"><span class="label">Recommendation:</span> Key these actions on a client id. For example, checkout with an already-used <code>transactionId</code> returns the existing transaction, and restore of a live row returns 200.</p>
+</div>
+
+<div class="finding">
+<h4>QA-006 · <code>/sync/changes</code> exists but the app never uses it; every write refetches everything</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Sync / spec traceability</span> <span>Effort: M</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/sync/routes.ts:L11-L31</code>; <code>apps/mobile/src/lib/query-client.ts:L23-L27</code> (<code>invalidateQueries()</code> with no filter, 250 ms after every write). A grep for <code>sync/changes</code> or <code>sync.changes</code> in <code>apps/mobile/src</code> finds nothing.</p>
+<p class="kv"><span class="label">What's wrong:</span> The spec lists <code>/sync/changes</code> for refreshing the offline cache. The app instead invalidates every query after each write, and screens that aren't open keep stale data until they're next opened online.</p>
+<p class="kv"><span class="label">Why it matters:</span> More data used on mobile, and stale offline screens after edits made through the assistant or on another surface. Low impact for one user.</p>
+<p class="kv"><span class="label">Recommendation:</span> Either remove the endpoint from the spec and README, or use it on reconnect to patch cached lists.</p>
+</div>
+
+<h3>4.2 Money, budgets &amp; bills</h3>
+
+<div class="finding">
+<h4>QA-007 · Replaying “Paid” advances a bill's due date twice, skipping a whole period</h4>
+<div class="meta"><span class="badge high">High</span> <span>Category: Money / idempotency</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/recurring/service.ts:L95-L146</code>; callers <code>apps/mobile/src/features/today/next-up.tsx:L35-L46</code>, <code>features/money/recurring-sheet.tsx:L107-L124</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> <code>pay()</code> inserts the transaction with <code>onConflictDoNothing()</code>, so it is idempotent on <code>transactionId</code>, but it then <i>always</i> runs <code>base.update(id, { nextDueAt: advance(item) })</code>. A retried request moves the due date forward again. Separately, the Today “Paid” button generates a fresh <code>newId()</code> on every tap and doesn't remove the row optimistically, so a double tap while offline logs the bill twice. It also routes only <i>income</i> in a foreign currency to the sheet, so a USD bill paid from Today fails with “Enter the USD → BDT rate”.</p>
+<pre><code>// recurring/service.ts L123-L143 (trimmed)
+db.insert(transactions).values({ id: transactionId, ... }).onConflictDoNothing().run();
+...
+const updated = base.update(id, { nextDueAt: advance(item, timeZone), overdueAt: null });</code></pre>
+<p class="kv"><span class="label">Evidence (reproduced):</span> bill due 5 Oct, pay twice with the same <code>transactionId</code> → <code>first pay nextDue "2026-11-05…"</code>, <code>replay nextDue "2026-12-05…"</code>, <code>expense rows: 1</code>.</p>
+<p class="kv"><span class="label">Why it matters:</span> November's bill vanishes from Today and from notifications, which is the late-fee scenario the feature exists to prevent.</p>
+<p class="kv"><span class="label">Recommendation:</span> When <code>transactionId</code> already exists with <code>recurringId = id</code>, return the current state without advancing. Store the paid occurrence date on the transaction and advance only from that date. On Today, hide the row optimistically and disable the button after one tap.</p>
+</div>
+
+<div class="finding">
+<h4>QA-008 · Budget rollover stops after the first month that inherits limits</h4>
+<div class="meta"><span class="badge high">High</span> <span>Category: Money / budgets</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/budgets/service.ts:L73-L91</code> (inheritance), <code>:L125-L139</code> (rollover).</p>
+<p class="kv"><span class="label">What's wrong:</span> A month with no budgets of its own inherits the latest earlier month's rows. Rollover reads the <i>previous calendar month's own</i> rows via <code>budgetsFor(deps, previousMonth)</code>, and those are empty when the previous month was itself inherited. Set budgets once in September with rollover on: October carries in, but November, December and later carry nothing, while the line still shows <code>rollover: true</code>. Unspent money silently disappears from flexible-left and therefore from safe-to-spend.</p>
+<pre><code>// L125-L139 (trimmed)
+const previousMonth = addMonths(month, -1);
+const previousBudgets = new Map(budgetsFor(deps, previousMonth).map(...)); // ignores inheritance
+const carriedMinor = budget?.rollover &amp;&amp; previous?.rollover
+  ? Math.max(0, previous.limitMinor - (previousSpent.get(cat.id) ?? 0)) : 0;</code></pre>
+<p class="kv"><span class="label">Evidence (reproduced):</span> <code>2026-10 inherited=true {"limit":300000,"carried":300000}</code>, <code>2026-11 inherited=true {"carried":0,"rollover":true}</code>, <code>2026-12 … {"carried":0}</code>.</p>
+<p class="kv"><span class="label">Why it matters:</span> The tested path (re-saving budgets each month) works, but the default path of setting budgets once does not. The daily number is understated.</p>
+<p class="kv"><span class="label">Recommendation:</span> Use <code>effectiveBudgets(deps, previousMonth).rows</code> for the previous month. Also decide whether carry should compound (today it ignores the previous month's own carry). Add a 3-month inheritance test.</p>
+</div>
+
+<div class="finding">
+<h4>QA-009 · Foreign-currency spending is counted as taka in budgets and safe-to-spend</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: Money / currency</span> <span>Effort: M</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/lib/money-queries.ts:L61-L109</code> (<code>spendingRows</code> sums <code>amountMinor</code> across accounts), <code>modules/budgets/service.ts:L94-L108</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> The spec allows any account to hold another currency, and the test fixtures include a USD “Payoneer” account. <code>spendingRows</code> ignores the account currency, so $50 (5,000 cents) adds 5,000 poisha (৳50) to the flexible bucket. Net worth handles this correctly by excluding foreign accounts (<code>insights/summary.ts:L120-L141</code>); budgets don't.</p>
+<p class="kv"><span class="label">Evidence (reproduced):</span> after a $50 USD Food expense, <code>spentTodayMinor: 5000</code> and <code>leftToday 42800 → 37800</code> (a ৳50 drop instead of roughly ৳6,000).</p>
+<p class="kv"><span class="label">Why it matters:</span> Card or Payoneer spending is under-reported by about 120×, so safe-to-spend overstates what's left.</p>
+<p class="kv"><span class="label">Recommendation:</span> Either exclude non-default-currency accounts from <code>spendingRows</code> and show “+ $50 not in budget”, or store a converted <code>baseAmountMinor</code> at entry time, as is already done for foreign income.</p>
+</div>
+
+<div class="finding">
+<h4>QA-010 · The calculator keypad saves ৳616.67 where the spec and the code comment say ৳617</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Money / spec mismatch</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/components/ui/amount-keypad.tsx:L18</code>, <code>:L44-L46</code>; <code>packages/shared/src/money.ts:L28-L33</code>; spec p. 13 (“I type 1850/3 … it saves ৳617”); <code>packages/shared/test/quick-add.test.ts:L87-L90</code> asserts 61,667.</p>
+<p class="kv"><span class="label">What's wrong:</span> <code>toMinor(616.666…)</code> rounds to the poisha (61,667). The spec, and the component's own doc comment, promise whole taka.</p>
+<p class="kv"><span class="label">Why it matters:</span> Cosmetic, but it shows up as “৳616.67” on every split bill.</p>
+<p class="kv"><span class="label">Recommendation:</span> Pick one. Either round expressions with an operator to whole taka (<code>Math.round(v) * 100</code>) or update the spec and comment.</p>
+</div>
+
+<h3>4.3 Capture, parsing &amp; dates</h3>
+
+<div class="finding">
+<h4>QA-011 · Quick-add doesn't understand Bangla digits; Bangla expenses are saved as tasks and skip the AI fallback</h4>
+<div class="meta"><span class="badge high">High</span> <span>Category: Capture / localisation</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>packages/shared/src/calculator.ts:L25</code>, <code>:L114-L116</code>; <code>packages/shared/src/quick-add.ts:L172-L181</code>, <code>:L227-L242</code>, <code>:L373-L386</code>; <code>packages/shared/src/money.ts:L74-L82</code>; <code>apps/mobile/src/features/quick-add/use-quick-add.ts:L87-L96</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> All numeric regexes use ASCII <code>\d</code>, and nothing in the repo maps ০-৯ to 0-9 (a search for Bangla digits in source finds only an AI voice hint). “চা ২০” isn't seen as an amount, so it falls through to <code>parseTask</code>. That function marks confidence <code>"high"</code> unless the title contains an <i>ASCII</i> number, and the AI parser is only called for low-confidence drafts, so it is never consulted. The same happens to “২h thesis” (not a time entry) and to <code>parseAmountToMinor("২৫০")</code>, which returns null.</p>
+<p class="kv"><span class="label">Evidence (reproduced):</span></p>
+<pre><code>parseQuickAdd("cha 20")          {"kind":"expense","amountMinor":2000,"confidence":"high"}
+parseQuickAdd("চা ২০")           {"kind":"task","title":"চা ২০","confidence":"high"}
+parseQuickAdd("lunch ২৫০")       {"kind":"task","title":"Lunch ২৫০","confidence":"high"}
+parseQuickAdd("রিকশা ৬০ bkash")  {"kind":"task","title":"রিকশা ৬০ bkash","confidence":"high"}
+parseQuickAdd("২h thesis")       {"kind":"task","title":"২h thesis","confidence":"high"}
+parseAmountToMinor("২৫০")        null</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> README promises “Bangla and English, typed or spoken, in quick-add”. A Bangla keyboard types Bangla digits by default, so the five-second expense log silently becomes an inbox task.</p>
+<p class="kv"><span class="label">Recommendation:</span> Normalise digits at the top of <code>parseQuickAdd</code>, <code>evaluateExpression</code> and <code>parseAmountToMinor</code>: <code>text.replace(/[০-৯]/g, d =&gt; String(d.charCodeAt(0) - 0x09E6))</code>. Also treat any non-ASCII-only task title as <code>"low"</code> confidence so Bangla text reaches the AI. Add Bangla cases to <code>quick-add.test.ts</code>.</p>
+</div>
+
+<div class="finding">
+<h4>QA-012 · Common words like “weekly” or “monthly” turn a task into a repeating one, and stray numbers become expenses</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: Capture / parser false positives</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>packages/shared/src/recurrence.ts:L365-L379</code> (bare <code>daily|weekly|monthly|yearly|annually</code>); <code>packages/shared/src/quick-add.ts:L307-L311</code>, <code>:L232-L239</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> The final recurrence pattern matches the bare adjective anywhere in the text, strips it from the title and sets an RRULE with high confidence. Separately, a trailing number in task-like text is read as an expense.</p>
+<pre><code>parseQuickAdd("submit weekly report") {"kind":"task","title":"Submit report","rrule":"FREQ=WEEKLY","confidence":"high"}
+parseQuickAdd("pay monthly rent")     {"kind":"task","title":"Pay rent","rrule":"FREQ=MONTHLY","confidence":"high"}
+parseQuickAdd("read chapter 5")       {"kind":"expense","amountMinor":500,"confidence":"low"}</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> One-off tasks start repeating forever and the title loses meaning. The preview line does show “Repeats”, which is a partial workaround. Offline, “read chapter 5” is shown as a ৳5 expense.</p>
+<p class="kv"><span class="label">Recommendation:</span> Only accept the bare adjectives at the start or end of the text, or after “every”/“repeat”. Keep the word in the title. Mark recurrence parsed from bare adjectives as <code>"low"</code> so the AI or the user confirms it.</p>
+</div>
+
+<div class="finding">
+<h4>QA-013 · Today doesn't roll over at midnight while open or offline, and new-day expenses don't move the card</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: Dates / midnight rollover</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/lib/queries.ts:L6</code>, <code>:L32-L37</code> (key <code>["today","now"]</code>); <code>apps/mobile/src/lib/query-client.ts:L32-L34</code>; <code>apps/mobile/src/lib/optimistic-spend.ts:L41</code>; <code>apps/mobile/src/app/(tabs)/index.tsx:L17-L56</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> Today's cache key doesn't include the date, and data refreshes only on focus or after a write. With the app left open past midnight, or opened offline the next morning, it shows yesterday's top three, timeline and “spent today”. <code>withNewExpense</code> skips any expense whose local date ≠ <code>data.date</code>, so a 00:30 expense doesn't reduce the stale card at all. The header does print <code>data.date</code>, but nothing says the data is stale.</p>
+<p class="kv"><span class="label">Evidence:</span> code reading. <span class="unv">Unverified on device</span>.</p>
+<p class="kv"><span class="label">Why it matters:</span> The shop-counter number is wrong at the start of each day until a refetch succeeds.</p>
+<p class="kv"><span class="label">Recommendation:</span> Key the query on the local date (<code>keys.today(toLocalDate(now, tz))</code>), schedule a refetch at local midnight, and show “Offline · showing yesterday” when <code>data.date</code> ≠ today.</p>
+</div>
+
+<div class="finding">
+<h4>QA-014 · Repeat rules that never occur pass validation; paying such a bill fails</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Dates / validation</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>packages/shared/src/schemas/common.ts:L20</code>; <code>packages/shared/src/recurrence.ts:L63-L108</code>, <code>:L110-L113</code>, <code>:L298-L310</code>; <code>apps/api/src/modules/recurring/service.ts:L57-L64</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> <code>isValidRRule</code> only checks FREQ. “every month on the 0th” parses to <code>BYMONTHDAY=0</code>, and <code>resolveMonthDay(0)</code> returns <code>dim + 1</code>, which never matches. <code>nextOccurrence</code> scans 4,392 days and returns null, so “Paid” returns 400 “This repeat rule has no next date” and a repeating task stops repeating without a word.</p>
+<p class="kv"><span class="label">Evidence (reproduced):</span> <code>parseRecurrence("every month on the 0th") → "FREQ=MONTHLY;BYMONTHDAY=0"</code>; <code>nextOccurrence(...) → null</code>.</p>
+<p class="kv"><span class="label">Recommendation:</span> Validate ranges (BYMONTHDAY 1–31 or -1, BYMONTH 1–12, BYHOUR 0–23) in <code>parseRRule</code>, and require <code>nextOccurrence(rule, today) !== null</code> in the schema refinement.</p>
+</div>
+
+<h3>4.4 Tasks</h3>
+
+<div class="finding">
+<h4>QA-015 · Undoing completion of a repeating task leaves a duplicate and breaks the series</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: Tasks / undo</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/tasks/service.ts:L237-L247</code>; <code>apps/mobile/src/features/tasks/use-task-actions.ts:L29-L43</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> Completing a repeating task clears its <code>rrule</code> and creates the next copy. Undo just PATCHes <code>status</code> back to open, so the original stays open <i>without</i> its rule and the new copy also exists.</p>
+<p class="kv"><span class="label">Evidence (reproduced):</span> after done then Undo, <code>original {"status":"open","rrule":null}</code>, plus a second open “Water plants” with <code>FREQ=DAILY</code> due the next day.</p>
+<p class="kv"><span class="label">Why it matters:</span> The snackbar exists because “a stray tap or swipe can tick the wrong task” (code comment). Using it leaves two tasks behind.</p>
+<p class="kv"><span class="label">Recommendation:</span> When a task goes from done to open within the same occurrence, soft-delete the generated copy (record <code>nextId</code> on the completed row) and restore the rrule.</p>
+</div>
+
+<div class="finding">
+<h4>QA-016 · Undo after deleting a task brings back the task but not its subtasks</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: Tasks / undo</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/tasks/service.ts:L252-L262</code> (remove cascades to children); <code>modules/tasks/routes.ts:L42-L44</code> → <code>lib/crud.ts:L101-L107</code> (restore doesn't cascade).</p>
+<p class="kv"><span class="label">Evidence (reproduced):</span> <code>subtasks before delete: 2</code> → delete → restore → <code>subtasks after Undo: 0</code>.</p>
+<p class="kv"><span class="label">Why it matters:</span> The spec chose “Undo snackbar instead of Are you sure?”, so Undo has to be lossless.</p>
+<p class="kv"><span class="label">Recommendation:</span> In <code>taskService.restore</code>, also restore children whose <code>deletedAt</code> equals the parent's <code>deletedAt</code>.</p>
+</div>
+
+<h3>4.5 Security &amp; access</h3>
+
+<div class="finding">
+<h4>QA-017 · The fingerprint lock is skipped on cold start: killing and reopening the app bypasses it</h4>
+<div class="meta"><span class="badge high">High</span> <span>Category: Security / app lock</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/features/security/app-lock.tsx:L11-L41</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> <code>locked</code> is initialised once with <code>useState(enabled)</code>. On a cold start, settings come from the persisted cache, which is restored asynchronously by <code>PersistQueryClientProvider</code>, so on first render <code>enabled</code> is <code>false</code> and <code>locked</code> stays false. When settings arrive, the effect can only <i>unlock</i>. The lock only arms after a background → foreground transition.</p>
+<pre><code>const enabled = settings?.appLock ?? false;
+const [locked, setLocked] = useState(enabled);       // false while settings load
+useEffect(() =&gt; { if (!enabled) setLocked(false); }, [enabled]);  // never re-locks</code></pre>
+<p class="kv"><span class="label">Evidence:</span> code reading. <span class="unv">Unverified on device</span>. Steps: enable App lock, swipe the app away from Recents, reopen it. Expected: fingerprint prompt. Predicted: Today opens with amounts visible.</p>
+<p class="kv"><span class="label">Why it matters:</span> This is the one privacy control for a phone handed to someone else.</p>
+<p class="kv"><span class="label">Recommendation:</span> Store the lock preference on the device (SecureStore/AsyncStorage) and read it before first render, or lock on mount until settings resolve: <code>useEffect(() =&gt; { if (enabled) setLocked(true) }, [enabled])</code> for the first resolution. Optionally set <code>FLAG_SECURE</code> to hide the Recents thumbnail.</p>
+</div>
+
+<div class="finding">
+<h4>QA-018 · Login rate limit and bind address differ from the spec</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Security / config</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/auth/routes.ts:L24</code> (10 per 15 min; the spec says 5), <code>:L27</code> (<code>x-real-ip ?? "local"</code>: every caller without the header shares one bucket); <code>apps/api/src/env.ts:L5</code> (<code>HOST</code> default <code>0.0.0.0</code>; spec p. 26 says the process listens on 127.0.0.1).</p>
+<p class="kv"><span class="label">Why it matters:</span> If the README step <code>HOST=127.0.0.1</code> is missed, the API is reachable on the raw port without TLS, and <code>X-Real-IP</code> can be forged to get past the limiter.</p>
+<p class="kv"><span class="label">Recommendation:</span> Default <code>HOST</code> to <code>127.0.0.1</code>. Align the limit with the spec, or update the spec.</p>
+</div>
+
+<h3>4.6 AI</h3>
+
+<div class="finding">
+<h4>QA-019 · AI guardrails are weaker than the spec: the assistant saves without confirmation and the cap is checked once per turn</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: AI / spec deviation</span> <span>Effort: M</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/ai/prompts.ts:L46</code> (“Adds and edits happen right away”); spec p. 37 “Deliberately not building: Any AI feature that saves records without my confirmation” and p. 24 “each returns a draft and never saves”; <code>apps/api/src/modules/ai/routes.ts:L95</code> and <code>assistant/agent.ts:L13</code>, <code>:L165-L206</code> (one <code>requireAi</code>, then up to 13 “smart” calls); <code>apps/api/src/ai/usage.ts:L59-L81</code> (owner never capped; the cap is a server env var, not a Settings value as the spec says).</p>
+<p class="kv"><span class="label">What's wrong:</span> The chat assistant creates and edits transactions and tasks directly. Undo exists, but a misheard Bangla voice note can change account balances before the user sees anything. The monthly cap is checked before the first model call, so one assistant turn can run 13 paid calls past the cap. For the owner there is no cost ceiling at all.</p>
+<p class="kv"><span class="label">Why it matters:</span> It conflicts with “Honest numbers” and with the spec's explicit exclusion. The cost exposure is unbounded for the owner.</p>
+<p class="kv"><span class="label">Recommendation:</span> Make the choice explicit: either update the spec, or have money writes from the assistant come back as drafts the user confirms (deletes already work this way). Re-check the cap inside the loop. Restore an owner-settable cap in Settings, even if it defaults to “none”.</p>
+</div>
+
+<div class="finding">
+<h4>QA-020 · AI calls can outlive Nginx's default 60 s proxy timeout, and bad AI output returns 500 instead of <code>ai_error</code></h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: AI / failure handling</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/ai/openai-client.ts:L20</code> (<code>timeout: 45_000, maxRetries: 1</code>, so up to about 90 s+); <code>deploy/nginx-tick-taka.conf:L10-L18</code> (no <code>proxy_read_timeout</code>, Nginx default 60 s); <code>apps/mobile/src/lib/http.ts:L7</code> (client waits 90 s); <code>apps/api/src/modules/ai/parse.ts:L169</code>, <code>:L190</code>, <code>:L272</code> (<code>schema.parse</code> runs <i>outside</i> <code>callAi</code>); <code>middleware/error-handler.ts</code> maps unknown errors to 500 <code>internal_error</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> A slow receipt scan or plan-day call that retries once gets a 504 HTML page from Nginx, which the app shows as “Request failed (504)”. The model is still billed and no usage is logged, because <code>logUsage</code> only runs on success. Output that fails the Zod schema surfaces as a generic server error rather than the documented fallback code.</p>
+<p class="kv"><span class="label">Evidence:</span> config and code reading. <span class="unv">Unverified</span> against a live Nginx.</p>
+<p class="kv"><span class="label">Recommendation:</span> Set <code>proxy_read_timeout 120s;</code> for <code>/ai/</code>, or cut the server budget to under 55 s in total (<code>maxRetries: 0</code>, 25 s). Move <code>schema.parse</code> inside <code>callAi</code> so every AI failure is a 502 <code>ai_error</code>.</p>
+</div>
+
+<div class="finding">
+<h4>QA-021 · Assistant writes continue on the server if the stream drops, without the client showing Undo</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: AI / streaming</span> <span>Effort: M</span> <span class="unv">Unverified</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/ai/routes.ts:L93-L125</code> (no abort handling around <code>aiAssistant</code>); <code>apps/mobile/src/lib/event-stream.ts:L52-L58</code> (a read error becomes <code>ServerUnreachableError</code>).</p>
+<p class="kv"><span class="label">What's wrong:</span> When the phone loses the connection mid-turn, nothing visible stops the agent loop from carrying on with writes through <code>dispatch</code>. The client never receives the <code>action</code> events, so it can't offer Undo. Not reproduced; Hono's behaviour on client abort for <code>streamSSE</code> wasn't tested.</p>
+<p class="kv"><span class="label">Recommendation:</span> Stop the loop on <code>stream.onAbort</code>. After a dropped stream, have the client fetch “recent assistant actions” so Undo is still available.</p>
+</div>
+
+<h3>4.7 Client platform &amp; jobs</h3>
+
+<div class="finding">
+<h4>QA-022 · Reminder scheduling has gaps, and permission denials are silent</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: Client / notifications</span> <span>Effort: M</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/features/notifications/use-notification-scheduler.ts:L13-L31</code>, <code>:L91-L99</code>; <code>apps/mobile/src/lib/notifications.ts:L12-L17</code>; <code>apps/mobile/src/lib/receipts.ts:L19-L22</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> (1) Task reminders are planned only for tasks whose <code>doAt</code> falls between now − 1 day and now + 8 days, so an inbox task with a <code>reminderAt</code> but no <code>doAt</code> never rings. (2) Rescheduling runs only after Today refetches, so if the app isn't opened for about 9 days, no reminders exist. (3) A denied notification or camera permission returns early with no message and no link to Settings. (4) Errors in <code>reschedule</code> are swallowed (<code>.catch(() =&gt; {})</code>).</p>
+<p class="kv"><span class="label">Why it matters:</span> The spec relies on phone-scheduled reminders, with no push. Missed bill and task reminders are invisible failures.</p>
+<p class="kv"><span class="label">Recommendation:</span> Query tasks by <code>reminderAt</code> range rather than <code>doAt</code>. Schedule on a background fetch as well as on app open. When permission is denied, show a one-line banner in Settings with “Open settings”.</p>
+</div>
+
+<div class="finding">
+<h4>QA-023 · Nightly jobs have no catch-up when the server is down at :05</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Server / scheduled jobs</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/jobs/scheduler.ts:L17-L43</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> Each user's backup runs only if the process is alive at <code>xx:05</code> during local hour 3, and overdue marking only during hour 0. A restart or deploy at that moment skips the day, and nothing records or retries it. Overdue <i>status</i> is computed from dates anyway, so only the <code>overdueAt</code> flag and the backup are affected.</p>
+<p class="kv"><span class="label">Recommendation:</span> On each hourly tick, back up if today's file is missing and the local hour is ≥ 3. Log the last success in the <code>settings</code> table under an internal <code>_</code> key.</p>
+</div>
+
+<div class="finding">
+<h4>QA-024 · SMS auto-capture is missing but still listed in the spec checklist and implementation plan</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Traceability / docs</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> spec pp. 17–18 and the build checklist p. 36 (“SMS auto-capture and review panel”, “Receipt and SMS scan”); <code>docs/IMPLEMENTATION_PLAN.md:L33</code>, <code>:L52</code>, <code>:L79</code>; <code>README.md:L291</code> (“SMS permissions are blocked in the build”). <code>git ls-files | grep -i sms</code> returns nothing.</p>
+<p class="kv"><span class="label">Why it matters:</span> The plan claims 63 features, which makes the release look complete. The owner should know this was dropped (presumably because of Play/Android SMS policy).</p>
+<p class="kv"><span class="label">Recommendation:</span> Mark SMS as “dropped” in the spec checklist and plan, with the reason.</p>
+</div>
+
+<h3>4.8 Test suite</h3>
+
+<div class="finding">
+<h4>QA-025 · The offline/outbox layer and the Bangla, replay and rollover edge cases have no tests</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: Testing</span> <span>Effort: M</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/test/</code> has 5 files (format, optimistic-spend, plan-notifications, server-clock, widget-snapshot), and <code>_raw/coverage-mobile.txt</code> lists no <code>lib/query-client.ts</code>, <code>outbox.ts</code>, <code>auth.ts</code> or <code>user-data.ts</code>. In <code>packages/shared/test/quick-add.test.ts</code> (15 tests) there are no Bangla inputs. <code>apps/api/test/money.test.ts:L257-L285</code> tests rollover only when the user re-saves budgets each month. There is no test of PATCH-after-create replay, <code>/pay</code> replay, timer start/stop with explicit times, or delete → restore with subtasks.</p>
+<p class="kv"><span class="label">Quality of existing tests:</span> Good. The assertions check real values (for example <code>dailyMinor: 64_000</code> for the spec example, exact <code>nextDueAt</code> instants, user isolation). Fakes are injected through <code>Deps</code> rather than mocked globally, and the clock is controllable. No flaky patterns were seen, and nothing depends on the wall clock except token iat/exp in <code>test/helpers.ts:L71-L72</code>, which is harmless.</p>
+<p class="kv"><span class="label">Why it matters:</span> Every Critical and most High findings in this report sit in code paths no test reaches.</p>
+<p class="kv"><span class="label">Recommendation:</span> See the test plan in section 7. Extract the outbox retry/persist policy into a pure module so it can be unit-tested with Bun.</p>
+</div>
+
+<div class="finding">
+<h4>QA-026 · Coverage figures for <code>dates.ts</code> and <code>money.ts</code> are unreliable</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Testing / tooling</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>_raw/coverage-shared.txt</code>: <code>src/dates.ts | 79.31 % funcs | 0.00 % lines | 6-211</code>, even though <code>dates.test.ts</code> has 6 tests. <code>_raw/coverage-api.txt</code>: <code>money.ts 1.18 % lines</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> Bun's line mapping for these modules is clearly wrong: functions are reported covered while lines are reported uncovered. Coverage can't currently be used as a gate for the most important helpers.</p>
+<p class="kv"><span class="label">Recommendation:</span> Re-check with a newer Bun or with <code>--coverage-reporter=lcov</code> and an external viewer. Don't set coverage thresholds until the numbers are trustworthy.</p>
+</div>
+</div>
+
+<!-- ========================= STRENGTHS ========================= -->
+<div class="section">
+<h2>5. Strengths (keep these)</h2>
+<ul>
+  <li><b>Money is integers end to end.</b> <code>toMinor</code> rounds half away from zero with an epsilon (<code>money.ts:L28-L33</code>), <code>splitEvenly</code> conserves totals, and balances and budgets are computed from transactions, never stored.</li>
+  <li><b>Safe-to-spend matches the spec.</b> Flexible-left is taken as of the start of today, divided by days left including today, and floored to whole taka (<code>finance.ts:L20-L24</code>). The API test reproduces the spec's ৳640 example exactly.</li>
+  <li><b>Client-generated ULIDs make creates idempotent</b> (<code>crud.ts:L71-L80</code>, debts, goals, balance check, receipts), and the phone stamps edits in server time via the <code>x-server-time</code> offset. Both are the right foundations; QA-002 and QA-007 are gaps in applying them, not in the design.</li>
+  <li><b>Per-user database isolation</b> is enforced in the middleware (<code>runAsUser</code>) and covered by <code>users.test.ts</code>, and the auth middleware wraps the whole API.</li>
+  <li><b>AI failures degrade gracefully in quick-add.</b> <code>callAi</code> turns provider errors into 502 <code>ai_error</code>, the cap and off switch have their own codes, and <code>use-quick-add.ts</code> silently keeps the on-phone draft.</li>
+  <li><b>Time-zone handling is careful.</b> Instants are UTC, local dates are strings, <code>zonedTimeToUtc</code> does two-pass offset resolution, jobs run per user time zone, and Bangladesh's Sun–Thu work week is honoured.</li>
+  <li><b>Clean gates:</b> 0 lint diagnostics, 0 type errors, 185 passing tests with meaningful assertions and an injectable clock.</li>
+</ul>
+</div>
+
+<!-- ========================= ACTION PLAN ========================= -->
+<div class="section">
+<h2>6. Action plan</h2>
+<table>
+  <thead><tr><th>Order</th><th>ID</th><th>Title</th><th>Severity</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>QA-001</td><td>Outbox: retry until reachable, persist in-flight writes</td><td><span class="badge critical">Critical</span></td><td>M</td></tr>
+    <tr><td>2</td><td>QA-002</td><td>Offline create+edit: stop last-write-wins from dropping the edit</td><td><span class="badge critical">Critical</span></td><td>S</td></tr>
+    <tr><td>3</td><td>QA-003</td><td>Don't wipe the queue on 401 or sign-out; refresh sessions</td><td><span class="badge high">High</span></td><td>M</td></tr>
+    <tr><td>4</td><td>QA-011</td><td>Normalise Bangla digits; send Bangla text to AI</td><td><span class="badge high">High</span></td><td>S</td></tr>
+    <tr><td>5</td><td>QA-007</td><td>Make bill “Paid” idempotent; one-tap guard on Today</td><td><span class="badge high">High</span></td><td>S</td></tr>
+    <tr><td>6</td><td>QA-017</td><td>Lock on cold start</td><td><span class="badge high">High</span></td><td>S</td></tr>
+    <tr><td>7</td><td>QA-004</td><td>Timer start/stop carry explicit times</td><td><span class="badge high">High</span></td><td>S</td></tr>
+    <tr><td>8</td><td>QA-008</td><td>Rollover across inherited months</td><td><span class="badge high">High</span></td><td>S</td></tr>
+    <tr><td>9</td><td>QA-025</td><td>Add the P0 tests from section 7</td><td><span class="badge medium">Medium</span></td><td>M</td></tr>
+    <tr><td>10</td><td>QA-013</td><td>Date-keyed Today + midnight refetch + stale banner</td><td><span class="badge medium">Medium</span></td><td>S</td></tr>
+    <tr><td>11</td><td>QA-015</td><td>Undo completion of a repeating task</td><td><span class="badge medium">Medium</span></td><td>S</td></tr>
+    <tr><td>12</td><td>QA-016</td><td>Restore subtasks with parent</td><td><span class="badge medium">Medium</span></td><td>S</td></tr>
+    <tr><td>13</td><td>QA-012</td><td>Tighten recurrence and stray-number heuristics</td><td><span class="badge medium">Medium</span></td><td>S</td></tr>
+    <tr><td>14</td><td>QA-009</td><td>Exclude or convert foreign-currency spending in budgets</td><td><span class="badge medium">Medium</span></td><td>M</td></tr>
+    <tr><td>15</td><td>QA-020</td><td>AI timeouts vs Nginx; schema errors → ai_error</td><td><span class="badge medium">Medium</span></td><td>S</td></tr>
+    <tr><td>16</td><td>QA-019</td><td>Decide on assistant confirmation and cap enforcement</td><td><span class="badge medium">Medium</span></td><td>M</td></tr>
+    <tr><td>17</td><td>QA-022</td><td>Reminder scheduling by reminderAt; permission banners</td><td><span class="badge medium">Medium</span></td><td>M</td></tr>
+    <tr><td>18</td><td>QA-005</td><td>Idempotent checkout / stop / restore</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>19</td><td>QA-014</td><td>Validate RRULE ranges and reachability</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>20</td><td>QA-018</td><td>HOST default 127.0.0.1; align login limit</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>21</td><td>QA-023</td><td>Backup catch-up</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>22</td><td>QA-010</td><td>Calculator rounding vs spec</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>23</td><td>QA-021</td><td>Stop assistant loop on client abort</td><td><span class="badge low">Low</span></td><td>M</td></tr>
+    <tr><td>24</td><td>QA-006</td><td>Use or retire /sync/changes</td><td><span class="badge low">Low</span></td><td>M</td></tr>
+    <tr><td>25</td><td>QA-024</td><td>Mark SMS as dropped in docs</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>26</td><td>QA-026</td><td>Fix coverage mapping before using thresholds</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ========================= TEST PLAN ========================= -->
+<div class="section">
+<h2>7. Recommended test plan</h2>
+<p class="small">Priority P0 covers the Critical/High findings, P1 the Medium ones, P2 hardening. “Unit” runs with <code>bun test</code> in shared or mobile; “API” uses <code>createTestContext</code> with in-memory SQLite and a controllable clock; “E2E” needs a device or emulator (for example Maestro).</p>
+<table class="gw">
+  <thead><tr><th style="width:7%">Pri</th><th style="width:9%">Type</th><th style="width:10%">Covers</th><th>Given / When / Then</th></tr></thead>
+  <tbody>
+    <tr><td>P0</td><td>Unit (mobile)</td><td>QA-001</td><td><b>Given</b> the outbox retry policy, <b>when</b> the error is <code>ServerUnreachableError</code> or <code>ApiError(502|503|504|429)</code>, <b>then</b> the policy says retry for any attempt count; <b>when</b> the error is <code>ApiError(400|404|409)</code>, <b>then</b> it gives up.</td></tr>
+    <tr><td>P0</td><td>E2E</td><td>QA-001</td><td><b>Given</b> Wi-Fi on and the API stopped, <b>when</b> the user logs “cha 20”, waits 60 s, kills the app, restarts the API and reopens the app, <b>then</b> exactly one ৳20 expense exists on the server.</td></tr>
+    <tr><td>P0</td><td>API</td><td>QA-002</td><td><b>Given</b> a task created with id X at replay time T, <b>when</b> a PATCH arrives with <code>updatedAt</code> = T − 2 h + 1 min (an edit made offline after the create), <b>then</b> the title is updated.</td></tr>
+    <tr><td>P0</td><td>Unit (mobile)</td><td>QA-003</td><td><b>Given</b> two queued writes, <b>when</b> a 401 is received, <b>then</b> the mutation cache still holds both and the user is asked to sign in again.</td></tr>
+    <tr><td>P0</td><td>Unit (shared)</td><td>QA-011</td><td><b>Given</b> default context, <b>when</b> parsing “চা ২০”, “lunch ২৫০”, “রিকশা ৬০ bkash”, “২h thesis”, “১৮৫০/৩”, <b>then</b> the results are expense ৳20, expense ৳250, expense ৳60 from bKash, a 120-minute time entry, and ৳616.67 (or ৳617, per QA-010).</td></tr>
+    <tr><td>P0</td><td>API</td><td>QA-007</td><td><b>Given</b> a monthly bill due on the 5th, <b>when</b> <code>/pay</code> is called twice with the same <code>transactionId</code>, <b>then</b> one expense exists and <code>nextDueAt</code> moved forward exactly one month.</td></tr>
+    <tr><td>P0</td><td>API</td><td>QA-004</td><td><b>Given</b> <code>/timer/start</code> with <code>startedAt</code> = S, <b>when</b> <code>/timer/stop</code> with <code>endedAt</code> = S + 45 min arrives 2 h later, <b>then</b> the entry is 45 min and nothing is running; <b>when</b> stop is replayed, <b>then</b> it returns 200 with the same entry.</td></tr>
+    <tr><td>P0</td><td>API</td><td>QA-008</td><td><b>Given</b> September budgets with rollover and no later saves, <b>when</b> reading October, November and December, <b>then</b> each month's <code>carriedMinor</code> equals the previous month's unspent amount.</td></tr>
+    <tr><td>P0</td><td>Component (mobile)</td><td>QA-017</td><td><b>Given</b> persisted settings with <code>appLock: true</code>, <b>when</b> <code>AppLock</code> mounts before settings resolve, <b>then</b> the lock screen renders and <code>authenticateAsync</code> is called.</td></tr>
+    <tr><td>P1</td><td>API</td><td>QA-015</td><td><b>Given</b> a daily task, <b>when</b> completed and then set back to open, <b>then</b> exactly one open task remains and it keeps <code>FREQ=DAILY</code>.</td></tr>
+    <tr><td>P1</td><td>API</td><td>QA-016</td><td><b>Given</b> a task with 2 subtasks, <b>when</b> deleted and restored, <b>then</b> both subtasks are live again.</td></tr>
+    <tr><td>P1</td><td>Unit (shared)</td><td>QA-012</td><td><b>Given</b> “submit weekly report”, <b>when</b> parsed, <b>then</b> <code>rrule</code> is null and the title keeps “weekly”; <b>given</b> “every week call mom”, <b>then</b> <code>FREQ=WEEKLY</code>.</td></tr>
+    <tr><td>P1</td><td>API</td><td>QA-009</td><td><b>Given</b> a Food budget and a USD expense, <b>when</b> reading safe-to-spend, <b>then</b> the USD amount is either excluded or converted, never added raw.</td></tr>
+    <tr><td>P1</td><td>Unit (mobile)</td><td>QA-013</td><td><b>Given</b> cached Today data for 2026-10-05 and a clock at 2026-10-06 00:30 Dhaka, <b>when</b> the Today hook runs offline, <b>then</b> a stale banner is shown and a new expense updates a today-dated view.</td></tr>
+    <tr><td>P1</td><td>API</td><td>QA-020</td><td><b>Given</b> the fake AI returns JSON that fails <code>aiParseOutputSchema</code>, <b>when</b> calling <code>/ai/parse</code>, <b>then</b> the response is 502 <code>ai_error</code>, not 500.</td></tr>
+    <tr><td>P1</td><td>Unit (mobile)</td><td>QA-022</td><td><b>Given</b> an inbox task with <code>reminderAt</code> tomorrow and <code>doAt</code> null, <b>when</b> <code>planNotifications</code> runs, <b>then</b> a reminder is planned.</td></tr>
+    <tr><td>P2</td><td>Unit (shared)</td><td>QA-014</td><td><b>Given</b> <code>FREQ=MONTHLY;BYMONTHDAY=0</code>, <b>when</b> validated with <code>rruleSchema</code>, <b>then</b> it is rejected.</td></tr>
+    <tr><td>P2</td><td>Unit (shared)</td><td>dates</td><td><b>Given</b> <code>Asia/Kathmandu</code> (+5:45) and <code>America/New_York</code> across a DST change, <b>when</b> computing <code>localDayRange</code> and <code>daysLeftInMonth</code> on the 1st and last day, <b>then</b> ranges are contiguous and 23/25-hour days are handled.</td></tr>
+    <tr><td>P2</td><td>API</td><td>QA-005</td><td><b>Given</b> a checkout already done with <code>transactionId</code> X, <b>when</b> it is replayed, <b>then</b> 200 with the same transaction.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ========================= SMOKE TEST ========================= -->
+<div class="section">
+<h2>8. Manual smoke test (≈15 minutes, real Android phone)</h2>
+<p class="small">Use a fresh day, the production APK and the VPS API. Tick each line. Steps marked ⚠ target findings in this report, so a failure there confirms the finding.</p>
+<table>
+  <thead><tr><th style="width:6%">#</th><th style="width:52%">Step</th><th>Expected</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Cold-start the app while signed in.</td><td>Today loads within about 2 s from cache. Date in the header is today.</td></tr>
+    <tr><td>2</td><td>Quick-add “cha 20”, then Save.</td><td>Preview “Expense ৳20 · Food · Cash”. Safe-to-spend drops by ৳20 at once.</td></tr>
+    <tr><td>3 ⚠</td><td>Quick-add “চা ২০” with the Bangla keyboard.</td><td>An expense of ৳20, not a task (QA-011).</td></tr>
+    <tr><td>4</td><td>Quick-add “+45000 salary” and “2h thesis”.</td><td>Income ৳45,000; a 2 h time entry under Research.</td></tr>
+    <tr><td>5 ⚠</td><td>Quick-add “submit weekly report”.</td><td>A one-off task titled “Submit weekly report” (QA-012).</td></tr>
+    <tr><td>6</td><td>Turn on airplane mode. Log “rickshaw 60 bkash”, then open it and change the amount to 70.</td><td>The pending-writes indicator shows 2.</td></tr>
+    <tr><td>7 ⚠</td><td>Turn airplane mode off and pull to refresh on Money › Transactions.</td><td>One rickshaw expense of ৳70 from bKash (QA-002).</td></tr>
+    <tr><td>8 ⚠</td><td>Stay on Wi-Fi, have someone run <code>pm2 stop tick-taka-api</code>, log “tea 15”, wait 20 s, then <code>pm2 start</code>.</td><td>The expense syncs, with no “Couldn't save” toast (QA-001).</td></tr>
+    <tr><td>9</td><td>Tick a top-three task, then tap Undo.</td><td>Task back to open; no duplicate if it repeats (QA-015).</td></tr>
+    <tr><td>10 ⚠</td><td>Delete a task with subtasks, then Undo.</td><td>Task and subtasks are back (QA-016).</td></tr>
+    <tr><td>11 ⚠</td><td>Mark a due bill “Paid” on Today, tap twice quickly.</td><td>One expense; the bill moves to next month, not the month after (QA-007).</td></tr>
+    <tr><td>12</td><td>Start a timer under Time, stop it after 1 min.</td><td>A 1 min entry; the running bar disappears.</td></tr>
+    <tr><td>13 ⚠</td><td>Settings › enable App lock. Swipe the app away from Recents and reopen.</td><td>Fingerprint prompt before any content (QA-017).</td></tr>
+    <tr><td>14</td><td>Turn on privacy mode on Today.</td><td>All amounts hidden.</td></tr>
+    <tr><td>15</td><td>Open the assistant and say “আজ কী কী কাজ আছে?”.</td><td>A reply in Bangla listing today's tasks; no records changed.</td></tr>
+    <tr><td>16</td><td>Settings › Export.</td><td>A JSON file is saved; it opens and contains <code>transactions</code>.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ========================= APPENDIX ========================= -->
+<div class="section">
+<h2>Appendix A — Raw command output (trimmed)</h2>
+<h4>Lint (<code>bunx biome check .</code>)</h4>
+<pre><code>Checked 388 files in 367ms. No fixes applied.
+exit 0</code></pre>
+<h4>Typecheck (<code>bun run typecheck</code>)</h4>
+<pre><code>@tick-taka/shared typecheck: Exited with code 0
+@tick-taka/api typecheck: Exited with code 0
+@tick-taka/mobile typecheck: Exited with code 0</code></pre>
+<h4>Tests (<code>bun run test</code>)</h4>
+<pre><code>@tick-taka/shared test:  71 pass  0 fail  173 expect() calls  (10 files)
+@tick-taka/mobile test:  14 pass  0 fail   23 expect() calls  (5 files)
+@tick-taka/api test:    100 pass  0 fail  332 expect() calls  (9 files)
+(the "[ai] call failed … provider down" stack trace is an expected log from ai.test.ts)</code></pre>
+<h4>Coverage, selected lines</h4>
+<pre><code>shared  All files 76.54 % funcs | 88.82 % lines
+        src/dates.ts       79.31 | 0.00  | 6-211        &lt;- see QA-026
+        src/quick-add.ts   91.18 | 84.48 | 107,109-110,250-251,293-294,362,417-426,440-473
+        src/recurrence.ts  97.06 | 96.86
+mobile  All files 81.73 % funcs | 71.63 % lines  (only 5 pure modules measured)
+api     All files 86.29 % funcs | 93.60 % lines
+        src/modules/ai/ask.ts             48.15 | 62.68
+        src/modules/ai/assistant/tools.ts 93.75 | 73.46 | 343-415,423-454
+        src/middleware/error-handler.ts  100.00 | 72.00 | 9,17,22-26
+        ../../packages/shared/src/recurrence.ts 53.33 | 72.21</code></pre>
+<h4>Dependency audit (<code>bun audit</code>)</h4>
+<pre><code>braces &lt;=3.0.3        high      via tailwindcss, expo, react-native, react-native-worklets
+node-forge &lt;=1.4.0    high      via expo
+postcss-selector-parser, decode-uri-component, esbuild (drizzle-kit, tailwindcss), uuid   moderate
+6 vulnerabilities (2 high, 4 moderate) — exit 1</code></pre>
+
+<h2 style="margin-top:8mm">Appendix B — QA reproduction output</h2>
+<p class="small">Scripts imported the project's own modules and <code>apps/api/test/helpers.ts</code> (in-memory SQLite, injected clock at 2026-10-04 10:00 Dhaka). They lived in <code>docs/audit/2026-10-06/_qa_tmp/</code>, were run with <code>bun</code> from <code>apps/api</code>, and were deleted afterwards. No source file was changed.</p>
+<pre><code>== shared parser (packages/shared) ==
+parseQuickAdd("cha 20")            {"kind":"expense","amountMinor":2000,"confidence":"high"}
+parseQuickAdd("চা ২০")             {"kind":"task","title":"চা ২০","rrule":null,"confidence":"high"}
+parseQuickAdd("lunch ২৫০")         {"kind":"task","title":"Lunch ২৫০","rrule":null,"confidence":"high"}
+parseQuickAdd("রিকশা ৬০ bkash")    {"kind":"task","title":"রিকশা ৬০ bkash","rrule":null,"confidence":"high"}
+parseQuickAdd("২h thesis")         {"kind":"task","title":"২h thesis","rrule":null,"confidence":"high"}
+parseQuickAdd("submit weekly report") {"kind":"task","title":"Submit report","rrule":"FREQ=WEEKLY","confidence":"high"}
+parseQuickAdd("pay monthly rent")  {"kind":"task","title":"Pay rent","rrule":"FREQ=MONTHLY","confidence":"high"}
+parseQuickAdd("read chapter 5")    {"kind":"expense","amountMinor":500,"confidence":"low"}
+parseAmountToMinor("২৫০")          null
+parseRecurrence("every month on the 0th") "FREQ=MONTHLY;BYMONTHDAY=0"
+nextOccurrence(BYMONTHDAY=0)       null</code></pre>
+<pre><code>== API (apps/api, in-memory) ==
+1 PATCH status: 200
+1 title after replay: "Buy milk"                                   (QA-002)
+2 first pay nextDue: "2026-11-05T03:00:00.000Z"
+2 replay nextDue: "2026-12-05T03:00:00.000Z"
+2 expense rows: 1                                                  (QA-007)
+3 2026-10 inherited=true: {"limit":300000,"carried":300000,"rollover":true}
+3 2026-11 inherited=true: {"limit":300000,"carried":0,"rollover":true}
+3 2026-12 inherited=true: {"limit":300000,"carried":0,"rollover":true}   (QA-008)
+4 spentToday after $50 USD expense (minor, read as BDT): 5000
+4 leftToday before/after: [42800,37800]                            (QA-009)
+5 original after undo: {"status":"open","rrule":null}
+5 open 'Water plants' tasks: [{"rrule":null,"doAt":"2026-10-03T18:00:00.000Z"},
+                              {"rrule":"FREQ=DAILY","doAt":"2026-10-04T18:00:00.000Z"}]   (QA-015)
+6 unauthenticated unknown path: 401
+6 unauthenticated /budgets/safe-to-spend: 401                      (auth check)
+timer: start 201 startedAt - tapStart (min): 120
+timer: stop 400 {"error":{"code":"bad_request","message":"Stop time must be after the start"}}
+timer: still running on server: true                               (QA-004)
+restore: subtasks before delete: 2
+restore: restored task status: 200 subtasks after Undo: 0          (QA-016)</code></pre>
+
+<h2 style="margin-top:8mm">Appendix C — Requirement checklist used</h2>
+<p class="small">From PRODUCT.md and the spec: log anything in under 5 s; Today answers “what now?” and “can I afford it?”; safe to spend = flexible left ÷ days left including today, fixed bills excluded; amounts in integer minor units; offline cache with queued writes sent in order, IDs from the phone, last-write-wins on <code>updated_at</code>; Asia/Dhaka for display, local strings for habit dates and budget months; streaks with 2 freezes a month; reward, never guilt; honest numbers (balances and hours reconcile); AI: rules first, cost cap, graceful fallback, minimum data, off switch, never saves without confirmation; app lock after 5 min; receipts served only to authenticated requests; login limited to 5 / 15 min; Bun listens on 127.0.0.1; nightly VACUUM INTO backup keeping 14; JSON export; local notifications with quiet hours 23:00–07:00; Bangla and English quick-add. Each item is mapped in section 3.</p>
+
+<h2 style="margin-top:8mm">Appendix D — File inventory reviewed</h2>
+<table class="gw">
+  <thead><tr><th style="width:22%">Area</th><th>Files</th></tr></thead>
+  <tbody>
+    <tr><td>Shared</td><td>packages/shared/src/{money, dates, finance, calculator, quick-add, recurrence, gamification, ids}.ts, schemas/{common, money}.ts</td></tr>
+    <tr><td>API core</td><td>apps/api/src/{app, index, env}.ts, middleware/{auth, rate-limit, error-handler}.ts, lib/{crud, resource-routes, validate, user-time, money-queries, deps}.ts, jobs/{scheduler, backup}.ts, db/user-registry.ts</td></tr>
+    <tr><td>API modules</td><td>auth, budgets, today, transactions, accounts, recurring, tasks, time-entries, goals, debts, shopping, sync, uploads, habits (service), insights (summary, grep)</td></tr>
+    <tr><td>API AI</td><td>ai/{usage, openai-client}.ts, modules/ai/{routes, parse, prompts}.ts, assistant/agent.ts (loop limits)</td></tr>
+    <tr><td>Mobile</td><td>src/lib/{query-client, outbox, http, api, queries, auth, user-data, connection, server-clock, optimistic-spend, today-cache, use-remove, notifications, receipts, event-stream}.ts; app/_layout.tsx, app/(tabs)/index.tsx; features/quick-add/*, today/{next-up, safe-to-spend-card}.tsx, tasks/use-task-actions.ts, money/recurring-sheet.tsx, time/time-tracking.tsx, focus/focus-screen.tsx, security/app-lock.tsx, notifications/use-notification-scheduler.ts, settings/account-section.tsx, components/ui/amount-keypad.tsx</td></tr>
+    <tr><td>Tests</td><td>apps/api/test/{helpers, money-helpers, money}.ts; packages/shared/test/quick-add.test.ts; test-file inventory of all workspaces</td></tr>
+    <tr><td>Deploy / docs</td><td>deploy/nginx-tick-taka.conf, README.md, PRODUCT.md, DESIGN.md, docs/IMPLEMENTATION_PLAN.md, spec (via _raw/spec.txt)</td></tr>
+  </tbody>
+</table>
+</div>
+
+</body>
+</html>

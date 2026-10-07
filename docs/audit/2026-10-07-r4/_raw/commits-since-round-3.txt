@@ -1,0 +1,36 @@
+801dd5f fix(mobile): drop a write the proxy refuses as too large instead of retrying forever
+b49539f test(mobile): cover recovering an assistant turn whose stream dropped
+c6307f8 test(mobile): cover pulling changes made elsewhere
+5709e2c test(mobile): cover how the outbox reads a failed send
+d1a610c fix(mobile): delete the JSON export once it has been shared, and on sign-out
+63a16ac fix(mobile): keep the encrypted screen cache when the storage key can't be read
+e8e33f0 fix(mobile): keep writes queued at start-up on disk, and say when a save fails
+6010dc9 fix(mobile): make the Undo of Paid, Received and Skip survive a restart
+87daf33 fix(mobile): check the error envelope and version the cached replies
+71eb8a1 feat(api): name each bill's exact due date on Today
+135873d fix(api): let a bill pay be undone after a replayed reply
+6581c93 fix(mobile): offer Undo after discarding a stuck change
+65f2fe9 fix(mobile): set dependent writes aside with the stuck write they depend on
+363536e fix(api): apply an edit stamped before 2024 instead of silently dropping it
+82f70dd fix(mobile): learn the server clock only from replies that carry a real time
+8d9b7e4 docs(design): make DESIGN.md agree with itself and with the code
+5fb18d3 fix(mobile): show the widget's quick-logs at the default size
+1fc2209 fix(mobile): work out today and this month in the user's time zone
+74d944e fix(mobile): give calendar days 49 dp by widening the grid, not hitSlop
+cd4f544 fix(mobile): draw chart axis labels at Caption size
+a35e73b fix(mobile): keep purple and mango to their meaning, and test every form
+7995f56 fix(mobile): give every chip, picker option and tab its real role
+35df896 fix(mobile): replace the last chip rows in sheets with fields
+c6a8012 refactor(mobile): move ToggleRow into the shared UI components
+9d3e708 fix(mobile): show values set elsewhere in pickers and times as 9:00 pm
+3bd5b5c refactor(mobile): add an IconButton with named shapes for bare icon buttons
+c1d481e refactor(mobile): share one month stepper across the three month screens
+174c8b4 chore: ignore local agent worktrees
+83f04db ci: fail the audit only on advisories that aren't accepted
+a316bdb refactor(shared): split the quick-add parser into money, task and guess modules
+2372a63 docs: say which assistant changes come with Undo
+e2a43b6 refactor(mobile): drop the unused expireSession export
+81d84bc refactor(api): put requireAuth's doc back on it and log offsite errors like other jobs
+0230b56 perf(api): stop writing on every request made with a refreshed token
+18c7b4a fix(api): limit the assistant's settings changes and give them an Undo
+2f6509d fix(api): make the assistant's budget draft and its Undo touch one line

@@ -1,0 +1,27 @@
+bun test v1.3.11 (af24e281)
+-------------------------|---------|---------|-------------------
+File                     | % Funcs | % Lines | Uncovered Line #s
+-------------------------|---------|---------|-------------------
+All files                |   81.14 |   96.07 |
+ src/calculator.ts       |  100.00 |  100.00 | 
+ src/dates.ts            |  100.00 |  100.00 | 
+ src/defaults.ts         |  100.00 |  100.00 | 
+ src/digits.ts           |  100.00 |  100.00 | 
+ src/finance.ts          |   88.89 |   90.91 | 49-52
+ src/gamification.ts     |  100.00 |  100.00 | 
+ src/ids.ts              |  100.00 |  100.00 | 
+ src/money.ts            |  100.00 |  100.00 | 
+ src/quick-add.ts        |   95.24 |   88.75 | 396-397,525-534,548-581
+ src/quiet-hours.ts      |  100.00 |  100.00 | 
+ src/recurrence.ts       |   97.37 |   97.23 | 359-362,474-479
+ src/schemas/common.ts   |   25.00 |  100.00 | 
+ src/schemas/money.ts    |   50.00 |  100.00 | 
+ src/schemas/settings.ts |   33.33 |   91.67 | 106,111-116
+ src/schemas/time.ts     |   33.33 |  100.00 | 
+ src/tiki.ts             |   75.00 |   68.52 | 66-82
+-------------------------|---------|---------|-------------------
+
+ 237 pass
+ 0 fail
+ 486 expect() calls
+Ran 237 tests across 12 files. [749.00ms]

@@ -1,0 +1,5 @@
+$ bun run --filter '*' typecheck
+@tick-taka/shared typecheck: Exited with code 0
+@tick-taka/api typecheck: Exited with code 0
+@tick-taka/mobile typecheck: Exited with code 0
+exit 0

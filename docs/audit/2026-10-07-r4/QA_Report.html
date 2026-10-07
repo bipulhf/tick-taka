@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Report — Tick &amp; Taka (round 4)</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 18mm 16mm;
+    @bottom-left { content: "QA Report — Tick & Taka · commit 801dd5f"; font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #777; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #777; }
+  }
+  @page :first {
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Helvetica Neue", "Noto Sans", "Noto Sans Bengali", "Lohit Bengali", Arial, sans-serif; font-size: 11pt; line-height: 1.42; color: #1f2328; margin: 0; }
+  h1, h2, h3, h4 { color: #111; line-height: 1.25; }
+  h2 { font-size: 15.5pt; border-bottom: 2px solid #263238; padding-bottom: 2mm; margin: 0 0 4mm; }
+  h3 { font-size: 12.5pt; margin: 6mm 0 2mm; color: #263238; break-after: avoid; page-break-after: avoid; }
+  h4 { font-size: 11pt; margin: 3mm 0 1mm; break-after: avoid; page-break-after: avoid; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1mm; }
+  .section { page-break-before: always; break-before: page; }
+  code, pre, .mono { font-family: "DejaVu Sans Mono", "Noto Sans Bengali", "Liberation Mono", monospace; font-size: 8.7pt; }
+  code { background: #f3f4f6; padding: 0 1mm; border-radius: 2px; word-break: break-word; overflow-wrap: anywhere; }
+  pre { background: #f6f8fa; border: 1px solid #d8dee4; border-left: 3px solid #90a4ae; padding: 2.5mm 3mm; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; margin: 1.5mm 0 3mm; page-break-inside: avoid; break-inside: avoid; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.4pt; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  th, td { border: 1px solid #cfd8dc; padding: 1.4mm 2mm; text-align: left; vertical-align: top; word-break: break-word; overflow-wrap: anywhere; }
+  th { background: #eceff1; font-weight: 700; }
+  .badge { display: inline-block; padding: 0.4mm 2.2mm; border-radius: 3mm; color: #fff; font-size: 8.6pt; font-weight: 700; white-space: nowrap; }
+  .critical { background: #c62828; } .high { background: #ef6c00; } .medium { background: #f9a825; color: #1f1f1f; } .low { background: #607d8b; }
+  .st { display: inline-block; padding: 0.2mm 1.8mm; border-radius: 2px; font-size: 8.5pt; font-weight: 700; white-space: nowrap; }
+  .st-ok { background: #e8f5e9; color: #1b5e20; } .st-part { background: #fff8e1; color: #8d6e00; } .st-miss { background: #eceff1; color: #37474f; } .st-broken { background: #ffebee; color: #b71c1c; }
+  .unv { display: inline-block; padding: 0.2mm 1.8mm; border: 1px dashed #6a1b9a; color: #6a1b9a; border-radius: 2px; font-size: 8.5pt; font-weight: 700; }
+  .rep { display: inline-block; padding: 0.2mm 1.8mm; border: 1px solid #1b5e20; color: #1b5e20; border-radius: 2px; font-size: 8.5pt; font-weight: 700; }
+  .finding { border: 1px solid #cfd8dc; border-radius: 2mm; padding: 3mm 4mm 2mm; margin: 0 0 5mm; }
+  .finding h4 { font-size: 11.5pt; margin: 0 0 1.5mm; }
+  .meta { font-size: 9.4pt; color: #455a64; margin-bottom: 2mm; }
+  .meta span { margin-right: 4mm; }
+  .label { font-weight: 700; color: #263238; }
+  .kv { margin: 0 0 1.6mm; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .top { margin-top: 30mm; }
+  .cover .title { font-size: 28pt; font-weight: 800; margin-bottom: 3mm; color: #263238; }
+  .cover .sub { font-size: 14pt; color: #455a64; }
+  .cover table { width: auto; font-size: 11pt; }
+  .cover td { border: none; padding: 1mm 6mm 1mm 0; }
+  .cover td.label { white-space: nowrap; }
+  .scorebox { display: inline-block; border: 2px solid #263238; border-radius: 2mm; padding: 2mm 6mm; font-size: 20pt; font-weight: 800; margin: 0 0 3mm; }
+  .scorebox small { font-size: 10pt; font-weight: 400; color: #455a64; }
+  .note { background: #f5f7f8; border-left: 3px solid #607d8b; padding: 2mm 3mm; margin: 2mm 0 3mm; font-size: 9.8pt; }
+  .small { font-size: 9.4pt; color: #455a64; }
+  .exec p { margin-bottom: 2mm; }
+  .exec table { font-size: 9.6pt; margin: 1mm 0 2mm; }
+  .two { display: flex; gap: 5mm; }
+  .two > div { flex: 1; }
+  table.trace { font-size: 8.8pt; }
+  table.trace th, table.trace td { padding: 1.1mm 1.8mm; }
+  td.id, .nw, .smoke td:first-child { white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- ============================ COVER ============================ -->
+<div class="cover">
+  <div class="top">
+    <div class="title">QA Report — Tick &amp; Taka (round 4)</div>
+    <div class="sub">Re-verification of the round-3 QA findings, and a fresh audit of the 36 commits made to fix them</div>
+  </div>
+  <table>
+    <tr><td class="label">Project</td><td>Tick &amp; Taka (monorepo: apps/api, apps/mobile, packages/shared)</td></tr>
+    <tr><td class="label">Date</td><td>7 October 2026</td></tr>
+    <tr><td class="label">Commit</td><td><code>801dd5f</code> on <code>fix/audit-2026-10-06</code> — “fix(mobile): drop a write the proxy refuses as too large instead of retrying forever”</td></tr>
+    <tr><td class="label">Baseline</td><td>Round 3 at <code>7e2bfeb</code> (QA score 87; open: QA-301…QA-309, plus QA-022, QA-026 and QA-211 partly fixed); 36 commits since</td></tr>
+    <tr><td class="label">Auditor role</td><td>QA Lead</td></tr>
+    <tr><td class="label">Mode</td><td>Read-only. No source, config, dependency or git state changed. Scratch scripts lived in <code>docs/audit/2026-10-07-r4/_qa_tmp/</code> and were deleted afterwards.</td></tr>
+    <tr><td class="label">Companion reports</td><td>UX_Report.pdf, Code_Quality_Report.pdf (written separately)</td></tr>
+  </table>
+  <div class="small">
+    Severity scale used in all three reports:
+    <span class="badge critical">Critical</span> data loss, security hole, crash or broken core flow ·
+    <span class="badge high">High</span> major feature broken or a stated principle clearly violated ·
+    <span class="badge medium">Medium</span> real problem with a workaround, notable friction or debt ·
+    <span class="badge low">Low</span> polish, consistency, minor cleanup.
+    Round-4 findings are numbered from QA-401.
+  </div>
+</div>
+
+<!-- ============================ 1. EXEC SUMMARY ============================ -->
+<div class="section exec">
+<h2>1. Executive summary</h2>
+<div class="scorebox">89 / 100 <small>overall QA score (round 1: 58 · round 2: 70 · round 3: 87)</small></div>
+
+<p>All nine round-3 findings are fixed, each with tests. Edits behind a stuck create now wait with it, a budget draft touches one line, a pay's Undo is one <code>/unpay</code> write, early writes are on disk, a key hiccup keeps the screen cache, and the assistant's settings changes are limited and undoable. Lint, typecheck and 774 tests pass. Of the 12 earlier items, 10 are fixed and 2 (reminders, coverage tooling) stay partly fixed and accepted.</p>
+<p>The new code has two Medium problems. <b>QA-401</b> (reproduced): a stuck <i>edit</i> of an existing account, category, area or budget line takes every later expense or task that uses that record with it. The card reads “Couldn't save, and 2 later changes to it”, and one Discard drops them all. <b>QA-402</b> (unverified): the export file is deleted as soon as the share promise resolves, which on Android can be before Drive or Gmail has read it. Delete-account asks for this export just before deleting. Four Low findings follow. No Critical or High issue was found. Device-only behaviour couldn't be run (section 2).</p>
+
+<div class="two">
+<div>
+<table>
+<thead><tr><th>Severity</th><th>New in round 4</th></tr></thead>
+<tbody>
+<tr><td><span class="badge critical">Critical</span></td><td>0</td></tr>
+<tr><td><span class="badge high">High</span></td><td>0</td></tr>
+<tr><td><span class="badge medium">Medium</span></td><td>2</td></tr>
+<tr><td><span class="badge low">Low</span></td><td>4</td></tr>
+<tr><td><b>Total</b></td><td><b>6</b></td></tr>
+</tbody>
+</table>
+</div>
+<div>
+<table>
+<thead><tr><th>Previous findings (12)</th><th>Count</th></tr></thead>
+<tbody>
+<tr><td><span class="st st-ok">Fixed</span></td><td>10</td></tr>
+<tr><td><span class="st st-part">Partially fixed</span></td><td>2</td></tr>
+<tr><td><span class="st st-broken">Not fixed</span></td><td>0</td></tr>
+<tr><td><span class="st st-broken">Regressed</span></td><td>0</td></tr>
+</tbody>
+</table>
+<p class="small">9 round-3 findings, plus 3 items round 3 left partly fixed</p>
+</div>
+</div>
+
+<h3>Top 5 to fix first</h3>
+<table>
+<thead><tr><th>Sev.</th><th>ID</th><th>Issue</th></tr></thead>
+<tbody>
+<tr><td><span class="badge medium">Medium</span></td><td class="id">QA-401</td><td>A stuck edit of an account, category, area or budget line takes every later expense or task that uses that record aside with it, and Discard drops them all. <span class="rep">Reproduced</span></td></tr>
+<tr><td><span class="badge medium">Medium</span></td><td class="id">QA-402</td><td>The export is deleted as soon as the share promise resolves, which may be before Drive or Gmail has read it. This is the export the delete-account page asks for. <span class="unv">Unverified</span></td></tr>
+<tr><td><span class="badge low">Low</span></td><td class="id">QA-403</td><td>Undo of a Skip that changed nothing moves the bill back, while that period's payment stays logged. <span class="rep">Reproduced</span></td></tr>
+<tr><td><span class="badge low">Low</span></td><td class="id">QA-404</td><td>A bill paid from a Tiki draft has no Undo, although the draft already holds everything <code>/unpay</code> needs.</td></tr>
+<tr><td><span class="badge low">Low</span></td><td class="id">QA-405</td><td>An Undo on the widget is lost if the app picked up the log while its storage key couldn't be read. <span class="unv">Unverified</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============================ 2. SCOPE ============================ -->
+<div class="section">
+<h2>2. Scope &amp; method</h2>
+<h3>What was reviewed</h3>
+<ul>
+<li><b>Intent:</b> <code>PRODUCT.md</code>, <code>DESIGN.md</code>, <code>README.md</code> and the spec (via <code>_raw/spec.txt</code>). The round-3 requirement checklist (Appendix C) was carried over and re-checked in section 4.</li>
+<li><b>Re-verification:</b> each of QA-301…QA-309, and QA-022, QA-026 and QA-211, which round 3 left partly fixed. This was done by reading the code at <code>801dd5f</code>, reading the new tests, and re-running a reproduction wherever a script could reach the path.</li>
+<li><b>Fresh audit</b> of <code>git log 7e2bfeb..HEAD</code> (36 commits). It covered the server-clock guard and pre-2024 edits, stuck-write groups with Retry, Discard and Undo, <code>outbox.cancel</code> and <code>POST /recurring/:id/unpay</code>, Today's exact <code>dueAt</code>, the side key for pre-load writes, save-failure surfacing, the widget hand-over, the encrypted cache on key failure, export clean-up, the error-envelope check and cache buster, <code>PUT /budgets/:month/:categoryId</code>, the <code>update_settings</code> allow-list and Undo, session-touch throttling, the quick-add split, the widget layout and the time-zone hooks.</li>
+</ul>
+
+<h3>Commands and evidence</h3>
+<table>
+<thead><tr><th>Command</th><th>Result</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td><code>bunx biome check .</code></td><td>555 files, exit 0</td><td><code>_raw/lint.txt</code></td></tr>
+<tr><td><code>bun run typecheck</code></td><td>shared / api / mobile, exit 0</td><td><code>_raw/typecheck.txt</code></td></tr>
+<tr><td><code>bun run test</code></td><td>774 pass, 0 fail (shared 247, mobile 291, api 236)</td><td><code>_raw/test.txt</code></td></tr>
+<tr><td>coverage per workspace</td><td>api 94.50% lines, shared 95.08%, mobile 93.05% (pure modules only)</td><td><code>_raw/coverage-*.txt</code></td></tr>
+<tr><td><code>bun run audit</code> (scripts/audit.ts)</td><td>5 accepted advisories, none new, exit 0</td><td><code>_raw/audit.txt</code></td></tr>
+<tr><td><code>bunx expo export --platform android</code></td><td>bundles (2 855 modules)</td><td><code>_raw/android-export.txt</code></td></tr>
+<tr><td>QA probes (Bun): <code>outbox-probe.ts</code>, <code>api-probe.ts</code>, <code>auth-probe.ts</code>, <code>qa-diff.ts</code></td><td>The probes import the project's own code. They use the real mobile <code>OutboxQueue</code>, and <code>createTestContext</code> with in-memory SQLite, an injected clock and real routes. <code>qa-diff.ts</code> compares the quick-add parser with the round-3 parser, taken out with <code>git archive 7e2bfeb</code>. Output is in Appendix B.</td><td><code>_qa_tmp/</code> (deleted)</td></tr>
+</tbody>
+</table>
+
+<h3>What could not be verified (marked Unverified where it matters)</h3>
+<ul>
+<li><b>Anything that needs a device.</b> Sign-in is Google-only, and the only emulator image has no Play services. So none of the following ran on a phone: the widget (its new layout, its quick-logs at the default size, its headless task and the hand-over timing), Android Keystore and <code>expo-secure-store</code> failures (the side key, the kept screen cache, QA-405), the share sheet's timing (QA-402), the app lock, notifications and quiet hours, how Hermes' <code>Intl</code> handles non-default time zones, and the snackbar's Undo timing. These were judged by reading the code. For QA-402, that included the <code>expo-sharing</code> 57.0.22 Android module.</li>
+<li><b>Network timing.</b> A lost reply was simulated by sending the same request twice, which is what the outbox does after a timeout. A persistent 5xx was simulated with a fake <code>send</code>.</li>
+<li><b>AI.</b> No real OpenAI calls were made. The <code>update_settings</code> allow-list was judged from its code and its tests (<code>assistant-actions.test.ts:L123-L176</code>).</li>
+<li>The screenshots in <code>docs/screenshots</code> predate every fix and were not used as evidence.</li>
+</ul>
+</div>
+
+<!-- ============================ 3. PREVIOUS FINDINGS ============================ -->
+<div class="section">
+<h2>3. Previous findings status</h2>
+<p class="small">Line references are at <code>801dd5f</code>. “Re-run” means a probe in this round repeated the round-3 scenario and now gets the expected result (Appendix B).</p>
+<table>
+<thead><tr><th style="width:12%">ID</th><th style="width:7%">Sev.</th><th style="width:21%">Round-3 title (short)</th><th style="width:11%">Status</th><th>Evidence at 801dd5f</th></tr></thead>
+<tbody>
+<tr><td class="id">QA-301</td><td>M</td><td>Edits queued behind a stuck create are dropped; Retry brings back the old version</td><td><span class="st st-ok">Fixed</span></td><td>When a write is set aside, every later write that names a record it creates or edits goes with it (<code>outbox-queue.ts:L424-L443</code>). A write queued later joins the same group (<code>L266-L271</code>, <code>L446-L456</code>). Retry, Discard and “Retry all” act on whole groups (<code>L117-L146</code>, <code>sync-status.tsx:L42-L94</code>). Tested in <code>outbox-queue.test.ts:L327-L400</code>. Re-run: the PATCH is set aside with its POST, and after Retry the title is “Call bank about card”. Residual: a user DB that won't open still answers 500, not 503 (<code>user-registry.ts:L184-L192</code>), so an outage sets every write aside after about 2 min; “Retry all” makes that a single tap. The grouping rule now goes too far: see QA-401.</td></tr>
+<tr><td class="id">QA-302</td><td>M</td><td>An old budget draft or its Undo overwrites the whole month</td><td><span class="st st-ok">Fixed</span></td><td>New <code>PUT /budgets/:month/:categoryId</code> (<code>budgets/routes.ts</code>, <code>service.ts:L291-L343</code>) sets one line, or removes it with <code>null</code>. It keeps rollover when rollover isn't sent, and copies an inherited month's lines in first. <code>set_budget</code>, its draft and its Undo use it (<code>actions.ts:L178-L228</code>). Tested in <code>assistant-money-drafts.test.ts:L152-L262</code>. Re-run in an inheriting month: Food set, Fun kept at ৳2,000 with rollover. Then Fun set to ৳3,000 and Food's Undo sent: Fun stays at ৳3,000.</td></tr>
+<tr><td class="id">QA-303</td><td>L</td><td>Undo after a replayed pay leaves the due date a month ahead</td><td><span class="st st-ok">Fixed</span></td><td>A replay names <code>previousDueAt</code> while the bill sits where that pay put it (<code>recurring/service.ts:L120-L132</code>). Undo is now one write, <code>POST /recurring/:id/unpay {transactionId, dueAt, skip}</code> (<code>L193-L209</code>), queued without waiting for the pay's reply (<code>recurring-pay.ts:L36-L52</code>). Today's bills carry <code>dueAt</code> (<code>today/service.ts</code>), and the cache buster was bumped to 3. Tested in <code>recurring.test.ts:L109-L232</code>. Re-run with an overdue bill: Today <code>at</code> = 4 Oct, <code>dueAt</code> = 1 Oct, and pay then unpay gives <code>nextDueAt</code> = 1 Oct. New edge with Skip: QA-403.</td></tr>
+<tr><td class="id">QA-304</td><td>L</td><td>Writes queued before the outbox loads exist only in memory</td><td><span class="st st-ok">Fixed</span></td><td>Before load, writes go to <code>tt.outbox.early</code> and are merged by <code>load()</code> (<code>outbox-queue.ts:L199-L258</code>, <code>L493-L512</code>, <code>outbox.ts:L22-L44</code>). The widget hand-over awaits <code>startOutbox()</code> and trims its own list only when <code>durable()</code> is true (<code>widget-pending.ts:L32-L46</code>, <code>outbox-queue.ts:L343-L349</code>). The status line says “not saved on this phone yet” (<code>sync-status.tsx:L113-L114</code>). Tested in <code>outbox-durability.test.ts</code> and <code>widget-handover.test.ts</code>. Residual: QA-405.</td></tr>
+<tr><td class="id">QA-305</td><td>L</td><td>A key hiccup deletes the encrypted screen cache</td><td><span class="st st-ok">Fixed</span></td><td><code>keepCacheOnKeyFailure</code> turns <code>KeyUnavailableError</code> into “no cache” and won't save over the sealed copy until it has been read. It then merges that copy late (<code>cache-persister.ts:L14-L57</code>, <code>query-client.ts:L83-L97</code>). The cache store refuses a plain-text fallback (<code>secure-storage.ts:L67-L76</code>). Tested in <code>cache-persister.test.ts:L102-L150</code>.</td></tr>
+<tr><td class="id">QA-306</td><td>L</td><td>Assistant changes any setting with no Undo</td><td><span class="st st-ok">Fixed</span></td><td>An allow-list leaves out <code>appLock</code>, <code>lockAfterMinutes</code>, <code>ai</code>, <code>defaultCurrency</code>, the default and cash accounts, and <code>timeZone</code> (<code>actions.ts:L27-L48</code>). Each change records an Undo with the old values, and the vacation list comes back with <code>vacationMode</code> (<code>L243-L264</code>). Tested in <code>assistant-actions.test.ts:L123-L176</code>, including <code>{theme:"dark", appLock:false}</code>, which is refused as a whole.</td></tr>
+<tr><td class="id">QA-307</td><td>L</td><td>Export file left in the cache after sign-out</td><td><span class="st st-ok">Fixed</span></td><td>The file is deleted in <code>finally</code> after <code>shareAsync</code> (<code>use-export-data.ts:L26-L34</code>), and any leftover export is swept in <code>clearUserData</code> (<code>user-data.ts:L19-L26, L40</code>). Tested in <code>export-file.test.ts</code>. Not done: the export is still parsed into memory and stringified again (<code>L16-L19</code>). The immediate delete brings a new risk, QA-402. That risk partly comes from round 3's own recommendation (“delete the file once <code>shareAsync</code> resolves”).</td></tr>
+<tr><td class="id">QA-308</td><td>L</td><td>Ten client spots use Asia/Dhaka for today and this month</td><td><span class="st st-ok">Fixed</span></td><td><code>useToday</code>, <code>useThisMonth</code> and <code>useUserTime</code> are in <code>lib/use-today.ts</code>. All ten spots now use them (checked one by one). <code>time-zone-use.test.ts:L91</code> scans every screen for a <code>toLocalDate</code>/<code>toLocalMonth</code> call without a zone, which is the CI guard round 3 asked for. A grep for one-argument calls finds none.</td></tr>
+<tr><td class="id">QA-309</td><td>L</td><td>The glue around the fixes is untested</td><td><span class="st st-ok">Fixed</span></td><td>New tests: <code>sync-pull.test.ts</code> (pull, cursor, waiting for the outbox), <code>outbox-failure.test.ts</code> (proxy and captive-portal mapping, 413), <code>widget-handover.test.ts</code>, <code>turn-recovery.test.ts</code>, <code>cache-persister.test.ts</code>, multi-entry parking, the replayed pay, and the other-line budget case. Two small items remain untested: the <code>storageKey</code> retry in <code>secure-storage.ts</code>, and the <code>applyOptimistic</code> wrapper. Both are folded into QA-406.</td></tr>
+<tr><td class="id">QA-211</td><td>M (r2)</td><td>New failure paths untested</td><td><span class="st st-ok">Fixed</span></td><td>The part round 3 left open, the sync pull, is now covered by <code>sync-pull.test.ts</code>.</td></tr>
+<tr><td class="id">QA-022</td><td>M (r1)</td><td>Reminder gaps</td><td><span class="st st-part">Partially fixed</span></td><td>No change since round 2. Reminders are rescheduled only when the app opens, with a 7-day horizon (<code>plan-notifications.ts:L37</code>). There is no background task (no <code>expo-task-manager</code> in <code>package.json</code>). Accepted as Low; not raised again.</td></tr>
+<tr><td class="id">QA-026</td><td>L (r1)</td><td>Coverage numbers unreliable</td><td><span class="st st-part">Partially fixed</span></td><td>Documented in <code>README.md:L393-L397</code>. The cross-workspace runs still show <code>shared/src/dates.ts</code> at 5.86% (api) and 0.00% (mobile) lines, and the mobile run shows <code>server-clock.ts</code> at 63.89% even though <code>server-clock.test.ts</code> exercises the uncovered lines. Accepted as a Bun tooling limit.</td></tr>
+</tbody>
+</table>
+<p><b>Tally:</b> 10 fixed, 2 partially fixed, 0 not fixed, 0 regressed. All 9 round-3 findings are fixed.</p>
+</div>
+
+<!-- ============================ 4. TRACEABILITY ============================ -->
+<div class="section">
+<h2>4. Requirements traceability</h2>
+<p class="small">Requirements come from the spec's build checklist and technical rules, <code>PRODUCT.md</code>, and the fix contracts adopted in rounds 1 to 3 (Appendix C). Status: <span class="st st-ok">Implemented</span> <span class="st st-part">Partial</span> <span class="st st-miss">Missing</span> <span class="st st-broken">Broken</span>. “Implemented” means the code path exists and is tested or was read end to end. It does not mean it was run on a device.</p>
+<table class="trace">
+<thead><tr><th style="width:24%">Requirement</th><th style="width:28%">Implementation</th><th style="width:12%">Status</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Sign-in, sessions, per-user SQLite + migrations</td><td>auth/routes.ts, middleware/auth.ts, db/sessions.ts, db/client.ts</td><td><span class="st st-ok">Implemented</span></td><td><code>last_used_at</code> is written at most once a minute, and the grace-window shortening only once (<code>sessions.ts:L110-L119</code>). Nothing reads <code>lastUsedAt</code>, so the throttle changes no behaviour.</td></tr>
+<tr><td>Auth on every protected route</td><td>app.ts, requireAuth</td><td><span class="st st-ok">Implemented</span></td><td>The new routes are under <code>requireAuth</code>. Re-run: <code>POST /recurring/:id/unpay</code> and <code>PUT /budgets/:month/:categoryId</code> without a token both return 401.</td></tr>
+<tr><td>Offline cache + queued writes in order</td><td>outbox-*.ts, query-client.ts, secure-storage.ts, cache-persister.ts</td><td><span class="st st-part">Partial</span></td><td>Durable from the first tap, and stuck writes are grouped and recoverable. The grouping catches writes that don't depend on the stuck one (QA-401).</td></tr>
+<tr><td>Conflicts: last write wins on updated_at</td><td>crud.ts:L83-L97, server-clock.ts</td><td><span class="st st-ok">Implemented</span></td><td>An offset is learned only from a real <code>x-server-time</code> on or after 2024. An edit stamped before 2024 applies in arrival order. Re-run: a 1970 stamp applies, and a 2025 stamp older than the row loses.</td></tr>
+<tr><td>GET /sync/changes and the pull</td><td>sync/routes.ts, sync-pull.ts</td><td><span class="st st-ok">Implemented</span></td><td>The pull waits for the outbox to empty, asks for counts only, and advances the cursor only after a good reply. Now tested.</td></tr>
+<tr><td>Quick-add (Bangla + English)</td><td>shared/quick-add*.ts, digits.ts, calculator.ts</td><td><span class="st st-ok">Implemented</span></td><td>The split into money, task and guess modules changes nothing. 230 cases (46 inputs × 5 forced kinds) give identical results to <code>7e2bfeb</code> (Appendix B).</td></tr>
+<tr><td>Tasks, subtasks, repeat, undo; planner moves</td><td>tasks/*, plan/*</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+<tr><td>Recurrence in plain words</td><td>shared/recurrence.ts</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+<tr><td>Focus timer / time tracking</td><td>time-entries/service.ts, focus-screen.tsx</td><td><span class="st st-ok">Implemented</span></td><td>Uses server time; a header-less reply can no longer push it to 1970.</td></tr>
+<tr><td>Habits, streaks, freezes; routines</td><td>habits/*, routines/*</td><td><span class="st st-ok">Implemented</span></td><td>The default habit date follows the zone setting (<code>habits/queries.ts:L7</code>).</td></tr>
+<tr><td>Accounts, computed balances, balance check</td><td>accounts/service.ts</td><td><span class="st st-ok">Implemented</span></td><td>A stuck balance check sets aside later expenses on that account (QA-401).</td></tr>
+<tr><td>Budgets: buckets, rollover; safe to spend</td><td>budgets/service.ts, shared/finance.ts</td><td><span class="st st-ok">Implemented</span></td><td>The one-line PUT keeps the other lines and rollover. Re-run in Appendix B.</td></tr>
+<tr><td>Bills: “Paid” creates a transaction; Undo</td><td>recurring/service.ts, money/recurring-pay.ts</td><td><span class="st st-ok">Implemented</span></td><td>Undo is server-side and survives a restart. Edges: QA-403 (Skip) and QA-404 (Tiki).</td></tr>
+<tr><td>Goals, debts, keypad, events, shopping</td><td>goals/, debts/, calculator.ts, events/, shopping/</td><td><span class="st st-ok">Implemented</span></td><td>Dates are picked through the new <code>DateField</code>, in the user's zone.</td></tr>
+<tr><td>SMS auto-capture</td><td>—</td><td><span class="st st-miss">Missing</span></td><td>Dropped by a recorded decision.</td></tr>
+<tr><td>Widget, launcher shortcuts</td><td>features/widget, use-app-shortcuts.ts</td><td><span class="st st-ok">Implemented</span></td><td><span class="unv">Unverified</span> At the default size, quick-logs replace Focus and Tiki, and every pill is at least 48 dp (<code>widget-layout.ts</code>, tested). Hand-over: QA-405.</td></tr>
+<tr><td>Local notifications, quiet hours, bill reminder</td><td>features/notifications/*</td><td><span class="st st-part">Partial</span></td><td>Rescheduled only when the app opens (QA-022 residual).</td></tr>
+<tr><td>Nightly backup (keep 14), off-site copy, JSON export</td><td>jobs/backup.ts, jobs/offsite.ts, export route, use-export-data.ts</td><td><span class="st st-ok">Implemented</span></td><td>The export file is deleted right after sharing. The timing may break the share (QA-402, Unverified).</td></tr>
+<tr><td>Fingerprint lock after 5 min; privacy mode</td><td>app-lock.tsx, lock-decision.ts</td><td><span class="st st-ok">Implemented</span></td><td><span class="unv">Unverified</span> The assistant can no longer turn it off.</td></tr>
+<tr><td>Data at rest protected</td><td>encrypted-storage.ts, secure-storage.ts</td><td><span class="st st-ok">Implemented</span></td><td>Key failures no longer cost the outbox or the cache. The widget store is the documented exception.</td></tr>
+<tr><td>Login 5 / 15 min; API on 127.0.0.1</td><td>auth/routes.ts, env.ts</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+<tr><td>AI with graceful fallback; cost cap</td><td>ai/usage.ts, modules/ai/*</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+<tr><td>AI never saves money without confirmation</td><td>assistant/tools.ts, actions.ts</td><td><span class="st st-ok">Implemented</span></td><td>Settings are allow-listed and come with an Undo.</td></tr>
+<tr><td>Undo instead of “Are you sure?”</td><td>notify + outbox writes</td><td><span class="st st-part">Partial</span></td><td>It holds almost everywhere. Gaps: a Tiki-paid bill (QA-404), and a Discard whose group is larger than the card says (QA-401).</td></tr>
+<tr><td>Account deletion</td><td>DELETE /auth/account, settings/delete-account.tsx</td><td><span class="st st-ok">Implemented</span></td><td>“Export first” depends on the share working (QA-402).</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============================ 5. FINDINGS ============================ -->
+<div class="section">
+<h2>5. Findings</h2>
+<p class="small">Grouped by category, with categories ordered by their worst finding. <span class="rep">Reproduced</span> means a Bun script calling the project's own code produced the output shown; full output is in Appendix B. <span class="unv">Unverified</span> means device behaviour judged by reading the code.</p>
+
+<h3>5.1 Offline sync</h3>
+<div class="finding">
+<h4>QA-401 · A stuck edit of an account, category, area or budget line takes every later write that uses that record aside with it, and Discard drops them all</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: Offline / data loss</span> <span>Effort: S–M</span> <span class="rep">Reproduced</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/lib/outbox-policy.ts:L110-L136</code> (<code>writtenIds</code> takes every record id in the path; <code>mentionsAny</code> matches any id anywhere in the body). <code>outbox-queue.ts:L424-L443</code> (<code>park</code>), <code>:L266-L271</code> and <code>:L446-L456</code> (a new write joins a group), <code>:L138-L146</code> (<code>discardStuck</code> drops the whole group). <code>components/ui/sync-status.tsx:L19-L26, L55-L58, L72-L78</code> (card and Discard). The labels used as the description: <code>money/account-sheet.tsx:L62-L66</code>, <code>settings/category-sheet.tsx:L73</code>, <code>plan/area-sheet.tsx:L61</code> (“Couldn't save”).</p>
+<p class="kv"><span class="label">What's wrong:</span> The QA-301 fix sets aside “every later write that names a record it creates or edits”. For a stuck <i>create</i> that's right. For a stuck <i>edit</i> of a record that already exists, it isn't. <code>PATCH /accounts/A</code> (rename), <code>POST /accounts/A/balance-check</code>, <code>PATCH /categories/C</code>, <code>PATCH /areas/X</code> and <code>PUT /budgets/2026-10/C</code> (Tiki's budget draft) all put an existing record's id in the path. After that, any expense with <code>accountId: A</code> or <code>categoryId: C</code>, and any task with <code>areaId: X</code>, joins the stuck group, even though it would land without trouble. Every write queued later also joins at once, and its promise rejects with <code>SetAsideError</code>, while the screen has already shown it as saved. The card describes the group by the head's <code>label</code>, which is failure text. So it reads “Couldn't save, and 2 later changes to it”. One Discard then removes the account edit and every expense in the group. Only an 8-second snackbar Undo protects them.</p>
+<pre><code>// Real OutboxQueue; PATCH /accounts/A answers 500 every time, everything else works.
+OVERGROUP: stuck = ["PATCH /accounts/01M4…","POST /transactions","POST /transactions"]
+           | T2 promise: SetAsideError | expenses on server: 0
+OVERGROUP: Discard on the account edit dropped 3 writes | expenses on server: 0 | queue size 0
+BUDGET-GROUP: stuck = ["PUT /budgets/2026-10/01M4…","POST /transactions"] | expense on server: false</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> The trigger is uncommon: one edit has to fail 8 times with a non-503 5xx. When it happens, though, the result works against the product's core numbers. Expenses the user logged aren't on the server. So after the next refetch they disappear from Today's safe-to-spend, and one tap on Discard, made to drop a failed rename, deletes them for good. The outbox tests only check writes that depend on a stuck create (<code>outbox-queue.test.ts:L327-L400</code>). Nothing checks that unrelated users of an edited record keep going.</p>
+<p class="kv"><span class="label">Recommendation:</span> Only a <i>create</i> passes its dependency on to writes that mention it in the body. For an edit, a delete or an action, group only later writes whose <i>path</i> targets the same record. Describe the group by kind (“Edit account bKash · 2 expenses waiting with it”), not by the failure label. Before discarding a group that contains creates, name them in the snackbar.</p>
+<pre><code>const created = new Set(createdIds(entry.request));   // POST body.id / transactionId
+const targets = new Set(pathIds(entry.request));       // record an edit/delete/action acts on
+const dependsOn = (later: OutboxRequest) =&gt;
+  mentionsAny(later, created) || pathIds(later).some((id) =&gt; targets.has(id) || created.has(id));</code></pre>
+</div>
+
+<h3>5.2 Privacy &amp; data portability</h3>
+<div class="finding">
+<h4>QA-402 · The export file is deleted as soon as the share promise resolves, which may be before the chosen app has read it</h4>
+<div class="meta"><span class="badge medium">Medium</span> <span>Category: Data portability / account deletion</span> <span>Effort: S</span> <span class="unv">Unverified on device</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/features/settings/use-export-data.ts:L16-L34</code>. <code>features/settings/delete-account.tsx:L41-L53</code> (“1. Keep a copy … Save it before you go on”). <code>node_modules/expo-sharing/android/src/main/java/expo/modules/sharing/SharingModule.kt:L39-L52, L80-L83</code> (the chooser is started for result, and the promise resolves on any activity result).</p>
+<p class="kv"><span class="label">What's wrong:</span> The QA-307 fix deletes the file in <code>finally</code>, right after <code>await Sharing.shareAsync(file.uri)</code>. On Android that promise resolves when the chooser returns an activity result. Some targets return it as soon as they open, especially ones started in their own task. Others return it when their own screen closes, then upload or attach the file afterwards from the <code>content://</code> URI (Drive's background upload, a mail draft sent later). In both cases the file may already be gone when the target reads it. The upload fails, or the attachment is empty, and the app has already shown nothing went wrong.</p>
+<pre><code>const data = await send("GET", "/export");
+file = new File(Paths.cache, exportFileName(new Date()));
+file.write(JSON.stringify(data));
+await Sharing.shareAsync(file.uri, { mimeType: "application/json", … });
+} finally {
+  if (file?.exists) file.delete();   // runs as soon as the chooser reports back</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> The export is the user's only copy of their data outside the server. The delete-account page asks for it as step 1, just before an irreversible delete. If the share silently failed, the user deletes the account believing they have a backup. Round 3's recommendation (“Delete the file once <code>shareAsync</code> resolves”) didn't account for this. This report corrects it.</p>
+<p class="kv"><span class="label">Recommendation:</span> Don't delete right after the share. Sweep exports older than about an hour at the next app start, and on sign-out (already done). Better: save through the Storage Access Framework (<code>Directory.pickDirectoryAsync()</code> in expo-file-system), so the app writes the file to a folder the user picks, knows it was written, and can say “Saved to Downloads/tick-taka-export-2026-10-07.json”. Then delete-account can show that confirmation. Test on a device with Drive, Gmail and Files as targets.</p>
+</div>
+
+<h3>5.3 Money &amp; Undo</h3>
+<div class="finding">
+<h4>QA-403 · Undo of a Skip that changed nothing moves the bill back, while that period's payment stays logged</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Money / Undo</span> <span>Effort: S</span> <span class="rep">Reproduced</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/recurring/service.ts:L71-L78</code> (<code>movedOnceFrom</code> infers the move from dates), <code>:L133-L134</code> (a late pay or skip changes nothing), <code>:L201-L206</code> (<code>unpay</code>: “A skip logs nothing, so only the date says whether it went through”).</p>
+<p class="kv"><span class="label">What's wrong:</span> A skip leaves no record. So <code>unpay {skip:true}</code> moves the bill back whenever its date is one step past <code>dueAt</code>, whoever moved it there. Here is how that happens. The user taps Paid on Today (offline, or while the recurring sheet is still cached). They then open the bill's sheet, which still shows 5 Oct, tap Skip, and then Undo. The Skip did nothing, because the bill had already moved. But its Undo moves the bill back to 5 Oct, and October's expense stays logged.</p>
+<pre><code>STALE-SKIP-UNDO: skip reply moved=false | unpay movedBack=true nextDueAt=2026-10-05
+                 | October expenses still logged=1</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> The bill shows as due, then overdue, for a period that is already paid, which invites a second payment. The trigger is narrow, since it needs a stale screen and an Undo.</p>
+<p class="kv"><span class="label">Recommendation:</span> Record who moved the bill. Store the pay's or skip's <code>transactionId</code> on the recurring row when it advances (for example <code>moved_by</code>), and have <code>unpay</code> move it back only when <code>moved_by === input.transactionId</code>. This replaces the date inference for both pay and skip. Add the test from section 8.</p>
+</div>
+
+<div class="finding">
+<h4>QA-404 · A bill paid from a Tiki draft has no Undo, although the draft holds everything <code>/unpay</code> needs</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: AI / Undo</span> <span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/ai/assistant/actions.ts:L92-L120</code> (<code>pay_bill</code> proposes and records with no <code>undo</code>). <code>apps/mobile/src/features/assistant/use-assistant.ts:L220-L240</code> (Save records <code>undo: draft.undo</code>, which is undefined here). <code>apps/api/src/modules/transactions/service.ts</code> (deleting the expense doesn't touch the bill). <code>README.md</code> (“money actions … are corrected in their own screens”).</p>
+<p class="kv"><span class="label">What's wrong:</span> The app always asks for drafts (<code>draftMoney: true</code>), so “pay my internet bill” becomes a pay draft with <code>transactionId</code> and <code>dueAt</code>. After Save, the chat shows “Saved: Pay Internet” with no Undo. The README's suggested fix, deleting the expense in Money, leaves the bill a month ahead. That is the same symptom QA-303 fixed for Today. Contributions to goals and debt repayments in the chat also have no Undo, but their reversal isn't a single write.</p>
+<p class="kv"><span class="label">Why it matters:</span> Today's Paid can be undone, but the same pay from Tiki can't. The user has to know to edit the due date by hand. This goes against the app's own rule, “Undo instead of ‘Are you sure?’, as everywhere else in the app” (<code>sync-status.tsx:L73</code>).</p>
+<p class="kv"><span class="label">Recommendation:</span> In <code>pay_bill</code>, add <code>undo: { method: "POST", path: `${billPath}/unpay`, body: { transactionId, dueAt, skip: Boolean(raw.skip) } }</code> to both the draft and the direct action, and update the README line.</p>
+</div>
+
+<h3>5.4 Widget</h3>
+<div class="finding">
+<h4>QA-405 · An Undo on the widget is lost if the app picked up the log while its storage key couldn't be read</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Widget / offline</span> <span>Effort: S</span> <span class="unv">Unverified on device</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/features/widget/widget-pending.ts:L32-L46</code> (logs are queued, then kept on the widget when <code>durable()</code> is false). <code>widget-task-handler.tsx:L64-L66</code> (Undo only removes the log from the widget's list). <code>lib/outbox-queue.ts:L209-L216, L499-L511</code> (while the saved queue can't be read, writes wait on the side key and are sent once it can be read).</p>
+<p class="kv"><span class="label">What's wrong:</span> When the outbox can't read its saved queue (a Keystore hiccup), the hand-over still queues each widget log. The log goes to the outbox's side key, saved in plain text by the fallback. The widget keeps its own copy, which is correct for durability. If the user then taps Undo on the widget within its 10-minute window, <code>undoQuickLog</code> finds the log in the widget's list, removes it from there, and queues no delete. The outbox's copy is still on the side key. It is sent once the key reads again, and the expense the user took back is saved.</p>
+<p class="kv"><span class="label">Why it matters:</span> Today's spending is too high by the amount taken back, and nothing on screen says why. It needs a Keystore failure and a widget Undo, so it is rare.</p>
+<p class="kv"><span class="label">Recommendation:</span> When <code>undoQuickLog</code> removes a log from the waiting list, also add its id to the pending deletes. A <code>DELETE</code> for an id the server never saw answers 404, which the outbox already treats as done (<code>outbox-policy.ts:L70-L73</code>). If the outbox did send the create, the delete follows it in order.</p>
+</div>
+
+<h3>5.5 Testing</h3>
+<div class="finding">
+<h4>QA-406 · The new rules are tested on their happy paths; the edges behind QA-401, QA-403 and QA-405 and a few modules are not</h4>
+<div class="meta"><span class="badge low">Low</span> <span>Category: Testing</span> <span>Effort: M</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/test/outbox-queue.test.ts:L297-L400</code> (parking groups: creates only). <code>apps/api/test/recurring.test.ts:L146-L232</code> (no unpay for a skip that changed nothing). <code>widget-handover.test.ts</code> (no widget Undo during the hand-over). <code>secure-storage.ts:L13-L25</code> (<code>storageKey</code> retry: no test). <code>lib/outbox.ts:L86-L108</code> (<code>applyOptimistic</code> wrapper). <code>packages/shared/src/quick-add.ts:L125-L134, L151-L184</code> (forced time entry and <code>describeDraft</code>: 52.69% lines, <code>_raw/coverage-shared.txt</code>). <code>use-export-data.ts</code> (no test; QA-402 needs a device test).</p>
+<p class="kv"><span class="label">Quality of what exists:</span> Good. There are 774 tests, up from 689. Every round-3 finding has a regression test that names it. The new tests use the real queue, real routes and real <code>Headers</code>, not stand-ins (<code>server-clock.test.ts</code>). A source scan guards the time-zone rule. No flaky patterns were seen; the outbox tests poll with short bounded waits.</p>
+<p class="kv"><span class="label">Recommendation:</span> Add the cases in section 8.</p>
+</div>
+</div>
+
+<!-- ============================ 6. STRENGTHS ============================ -->
+<div class="section">
+<h2>6. Strengths (keep these)</h2>
+<ul>
+<li><b>Every fix ships with its proof.</b> Each of the 36 commits names the finding it closes. The fix commits add a test that fails without the fix: <code>outbox-durability.test.ts</code>, <code>widget-handover.test.ts</code>, <code>cache-persister.test.ts</code>, the unpay suite and the other-line budget suite. The quick-add split preserved behaviour exactly (230 of 230 cases).</li>
+<li><b>Undo moved to the server, where it belongs.</b> <code>/unpay</code> needs nothing from the pay's reply, is safe to repeat, refuses another bill's transaction, and keeps a later period's date. A pay that hasn't gone out is simply taken off the queue (<code>outbox.cancel</code>).</li>
+<li><b>The outbox is honest about storage.</b> Writes are on disk from the first tap. A failed save is reported once and shown until a save works. The widget keeps its own copy until the outbox is durable. A sealed queue that can't be read is never written over.</li>
+<li><b>Defensive time handling.</b> A missing <code>x-server-time</code> is NaN, not 1970. A saved offset that puts “now” before 2024 is ignored, and the server treats a pre-2024 stamp as unstamped. Every screen uses the user's zone, and a test enforces it.</li>
+<li><b>Narrow assistant powers.</b> Settings are allow-listed with an Undo, and budget drafts touch one line. A refused key refuses the whole call, so a mixed request can't sneak a risky key through.</li>
+<li><b>Failure-shape awareness.</b> The error-envelope check tells proxy pages apart from API refusals. A 413 is dropped instead of retried forever. The cache buster is versioned, with a comment that says when to bump it.</li>
+<li><b>Clean gates.</b> Biome, typecheck, 774 tests and the audit allow-list all pass in CI, and the README explains the coverage limits.</li>
+</ul>
+</div>
+
+<!-- ============================ 7. ACTION PLAN ============================ -->
+<div class="section">
+<h2>7. Action plan</h2>
+<table>
+<thead><tr><th>Order</th><th>ID</th><th>Title</th><th>Severity</th><th>Effort</th></tr></thead>
+<tbody>
+<tr><td>1</td><td class="id">QA-401</td><td>Group only true dependants of a stuck write; describe groups by kind; name the creates a Discard drops</td><td><span class="badge medium">Medium</span></td><td>S–M</td></tr>
+<tr><td>2</td><td class="id">QA-402</td><td>Keep the export until a later sweep, or save it through SAF; confirm where it was saved before delete-account</td><td><span class="badge medium">Medium</span></td><td>S</td></tr>
+<tr><td>3</td><td class="id">QA-406</td><td>Tests for the cases in section 8 (P1 first)</td><td><span class="badge low">Low</span></td><td>M</td></tr>
+<tr><td>4</td><td class="id">QA-403</td><td>Record who moved the bill (<code>moved_by</code>) and make <code>unpay</code> check it</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+<tr><td>5</td><td class="id">QA-404</td><td>Give <code>pay_bill</code> an <code>/unpay</code> Undo; update the README line</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+<tr><td>6</td><td class="id">QA-405</td><td>Widget Undo of a waiting log also queues a delete</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+<tr><td>7</td><td class="id">QA-301 residual</td><td>Return 503 when a user's database can't be opened</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============================ 8. TEST PLAN ============================ -->
+<div class="section">
+<h2>8. Recommended test plan</h2>
+<p class="small">P1 covers the Medium findings and P2 the Low ones. “API” means <code>createTestContext</code>. “Unit (mobile)” means the real <code>OutboxQueue</code> with a fake <code>send</code>, as in this audit's probes.</p>
+<table>
+<thead><tr><th>Pri</th><th>Type</th><th>Covers</th><th>Given / When / Then</th></tr></thead>
+<tbody>
+<tr><td>P1</td><td>Unit (mobile)</td><td>QA-401</td><td><b>Given</b> a queued <code>PATCH /accounts/A</code> that gets 500 eight times and a queued <code>POST /transactions {accountId:A}</code>, <b>when</b> the queue runs, <b>then</b> only the PATCH is stuck, the expense is sent, and a later expense on A goes out at once.</td></tr>
+<tr><td>P1</td><td>Unit (mobile)</td><td>QA-401</td><td><b>Given</b> a stuck <code>PUT /budgets/2026-10/C</code>, <b>when</b> an expense with <code>categoryId:C</code> is queued, <b>then</b> it is sent, not set aside, and its promise resolves.</td></tr>
+<tr><td>P1</td><td>Unit (mobile)</td><td>QA-401</td><td><b>Given</b> a stuck <code>POST /accounts {id:A}</code> (a create), <b>when</b> an expense in A is queued, <b>then</b> it joins the group (the existing behaviour stays).</td></tr>
+<tr><td>P1</td><td>E2E (device)</td><td>QA-402</td><td><b>Given</b> Settings › Delete account, <b>when</b> Export is shared to Drive, then to Gmail, then to Files, <b>then</b> each target receives a complete file (size &gt; 0, valid JSON), checked after the upload or send finishes.</td></tr>
+<tr><td>P2</td><td>API</td><td>QA-403</td><td><b>Given</b> a bill paid for 5 Oct, <b>when</b> a skip for 5 Oct is sent and then unpaid, <b>then</b> <code>movedBack</code> is false, <code>nextDueAt</code> stays 5 Nov, and the expense stays.</td></tr>
+<tr><td>P2</td><td>API (fake AI)</td><td>QA-404</td><td><b>Given</b> a <code>pay_bill</code> draft, <b>then</b> it carries an Undo to <code>/recurring/:id/unpay</code> with the same <code>transactionId</code> and <code>dueAt</code>. <b>When</b> the draft and then its Undo are sent, <b>then</b> no expense remains and the date is back.</td></tr>
+<tr><td>P2</td><td>Unit (mobile)</td><td>QA-405</td><td><b>Given</b> an outbox whose saved queue can't be read and one widget log handed over, <b>when</b> the widget's Undo runs and the key later reads, <b>then</b> the server receives the POST and a DELETE for that id, in that order, or neither.</td></tr>
+<tr><td>P2</td><td>Unit (mobile)</td><td>secure-storage</td><td><b>Given</b> <code>SecureStore.getItemAsync</code> rejecting once, <b>when</b> a value is read twice, <b>then</b> the first read throws <code>KeyUnavailableError</code> and the second succeeds with the same key (no new key generated).</td></tr>
+<tr><td>P2</td><td>Unit (shared)</td><td>quick-add</td><td><b>Given</b> <code>forceKind:"time_entry"</code> with “email”, <b>then</b> a 0-minute, low-confidence entry. <b>Given</b> each draft kind, <b>then</b> <code>describeDraft</code> gives the documented one-line preview.</td></tr>
+<tr><td>P2</td><td>Unit (mobile)</td><td>outbox glue</td><td><b>Given</b> a USD-account expense, <b>when</b> <code>queueWrite</code> runs, <b>then</b> today's left-to-spend is unchanged. A BDT expense lowers it by its amount.</td></tr>
+<tr><td>P2</td><td>API</td><td>QA-301 residual</td><td><b>Given</b> a user whose database fails to open, <b>when</b> any authenticated request arrives, <b>then</b> 503, and the phone's policy retries without parking.</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============================ 9. SMOKE TEST ============================ -->
+<div class="section">
+<h2>9. Manual smoke test (≈15 minutes, real Android phone)</h2>
+<p class="small">Production APK against a staging API. Steps marked ⚠ target findings in this report; a failure there confirms the finding.</p>
+<table class="smoke">
+<thead><tr><th>#</th><th>Step</th><th>Expected</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Cold-start signed in, with the token older than 24 h, five times on mobile data.</td><td>Today loads from cache; no login screen.</td></tr>
+<tr><td>2</td><td>Airplane mode: log “rickshaw 60 bkash”, edit it to 70, then swipe the app away at once. Reopen and reconnect.</td><td>One ৳70 expense on the server (side key, QA-304).</td></tr>
+<tr><td>3</td><td>Tap “Paid” on a bill in Today, then Undo. Repeat in airplane mode, kill the app before reconnecting, then reconnect.</td><td>Both times the expense is gone and the bill is back on its old due date (QA-303).</td></tr>
+<tr><td>4</td><td>⚠ Tap Paid on a bill in Today. While offline, open the same bill's sheet, tap Skip, then Undo. Reconnect.</td><td>The bill stays on next month and October's expense stays (QA-403).</td></tr>
+<tr><td>5</td><td>⚠ Staging: make <code>PATCH /accounts/:id</code> return 500. Rename bKash, then log two expenses from bKash. Wait 3 minutes.</td><td>Only the rename is stuck; both expenses reach the server (QA-401).</td></tr>
+<tr><td>6</td><td>⚠ Settings › Delete account › Export: share to Google Drive, then open the uploaded file on a computer.</td><td>A complete JSON file (QA-402).</td></tr>
+<tr><td>7</td><td>Ask Tiki “set my food budget to 8000”; don't save. In Budgets change Transport. Save the draft, then tap its Undo.</td><td>Food changes and then goes back; Transport keeps its new value (QA-302).</td></tr>
+<tr><td>8</td><td>⚠ Ask Tiki “pay my internet bill” and Save.</td><td>An Undo next to “Saved” (QA-404).</td></tr>
+<tr><td>9</td><td>Ask Tiki “turn off app lock”, then “switch to dark theme”, then tap Undo.</td><td>The first is refused with a pointer to Settings; the theme changes and Undo restores it (QA-306).</td></tr>
+<tr><td>10</td><td>Add the widget at its default size.</td><td>Task, Expense and up to two quick-logs fit in one row, each at least a thumb wide.</td></tr>
+<tr><td>11</td><td>Airplane mode: tap a widget quick-log, open the app, close it, then tap Undo on the widget. Reconnect.</td><td>No expense on the server.</td></tr>
+<tr><td>12</td><td>Settings › Time zone: America/New_York. Open Budgets and Monthly review at 01:00 on the 1st, Dhaka time.</td><td>Both open on the previous month (QA-308).</td></tr>
+<tr><td>13</td><td>Sign out, then with <code>adb shell run-as</code> on a debug build list <code>cache/</code>.</td><td>No <code>tick-taka-export-*.json</code> (QA-307).</td></tr>
+<tr><td>14</td><td>Turn on App lock, swipe the app away, reopen.</td><td>Fingerprint prompt before any content.</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============================ APPENDICES ============================ -->
+<div class="section">
+<h2>Appendix A — Raw command output (trimmed)</h2>
+<h4>Lint</h4>
+<pre><code>$ bunx biome check .
+Checked 555 files in 374ms. No fixes applied.
+exit 0</code></pre>
+<h4>Typecheck</h4>
+<pre><code>@tick-taka/shared typecheck: Exited with code 0
+@tick-taka/api typecheck: Exited with code 0
+@tick-taka/mobile typecheck: Exited with code 0</code></pre>
+<h4>Tests</h4>
+<pre><code>@tick-taka/shared test: 247 pass  0 fail  519 expect() calls  (13 files)
+@tick-taka/mobile test: 291 pass  0 fail  865 expect() calls  (56 files)
+@tick-taka/api test:    236 pass  0 fail  848 expect() calls  (31 files) [9.65s]</code></pre>
+<h4>Coverage (selected lines)</h4>
+<pre><code>shared  All files                 84.16 % funcs | 95.08 % lines
+        src/quick-add.ts          75.00 | 52.69 | 125-134,151-184      &lt;- QA-406
+        src/quick-add-money.ts   100.00 |100.00
+        src/quick-add-task.ts    100.00 | 98.43 | 64-65
+mobile  All files                 90.97 % funcs | 93.05 % lines (pure modules only)
+        src/lib/outbox-queue.ts   91.89 | 96.82 | 171-174,183,187-189,252-253
+        src/lib/cache-persister.ts 87.50 | 86.84 | 49,51-54
+        src/lib/server-clock.ts   62.50 | 63.89                 &lt;- QA-026 (tested; mis-mapped)
+        ../../packages/shared/src/dates.ts 45.16 | 0.00         &lt;- QA-026
+api     All files                 88.20 % funcs | 94.50 % lines
+        src/modules/recurring/service.ts 100.00 | 99.36
+        src/modules/budgets/service.ts   100.00 |100.00
+        src/modules/ai/assistant/actions.ts 100.00 | 96.63 | 112-118</code></pre>
+<h4>Dependency audit</h4>
+<pre><code>$ bun scripts/audit.ts
+accepted GHSA-vfj7-8cjw-p6xm braces (high): build tooling only; no patched release exists.
+accepted GHSA-vcc3-ghjq-m6fr decode-uri-component (moderate): under expo-router …
+accepted GHSA-67mh-4wv8-2f99 esbuild (moderate): inside drizzle-kit's loader …
+accepted GHSA-86w9-cpqp-85rv node-forge (high): Expo CLI tooling only …
+accepted GHSA-rj75-hqrm-r3gf postcss-selector-parser (moderate): Tailwind 3 needs 6.x …
+No new advisories (5 accepted).  exit 0</code></pre>
+<h4>Android bundle</h4>
+<pre><code>Android Bundled 51854ms apps/mobile/index.ts (2855 modules)
+_expo/static/js/android/index-….hbc (7.7MB)   exit 0</code></pre>
+
+<h2 style="margin-top:8mm">Appendix B — QA reproduction output</h2>
+<p class="small">The scripts imported the project's own modules: <code>apps/api/test/helpers.ts</code> (in-memory SQLite, clock fixed at Sun 4 Oct 2026 10:00 Dhaka), <code>money-helpers.ts</code>, the real mobile <code>OutboxQueue</code> and outbox policy, and the round-3 shared sources taken out with <code>git archive 7e2bfeb</code>. They lived in <code>docs/audit/2026-10-07-r4/_qa_tmp/</code> and were deleted after the run. No source file was changed. Long record ids are shortened with “…”.</p>
+<h4>outbox-probe.ts (apps/mobile OutboxQueue, fake send)</h4>
+<pre><code>OVERGROUP: stuck = ["PATCH /accounts/01M4…","POST /transactions","POST /transactions"]
+           | T2 promise: SetAsideError | expenses on server: 0  (QA-401)
+OVERGROUP: Discard on the account edit dropped 3 writes: ["PATCH /accounts/01M4…",
+           "POST /transactions","POST /transactions"] | expenses on server: 0 | queue size 0
+BUDGET-GROUP: stuck = ["PUT /budgets/2026-10/01M4…","POST /transactions"] | expense on server: false
+QA-301: stuck = ["POST","PATCH"] rejected = []
+QA-301: after Retry title = "Call bank about card" | queue size 0  (fixed)</code></pre>
+<h4>api-probe.ts · auth-probe.ts (apps/api)</h4>
+<pre><code>STALE-SKIP-UNDO: skip reply moved=false | unpay movedBack=true nextDueAt=2026-10-05
+                 | October expenses still logged=1  (QA-403)
+BUDGET-LINE: unknown category -&gt; 400 {"error":{"code":"invalid_reference",…}}
+             | income category -&gt; 200 | month 2026-13 -&gt; 400 | limit -1 -&gt; 400
+BUDGET-INHERIT: after Food line in inheriting Oct, Fun kept=200000 rollover=true
+                | after Undo Food=600000 Fun=300000  (QA-302 fixed)
+PRE-2024: 1970-stamped -&gt; "Call bank (1970)" | 2020-stamped -&gt; "Call bank (2020)"
+          | 2025-stamped (older than row) -&gt; "Call bank (2020)"
+TODAY-DUEAT: overdue bill at=2026-10-04 dueAt=2026-10-01
+             | pay+unpay -&gt; nextDueAt=2026-10-01 movedBack=true  (QA-303 fixed)
+AUTH: POST /recurring/:id/unpay no token -&gt; 401 | PUT /budgets/:month/:cat no token -&gt; 401</code></pre>
+<h4>qa-diff.ts (packages/shared, parser at 7e2bfeb vs 801dd5f)</h4>
+<pre><code>quick-add split: 230 cases (46 inputs × 5 kinds), 0 differences vs 7e2bfeb
+"dinner 1,50,000" -&gt; expense 15000000 high      "500tk dinner" -&gt; expense 50000 high
+"bus 30 + rickshaw 40" -&gt; expense 7000 low      "tea 10 tea 10 tea 10" -&gt; expense 1000 low
+"dinner 1.5k" -&gt; task "Dinner 1.5k" low         "1e3 lunch" -&gt; task
+Inputs included: চা ২০, সিঙ্গারা ১০ · চা ২০। · lunch 2x150 · lunch ১,২৫০ · রিকশা ৬০ টাকা ·
+১০০০ বেতন · +১০০০ salary · ৩০ মিনিট research · gym every mon wed fri 7am · someday learn guitar …</code></pre>
+</div>
+
+<div class="section">
+<h2>Appendix C — Requirement checklist used</h2>
+<p>From PRODUCT.md and the spec: log anything in under 5 s. Today answers “what now?” and “can I afford it?”. Safe to spend = flexible left ÷ days left including today, with fixed bills excluded. Amounts are integer minor units. Offline cache with queued writes sent in order, ids made on the phone, last-write-wins on <code>updated_at</code>. Asia/Dhaka by default for display, with local strings for habit dates and budget months. Streaks with 2 freezes a month. Reward, never guilt. Honest numbers (balances and hours reconcile). AI: rules first, a cost cap, graceful fallback, minimum data, an off switch, and never saving money without confirmation. App lock after 5 min. Receipts served only to authenticated requests. Login limited to 5 per 15 min. Bun listens on 127.0.0.1. Nightly <code>VACUUM INTO</code> backup keeping 14. JSON export. Local notifications with quiet hours 23:00–07:00. Bangla and English quick-add.</p>
+<p>The fix contracts from rounds 1 to 3 add: revocable sliding sessions with a 60 s grace for a refreshed-away token. A 401 never clears the queue, and signing out with pending writes asks first. Zone validation and per-user job isolation. CHECK→400. Stuck-write parking with Retry and Discard. Money drafts for budgets and amount fields. A persisted clock offset. Round 3 adds: dependent writes grouped with a stuck one, one-line budget writes, an Undo of a pay that survives a lost reply, writes durable before the outbox loads, no cache loss on a key failure, assistant settings limited with an Undo, export clean-up, and zone-aware today/month on every screen.</p>
+
+<h2 style="margin-top:8mm">Appendix D — File inventory reviewed</h2>
+<table>
+<thead><tr><th style="width:20%">Area</th><th>Files</th></tr></thead>
+<tbody>
+<tr><td>Shared</td><td>packages/shared/src/{dates, ids, quick-add, quick-add-money, quick-add-task, quick-add-guess}.ts; schemas/{common, money, settings}.ts</td></tr>
+<tr><td>API</td><td>app.ts; lib/crud.ts; db/{sessions, user-registry, seed}.ts; modules/recurring/{routes, service}; modules/budgets/{routes, service}; modules/today/service; modules/settings/{routes, service}; modules/transactions/service; modules/ai/assistant/{actions, tools, entities}; middleware/error-handler</td></tr>
+<tr><td>Mobile lib</td><td>outbox-queue, outbox-policy, outbox-failure, outbox, server-clock, http, api, cache-persister, query-client, encrypted-storage, secure-storage, user-data, export-file, sync-pull, sync-changes, use-today, snack-timing, pick-date, format</td></tr>
+<tr><td>Mobile features</td><td>components/ui/{sync-status, date-field}; widget/{use-widget-sync, widget-pending, widget-task-handler, widget-quick-log, widget-layout}; money/{recurring-pay, recurring-sheet, account-sheet, goal-sheet}; today/next-up; assistant/{use-assistant, money-drafts}; settings/{use-export-data, delete-account, category-sheet}; plan/area-sheet; the ten QA-308 screens</td></tr>
+<tr><td>Tests</td><td>apps/mobile/test/{outbox-queue, outbox-durability, outbox-failure, widget-handover, cache-persister, server-clock, sync-pull, turn-recovery, recurring-pay, export-file, api-errors, time-zone-use, widget-layout}.test.ts; apps/api/test/{recurring, assistant-money-drafts, assistant-actions, budgets, sessions, time}.test.ts; packages/shared/test/quick-add.test.ts</td></tr>
+<tr><td>Third party (read only)</td><td>node_modules/expo-sharing 57.0.22 Android <code>SharingModule.kt</code></td></tr>
+<tr><td>Docs / raw</td><td>docs/AUDIT_PROMPT.md, PRODUCT.md, README.md, docs/audit/2026-10-07-r3/QA_Report.html, docs/audit/2026-10-07-r4/_raw/*</td></tr>
+</tbody>
+</table>
+</div>
+
+</body>
+</html>

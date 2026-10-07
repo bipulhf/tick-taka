@@ -1,0 +1,12 @@
+# Shared discovery notes (2026-10-06, commit 3b5438b)
+- Monorepo, Bun workspaces: apps/api (Bun + Hono + Drizzle + SQLite per user, croner jobs, OpenAI optional), apps/mobile (Expo 57 / RN 0.86, expo-router, TanStack Query + AsyncStorage persister, offline write queue, NativeWind, Android widget), packages/shared (zod schemas, quick-add parser, recurrence, dates, money).
+- Docs: PRODUCT.md, DESIGN.md, README.md, docs/IMPLEMENTATION_PLAN.md, tick_taka_spec.pdf (text in _raw/spec.txt). Screenshots: docs/screenshots/*.png.
+- Tooling: biome 2.5 (lint), tsc strict (tsconfig.base.json), bun test. Deploy: deploy/nginx-tick-taka.conf, PM2 per README.
+- Commands run (raw output in this folder):
+  - `bunx biome check .` → 388 files, exit 0, no diagnostics (lint.txt)
+  - `bun run typecheck` → all 3 workspaces exit 0 (typecheck.txt)
+  - `bun run test` → api 100 pass/0 fail (9 files), shared 71 pass, mobile 14 pass (test.txt)
+  - coverage per workspace: coverage-api.txt, coverage-shared.txt, coverage-mobile.txt
+  - `bun audit` → 6 vulnerabilities (2 high, 4 moderate), exit 1 (audit.txt)
+- No CI config found at repo root (verify: .github absent).
+- PDF tool: /usr/bin/google-chrome (headless). pdfinfo/pdftoppm available for verification.

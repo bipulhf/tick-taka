@@ -1,0 +1,75 @@
+df29d67 feat(mobile): confirm assistant money changes before they are saved
+beb72d7 chore(mobile): note why the reminder rescheduler reruns on Today refreshes
+9b1d346 build(mobile): remove the unused expo-navigation-bar
+3a16b9d fix: schedule reminders by when they ring and stop hiding failures
+e647102 feat(mobile): pull /sync/changes on start, reconnect and foreground
+6710413 feat: add a Numbers setting for English or Bangla digits in amounts
+093463c fix(mobile): drop the last shortfall-first progress displays
+f216c77 fix(mobile): keep in-screen inputs above the keyboard
+1c9e6a8 feat(mobile): put "what now?" and safe-to-spend above the fold on Today
+4f075d1 fix(mobile): let the end of Today scroll clear of the running-timer bar
+a674fdc fix(mobile): shutdown ticks show at once and can be undone
+1445f0a fix(mobile): an extra tap on a finished habit ring no longer resets it
+c5262d2 feat: name the tasks a bulk move touched and offer Undo
+6f982dd feat(mobile): say what quick-add saved, with Undo
+faaeef2 fix(mobile): turn API and network errors into friendly copy in one place
+701dc64 refactor(mobile): split the task sheet, transaction sheet and quick-add hook
+65a9ca9 feat(mobile): replace chip walls in sheets with picker fields
+efa037c refactor(mobile): read time zone and week start through one helper
+1935571 docs: record the server-side AI cap and assistant money drafts as scope decisions
+787906d fix(api): restore /sync/changes and index updated_at on busy tables
+149ede1 docs: reconcile the deploy host, port and steps across files
+04173f7 perf(api): stream the export and drop the unused /sync/changes
+1e4743b fix(api): bound AI calls, stop the assistant on disconnect, cap every call
+f46416e feat(api): check every backup and warn when backups share the data disk
+f433d06 fix(api): catch up on nightly jobs missed while the server was down
+fb015b4 feat(api): structured request logging with request ids
+5d16811 fix(mobile): allow cleartext HTTP only in development builds
+bba2fb7 fix(api): validate assistant ids before building request paths
+f13492f fix(api): bind to loopback and trust X-Real-IP only when configured
+6a7d956 feat(api): delete an account with DELETE /auth/account
+57ab3b1 perf(api): close idle user databases and yield between users in jobs
+12ec297 fix(api): accept the sign-in token only from the Authorization header
+2cf6592 feat(api): revocable, refreshable sessions
+5c7a211 fix(mobile): encrypt cached financial data and queued writes at rest
+163bde7 fix(mobile): make replayed timer stops and bill payments no-ops
+53cec08 fix(mobile): recover assistant changes after the stream drops
+e489225 feat(mobile): delete the account from Settings
+6944278 fix(mobile): load receipt images with an auth header, not ?token=
+fce636b fix(mobile): show a recovery screen instead of crashing on render errors
+81f9c1c fix(mobile): lock the app on a cold start
+deb2eb2 fix(mobile): roll Today over at local midnight
+d4a4a69 fix(mobile): send the tap time when a timer starts or stops
+633c0c4 fix(mobile): keep the outbox on 401 and ask to sign in again
+3fc4b4c fix(mobile): open on login instead of hanging when the session can't be read
+25a5b19 fix(mobile): keep queued writes until the server takes them
+0d05650 fix(mobile): plan for large font sizes
+e72c8ce fix(mobile): accent themes reach useColors()
+8bb6918 fix(mobile): tab bar sizes match the spec; document the capsule layout
+772a7f4 fix(mobile): focus timer speaks at milestones, not every second
+604add0 fix(mobile): realign colour meaning with DESIGN.md
+f5e96b1 fix(mobile): bring small touch targets up to 48 dp
+e222702 fix(mobile): roles on every pressable and linked field labels
+47f1787 fix(mobile): swipe and drag actions reachable from TalkBack
+66f3a46 fix(mobile): money calendar marks spend with a small coral bar
+6143f5f fix(mobile): TalkBack reads the safe-to-spend numbers
+3333140 fix(mobile): sign transaction amounts so colour isn't the only cue
+006adc5 fix(mobile): dark text on semantic fills, marks instead of sky slabs
+d26d803 fix(mobile): AA text tier for semantic colours and stronger boundaries
+dff3609 refactor(shared): name the default week start
+93c3934 feat(api): enforce enums, amounts and self-references in the database
+1bf7019 fix(api): make task Undo lossless for repeats and subtasks
+4424711 fix(shared): refuse repeat rules that never occur
+d24c549 fix(api): keep foreign-currency spending out of taka budgets
+8b764e8 fix(api): keep budget rollover going through inherited months
+2cfbce6 fix(api): stop a replayed bill payment from advancing the due date again
+7e7b746 fix(api): record timer start and stop at the phone's tap time
+0cabb36 fix(api): make delete, restore and shopping checkout safe to replay
+3811541 fix(api): escape LIKE wildcards in task and transaction search
+395f746 feat(shared): group taka amounts in lakh and offer Bangla numerals
+250a0eb fix(shared): stop adjectives repeating tasks and labels becoming expenses
+7b42a29 fix(shared): read Bangla digits and currency words in quick-add and amounts
+8d60db8 fix(shared): round uneven calculator splits to whole taka
+6b19d8f test(shared): cover every dates and money helper directly
+0c937c5 ci: run lint, typecheck and tests on every push and pull request
+ceb5bbc docs: mark SMS auto-capture as dropped in the implementation plan

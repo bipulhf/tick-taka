@@ -1,0 +1,2 @@
+Checked 484 files in 284ms. No fixes applied.
+exit 0

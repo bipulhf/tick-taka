@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Report — Tick &amp; Taka (round 2)</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 18mm 16mm;
+    @bottom-left { content: "QA Report — Tick & Taka · commit df29d67"; font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #777; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #777; }
+  }
+  @page :first {
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Helvetica Neue", "Noto Sans", "Noto Sans Bengali", "Lohit Bengali", Arial, sans-serif; font-size: 11pt; line-height: 1.42; color: #1f2328; margin: 0; }
+  h1, h2, h3, h4 { color: #111; line-height: 1.25; }
+  h2 { font-size: 15.5pt; border-bottom: 2px solid #263238; padding-bottom: 2mm; margin: 0 0 4mm; }
+  h3 { font-size: 12.5pt; margin: 6mm 0 2mm; color: #263238; }
+  h4 { font-size: 11pt; margin: 3mm 0 1mm; break-after: avoid; page-break-after: avoid; }
+  h3 { break-after: avoid; page-break-after: avoid; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1mm; }
+  .section { page-break-before: always; break-before: page; }
+  code, pre, .mono { font-family: "DejaVu Sans Mono", "Noto Sans Bengali", "Liberation Mono", monospace; font-size: 8.7pt; }
+  code { background: #f3f4f6; padding: 0 1mm; border-radius: 2px; word-break: break-word; overflow-wrap: anywhere; }
+  pre { background: #f6f8fa; border: 1px solid #d8dee4; border-left: 3px solid #90a4ae; padding: 2.5mm 3mm; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; margin: 1.5mm 0 3mm; page-break-inside: avoid; break-inside: avoid; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.4pt; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  th, td { border: 1px solid #cfd8dc; padding: 1.4mm 2mm; text-align: left; vertical-align: top; word-break: break-word; overflow-wrap: anywhere; }
+  th { background: #eceff1; font-weight: 700; }
+  .badge { display: inline-block; padding: 0.4mm 2.2mm; border-radius: 3mm; color: #fff; font-size: 8.6pt; font-weight: 700; white-space: nowrap; }
+  .critical { background: #c62828; } .high { background: #ef6c00; } .medium { background: #f9a825; color: #1f1f1f; } .low { background: #607d8b; }
+  .st { display: inline-block; padding: 0.2mm 1.8mm; border-radius: 2px; font-size: 8.5pt; font-weight: 700; white-space: nowrap; }
+  .st-ok { background: #e8f5e9; color: #1b5e20; } .st-part { background: #fff8e1; color: #8d6e00; } .st-miss { background: #eceff1; color: #37474f; } .st-broken { background: #ffebee; color: #b71c1c; }
+  .unv { display: inline-block; padding: 0.2mm 1.8mm; border: 1px dashed #6a1b9a; color: #6a1b9a; border-radius: 2px; font-size: 8.5pt; font-weight: 700; }
+  .rep { display: inline-block; padding: 0.2mm 1.8mm; border: 1px solid #1b5e20; color: #1b5e20; border-radius: 2px; font-size: 8.5pt; font-weight: 700; }
+  .finding { border: 1px solid #cfd8dc; border-radius: 2mm; padding: 3mm 4mm 2mm; margin: 0 0 5mm; }
+  .finding h4 { font-size: 11.5pt; margin: 0 0 1.5mm; }
+  .meta { font-size: 9.4pt; color: #455a64; margin-bottom: 2mm; }
+  .meta span { margin-right: 4mm; }
+  .label { font-weight: 700; color: #263238; }
+  .kv { margin: 0 0 1.6mm; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .top { margin-top: 30mm; }
+  .cover .title { font-size: 28pt; font-weight: 800; margin-bottom: 3mm; color: #263238; }
+  .cover .sub { font-size: 14pt; color: #455a64; }
+  .cover table { width: auto; font-size: 11pt; }
+  .cover td { border: none; padding: 1mm 6mm 1mm 0; }
+  .scorebox { display: inline-block; border: 2px solid #263238; border-radius: 2mm; padding: 2mm 6mm; font-size: 20pt; font-weight: 800; margin: 0 0 3mm; }
+  .scorebox small { font-size: 10pt; font-weight: 400; color: #455a64; }
+  .note { background: #f5f7f8; border-left: 3px solid #607d8b; padding: 2mm 3mm; margin: 2mm 0 3mm; font-size: 9.8pt; }
+  .small { font-size: 9.4pt; color: #455a64; }
+  .exec p { margin-bottom: 2mm; }
+  .exec table { font-size: 9.6pt; margin: 1mm 0 2mm; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="top">
+    <div class="title">QA Report — Tick &amp; Taka (round 2)</div>
+    <div class="sub">Re-verification of the round-1 QA findings, plus a fresh audit of the code that fixed them</div>
+    <br><br>
+    <table>
+      <tr><td class="label">Project</td><td>Tick &amp; Taka (monorepo: apps/api, apps/mobile, packages/shared)</td></tr>
+      <tr><td class="label">Date</td><td>6 October 2026</td></tr>
+      <tr><td class="label">Commit</td><td><code>df29d67</code> on <code>fix/audit-2026-10-06</code> — “feat(mobile): confirm assistant money changes before they are saved”</td></tr>
+      <tr><td class="label">Baseline</td><td>Round 1 at <code>3b5438b</code> (QA score 58, 26 findings); 75 commits since</td></tr>
+      <tr><td class="label">Auditor role</td><td>QA Lead</td></tr>
+      <tr><td class="label">Mode</td><td>Read-only. No source, config, dependency or git state changed. Scratch scripts lived in <code>_qa_tmp/</code> and were deleted.</td></tr>
+      <tr><td class="label">Companion reports</td><td>UX_Report.pdf, Code_Quality_Report.pdf (written separately)</td></tr>
+    </table>
+  </div>
+  <div class="small">
+    Severity scale used in all three reports: <span class="badge critical">Critical</span> data loss, security hole, crash or broken core flow ·
+    <span class="badge high">High</span> major feature broken or a stated principle clearly violated ·
+    <span class="badge medium">Medium</span> real problem with a workaround, notable friction or debt ·
+    <span class="badge low">Low</span> polish, consistency, minor cleanup.
+    Round-2 findings are numbered from QA-201 so they don't collide with round-1 IDs.
+  </div>
+</div>
+
+<!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+<div class="section exec">
+<h2>1. Executive summary</h2>
+<div class="scorebox">70 / 100 <small>overall QA score (round 1: 58)</small></div>
+<p>The fix round worked. Of the 26 round-1 findings, 21 are fixed and 5 are partly fixed. None are unfixed or regressed. The outbox was rewritten and now behaves as promised: it keeps a write until the server accepts it, retries 5xx and unreachable servers forever, pauses on 401 instead of wiping, and lifts queued edits over the create they follow. A probe that replays real <code>OutboxQueue</code> writes against the in-memory API confirmed this. Bangla digits parse, bill payments and timer stops replay safely, and rollover and foreign-currency budgets are right. The test suite went from 185 to 568 passing tests, and the assertions are meaningful.</p>
+<p>The new code brought new failure modes, and two are serious. <b>QA-201</b>: any signed-in user can crash the whole API in a restart loop by setting an invalid time zone. A plain <code>PATCH /settings</code> or the assistant's <code>update_settings</code> is enough, because the hourly job runner lets the error escape and Bun exits. A user database that fails migration 0004 does the same. <b>QA-202</b>: refreshing the token revokes the old one at once, so a request still carrying it gets a 401. The app then expires the session and discards the new token, which sends a daily user back to Google sign-in. Both were reproduced. Both are small fixes.</p>
+<table>
+  <thead><tr><th>Severity</th><th>Count</th><th>Round-1 status</th><th>Count</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge critical">Critical</span></td><td>1</td><td><span class="st st-ok">Fixed</span></td><td>21</td></tr>
+    <tr><td><span class="badge high">High</span></td><td>1</td><td><span class="st st-part">Partially fixed</span></td><td>5</td></tr>
+    <tr><td><span class="badge medium">Medium</span></td><td>5</td><td><span class="st st-miss">Not fixed</span></td><td>0</td></tr>
+    <tr><td><span class="badge low">Low</span></td><td>8</td><td><span class="st st-broken">Regressed</span></td><td>0</td></tr>
+    <tr><td><b>Total new</b></td><td><b>15</b></td><td><b>Total round 1</b></td><td><b>26</b></td></tr>
+  </tbody>
+</table>
+<h3 style="margin-top:3mm">Top 5 to fix first</h3>
+<ol>
+  <li><span class="badge critical">Critical</span> <b>QA-201</b> One user's invalid time zone, or a database that won't open, crashes the job runner. Bun exits and the API restart-loops for everyone. Reproduced.</li>
+  <li><span class="badge high">High</span> <b>QA-202</b> Token refresh revokes the old token at once. Any request still carrying it gets a 401, and the app throws the fresh token away and shows the login screen. Reproduced.</li>
+  <li><span class="badge medium">Medium</span> <b>QA-204</b> One write that keeps failing with 5xx blocks every later write. While the phone is online, nothing on screen says writes are waiting. Reproduced: 55 attempts, 0 writes landed.</li>
+  <li><span class="badge medium">Medium</span> <b>QA-203</b> An offline edit queued after “bring old tasks into today” is silently dropped by last-write-wins. Reproduced.</li>
+  <li><span class="badge medium">Medium</span> <b>QA-208</b> The assistant still sets budgets, and edits bill, goal and event amounts, without asking for confirmation. <code>set_budget</code> also has no Undo.</li>
+</ol>
+</div>
+
+<!-- ============ 2. SCOPE & METHOD ============ -->
+<div class="section">
+<h2>2. Scope &amp; method</h2>
+<h3>What was reviewed</h3>
+<ul>
+  <li><b>Intent:</b> PRODUCT.md, DESIGN.md, README.md, docs/IMPLEMENTATION_PLAN.md (including the new scope decisions) and the spec (via <code>_raw/spec.txt</code>). Requirements were carried over from round 1 and re-checked in section 4.</li>
+  <li><b>Round-1 re-verification:</b> each of QA-001 to QA-026 was re-checked against the current code. Where a script could reproduce it, the round-1 reproduction was run again (section 3).</li>
+  <li><b>Fresh audit, focused on new code:</b> the outbox (<code>outbox-policy.ts</code>, <code>outbox-queue.ts</code>, <code>outbox.ts</code>), sessions (<code>auth.ts</code>, <code>session.ts</code>, <code>http.ts</code>; API <code>auth/routes.ts</code>, <code>middleware/auth.ts</code>, <code>db/sessions.ts</code>), encryption at rest (<code>encrypted-storage.ts</code>, <code>secure-storage.ts</code>, <code>query-client.ts</code>), <code>/sync/changes</code> (API route, <code>sync-changes.ts</code>, <code>sync-paths.ts</code>), assistant money drafts and recovery (<code>tools.ts</code>, <code>agent.ts</code>, <code>routes.ts</code>, <code>money-drafts.ts</code>, <code>use-assistant.ts</code>, <code>recover-turn.ts</code>, <code>recovered-actions.ts</code>), migrations 0003–0005 and <code>db/client.ts</code>, idempotent endpoints (recurring pay, timer, checkout, restore, goals, debts, balance check), Bangla digit parsing (<code>digits.ts</code>, <code>calculator.ts</code>, <code>money.ts</code>, <code>quick-add.ts</code>), the scheduler, app lock, notifications, widget, Today date rollover and the time-entry service.</li>
+</ul>
+<h3>Commands and evidence</h3>
+<table>
+  <thead><tr><th style="width:36%">Command</th><th>Result</th><th style="width:20%">Source</th></tr></thead>
+  <tbody>
+    <tr><td><code>bunx biome check apps packages *.json .github</code></td><td>484 files, exit 0</td><td>_raw/lint.txt</td></tr>
+    <tr><td><code>bun run typecheck</code></td><td>shared / api / mobile exit 0</td><td>_raw/typecheck.txt</td></tr>
+    <tr><td><code>bun run test</code></td><td>568 pass, 0 fail (shared 237, mobile 165, api 166)</td><td>_raw/test.txt</td></tr>
+    <tr><td>coverage per workspace</td><td>api 93.8% lines, shared 96.1%, mobile 92.1% (pure modules only)</td><td>_raw/coverage-*.txt</td></tr>
+    <tr><td><code>bun audit</code></td><td>6 advisories (2 high, 4 moderate), all transitive via Expo, Tailwind or drizzle-kit</td><td>_raw/audit.txt</td></tr>
+    <tr><td>QA probes (Bun, run from apps/api or apps/mobile): <code>shared-probe.ts</code>, <code>api-probe.ts</code>, <code>api-probe2.ts</code>, <code>refresh-race.ts</code>, <code>tz-probe.ts</code>, <code>migrate-probe.ts</code>, <code>unhandled.ts</code></td><td>The project's own modules: <code>createTestContext</code> (in-memory SQLite, injected clock), the real mobile <code>OutboxQueue</code> and <code>http.ts</code>, and the real migrations. Upload and backup folders pointed inside <code>_qa_tmp/</code>. Output is in Appendix B.</td><td>_qa_tmp/ (deleted afterwards)</td></tr>
+  </tbody>
+</table>
+<h3>What could not be verified (marked <span class="unv">Unverified</span> where it matters)</h3>
+<ul>
+  <li><b>Anything that needs a device.</b> Sign-in is Google-only, and the only emulator image has no Play services, so nothing ran on a phone. This covers the app lock on a real cold start, whether the lock overlay covers an open form sheet or full-screen modal, notifications firing and quiet hours, the widget and launcher shortcuts, the biometric prompt, and Android Keystore behaviour (QA-206). It also covers AsyncStorage's 6 MB database and 2 MB-per-row limits with the encrypted cache, whether a Bangla keyboard's number pad types Bangla digits (QA-215), cold-start ordering of token versus outbox load (QA-207), clock skew (QA-212) and the recovery of a dropped assistant stream (QA-210). These were judged by reading the code.</li>
+  <li><b>QA-202 timing.</b> The race was reproduced with the real <code>http.ts</code> against the in-memory API, with a 300 ms delay on the refresh reply. How often it happens on a real mobile network was not measured.</li>
+  <li><b>QA-201 under pm2.</b> The restart loop is inferred. It rests on two observed facts: the scheduler's rejection is unhandled (reproduced), and Bun 1.3.11 exits with code 1 on an unhandled rejection (<code>unhandled.ts</code>). Restart-on-exit is pm2's default. pm2 and Nginx were not run.</li>
+  <li><b>AI.</b> No real OpenAI calls were made. The API path an assistant <code>update_settings</code> call takes was reproduced. Whether a given model would emit an invalid zone name such as “Dhaka” was not.</li>
+  <li>The screenshots in docs/screenshots predate the fixes and were not used as evidence.</li>
+</ul>
+</div>
+
+<!-- ============ 3. ROUND-1 STATUS ============ -->
+<div class="section">
+<h2>3. Round-1 findings status</h2>
+<p class="small">“Re-run” means the round-1 reproduction was run again at df29d67 and now gives the expected result. Line references are at df29d67.</p>
+<table>
+  <thead><tr><th style="width:10%">ID</th><th style="width:7%">Sev.</th><th style="width:22%">Round-1 title (short)</th><th style="width:11%">Status</th><th>Evidence at df29d67</th></tr></thead>
+  <tbody>
+    <tr><td style="white-space:nowrap">QA-001</td><td><span class="badge critical">C</span></td><td>Outbox gives up after 3 retries / on 5xx</td><td><span class="st st-ok">Fixed</span></td><td>Own persisted queue. <code>outbox-policy.ts:L68-L77</code> retries unreachable, 5xx, 408 and 429 forever with a backoff capped at 1 min (L46-L48). Entries are saved until accepted (<code>outbox-queue.ts</code> persist and load). Tested in outbox-queue.test.ts. Residual visibility gap: QA-204.</td></tr>
+    <tr><td style="white-space:nowrap">QA-002</td><td><span class="badge critical">C</span></td><td>Offline create then edit loses the edit</td><td><span class="st st-part">Partially fixed</span></td><td>Re-run through the real OutboxQueue: create plus 2 edits offline, replayed 2 h later, keeps both edits (Appendix B). <code>followCreatedRecords</code> lifts queued PATCHes to the reply's stamp. The server still compares the phone's edit time with its own processing time, and bulk endpoints aren't followed: QA-203.</td></tr>
+    <tr><td style="white-space:nowrap">QA-003</td><td><span class="badge high">H</span></td><td>Expired session / sign-out wipes the queue</td><td><span class="st st-ok">Fixed</span></td><td>401 calls <code>expireSession()</code> (auth.ts), which keeps the profile and queue. Wipe happens only when a different user signs in (<code>mustWipeBeforeSignIn</code>). Sign-out asks first, with the pending count (<code>confirm-sign-out.ts</code>). Sliding refresh added. The refresh itself has a new race: QA-202.</td></tr>
+    <tr><td style="white-space:nowrap">QA-004</td><td><span class="badge high">H</span></td><td>Offline timer records reconnect time</td><td><span class="st st-ok">Fixed</span></td><td>Re-run: start sent 2 h late with <code>startedAt</code> gives 201; stop by id gives a 45 min entry; a replayed stop gives 200. Focus still uses the raw phone clock: QA-212.</td></tr>
+    <tr><td style="white-space:nowrap">QA-005</td><td><span class="badge low">L</span></td><td>Retried actions not idempotent</td><td><span class="st st-ok">Fixed</span></td><td><code>crud.ts:L182-L199</code> repeat delete and restore return the row. Checkout replays by <code>transactionId</code>. Stop replays by id or window. idempotency.test.ts.</td></tr>
+    <tr><td style="white-space:nowrap">QA-006</td><td><span class="badge low">L</span></td><td>/sync/changes unused</td><td><span class="st st-ok">Fixed</span></td><td><code>sync-changes.ts</code> pulls on start, reconnect and foreground, and refreshes only the screens touched (<code>sync-paths.ts</code>). Updated-at indexes in 0005.</td></tr>
+    <tr><td style="white-space:nowrap">QA-007</td><td><span class="badge high">H</span></td><td>Replayed “Paid” advances due date twice</td><td><span class="st st-part">Partially fixed</span></td><td>Re-run: a replay with the same <code>transactionId</code> and a double tap with <code>dueAt</code> both leave next due on 2026-11-05 with one expense. Remaining: a foreign bill paid from Today is still sent without a rate (QA-213), and assistant pay drafts have no <code>dueAt</code> (QA-209).</td></tr>
+    <tr><td style="white-space:nowrap">QA-008</td><td><span class="badge high">H</span></td><td>Rollover stops after first inherited month</td><td><span class="st st-ok">Fixed</span></td><td>Re-run with budgets set once in September: carried 300k / 600k / 900k for Oct / Nov / Dec. budgets.test.ts.</td></tr>
+    <tr><td style="white-space:nowrap">QA-009</td><td><span class="badge medium">M</span></td><td>USD spending counted as taka</td><td><span class="st st-ok">Fixed</span></td><td>Re-run: a $50 expense leaves leftToday unchanged (21400 → 21400). The client's optimistic update still subtracts it until refetch (QA-213, Low).</td></tr>
+    <tr><td style="white-space:nowrap">QA-010</td><td><span class="badge low">L</span></td><td>1850/3 saves ৳616.67</td><td><span class="st st-ok">Fixed</span></td><td><code>expressionToMinor("1850/3")</code> = 61700 (<code>calculator.ts:L140-L150</code>).</td></tr>
+    <tr><td style="white-space:nowrap">QA-011</td><td><span class="badge high">H</span></td><td>Bangla digits not parsed</td><td><span class="st st-ok">Fixed</span></td><td>Re-run: “চা ২০” gives an expense of ৳20. “রিকশা ৬০ bkash” gives ৳60 from bKash. “২h thesis” gives 120 min. <code>parseAmountToMinor("২৫০")</code> = 25000. Edge cases: QA-214.</td></tr>
+    <tr><td style="white-space:nowrap">QA-012</td><td><span class="badge medium">M</span></td><td>“weekly report” becomes repeating</td><td><span class="st st-ok">Fixed</span></td><td>Re-run: “submit weekly report” is a one-off task that keeps its title. “read chapter 5” is a task, not ৳5. A bare edge word is a <i>low</i>-confidence guess (<code>quick-add.ts</code> takeRecurrence).</td></tr>
+    <tr><td style="white-space:nowrap">QA-013</td><td><span class="badge medium">M</span></td><td>Today doesn't roll over at midnight</td><td><span class="st st-ok">Fixed</span></td><td>Query key includes the local date (<code>queries.ts:L76-L89</code>). A midnight timer and foreground both update it, and a “Showing &lt;date&gt;” line appears when the data is older (<code>(tabs)/index.tsx:L60-L63</code>). <span class="unv">Unverified</span> on device.</td></tr>
+    <tr><td style="white-space:nowrap">QA-014</td><td><span class="badge low">L</span></td><td>Never-occurring rules pass validation</td><td><span class="st st-ok">Fixed</span></td><td>Re-run: “every month on the 0th” no longer yields BYMONTHDAY=0, and <code>rruleSchema</code> rejects it (<code>recurrence.ts:L107-L128</code>).</td></tr>
+    <tr><td style="white-space:nowrap">QA-015</td><td><span class="badge medium">M</span></td><td>Undo completion leaves duplicate</td><td><span class="st st-ok">Fixed</span></td><td>Re-run: one open copy remains, with FREQ=DAILY. Undo uses <code>next_id</code> (migration 0003; <code>tasks/service.ts:L271-L284</code>).</td></tr>
+    <tr><td style="white-space:nowrap">QA-016</td><td><span class="badge medium">M</span></td><td>Undo delete loses subtasks</td><td><span class="st st-ok">Fixed</span></td><td>Re-run: 2 subtasks are back after Undo (<code>tasks/service.ts:L298-L316</code>).</td></tr>
+    <tr><td style="white-space:nowrap">QA-017</td><td><span class="badge high">H</span></td><td>App lock skipped on cold start</td><td><span class="st st-ok">Fixed</span></td><td>The device copy of the setting decides before settings load, and the screen is covered while it is read (<code>app-lock.tsx:L29-L34, L58-L60</code>). The first start after an update, with no device copy yet, waits for settings. <span class="unv">Unverified</span> on device.</td></tr>
+    <tr><td style="white-space:nowrap">QA-018</td><td><span class="badge low">L</span></td><td>Login limit and bind address</td><td><span class="st st-ok">Fixed</span></td><td>HOST defaults to 127.0.0.1 (<code>env.ts:L6</code>). The limit is 5 per 15 min. X-Real-IP is trusted only from loopback with TRUST_PROXY (<code>client-ip.ts</code>), as documented in the README.</td></tr>
+    <tr><td style="white-space:nowrap">QA-019</td><td><span class="badge medium">M</span></td><td>Assistant saves without confirmation; cap per turn</td><td><span class="st st-part">Partially fixed</span></td><td>Money drafts for transactions, accounts, debts, pay, contribute, repay, balance check and checkout. The cap is checked before every model call. The owner staying uncapped is a recorded scope decision. Budgets and other money fields still bypass drafts: QA-208.</td></tr>
+    <tr><td style="white-space:nowrap">QA-020</td><td><span class="badge medium">M</span></td><td>AI calls outlive Nginx; bad output gives 500</td><td><span class="st st-ok">Fixed</span></td><td><code>/ai/</code> gets <code>proxy_read_timeout 120s</code>. A schema mismatch gives 502 ai_error (<code>usage.ts:L140-L153</code>).</td></tr>
+    <tr><td style="white-space:nowrap">QA-021</td><td><span class="badge low">L</span></td><td>Assistant keeps writing after stream drop</td><td><span class="st st-ok">Fixed</span></td><td>An abort signal stops the loop (<code>routes.ts</code>, <code>agent.ts</code>). The phone recovers changes via /sync/changes, with a new attribution gap: QA-210.</td></tr>
+    <tr><td style="white-space:nowrap">QA-022</td><td><span class="badge medium">M</span></td><td>Reminder gaps; silent permission denial</td><td><span class="st st-part">Partially fixed</span></td><td>Tasks are picked by <code>reminderAt</code> (<code>reminder-window.ts</code>). A banner shows with “Open settings”, and errors appear in Settings. Remaining (Low, not re-raised): reminders are still rescheduled only when the app opens (8-day lookahead), with no background task.</td></tr>
+    <tr><td style="white-space:nowrap">QA-023</td><td><span class="badge low">L</span></td><td>No job catch-up</td><td><span class="st st-ok">Fixed</span></td><td>A job is due when past its hour and not yet run today, plus a catch-up 10 s after start (<code>scheduler.ts</code>). That same catch-up is how QA-201 turns into a restart loop.</td></tr>
+    <tr><td style="white-space:nowrap">QA-024</td><td><span class="badge low">L</span></td><td>SMS listed but missing</td><td><span class="st st-ok">Fixed</span></td><td>IMPLEMENTATION_PLAN.md marks SMS as <i>dropped</i>, with the reason. The spec PDF itself is unchanged.</td></tr>
+    <tr><td style="white-space:nowrap">QA-025</td><td><span class="badge medium">M</span></td><td>Outbox, Bangla and replay edge cases untested</td><td><span class="st st-ok">Fixed</span></td><td>outbox-policy and outbox-queue tests, Bangla quick-add table tests, timer-replay, task-undo, idempotency, budgets and migration tests. New gaps: QA-211.</td></tr>
+    <tr><td style="white-space:nowrap">QA-026</td><td><span class="badge low">L</span></td><td>Coverage numbers unreliable</td><td><span class="st st-part">Partially fixed</span></td><td>Shared's own run now reports 100% for dates and money. The api and mobile runs still show <code>shared/src/dates.ts</code> at 6.47% and 0% lines (Bun mapping). Residual is Low, not re-raised.</td></tr>
+  </tbody>
+</table>
+<p><b>Tally:</b> 21 fixed, 5 partially fixed, 0 not fixed, 0 regressed.</p>
+</div>
+
+<!-- ============ 4. TRACEABILITY ============ -->
+<div class="section">
+<h2>4. Requirements traceability</h2>
+<p class="small">Requirements come from the spec's build checklist and technical rules, plus PRODUCT.md, carried over from round 1. Status: <span class="st st-ok">Implemented</span> <span class="st st-part">Partial</span> <span class="st st-miss">Missing</span> <span class="st st-broken">Broken</span>. “Implemented” means the code path exists and is tested or was read end to end. It does not mean it was run on a device.</p>
+<table>
+  <thead><tr><th style="width:27%">Requirement</th><th style="width:30%">Implementation</th><th style="width:12%">Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Sign-in, sessions, per-user SQLite + migrations</td><td>auth/routes.ts, middleware/auth.ts, db/sessions.ts, db/client.ts</td><td><span class="st st-part">Partial</span></td><td>Sessions are revocable and sliding. The refresh race signs users out (QA-202). Migration 0004 aborts on legacy rows (QA-201).</td></tr>
+    <tr><td>Auth on every protected route</td><td>app.ts, requireAuth</td><td><span class="st st-ok">Implemented</span></td><td>Reproduced by sweeping every route without a token. Only /health, /, /privacy, /terms and /auth/google don't answer 401.</td></tr>
+    <tr><td>Offline cache + queued writes in order</td><td>outbox-*.ts, query-client.ts, secure-storage.ts</td><td><span class="st st-part">Partial</span></td><td>Core works. Gaps: a stuck head blocks the queue invisibly (QA-204), cold-start idle (QA-207), widget side queue (QA-205).</td></tr>
+    <tr><td>Conflicts: last write wins on updated_at</td><td>crud.ts:L170-L180, outbox-policy.ts:L95-L124</td><td><span class="st st-part">Partial</span></td><td>Edits after bulk moves are dropped (QA-203). Clock offset isn't persisted (QA-212).</td></tr>
+    <tr><td>GET /sync/changes</td><td>sync/routes.ts, sync-changes.ts</td><td><span class="st st-ok">Implemented</span></td><td>Pulled on start, reconnect and foreground. Deletions included.</td></tr>
+    <tr><td>Quick-add (Bangla + English)</td><td>shared/quick-add.ts, digits.ts, calculator.ts</td><td><span class="st st-ok">Implemented</span></td><td>Bangla digits and currency words work. Multi-amount lines and a trailing danda are mishandled (QA-214).</td></tr>
+    <tr><td>Tasks, subtasks, repeat on completion, undo</td><td>tasks/service.ts</td><td><span class="st st-ok">Implemented</span></td><td>Undo is lossless (re-run).</td></tr>
+    <tr><td>Recurrence in plain words</td><td>shared/recurrence.ts</td><td><span class="st st-ok">Implemented</span></td><td>Ranges and reachability are validated.</td></tr>
+    <tr><td>Overdue rescue, does-my-day-fit, evening, someday</td><td>tasks/service.ts:L321-L430, bulk-move.ts</td><td><span class="st st-ok">Implemented</span></td><td>Undo names the moved tasks. Offline edit after a move is lost (QA-203).</td></tr>
+    <tr><td>Focus timer / time tracking</td><td>time-entries/service.ts, focus-screen.tsx</td><td><span class="st st-ok">Implemented</span></td><td>Replays are safe. Focus uses the raw phone clock (QA-212).</td></tr>
+    <tr><td>Habits, streaks, freezes; routines</td><td>habits/*, routines/*</td><td><span class="st st-ok">Implemented</span></td><td>Bangla digits ignored in the target field (QA-215).</td></tr>
+    <tr><td>Accounts, computed balances, balance check</td><td>accounts/service.ts</td><td><span class="st st-ok">Implemented</span></td><td>Balance check is idempotent by id.</td></tr>
+    <tr><td>Budgets: buckets, rollover; safe to spend</td><td>budgets/service.ts, shared/finance.ts</td><td><span class="st st-ok">Implemented</span></td><td>Rollover through inherited months. Foreign currency is excluded server-side.</td></tr>
+    <tr><td>Bills, “Paid” creates transaction</td><td>recurring/service.ts:L95-L160</td><td><span class="st st-ok">Implemented</span></td><td>Idempotent with transactionId and dueAt. Foreign bill on Today (QA-213), assistant draft (QA-209).</td></tr>
+    <tr><td>Goals, debts, calculator keypad, events, shopping</td><td>goals/, debts/, calculator.ts, events/, shopping/</td><td><span class="st st-ok">Implemented</span></td><td>1850/3 saves ৳617.</td></tr>
+    <tr><td>SMS auto-capture</td><td>—</td><td><span class="st st-miss">Missing</span></td><td>Dropped by a recorded decision.</td></tr>
+    <tr><td>Widget, launcher shortcuts</td><td>features/widget, use-app-shortcuts.ts</td><td><span class="st st-ok">Implemented</span> <span class="unv">Unverified</span></td><td>Offline widget logs bypass the outbox (QA-205).</td></tr>
+    <tr><td>Local notifications, quiet hours, bill reminder</td><td>features/notifications/*</td><td><span class="st st-part">Partial</span></td><td>Rescheduled only on app open (QA-022 residual).</td></tr>
+    <tr><td>Nightly backup (keep 14), JSON export</td><td>jobs/backup.ts, scheduler.ts, sync/routes.ts</td><td><span class="st st-part">Partial</span></td><td>Backups are checked and caught up. One bad user stops every user's jobs and crashes the server (QA-201).</td></tr>
+    <tr><td>Fingerprint lock after 5 min; privacy mode</td><td>app-lock.tsx, lock-decision.ts</td><td><span class="st st-ok">Implemented</span> <span class="unv">Unverified</span></td><td>Locks on cold start.</td></tr>
+    <tr><td>Data at rest protected</td><td>encrypted-storage.ts, secure-storage.ts</td><td><span class="st st-ok">Implemented</span></td><td>AES-GCM with the key in the Keystore. Plain-text fallback and delete-on-decrypt-failure (QA-206). Widget data is plain (QA-205).</td></tr>
+    <tr><td>Login 5 / 15 min; API on 127.0.0.1</td><td>auth/routes.ts:L34, env.ts:L6</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+    <tr><td>AI features with graceful fallback</td><td>api/modules/ai/*</td><td><span class="st st-ok">Implemented</span></td><td>Timeouts and schema errors give 502 ai_error.</td></tr>
+    <tr><td>AI never saves (money) without confirmation; cost cap</td><td>assistant/tools.ts, usage.ts</td><td><span class="st st-part">Partial</span></td><td>Budget and other money fields bypass drafts (QA-208).</td></tr>
+    <tr><td>Account deletion</td><td>DELETE /auth/account, Settings</td><td><span class="st st-ok">Implemented</span></td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============ 5. FINDINGS ============ -->
+<div class="section">
+<h2>5. Findings</h2>
+<p class="small">Grouped by category, and categories are ordered by their worst finding. <span class="rep">Reproduced</span> means a Bun script calling the project's own code produced the output shown; full output is in Appendix B.</p>
+
+<h3>5.1 Server &amp; scheduled jobs</h3>
+
+<div class="finding">
+<h4>QA-201 · One user's bad data takes the whole API down: an invalid time zone or a database that won't open crashes the job runner, and the server restart-loops</h4>
+<div class="meta"><span class="badge critical">Critical</span><span>Category: Server / availability / security</span><span>Effort: S</span><span class="rep">Reproduced</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/jobs/scheduler.ts:L36-L65</code> (loop), <code>:L71-L85</code> (startJobs). <code>packages/shared/src/schemas/settings.ts:L24</code> (<code>timeZone: z.string()</code>). <code>apps/api/src/modules/ai/assistant/tools.ts:L517-L521</code> (<code>update_settings</code> forwards any fields, no Undo). <code>apps/api/src/db/client.ts:L28-L33</code> plus <code>drizzle/0004_constraints.sql</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> In <code>runHourlyJobs</code> only <code>job.run()</code> is inside a try/catch. Opening the user's database (<code>deps.users.lease</code>, which also runs migrations), <code>readSettings</code> and <code>localParts(now, timeZone)</code> run inside a <code>try { } finally { }</code> with no catch, so any throw rejects the whole run. <code>startJobs</code> calls <code>tick()</code> from croner with no <code>catch</code> option, so croner rethrows. It also calls it from a <code>setTimeout</code> 10 s after start as <code>void tick()</code>. Nothing handles that rejection, and Bun exits with code 1. pm2 restarts the process, the catch-up runs 10 s later, and it crashes again.</p>
+<p class="kv">There are two reproduced triggers:</p>
+<ol>
+<li><b>Invalid time zone.</b> <code>timeZone</code> accepts any string, so <code>PATCH /settings {"timeZone":"Dhaka"}</code> answers 200. After that, this user's <code>/today</code> and <code>/budgets/safe-to-spend</code> answer 500, and <code>runHourlyJobs</code> rejects with <code>RangeError: invalid time zone</code>. Saying “set my time zone to Dhaka” to the assistant takes the same path. The app has no screen to change it back. The assistant can't fix it either, because it reads the time zone itself at the start of every turn.</li>
+<li><b>A database that won't open.</b> Migration 0004 rebuilds tables with new CHECKs and aborts on any old row that breaks one, even a soft-deleted row. The round-1 <code>transactionUpdateSchema</code> allowed <code>amountMinor: 0</code>, so such rows can exist.</li>
+</ol>
+<pre><code>// scheduler.ts L38-L63 (trimmed)
+for (const user of deps.users.list()) {
+  await yieldToRequests();
+  const lease = deps.users.lease(user);              // opens + migrates: may throw
+  try {
+    runAsUser({ user, data }, () => {
+      const timeZone = readSettings(data.db).timeZone;
+      const { hour } = localParts(now, timeZone);    // RangeError on "Dhaka"
+      for (const job of JOBS) { try { job.run(...) } catch (error) { log(...) } }
+    });
+  } finally { lease.release({ closeIfOpened: true }); }   // no catch
+}
+// L80-L81
+const job = new Cron("5 * * * *", { name: "per-user-jobs" }, tick);   // no catch option
+const catchUp = setTimeout(() => void tick(), 10_000);</code></pre>
+<pre><code>PATCH /settings {timeZone:'Dhaka'} -> 200
+GET /today -> 500   GET /budgets/safe-to-spend -> 500   GET /tasks -> 200
+other user GET /today -> 200
+runHourlyJobs rejected: RangeError invalid time zone: Dhaka
+unhandled.ts (same tick() shape, rejecting): error ... exit code 1
+0004 on a DB holding one soft-deleted 0-amount expense:
+  openDatabase threw ... CHECK constraint failed: transactions_amount_check</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> One request from any signed-in account takes the service down for every user, and backups stop running because they live in the same loop. It is a denial-of-service hole as well as a crash. The affected user is also locked out of Today with no way to recover in the app.</p>
+<p class="kv"><span class="label">Recommendation:</span></p>
+<ol>
+<li>Validate <code>timeZone</code> as a real IANA zone, for example <code>z.string().refine(tz =&gt; { try { new Intl.DateTimeFormat("en", { timeZone: tz }); return true } catch { return false } })</code>. Have <code>readSettings</code> fall back to the default when a stored value is invalid.</li>
+<li>In the job loop, wrap each user's whole body (lease included) in try/catch, then log and continue.</li>
+<li>Add <code>.catch(log)</code> to <code>tick()</code> and <code>catch: true</code> to the Cron.</li>
+<li>Add a <code>process.on("unhandledRejection")</code> logger as a backstop.</li>
+<li>Allow-list the keys <code>update_settings</code> may change, and give it an Undo.</li>
+<li>Before rebuilding tables in 0004, repair or log rows that would fail the new CHECKs.</li>
+</ol>
+</div>
+
+<h3>5.2 Sessions</h3>
+
+<div class="finding">
+<h4>QA-202 · Refreshing the session signs the user out when another request still carries the old token</h4>
+<div class="meta"><span class="badge high">High</span><span>Category: Auth / session</span><span>Effort: S–M</span><span class="rep">Reproduced</span> <span class="unv">Unverified on a real network</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/auth/routes.ts:L60-L65</code> (revoke in the same request). <code>apps/mobile/src/lib/http.ts:L45-L54</code> (401 hook). <code>apps/mobile/src/lib/auth.ts:L41-L56</code> (refresh on start), <code>:L80-L91</code> (saveSession awaits 3 SecureStore writes before setting the token), <code>:L150-L168</code> (refresh). <code>apps/api/test/sessions.test.ts:L47-L49</code> asserts the instant revoke.</p>
+<p class="kv"><span class="label">What's wrong:</span> The phone refreshes on every cold start and foreground once the token is a day old. That is exactly when the Today query, the <code>/sync/changes</code> pull and the outbox all fire with the old token. The server revokes the old session inside <code>/auth/refresh</code>, so any of those requests that arrives afterwards gets <code>401 session_expired</code>. The ky hook sees the header still matches the current token, because the new one isn't stored yet, and calls <code>expireSession()</code>, which clears the token. When the refresh reply arrives, <code>tokenStore.get() === token</code> is false and the new token is discarded. The old session is already revoked, so the user lands on the login screen. A lost refresh reply (timeout, network switch) ends the same way.</p>
+<pre><code>// refresh-race.ts: real http.ts hooks against the in-memory API, refresh reply delayed 300 ms
+onUnauthorized -> expireSession(): token cleared
+GET /today with the old token -> 401
+refresh reply 200; tokenStore === old token? false -> DISCARDED
+signed in afterwards: false
+// server alone: refresh 200 | old token after refresh: 401 session_expired | new token: 200</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> Nothing is lost, because the queue is kept. But a daily user is sent back to Google sign-in whenever the race hits, and sign-in needs a network and Play services. Offline-first stops working until they sign in. It undoes much of the value of the QA-003 fix.</p>
+<p class="kv"><span class="label">Recommendation:</span></p>
+<ul>
+<li><b>Server:</b> keep the replaced session valid for a short grace period (for example <code>revoked_at = now + 2 min</code>, or until the new jti is first used).</li>
+<li><b>Client:</b> while <code>refreshing</code> is pending, make <code>beforeRequest</code> await it, and ignore a 401 for the token being refreshed. Set the new token in memory before the SecureStore writes. Add a test with a 401 arriving mid-refresh.</li>
+</ul>
+</div>
+
+<h3>5.3 Offline sync &amp; local storage</h3>
+
+<div class="finding">
+<h4>QA-203 · An edit queued after a bulk move is silently discarded on replay</h4>
+<div class="meta"><span class="badge medium">Medium</span><span>Category: Offline / last-write-wins</span><span>Effort: M</span><span class="rep">Reproduced</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/lib/crud.ts:L170-L180</code>. <code>apps/api/src/modules/tasks/service.ts:L321-L372</code> (<code>rescueOverdue</code>), <code>:L383-L430</code> (<code>moveLowPriority</code>). <code>apps/mobile/src/lib/outbox-policy.ts:L95-L124</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> The server keeps an edit only if the phone's edit time is not older than the row's <code>updatedAt</code>, and it stamps every write with the time it is <i>processed</i>. The round-1 fix (<code>followCreatedRecords</code>) lifts queued PATCHes to that stamp, but only when the reply contains the row with <code>id</code> and <code>updatedAt</code>, at the top level or one level down. <code>rescue-overdue</code> replies <code>{ moved: number, before: [...] }</code> without <code>updatedAt</code>. <code>move-low-priority</code> replies with an array, which <code>stampedRows</code> doesn't walk. So if you go offline, tap “bring old tasks into today” and then rename one of them, the rename replays with an older time than the move. The server answers 200 and leaves the row unchanged.</p>
+<pre><code>NEW bulk-then-edit: rescue-overdue then rename offline, replay 2h later -> title: "Call bank"
+  POST /tasks/rescue-overdue -> 200 | PATCH /tasks/01M48T... -> 200   (rename to "Call bank about card" lost)</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> This is silent loss of a user edit, the same class as round-1 QA-002 with a narrower trigger. The morning “bring old tasks into today” tap is a common first action.</p>
+<p class="kv"><span class="label">Recommendation:</span> Compare like with like. Store the client's last edit time separately from the server's <code>updatedAt</code>, and let a PATCH win over server-side bulk changes made before it was tapped. Failing that, have bulk endpoints return the stamped rows and teach <code>stampedRows</code> to walk arrays. Add an outbox-plus-API replay test.</p>
+</div>
+
+<div class="finding">
+<h4>QA-204 · A write the server keeps failing blocks every later write, and nothing on screen says so while the phone is online</h4>
+<div class="meta"><span class="badge medium">Medium</span><span>Category: Offline / error visibility</span><span>Effort: M</span><span class="rep">Reproduced</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/lib/outbox-policy.ts:L68-L77</code>. <code>apps/mobile/src/lib/outbox-queue.ts:L160-L190</code>. <code>apps/mobile/src/components/ui/sync-status.tsx:L14</code> (<code>if (online) return null</code>). <code>apps/api/src/middleware/error-handler.ts:L20-L33</code> (CHECK violations become 500). <code>apps/mobile/src/lib/sync-changes.ts:L51</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> The queue is strictly ordered and retries 5xx forever, which is the right default. But when one request fails deterministically with 5xx, the head entry retries every minute forever and every later write waits behind it. That happens on a server bug, or on a SQLite CHECK violation, which the error handler maps to 500 instead of 400. The <code>/sync/changes</code> pull also waits for an empty queue, so remote changes stop arriving too. The only pending indicator is hidden whenever the phone is online, so neither this case nor the round-1 scenario (Wi-Fi up, API down) is visible. There's no way to see, retry or discard a stuck write.</p>
+<pre><code>HEAD-OF-LINE (real OutboxQueue + API): PATCH /events {startsOn after endsOn} -> 500
+  (CHECK constraint failed: events_range_check), then a ৳20 expense queued behind it:
+  failed attempts 55 | queue size 2 | landed: [] | policy for 500: retry</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> The user believes their expenses are saved (“Saved on this phone. It'll sync…”). They may sit on one phone indefinitely while the server's numbers and backups drift.</p>
+<p class="kv"><span class="label">Recommendation:</span></p>
+<ul>
+<li>Map <code>SQLITE_CONSTRAINT_CHECK</code> and <code>NOTNULL</code> to 400 <code>validation_error</code>.</li>
+<li>Show a pending chip whenever <code>outbox.size &gt; 0</code>, online or not, and a “needs attention” state once the head entry has failed N times. Let the user retry or discard it there.</li>
+<li>Consider parking an entry after N identical 5xx failures so later writes can go.</li>
+</ul>
+</div>
+
+<div class="finding">
+<h4>QA-205 · Expenses logged from the widget wait in a second, plain-text queue that the app doesn't count or protect</h4>
+<div class="meta"><span class="badge low">Low</span><span>Category: Widget / offline</span><span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/features/widget/widget-task-handler.tsx:L17-L51</code>. <code>widget-cache.ts:L35-L68</code>. <code>use-widget-sync.tsx:L41-L49</code>. <code>lib/user-data.ts:L16-L33</code>. <code>features/settings/confirm-sign-out.ts</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span></p>
+<ul>
+<li>Offline widget taps go to <code>tt.widget-pending</code> in plain AsyncStorage (note, amount, account), outside the encrypted outbox.</li>
+<li>They aren't counted in <code>outbox.size</code>, so the sign-out warning reports 0 unsynced changes, and <code>clearUserData</code> deletes them.</li>
+<li>The hand-over is read → enqueue → <code>writePendingLogs([])</code>, so a widget tap landing in between is lost.</li>
+<li>The widget cache (left-to-spend, next task title) is also plain text, unlike the “encrypted at rest” claim in <code>secure-storage.ts</code>.</li>
+</ul>
+<p class="kv"><span class="label">Recommendation:</span> Count pending widget logs in the sign-out check. Remove only the ids that were enqueued. Store the widget data through <code>secureStorage</code>, which the headless task can also read, or document the exception.</p>
+</div>
+
+<div class="finding">
+<h4>QA-206 · A stored value that fails to decrypt is deleted (including the offline queue), and encryption silently falls back to plain text</h4>
+<div class="meta"><span class="badge low">Low</span><span>Category: Storage / encryption</span><span>Effort: S</span><span class="unv">Unverified</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/lib/encrypted-storage.ts:L36-L55</code>. <code>apps/mobile/src/lib/secure-storage.ts:L11-L23</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> Any decrypt error removes the value. That is right for a key lost to a Keystore reset. But the same path runs if <code>SecureStore.getItemAsync</code> throws once: <code>storageKey()</code> rejects, decrypt throws, and the queued writes are deleted without a message. If the key can't be stored at all, every value is written in plain text with no log or flag.</p>
+<p class="kv"><span class="label">Recommendation:</span> Separate “wrong or missing key” (delete) from “key store unavailable” (keep, retry later). For the outbox, move undecryptable data aside and tell the user. Log the plain-text fallback.</p>
+</div>
+
+<div class="finding">
+<h4>QA-207 · On a cold start the saved queue can sit idle if it finishes loading before the session token</h4>
+<div class="meta"><span class="badge low">Low</span><span>Category: Offline / start-up</span><span>Effort: S</span><span class="unv">Unverified</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/app/_layout.tsx:L78-L81</code>. <code>lib/auth.ts:L41-L56</code>. <code>lib/outbox-queue.ts:L85-L101, L160-L165</code>. <code>lib/outbox.ts:L37</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> <code>load()</code> kicks the queue once, and <code>canSend()</code> needs a token. <code>loadToken()</code> sets the token but never kicks the outbox; <code>saveSession</code> does, but that only runs on sign-in or refresh. Suppose the token is fresh (under 24 h, so no refresh) and the network and AppState don't change. If the outbox loads first, queued writes then wait until the next foreground or network change. It is timing-dependent, and the outbox read is usually the slower one.</p>
+<p class="kv"><span class="label">Recommendation:</span> Call <code>outbox.kick()</code> at the end of <code>loadToken()</code>, or subscribe the outbox to <code>tokenStore</code>.</p>
+</div>
+
+<h3>5.4 AI assistant</h3>
+
+<div class="finding">
+<h4>QA-208 · The assistant still changes budgets, and bill, goal and event amounts, without confirmation; <code>set_budget</code> has no Undo</h4>
+<div class="meta"><span class="badge medium">Medium</span><span>Category: AI / spec deviation</span><span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/ai/assistant/tools.ts:L53-L54</code> (<code>MONEY_ENTITIES = transaction, account, debt</code>), <code>:L476-L515</code> (<code>set_budget</code>). <code>prompts.ts:L55</code>. Spec p. 37. docs/IMPLEMENTATION_PLAN.md (“Assistant money writes are drafts”).</p>
+<p class="kv"><span class="label">What's wrong:</span> Drafting covers only three entities plus five actions. <code>set_budget</code> sends <code>PUT /budgets</code> straight away and records an action with no undo. It also writes <code>rollover: false</code> for the line it sets, which silently turns off a rollover the user had. Creates and edits of <code>bill</code> (amount), <code>goal</code> (target), <code>event</code> (budget), <code>shopping_item</code> (estimate) and <code>category</code> (<code>budgetType</code>, which moves a category in or out of safe-to-spend) also apply at once.</p>
+<pre><code>case "set_budget": {
+  ...
+  const budgets = Number(limitMinor) &gt; 0 ? [...kept, { categoryId, limitMinor, rollover: false }] : kept;
+  const result = await caller.call("PUT", "/budgets", { month, budgets });
+  actions.push({ summary: ... });          // no undo, no draft
+</code></pre>
+<p class="kv"><span class="label">Why it matters:</span> A misheard voice note (“৮০০০”) can change today's safe-to-spend number with no confirmation and no Undo. That contradicts the project's own scope decision.</p>
+<p class="kv"><span class="label">Recommendation:</span> Route <code>set_budget</code> and the money fields of these entities through <code>propose()</code>. Keep the line's current <code>rollover</code>. Give the draft an undo that re-PUTs the previous lines.</p>
+</div>
+
+<div class="finding">
+<h4>QA-209 · Saving an older “Pay a bill” draft pays the next period as well</h4>
+<div class="meta"><span class="badge medium">Medium</span><span>Category: AI / money idempotency</span><span>Effort: S</span><span class="rep">Reproduced (API)</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/api/src/modules/ai/assistant/tools.ts:L408-L425</code> (draft body: <code>transactionId</code>, no <code>dueAt</code>). <code>apps/api/src/modules/recurring/service.ts:L99-L112</code>. <code>apps/mobile/src/features/assistant/use-assistant.ts:L219-L235</code> (drafts stay <i>pending</i> in the saved chat).</p>
+<p class="kv"><span class="label">What's wrong:</span> The Today and bill-sheet buttons send <code>dueAt</code>, so a repeat changes nothing. The assistant's pay draft doesn't send it. Drafts stay pending in the chat with no expiry. Suppose the bill gets paid from Today, and later the user taps Save on the old draft. That logs a second expense and moves the due date another period, which is the round-1 QA-007 outcome by another route.</p>
+<pre><code>QA-007 pay: first 200 2026-11-05 | replay 200 2026-11-05 | double-tap(dueAt) 200 2026-11-05
+            | pay without dueAt (assistant draft shape) 200 2026-12-05 | expense rows: 2</code></pre>
+<p class="kv"><span class="label">Recommendation:</span> Put <code>dueAt: bill.nextDueAt</code> in the draft body (the tool can read the bill first). Expire or re-validate drafts on Save, for example by disabling Save when the bill's <code>nextDueAt</code> has moved.</p>
+</div>
+
+<div class="finding">
+<h4>QA-210 · After a dropped assistant turn, the phone's own queued writes can be listed as Tiki's changes, with an Undo that deletes them</h4>
+<div class="meta"><span class="badge low">Low</span><span>Category: AI / recovery</span><span>Effort: S</span><span class="unv">Unverified</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/features/assistant/use-assistant.ts:L152-L168</code>. <code>recover-turn.ts</code>. <code>recovered-actions.ts:L154-L182</code> (filter at L80).</p>
+<p class="kv"><span class="label">What's wrong:</span> Recovery treats every row created or changed between the turn's start and 3 min after it ended as the assistant's work. Streams drop when the connection is flaky, which is also when the outbox replays expenses logged offline. Those rows appear as “Added transaction … · Undo”, and Undo deletes a real expense.</p>
+<p class="kv"><span class="label">Recommendation:</span> Record assistant writes server-side, keyed by a turn id (for example a header the dispatcher adds), and recover from that log. Alternatively, exclude ids the outbox sent during the window.</p>
+</div>
+
+<h3>5.5 Testing</h3>
+
+<div class="finding">
+<h4>QA-211 · The new failure paths have no tests: refresh race, job isolation, settings validation, migration on legacy rows, bulk-then-edit replay, sync pull</h4>
+<div class="meta"><span class="badge medium">Medium</span><span>Category: Testing</span><span>Effort: M</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/test/</code> has no tests for <code>auth.ts</code> (refresh), <code>sync-changes.ts</code>, the glue in <code>outbox.ts</code> (<code>describe</code>, <code>applyOptimistic</code>), <code>use-assistant</code> or <code>recover-turn</code>, or the widget queue. <code>apps/api/test/sessions.test.ts:L47-L49</code> asserts the instant revoke that causes QA-202. No scheduler test has a user whose database or settings throw. <code>migrations.test.ts</code> seeds only rows that satisfy the new CHECKs. No test chains a bulk endpoint and a PATCH.</p>
+<p class="kv"><span class="label">Quality of what exists:</span> Good, and a big step up from 185 to 568 tests. The outbox tests drive the real queue through fakes. API tests use real routes with an injectable clock. Assertions check exact values (for example <code>carriedMinor: 550_000</code>, replay status and body equality). No flaky patterns were seen. Coverage covers pure modules well (mobile 92% of measured lines). React hooks and native glue are not measured.</p>
+<p class="kv"><span class="label">Why it matters:</span> Both the Critical and the High in this report sit in code no test reaches. The same was true in round 1.</p>
+<p class="kv"><span class="label">Recommendation:</span> Add the P0 and P1 cases in section 8.</p>
+</div>
+
+<h3>5.6 Money, time &amp; capture</h3>
+
+<div class="finding">
+<h4>QA-212 · Some tap times use the raw phone clock, so a phone running fast loses focus sessions and a slow one can lose offline edits</h4>
+<div class="meta"><span class="badge low">Low</span><span>Category: Time / clock skew</span><span>Effort: S</span><span class="unv">Unverified</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/features/focus/focus-screen.tsx:L44-L45, L92</code> (<code>Date.now()</code>). <code>apps/mobile/src/lib/server-clock.ts:L6-L17</code> (offset kept only in memory). <code>apps/api/src/modules/time-entries/service.ts:L19-L31</code> (rejects tap times more than 5 min in the future).</p>
+<p class="kv"><span class="label">What's wrong:</span> Focus start and stop use <code>Date.now()</code>, while every other write uses <code>editTime()</code>. The server-time offset is learned from responses and not persisted, so after an offline cold start <code>editTime()</code> is the raw phone clock too. Two consequences follow:</p>
+<ul>
+<li>A phone 6 min fast has its focus start rejected with 400 (dropped, with a toast), and the stop then gets 404.</li>
+<li>A phone a few minutes slow, edited offline after a cold start, loses last-write-wins against rows the server touched recently.</li>
+</ul>
+<p class="kv"><span class="label">Recommendation:</span> Use <code>editTime()</code> in focus. Persist the offset and restore it on start. On the server, clamp a slightly future tap time to <code>now</code> instead of rejecting it.</p>
+</div>
+
+<div class="finding">
+<h4>QA-213 · Foreign-currency spending still moves the taka safe-to-spend on screen, and Today's “Paid” sends foreign bills without a rate</h4>
+<div class="meta"><span class="badge low">Low</span><span>Category: Money / currency</span><span>Effort: S</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/lib/outbox.ts:L69-L80</code> (<code>applyOptimistic</code>). <code>lib/optimistic-spend.ts:L34-L50</code>. <code>features/today/next-up.tsx:L36-L47</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span></p>
+<ul>
+<li>The server now leaves foreign accounts out (QA-009 fixed), but the optimistic update subtracts any expense. A $50 card expense takes ৳50 off “left today” until the next refetch, and offline that lasts until reconnect.</li>
+<li>On Today, only foreign <i>income</i> opens the sheet. A USD bill whose account isn't in USD is posted straight to <code>/pay</code>, and the toast says “logged”. The server then answers 400 “Enter the USD → BDT rate”, and a second toast says it failed.</li>
+</ul>
+<p class="kv"><span class="label">Recommendation:</span> Skip the optimistic update when the account's currency isn't the default. Open the sheet for any item whose currency differs from its account's.</p>
+</div>
+
+<div class="finding">
+<h4>QA-214 · Quick-add saves only the last amount of a two-item line, and a trailing “।” turns a Bangla expense into a task</h4>
+<div class="meta"><span class="badge low">Low</span><span>Category: Capture / parser</span><span>Effort: S</span><span class="rep">Reproduced</span></div>
+<p class="kv"><span class="label">Where:</span> <code>packages/shared/src/quick-add.ts:L262-L330</code> (amount is the last token). <code>calculator.ts:L124-L127</code> (<code>isAmountExpression</code> has no <code>x</code>).</p>
+<pre><code>"চা ২০, সিঙ্গারা ১০"  {"kind":"expense","note":"চা ২০, সিঙ্গারা","amountMinor":1000,"confidence":"high"}
+"চা ২০।"              {"kind":"task","title":"চা ২০।","confidence":"low"}
+"lunch 2x150"         {"kind":"task","title":"Lunch 2x150","confidence":"high"}</code></pre>
+<p class="kv"><span class="label">What's wrong:</span></p>
+<ul>
+<li>With two amounts, only the last is saved, at high confidence, so the AI is never asked. The preview does show ৳10, which is a partial workaround.</li>
+<li>A trailing danda makes the line a task when offline or with AI off.</li>
+<li>The keypad accepts <code>x</code> as multiply, but quick-add treats “2x150” as a high-confidence task title.</li>
+</ul>
+<p class="kv"><span class="label">Recommendation:</span> Mark money text with more than one amount as low confidence, or sum the amounts when they are separated by commas or “+”. Strip a trailing <code>।</code>, <code>.</code> or <code>!</code> before parsing. Accept <code>x</code> and <code>×</code> in <code>isAmountExpression</code>.</p>
+</div>
+
+<div class="finding">
+<h4>QA-215 · Bangla digits in non-amount number fields are dropped without a word</h4>
+<div class="meta"><span class="badge low">Low</span><span>Category: Localisation</span><span>Effort: S</span><span class="unv">Unverified</span></div>
+<p class="kv"><span class="label">Where:</span> <code>apps/mobile/src/features/habits/habit-sheet.tsx:L37</code>. <code>features/routines/routine-runner.tsx:L98</code>.</p>
+<p class="kv"><span class="label">What's wrong:</span> <code>Number("৩")</code> is <code>NaN</code>, so the habit target silently becomes 1 and a routine step's minutes are cleared. Amount fields run through <code>toAsciiDigits</code>; these two don't. Pasting Bangla digits triggers it. Whether the Android number pad types Bangla digits with a Bangla keyboard wasn't verified.</p>
+<p class="kv"><span class="label">Recommendation:</span> Use one helper, for example <code>Number(toAsciiDigits(v))</code>, for every typed number.</p>
+</div>
+</div>
+
+<!-- ============ 6. STRENGTHS ============ -->
+<div class="section">
+<h2>6. Strengths (keep these)</h2>
+<ul>
+  <li><b>The outbox is now a real, testable component.</b> The policy is pure (<code>classifyFailure</code>, <code>retryDelay</code>, <code>followCreatedRecords</code>). The queue owns its own storage, marks a possibly delivered first entry after a restart, and keeps writes queued before load in order. A 401 pauses it rather than wiping. Writes left by the old TanStack format are migrated.</li>
+  <li><b>Idempotency by design.</b> Phone-made ids are used everywhere. Pay takes <code>transactionId</code> plus <code>dueAt</code>, stop takes an id, checkout takes a <code>transactionId</code>, and delete and restore return the row on repeat. Every one of these was re-run with the expected result.</li>
+  <li><b>Sessions are revocable and sliding.</b> A <code>jti</code> sits in a sessions table, 401 codes say why, and the server has logout and account deletion. The client keeps the profile and queue for the same person and wipes only for a different account.</li>
+  <li><b>Bangla handled at the root.</b> One <code>toAsciiDigits</code> runs before every parser, currency words are stripped, number words become labels (“৩ নম্বর”), and a Bangla title gets low confidence so the AI sees it. The quick-add table test covers dozens of cases.</li>
+  <li><b>The database enforces what zod enforces.</b> CHECK constraints, foreign keys and self-reference checks were added, and the migration is tested on a populated database.</li>
+  <li><b>Assistant safety.</b> The loop stops on client abort, the cost cap is checked before every model call, deletions need confirmation, model-chosen paths are checked with <code>isPlainPath</code>, and money writes in most forms are drafts.</li>
+  <li><b>Clean gates.</b> Lint is clean, types are clean, and 568 tests pass with exact-value assertions and an injectable clock. CI runs all three on every push.</li>
+</ul>
+</div>
+
+<!-- ============ 7. ACTION PLAN ============ -->
+<div class="section">
+<h2>7. Action plan</h2>
+<table>
+  <thead><tr><th style="width:8%">Order</th><th style="width:10%">ID</th><th>Title</th><th style="width:12%">Severity</th><th style="width:9%">Effort</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td style="white-space:nowrap">QA-201</td><td>Validate time zones; isolate per-user job failures; catch tick() rejections</td><td><span class="badge critical">Critical</span></td><td>S</td></tr>
+    <tr><td>2</td><td style="white-space:nowrap">QA-202</td><td>Grace window for refreshed sessions; hold requests during refresh</td><td><span class="badge high">High</span></td><td>S–M</td></tr>
+    <tr><td>3</td><td style="white-space:nowrap">QA-211</td><td>Tests for the paths above (P0 in section 8)</td><td><span class="badge medium">Medium</span></td><td>M</td></tr>
+    <tr><td>4</td><td style="white-space:nowrap">QA-204</td><td>CHECK → 400; pending/stuck indicator while online; park poison writes</td><td><span class="badge medium">Medium</span></td><td>M</td></tr>
+    <tr><td>5</td><td style="white-space:nowrap">QA-203</td><td>Last-write-wins that survives bulk moves</td><td><span class="badge medium">Medium</span></td><td>M</td></tr>
+    <tr><td>6</td><td style="white-space:nowrap">QA-208</td><td>Drafts for set_budget and other money fields; keep rollover; Undo</td><td><span class="badge medium">Medium</span></td><td>S</td></tr>
+    <tr><td>7</td><td style="white-space:nowrap">QA-209</td><td>dueAt in pay drafts; expire stale drafts</td><td><span class="badge medium">Medium</span></td><td>S</td></tr>
+    <tr><td>8</td><td style="white-space:nowrap">QA-207</td><td>Kick the outbox when the token loads</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>9</td><td style="white-space:nowrap">QA-212</td><td>editTime() in focus; persist clock offset</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>10</td><td style="white-space:nowrap">QA-213</td><td>Currency-aware optimistic spend and Today “Paid”</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>11</td><td style="white-space:nowrap">QA-205</td><td>Widget queue: count, encrypt, clear by id</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>12</td><td style="white-space:nowrap">QA-206</td><td>Don't delete the outbox on a transient key-store error</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>13</td><td style="white-space:nowrap">QA-210</td><td>Attribute recovered changes by turn id</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>14</td><td style="white-space:nowrap">QA-214</td><td>Multi-amount, danda and “x” in quick-add</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+    <tr><td>15</td><td style="white-space:nowrap">QA-215</td><td>toAsciiDigits for every typed number</td><td><span class="badge low">Low</span></td><td>S</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============ 8. TEST PLAN ============ -->
+<div class="section">
+<h2>8. Recommended test plan</h2>
+<p class="small">P0 covers the Critical and High findings, P1 the Medium ones, P2 hardening. “API” means <code>createTestContext</code>. “Integration” means the real <code>OutboxQueue</code> with <code>send</code> wired to the in-memory API, as in this audit's probes.</p>
+<table>
+  <thead><tr><th style="width:5%">Pri</th><th style="width:13%">Type</th><th style="width:9%">Covers</th><th>Given / When / Then</th></tr></thead>
+  <tbody>
+    <tr><td>P0</td><td>API</td><td style="white-space:nowrap">QA-201</td><td><b>Given</b> a signed-in user, <b>when</b> PATCH /settings sends <code>{timeZone:"Dhaka"}</code>, <b>then</b> 400 and the stored zone is unchanged. <b>Given</b> a stored invalid zone, <b>when</b> GET /today runs, <b>then</b> 200 using the default zone.</td></tr>
+    <tr><td>P0</td><td>API</td><td style="white-space:nowrap">QA-201</td><td><b>Given</b> two users where the first one's lease or settings throw, <b>when</b> runHourlyJobs runs, <b>then</b> it resolves, logs the failure and the second user's backup is written.</td></tr>
+    <tr><td>P0</td><td>Unit (api)</td><td style="white-space:nowrap">QA-201</td><td><b>Given</b> startJobs with a tick that rejects, <b>when</b> the catch-up fires, <b>then</b> no unhandled rejection reaches the process (spy on <code>process.on("unhandledRejection")</code>).</td></tr>
+    <tr><td>P0</td><td>Migration</td><td style="white-space:nowrap">QA-201</td><td><b>Given</b> a 0003 database holding a soft-deleted 0-amount expense, <b>when</b> openDatabase runs, <b>then</b> migration completes and the row is fixed or reported, not fatal.</td></tr>
+    <tr><td>P0</td><td>API</td><td style="white-space:nowrap">QA-202</td><td><b>Given</b> token A refreshed into token B, <b>when</b> A is used within the grace window, <b>then</b> 200. <b>When</b> A is used after it, <b>then</b> 401 session_expired.</td></tr>
+    <tr><td>P0</td><td>Unit (mobile)</td><td style="white-space:nowrap">QA-202</td><td><b>Given</b> a refresh in flight, <b>when</b> another request returns 401 for the old token, <b>then</b> the session isn't expired and the refreshed token is saved.</td></tr>
+    <tr><td>P1</td><td>Integration</td><td style="white-space:nowrap">QA-203</td><td><b>Given</b> an overdue task, offline, <b>when</b> rescue-overdue then a rename are replayed 2 h later, <b>then</b> the title is the rename. The same holds for move-low-priority.</td></tr>
+    <tr><td>P1</td><td>API + unit</td><td style="white-space:nowrap">QA-204</td><td><b>Given</b> a PATCH that breaks a CHECK, <b>then</b> 400 validation_error. <b>Given</b> a head entry failing 5xx N times, <b>then</b> the queue reports it as stuck and later entries go once it is parked.</td></tr>
+    <tr><td>P1</td><td>API (fake AI)</td><td style="white-space:nowrap">QA-208</td><td><b>Given</b> <code>draftMoney: true</code>, <b>when</b> the model calls set_budget, <b>then</b> the done event has a draft and GET /budgets is unchanged.</td></tr>
+    <tr><td>P1</td><td>API (fake AI)</td><td style="white-space:nowrap">QA-209</td><td><b>Given</b> a pay_bill draft, <b>when</b> the bill is paid with dueAt and the draft is then saved, <b>then</b> there is one expense and the due date moved once.</td></tr>
+    <tr><td>P1</td><td>Unit (mobile)</td><td>sync</td><td><b>Given</b> a stored cursor and a non-empty outbox, <b>when</b> pullChanges runs, <b>then</b> it waits and doesn't advance the cursor. <b>Given</b> a reply, <b>then</b> the cursor equals serverTime and only the mapped keys refresh.</td></tr>
+    <tr><td>P2</td><td>Unit (mobile)</td><td style="white-space:nowrap">QA-207</td><td><b>Given</b> the outbox loaded before the token, <b>when</b> loadToken completes, <b>then</b> the queue sends without any AppState or network event.</td></tr>
+    <tr><td>P2</td><td>Unit (mobile)</td><td style="white-space:nowrap">QA-212/213</td><td><b>Given</b> a known server offset, <b>when</b> the app restarts offline, <b>then</b> editTime() still applies it. <b>Given</b> a USD account expense, <b>then</b> applyOptimistic leaves leftToday unchanged.</td></tr>
+    <tr><td>P2</td><td>Unit (shared)</td><td style="white-space:nowrap">QA-214</td><td><b>Given</b> “চা ২০, সিঙ্গারা ১০”, <b>then</b> low confidence (or ৳30). <b>Given</b> “চা ২০।”, <b>then</b> an expense of ৳20. <b>Given</b> “lunch 2x150”, <b>then</b> an expense of ৳300.</td></tr>
+    <tr><td>P2</td><td>Unit (mobile)</td><td style="white-space:nowrap">QA-205/206</td><td><b>Given</b> pending widget logs, <b>then</b> the sign-out count includes them. <b>Given</b> a key store that throws once, <b>when</b> the outbox loads, <b>then</b> the stored queue is kept.</td></tr>
+    <tr><td>P2</td><td>E2E (device)</td><td style="white-space:nowrap">QA-202</td><td><b>Given</b> a token issued 25 h ago, <b>when</b> the app is cold-started on mobile data, <b>then</b> Today loads and the login screen never appears (repeat 10 times).</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============ 9. SMOKE TEST ============ -->
+<div class="section">
+<h2>9. Manual smoke test (≈15 minutes, real Android phone)</h2>
+<p class="small">Production APK against a <b>staging</b> API. Steps marked ⚠ target findings in this report; a failure there confirms the finding.</p>
+<table>
+  <thead><tr><th style="width:5%">#</th><th>Step</th><th style="width:40%">Expected</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Cold-start while signed in.</td><td>Today loads from cache within about 2 s and the header date is today.</td></tr>
+    <tr><td>2 ⚠</td><td>Set the phone's date a day ahead (or wait a day), then cold-start on mobile data. Repeat 5 times.</td><td>No login screen (QA-202).</td></tr>
+    <tr><td>3</td><td>Quick-add “চা ২০”, then “রিকশা ৬০ bkash”.</td><td>Expense ৳20, then ৳60 from bKash. Safe-to-spend drops at once.</td></tr>
+    <tr><td>4 ⚠</td><td>Quick-add “চা ২০, সিঙ্গারা ১০”.</td><td>The preview should not say ৳10 with high confidence (QA-214).</td></tr>
+    <tr><td>5</td><td>Airplane mode: log “rickshaw 60 bkash”, open it, change it to 70. Then reconnect.</td><td>One ৳70 expense on the server.</td></tr>
+    <tr><td>6 ⚠</td><td>With an overdue task, go to airplane mode, tap “bring old tasks into today”, then rename that task. Reconnect.</td><td>The new title survives (QA-203).</td></tr>
+    <tr><td>7 ⚠</td><td>Stay on Wi-Fi, stop the API, log “tea 15” and look at Today. Start the API.</td><td>Something says 1 change is waiting, then it syncs (QA-204).</td></tr>
+    <tr><td>8 ⚠</td><td>Assistant: “set my food budget to 8000”.</td><td>A draft card to confirm, not an immediate change (QA-208).</td></tr>
+    <tr><td>9 ⚠</td><td>Assistant: “pay my internet bill”. Do <i>not</i> save. Tap “Paid” on Today, then Save the old draft.</td><td>No second expense, and the due date moves once (QA-209).</td></tr>
+    <tr><td>10</td><td>Start a focus session, finish it after 1 minute.</td><td>A 1 min focus entry appears in Time.</td></tr>
+    <tr><td>11</td><td>Turn on App lock, swipe the app away, reopen.</td><td>Fingerprint prompt before any content.</td></tr>
+    <tr><td>12</td><td>Open a transaction sheet, background the app for 5+ minutes, return.</td><td>The lock covers the sheet (unverified in this audit).</td></tr>
+    <tr><td>13 ⚠</td><td>Airplane mode: tap a widget quick-log. Open the app still offline and choose Sign out.</td><td>The warning counts the widget log (QA-205).</td></tr>
+    <tr><td>14</td><td>Settings › Numbers › Bangla.</td><td>Amounts show as ৳১,২৫০ everywhere.</td></tr>
+    <tr><td>15 ⚠</td><td><b>Staging only:</b> <code>curl -X PATCH …/settings -d '{"timeZone":"Dhaka"}'</code> with a test account, then watch <code>pm2 logs</code> for 1 minute.</td><td>400. If it returns 200, expect restarts every ~10 s (QA-201).</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============ APPENDICES ============ -->
+<div class="section">
+<h2>Appendix A — Raw command output (trimmed)</h2>
+<h4>Lint</h4>
+<pre><code>$ bunx biome check apps packages *.json .github
+Checked 484 files in 284ms. No fixes applied.
+exit 0</code></pre>
+<h4>Typecheck</h4>
+<pre><code>@tick-taka/shared typecheck: Exited with code 0
+@tick-taka/api typecheck: Exited with code 0
+@tick-taka/mobile typecheck: Exited with code 0</code></pre>
+<h4>Tests</h4>
+<pre><code>@tick-taka/shared test:  237 pass  0 fail  486 expect() calls  (12 files)
+@tick-taka/mobile test:  165 pass  0 fail  453 expect() calls  (31 files)
+@tick-taka/api test:     166 pass  0 fail  621 expect() calls  (26 files)</code></pre>
+<h4>Coverage (selected lines)</h4>
+<pre><code>shared  All files 81.14 % funcs | 96.07 % lines
+        src/quick-add.ts  95.24 | 88.75 | 396-397,525-534,548-581
+mobile  All files 91.93 % funcs | 92.08 % lines (pure modules only)
+        src/lib/http.ts   46.15 | 80.95      src/lib/outbox-queue.ts 87.50 | 94.41
+        ../../packages/shared/src/dates.ts 41.38 | 0.00   &lt;- QA-026 residual
+api     All files 86.91 % funcs | 93.78 % lines
+        src/jobs/scheduler.ts 87.50 | 76.36 | 71-83   (startJobs untested)
+        src/modules/ai/assistant/tools.ts 94.44 | 73.89 | ...,412-483,491-522 (pay/goal/budget actions)</code></pre>
+<h4>Dependency audit</h4>
+<pre><code>braces &lt;=3.0.3 (high), node-forge &lt;=1.4.0 (high), postcss-selector-parser, decode-uri-component,
+esbuild (drizzle-kit, tailwindcss), uuid (moderate) — 6 vulnerabilities (2 high, 4 moderate), exit 1</code></pre>
+
+<h2 style="margin-top:8mm">Appendix B — QA reproduction output</h2>
+<p class="small">Scripts imported the project's own modules: <code>apps/api/test/helpers.ts</code> (in-memory SQLite, clock fixed at Sun 4 Oct 2026 10:00 Dhaka), the real mobile <code>OutboxQueue</code> and <code>http.ts</code>, and the real drizzle migrations. Request-log lines are omitted. They lived in <code>docs/audit/2026-10-06-r2/_qa_tmp/</code> and were deleted after the run. No source file was changed.</p>
+<h4>shared-probe.ts (packages/shared)</h4>
+<pre><code>"চা ২০"                {"kind":"expense","note":"চা","amountMinor":2000,"accountId":"acc_cash","confidence":"high"}
+"lunch ২৫০"            {"kind":"expense","note":"lunch","amountMinor":25000,"confidence":"high"}
+"রিকশা ৬০ bkash"       {"kind":"expense","note":"রিকশা","amountMinor":6000,"accountId":"acc_bkash","confidence":"high"}
+"২h thesis"            {"kind":"time_entry","note":"thesis","minutes":120,"confidence":"high"}
+"১৮৫০/৩"               {"kind":"expense","amountMinor":61700,"confidence":"low"}
+"submit weekly report" {"kind":"task","title":"Submit weekly report","rrule":null,"confidence":"high"}
+"read chapter 5"       {"kind":"task","title":"Read chapter 5","rrule":null,"confidence":"low"}
+"চা ২০।"               {"kind":"task","title":"চা ২০।","confidence":"low"}
+"চা ২০, সিঙ্গারা ১০"   {"kind":"expense","note":"চা ২০, সিঙ্গারা","amountMinor":1000,"confidence":"high"}
+"lunch 2x150"          {"kind":"task","title":"Lunch 2x150","confidence":"high"}
+parseAmountToMinor ২৫০ = 25000   ১,২৩,৪৫৬.৫০ = 12345650
+expressionToMinor 1850/3 = 61700
+formatAmount beng 27249000 = ৳২,৭২,৪৯০
+parseRecurrence "every month on the 0th" = FREQ=MONTHLY (day 0 dropped)
+isValidRRule / rruleSchema "FREQ=MONTHLY;BYMONTHDAY=0" = false / false</code></pre>
+<h4>api-probe.ts / api-probe2.ts (apps/api, in-memory)</h4>
+<pre><code>QA-002 raw server: PATCH 200 title: Buy milk   (server LWW unchanged; fix is client-side)
+QA-002 via outbox: create+2 edits offline, replay 2h later -> {"title":"Buy oat milk","notes":"2 litres"}
+NEW bulk-then-edit: rescue-overdue then rename offline, replay 2h later -> title: "Call bank"     (QA-203)
+NEW checkout-then-edit: ["Eggs (12)"]                                                           (no issue)
+QA-007 pay: first 2026-11-05 | replay 2026-11-05 | double-tap(dueAt) 2026-11-05
+           | pay without dueAt 2026-12-05 | expense rows: 2                                      (QA-209)
+QA-016 delete+restore: subtasks after undo: 2
+QA-004 timer: start 201 stop 200 45 min; replayed stop 200
+SESSION refresh: 200 | old token after refresh: 401 session_expired | new token: 200             (QA-202)
+SYNC since: 200 {"tasks":1} deletedAt set: true
+CHECK via PATCH /events {startsOn after endsOn}: 500 internal_error                             (QA-204)
+AUTH: routes not answering 401 without a token: GET /health, GET /, GET /privacy, GET /terms, POST /auth/google (400)
+QA-008 rollover (set once in Sept): 2026-10 carried=300000, 2026-11 carried=600000, 2026-12 carried=900000
+QA-009 USD $50 expense: leftToday 21400 -> 21400
+QA-015 complete+undo repeating: open copies 1 rrule FREQ=DAILY
+HEAD-OF-LINE: failed attempts 55 | queue size 2 | landed: [] | policy for 500: retry             (QA-204)</code></pre>
+<h4>refresh-race.ts (apps/mobile http.ts + API) · tz-probe.ts · migrate-probe.ts · unhandled.ts</h4>
+<pre><code>onUnauthorized -> expireSession(): token cleared
+GET /today with the old token -> 401
+refresh reply 200; tokenStore === old token? false -> DISCARDED
+signed in afterwards: false                                                                     (QA-202)
+
+PATCH /settings {timeZone:'Dhaka'} -> 200
+GET /today -> 500 | GET /settings -> 200 | GET /budgets/safe-to-spend -> 500 | GET /tasks -> 200
+other user GET /today -> 200
+runHourlyJobs rejected: RangeError invalid time zone: Dhaka                                     (QA-201)
+
+openDatabase threw: Failed to run the query ... | cause: SQLiteError: CHECK constraint failed: transactions_amount_check
+migrations recorded: 4 (0004/0005 not applied)                                                  (QA-201)
+
+error: user db failed to open ... Bun v1.3.11 (Linux x64) — exit code 1                          (QA-201)</code></pre>
+</div>
+
+<div class="section">
+<h2>Appendix C — Requirement checklist used</h2>
+<p>From PRODUCT.md and the spec: log anything in under 5 s; Today answers “what now?” and “can I afford it?”; safe to spend = flexible left ÷ days left including today, fixed bills excluded; amounts in integer minor units; offline cache with queued writes sent in order, ids from the phone, last-write-wins on updated_at; Asia/Dhaka for display, local strings for habit dates and budget months; streaks with 2 freezes a month; reward, never guilt; honest numbers (balances and hours reconcile); AI rules first, cost cap, graceful fallback, minimum data, off switch, never saves (money) without confirmation; app lock after 5 min; receipts served only to authenticated requests; login limited to 5 per 15 min; Bun listens on 127.0.0.1; nightly VACUUM INTO backup keeping 14; JSON export; local notifications with quiet hours 23:00–07:00; Bangla and English quick-add.</p>
+<p>The round-1 fix contract (<code>../2026-10-06/_raw/FIX_CONTRACT.md</code>) adds: revocable sliding sessions with <code>POST /auth/refresh</code>, logout and account deletion; a 401 never clears the queue; a wipe happens only when a different user signs in; sign-out with pending writes asks first; receipts load with a Bearer header only.</p>
+
+<h2 style="margin-top:8mm">Appendix D — File inventory reviewed</h2>
+<table>
+  <thead><tr><th style="width:18%">Area</th><th>Files</th></tr></thead>
+  <tbody>
+    <tr><td>Shared</td><td>packages/shared/src/{digits, calculator, money, quick-add, recurrence, dates}.ts, schemas/{common, money, settings, time}.ts</td></tr>
+    <tr><td>API core</td><td>apps/api/src/{index, app, env}.ts; middleware/{auth, error-handler}.ts; lib/{crud, client-ip, errors}.ts; db/{client, sessions, tables, user-registry (lease/data)}.ts; jobs/{scheduler, backup}.ts; drizzle/0003–0005 + meta/_journal.json</td></tr>
+    <tr><td>API modules</td><td>auth/{routes, session-token}, sync/routes, tasks/service, time-entries/{service, routes}, recurring/service, goals/service (contribute), debts/service, accounts/service (balance check), transactions/service, categories/routes, category-rules/{routes, service}, events/routes, settings/service</td></tr>
+    <tr><td>API AI</td><td>ai/usage.ts (callAi, parseAiOutput), modules/ai/{routes, prompts}.ts, assistant/{agent, tools, dispatch, fields}.ts</td></tr>
+    <tr><td>Mobile lib</td><td>outbox-policy, outbox-queue, outbox, http, api, auth, session, secure-storage, encrypted-storage, query-client, user-data, sync-changes, sync-paths, invalidation, server-clock, local-day, queries, optimistic-spend, today-cache, notifications, receipts, connection, event-stream, error-copy, config, polyfills</td></tr>
+    <tr><td>Mobile features</td><td>app/_layout.tsx, (tabs)/index.tsx; assistant/{use-assistant, money-drafts, recovered-actions, recover-turn}; security/{app-lock, app-lock-pref, lock-decision}; notifications/{use-notification-scheduler, plan-notifications, reminder-window}; settings/{reminder-status-banner, confirm-sign-out}; widget/*; quick-add/{use-quick-add, quick-add-requests}; today/{next-up, bulk-move}; time/time-tracking, focus/focus-screen, money/{event-sheet, recurring-sheet}, habits/habit-sheet, routines/routine-runner, components/ui/sync-status</td></tr>
+    <tr><td>Tests</td><td>apps/api/test/{helpers, money-helpers, idempotency, timer-replay, task-undo, budgets, sessions, migrations, handles}.test.ts; apps/mobile/test/{outbox-queue, outbox-policy, session, http-auth}.test.ts; packages/shared/test/quick-add.test.ts; file list of all three workspaces</td></tr>
+    <tr><td>Deploy / docs</td><td>deploy/nginx-tick-taka.conf, apps/api/ecosystem.config.cjs, apps/api/.env.example, apps/mobile/app.config.ts, README.md, docs/IMPLEMENTATION_PLAN.md, round-1 reports and _raw notes</td></tr>
+  </tbody>
+</table>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+bun test v1.3.11 (af24e281)
+--------------------------------------------------|---------|---------|-------------------
+File                                              | % Funcs | % Lines | Uncovered Line #s
+--------------------------------------------------|---------|---------|-------------------
+All files                                         |   90.97 |   93.05 |
+ src/components/ui/a11y-actions.ts                |  100.00 |  100.00 | 
+ src/components/ui/calendar-grid.ts               |  100.00 |  100.00 | 
+ src/components/ui/picker-options.ts              |  100.00 |  100.00 | 
+ src/features/assistant/clear-chat-warning.ts     |  100.00 |  100.00 | 
+ src/features/assistant/money-drafts.ts           |  100.00 |  100.00 | 
+ src/features/assistant/recovered-actions.ts      |  100.00 |  100.00 | 
+ src/features/assistant/turn-recovery.ts          |  100.00 |  100.00 | 
+ src/features/focus/focus-announcement.ts         |  100.00 |  100.00 | 
+ src/features/habits/habit-tap.ts                 |  100.00 |  100.00 | 
+ src/features/money/bill-status.ts                |  100.00 |  100.00 | 
+ src/features/money/recurring-pay.ts              |  100.00 |  100.00 | 
+ src/features/money/transaction-amount.ts         |  100.00 |  100.00 | 
+ src/features/notifications/plan-notifications.ts |  100.00 |   80.82 | 91-96,107-114
+ src/features/notifications/reminder-window.ts    |  100.00 |  100.00 | 
+ src/features/plan/area-colors.ts                 |  100.00 |  100.00 | 
+ src/features/plan/move-undo.ts                   |  100.00 |  100.00 | 
+ src/features/quick-add/quick-add-requests.ts     |  100.00 |   72.90 | 33-47,58-63,68,70,114-132
+ src/features/review/shutdown-cache.ts            |  100.00 |  100.00 | 
+ src/features/security/lock-decision.ts           |  100.00 |  100.00 | 
+ src/features/settings/delete-account-rules.ts    |  100.00 |  100.00 | 
+ src/features/today/bulk-move.ts                  |  100.00 |  100.00 | 
+ src/features/today/next-thing.ts                 |  100.00 |  100.00 | 
+ src/features/today/pay-needs-rate.ts             |  100.00 |  100.00 | 
+ src/features/today/safe-to-spend-label.ts        |  100.00 |  100.00 | 
+ src/features/widget/widget-colors.ts             |  100.00 |  100.00 | 
+ src/features/widget/widget-layout.ts             |   92.86 |   95.79 | 89-92
+ src/features/widget/widget-pending.ts            |  100.00 |  100.00 | 
+ src/features/widget/widget-quick-log.ts          |  100.00 |  100.00 | 
+ src/features/widget/widget-snapshot.ts           |  100.00 |   96.67 | 
+ src/lib/api.ts                                   |   87.50 |   90.32 | 52-54
+ src/lib/cache-persister.ts                       |   87.50 |   86.84 | 49,51-54
+ src/lib/config.ts                                |  100.00 |  100.00 | 
+ src/lib/encrypted-storage.ts                     |   85.71 |  100.00 | 
+ src/lib/error-copy.ts                            |  100.00 |   97.87 | 
+ src/lib/export-file.ts                           |  100.00 |  100.00 | 
+ src/lib/format.ts                                |   87.50 |   96.55 | 58-59
+ src/lib/gentle-progress.ts                       |  100.00 |  100.00 | 
+ src/lib/http.ts                                  |   61.54 |   85.71 | 75-76,82-84,91,96-97
+ src/lib/invalidation.ts                          |  100.00 |  100.00 | 
+ src/lib/local-day.ts                             |  100.00 |  100.00 | 
+ src/lib/optimistic-spend.ts                      |  100.00 |  100.00 | 
+ src/lib/outbox-failure.ts                        |  100.00 |  100.00 | 
+ src/lib/outbox-policy.ts                         |  100.00 |   99.17 | 
+ src/lib/outbox-queue.ts                          |   91.89 |   96.82 | 171-174,183,187-189,252-253
+ src/lib/phone-writes.ts                          |  100.00 |  100.00 | 
+ src/lib/server-clock.ts                          |   62.50 |   63.89 | 22-25,39-40,49-52,64-66
+ src/lib/session-manager.ts                       |   83.33 |   94.03 | 133-136
+ src/lib/session.ts                               |  100.00 |  100.00 | 
+ src/lib/snack-timing.ts                          |  100.00 |  100.00 | 
+ src/lib/store.ts                                 |   60.00 |   80.00 | 14-15
+ src/lib/sync-paths.ts                            |  100.00 |  100.00 | 
+ src/lib/sync-pull.ts                             |  100.00 |   97.37 | 
+ src/lib/user-time.ts                             |  100.00 |  100.00 | 
+ src/theme/palette.ts                             |  100.00 |  100.00 | 
+ ../../packages/shared/src/dates.ts               |   45.16 |    0.00 | 6-234
+ ../../packages/shared/src/digits.ts              |   50.00 |   33.33 | 6-9,22-23
+ ../../packages/shared/src/ids.ts                 |  100.00 |  100.00 | 
+ ../../packages/shared/src/money.ts               |   45.45 |   67.65 | 25,30-33,37,106,114-119,124-132
+ ../../packages/shared/src/quiet-hours.ts         |  100.00 |  100.00 | 
+ ../../packages/shared/src/recurrence.ts          |    8.00 |   40.22 | 54-61,65-99,103,107-112,121-125,130-131,136-166,174-183,191-194,272-284,302-307,325-328,345-347,359-362,371-374,380-382,387-396,408-436,440-442,446-447,452-482
+ ../../packages/shared/src/schemas/common.ts      |    0.00 |  100.00 | 
+--------------------------------------------------|---------|---------|-------------------
+
+ 291 pass
+ 0 fail
+ 865 expect() calls
+Ran 291 tests across 56 files. [1125.00ms]

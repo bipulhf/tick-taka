@@ -1,0 +1,10 @@
+$ bun scripts/audit.ts
+[0m[1mbun audit [0m[2mv1.3.11 (af24e281)[0m
+accepted  GHSA-vfj7-8cjw-p6xm  braces: braces <=3.0.3 (high): build tooling only; no patched release exists.
+accepted  GHSA-vcc3-ghjq-m6fr  decode-uri-component: decode-uri-component <=0.4.2 (moderate): under expo-router; the fix is an ESM-only major, and the risk is a slow parse of a malformed deep link on the user's own phone.
+accepted  GHSA-67mh-4wv8-2f99  esbuild: esbuild <=0.24.2 (moderate): 0.18 inside drizzle-kit's loader, which only runs db:generate locally.
+accepted  GHSA-86w9-cpqp-85rv  node-forge: node-forge <=1.4.0 (high): Expo CLI tooling only; no patched release exists.
+accepted  GHSA-rj75-hqrm-r3gf  postcss-selector-parser: postcss-selector-parser <7.1.6 (moderate): Tailwind 3 needs 6.x; build time only.
+
+No new advisories (5 accepted).
+exit 0

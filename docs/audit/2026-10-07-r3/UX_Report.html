@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UX Report — Tick &amp; Taka (round 3)</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm;
+    @bottom-left { content: "UX Report — Tick & Taka · commit 7e2bfeb"; font: 8.5pt Arial, sans-serif; color: #777; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt Arial, sans-serif; color: #777; } }
+  @page :first { @bottom-left { content: none; } @bottom-right { content: none; } }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Segoe UI", Roboto, "Noto Sans", "Noto Sans Bengali", Arial, sans-serif; font-size: 11pt; line-height: 1.42; color: #1d1b22; margin: 0; }
+  h1 { font-size: 20pt; margin: 0 0 8px; }
+  h2 { font-size: 15pt; margin: 0 0 10px; padding-bottom: 4px; border-bottom: 2px solid #e6dccd; }
+  h3 { font-size: 12pt; margin: 16px 0 6px; }
+  h4 { font-size: 11pt; margin: 0 0 4px; }
+  h2, h3, h4 { break-after: avoid; page-break-after: avoid; }
+  p { margin: 0 0 8px; }
+  ul { margin: 0 0 8px; padding-left: 20px; }
+  li { margin-bottom: 3px; }
+  section.major { page-break-before: always; break-before: page; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; }
+  .cover .kicker { font-size: 11pt; letter-spacing: .08em; text-transform: uppercase; color: #8a5a00; font-weight: 700; }
+  .cover h1 { font-size: 30pt; margin: 6px 0 4px; }
+  .cover .sub { font-size: 13pt; color: #555; margin-bottom: 28px; }
+  .cover table { width: 100%; }
+  .cover td:first-child { width: 30%; color: #666; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 9.6pt; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  th, td { border: 1px solid #e3dccf; padding: 4px 6px; vertical-align: top; text-align: left; }
+  th { background: #f6efe3; font-weight: 700; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  table.small { font-size: 8.4pt; }
+  table.small td, table.small th { padding: 2px 5px; }
+  code { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.8pt; background: #f4f1ea; padding: 0 3px; border-radius: 3px; overflow-wrap: anywhere; word-break: break-word; }
+  pre { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.6pt; background: #f7f4ee; border: 1px solid #e6dfd2; border-radius: 6px; padding: 7px 9px; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; margin: 4px 0 8px; page-break-inside: avoid; }
+  pre code { background: none; padding: 0; }
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 8.6pt; font-weight: 700; color: #fff; white-space: nowrap; }
+  .Critical { background: #c62828; } .High { background: #ef6c00; } .Medium { background: #f9a825; color: #2a2100; } .Low { background: #607d8b; }
+  .st { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 8.6pt; font-weight: 700; white-space: nowrap; }
+  .Fixed { background: #dff2e6; color: #155c34; } .Partial { background: #fff1cc; color: #6b4b00; } .NotFixed { background: #fde0dc; color: #8a1c10; } .Regressed { background: #c62828; color: #fff; }
+  .unv { display: inline-block; padding: 0 6px; border: 1px dashed #8a5a00; border-radius: 4px; font-size: 8.4pt; color: #8a5a00; font-weight: 700; white-space: nowrap; }
+  .pass { color: #155c34; font-weight: 700; } .fail { color: #b23a2a; font-weight: 700; } .na { color: #777; }
+  .score { display: flex; align-items: center; gap: 18px; margin: 4px 0 10px; }
+  .score .big { font-size: 40pt; font-weight: 800; color: #11725d; line-height: 1; }
+  .score .big small { font-size: 16pt; color: #555; }
+  .finding { border: 1px solid #e3dccf; border-radius: 8px; padding: 9px 11px; margin: 0 0 12px; page-break-inside: avoid; break-inside: avoid; }
+  .finding.long { page-break-inside: auto; break-inside: auto; }
+  .finding h4 { font-size: 11.5pt; }
+  .meta { font-size: 9.4pt; color: #555; margin-bottom: 6px; }
+  .finding dl { margin: 0; display: grid; grid-template-columns: 112px 1fr; gap: 3px 10px; font-size: 10pt; }
+  .finding dt { font-weight: 700; color: #4a4450; }
+  .finding dd { margin: 0; }
+  .note { background: #f7f4ee; border-left: 4px solid #d9c9a8; padding: 6px 10px; font-size: 9.8pt; margin: 6px 0 10px; }
+  figure { margin: 6px 0 10px; text-align: center; page-break-inside: avoid; }
+  figure img { max-width: 100%; border: 1px solid #ddd; border-radius: 6px; }
+  figcaption { font-size: 9pt; color: #555; margin-top: 3px; text-align: left; }
+  .two { display: flex; gap: 14px; align-items: flex-start; }
+  .two > * { flex: 1; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<section class="cover">
+  <div class="kicker">Audit report 2 of 3 · Round 3</div>
+  <h1>UX Report — Tick &amp; Taka (round 3)</h1>
+  <div class="sub">Android app for one person's day and money · re-audit after 42 fix commits</div>
+  <table>
+    <tr><td>Project</td><td>Tick &amp; Taka (monorepo: <code>apps/mobile</code>, <code>apps/api</code>, <code>packages/shared</code>)</td></tr>
+    <tr><td>Date</td><td>2026-10-07</td></tr>
+    <tr><td>Commit</td><td><code>7e2bfeb</code> (branch <code>fix/audit-2026-10-06</code>)</td></tr>
+    <tr><td>Previous audits</td><td>Round 1 at <code>3b5438b</code>: 64/100, 30 findings. Round 2 at <code>df29d67</code>: 83/100, 16 open findings (<code>docs/audit/2026-10-06-r2/UX_Report.html</code>).</td></tr>
+    <tr><td>Auditor role</td><td>UX Lead</td></tr>
+    <tr><td>Yardstick</td><td><code>PRODUCT.md</code> (users, 5 principles, accessibility commitments) and <code>DESIGN.md</code> (tokens, type, layout, components), then general best practice</td></tr>
+    <tr><td>Mode</td><td>Read-only static review of the code. The app was not run: the only emulator image has no Google Play services and sign-in is Google-only. The screenshots in <code>docs/screenshots</code> predate every fix commit (last changed in <code>1f25750</code>, 2026-10-05).</td></tr>
+  </table>
+</section>
+
+<!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+<section class="major">
+<h2>1. Executive summary</h2>
+<div class="score"><div class="big">89<small>/100</small></div>
+<div>Round 2: 83/100. Round 1: 64/100.<br>
+Round-2 findings: <b>12 Fixed</b>, <b>3 Partially fixed</b>, <b>1 Not fixed</b>, <b>0 Regressed</b>.<br>
+Open findings now: 0 Critical, 0 High, 2 Medium, 9 Low.</div></div>
+
+<p>Every round-2 item with real user impact was fixed, and fixed in the code rather than in the docs. The widget is now built from the app's tested tokens (<code>widget-colors.ts</code>), with 13 px text, 48 dp targets, the Numbers setting and a 10-minute Undo for quick-logs. The snackbar follows Android's "Time to take action" setting, stays put while TalkBack is on and says "Undo available". Paid, Received, Skip and planner moves all have Undo. Account deletion has its own page with export and a typed "DELETE". The colour-meaning work also holds up: purple now marks habits only, deadlines are ink with a flag, and a new test guards it.</p>
+<p>What is left is small, with two exceptions. First, the Undo after an offline "Paid" lives only in memory, but the snackbar says "Took back Rent" straight away. If Android kills the app before the phone reconnects, the payment goes through anyway. Second, the widget now hides its quick-log row below 240 dp, which probably means it is hidden at the default 4×2 size (<span class="unv">Unverified</span>). The rest is polish. Five less-used sheets still have chip rows, nine chip rows still announce as buttons, the AI-cost screen uses purple, the chart labels are 10 px, and the README screenshots are still old.</p>
+
+<table>
+<thead><tr><th>Severity</th><th class="num">Critical</th><th class="num">High</th><th class="num">Medium</th><th class="num">Low</th><th class="num">Total</th></tr></thead>
+<tr><td>Open findings (round 3)</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td class="num">9</td><td class="num">11</td></tr>
+<tr><td>Round 2, for comparison</td><td class="num">0</td><td class="num">1</td><td class="num">5</td><td class="num">10</td><td class="num">16</td></tr>
+<tr><td>Round 1, for comparison</td><td class="num">1</td><td class="num">6</td><td class="num">16</td><td class="num">7</td><td class="num">30</td></tr>
+</table>
+
+<h3>Top 5 to fix first</h3>
+<table>
+<thead><tr><th style="width:70px">Severity</th><th>Issue</th></tr></thead>
+<tr><td><span class="badge Medium">Medium</span></td><td><b>UX-042</b> An offline "Paid"/"Received"/"Skip" Undo is held only in memory. The snackbar says "Took back …" at once, but if the app restarts before the pay is sent, the payment still goes through (<code>features/money/recurring-pay.ts:41-60</code>, <code>features/today/next-up.tsx:48-60</code>).</td></tr>
+<tr><td><span class="badge Medium">Medium</span></td><td><b>UX-043</b> The widget's one-tap quick-log row needs ≥ 240 dp of height and is likely hidden at the default 4×2 size. At the 250 dp minimum width, the four action pills are about 52 dp wide, so "－ Expense" clips <span class="unv">Unverified</span> (<code>features/widget/safe-to-spend-widget.tsx:27-29, 153-155</code>; <code>app.json:71-74</code>).</td></tr>
+<tr><td><span class="badge Low">Low</span></td><td><b>UX-036</b> (carried) Nine single-choice chip rows still announce "button, selected". On/off chips are buttons, and the tab bar's tabs have no tablist (<code>components/ui/chip.tsx:24</code> default <code>choice="action"</code>).</td></tr>
+<tr><td><span class="badge Low">Low</span></td><td><b>UX-013</b> (carried) Chip rows remain in the account, bill, goal, event and time-entry sheets. Commit <code>d50237a</code> says the recurring and category sheets were converted, but it only added labels and roles.</td></tr>
+<tr><td><span class="badge Low">Low</span></td><td><b>UX-044</b> Colour drift outside the new test: purple bars on the AI cost screen, mango-tinted keypad operators, and a test regex that misses <code>className</code>, <code>colors.*</code> and ternaries.</td></tr>
+</table>
+<p class="note">How the score is built: see "Score breakdown" at the end of section 2. It is 89, not in the 90s, because the two Medium findings both touch the money-logging scene that PRODUCT.md is built around, and because several gains (TalkBack behaviour, widget layout) are still <span class="unv">Unverified</span> on a device.</p>
+</section>
+
+<!-- ============ 2. SCOPE & METHOD ============ -->
+<section class="major">
+<h2>2. Scope and method</h2>
+<h3>What was reviewed</h3>
+<ul>
+<li><b>Intent:</b> <code>PRODUCT.md</code> (unchanged since round 2) and <code>DESIGN.md</code>. The two DESIGN.md changes since round 2 (<code>cd63193</code>, <code>c744628</code>) were each judged on whether they are explicit, reasoned decisions or quiet moves of the yardstick (section 4.1).</li>
+<li><b>Round 2:</b> all 16 open findings in <code>docs/audit/2026-10-06-r2/UX_Report.html</code>, each checked against the code at <code>7e2bfeb</code> and against the commit that claims to fix it (<code>git log df29d67..HEAD</code>, 42 commits, of which 114 changed files are under <code>apps/mobile/src</code>).</li>
+<li><b>Code read in full or in the changed regions:</b> <code>theme/palette.ts</code>, <code>global.css</code>, <code>tailwind.config.js</code>; <code>components/ui</code> (snackbar, button, chip, segmented, picker-field, checkbox, amount-keypad, sync-status, swipe-row, a11y-actions); <code>components/navigation/tab-bar.tsx</code>; the whole of <code>features/widget</code>; <code>features/today</code> (next-up, later-today, safe-to-spend card/label); <code>features/money</code> (recurring-pay, recurring-sheet, bills-screen, bill-status, money-calendar, money-home, account/goal/event sheets); <code>features/plan</code> (use-move-task, move-undo, week-planner, calendar-view, plan-home, area-sheet); <code>features/settings</code> (settings-screen, account-section, delete-account and its rules, planning, notification, appearance, setting-row, themed-root); <code>features/assistant</code> (assistant-sheet, clear-chat-warning); <code>features/review</code> (weekly-review, review-home, ai-usage, insights); <code>features/habits</code> (habit-chips, habit-sheet); <code>app/login.tsx</code>; <code>lib/</code> (auth delete/sign-in, error-copy, gentle-progress, snack-timing, notify, outbox + outbox-queue waiters).</li>
+<li><b>Tests read for intent:</b> <code>test/contrast.test.ts</code>, <code>test/colour-meaning.test.ts</code>, <code>test/snack-timing.test.ts</code>.</li>
+</ul>
+<h3>Scripted checks (scratch in <code>_ux_tmp/</code>, deleted afterwards)</h3>
+<ul>
+<li><b>Contrast:</b> a Python script parsed <code>palette.ts</code> (including the accent themes), <code>global.css</code> and the DESIGN.md colour table. It rebuilt the widget palette exactly as <code>widget-colors.ts</code> does, then computed WCAG 2.x ratios for 244 pairs (Appendix A). Token diff: <b>0 mismatches in 70 comparisons</b> (17 tokens × 2 schemes × palette-vs-CSS and palette-vs-DESIGN.md, plus on-mango in both schemes).</li>
+<li><b>Pressable scan:</b> all 71 <code>&lt;Pressable&gt;</code> / <code>&lt;SwipeRowPressable&gt;</code> opening tags in 44 files, checked for role, label, size classes and hitSlop, plus grep counts of accessibility props (Appendix B). A second scan listed every <code>&lt;Chip&gt;</code> and whether it passes a <code>choice</code> (UX-036).</li>
+<li><b>Reused, not re-run</b> (from <code>_raw/</code>): Biome (523 files, exit 0), typecheck (3 workspaces, exit 0), tests (mobile 233, shared 247, api 209 pass, 0 fail).</li>
+</ul>
+<h3>What could not be verified</h3>
+<p>No device or emulator run, so the following are <span class="unv">Unverified</span>:</p>
+<ul>
+<li>What TalkBack reads: radio/checkbox states, the snackbar announcement and its "Dismiss" action, the swipe actions.</li>
+<li>Widget rendering at real launcher cell sizes (UX-043).</li>
+<li>Whether hitSlop on adjacent calendar cells changes hit testing (UX-040).</li>
+<li>Layout at 200% font size.</li>
+<li>Reanimated 4.5 springs and layout animations under the system reduce-motion setting. Its default is <code>ReduceMotion.System</code>, so they should be skipped.</li>
+<li>Snackbars raised while a formSheet is open.</li>
+</ul>
+<p>Screenshots: <code>login.png</code> is embedded because the login screen is essentially unchanged; the only differences are the new "Account deleted" notice and the dev-only host line. <code>widget.png</code> is embedded only as the before state for UX-031. The others show pre-fix layouts and are not used as evidence.</p>
+
+<h3>Score breakdown</h3>
+<table>
+<thead><tr><th>Area</th><th class="num">Weight</th><th class="num">R2</th><th class="num">R3</th><th class="num">Points</th><th>Main reason for the change</th></tr></thead>
+<tr><td>Fit to the 5 principles + accessibility commitments (avg 4.33/5)</td><td class="num">25</td><td class="num">80%</td><td class="num">87%</td><td class="num">21.7</td><td>Colour meaning and "never guilt" now hold; small residue remains (UX-044)</td></tr>
+<tr><td>Core task flows (taps, friction, undo)</td><td class="num">20</td><td class="num">90%</td><td class="num">93%</td><td class="num">18.6</td><td>Undo on every one-tap write; offline pay-undo gap (UX-042), widget quick-log hidden by default (UX-043)</td></tr>
+<tr><td>Nielsen heuristics (avg 4.5/5)</td><td class="num">15</td><td class="num">84%</td><td class="num">90%</td><td class="num">13.5</td><td>Control, prevention and recovery up; consistency still held back by chip rows</td></tr>
+<tr><td>Visual design and token consistency</td><td class="num">10</td><td class="num">75%</td><td class="num">85%</td><td class="num">8.5</td><td>Widget on tokens; colour test; 10 px chart labels; DESIGN.md self-contradictions</td></tr>
+<tr><td>Accessibility (contrast, SR, scaling, motion)</td><td class="num">15</td><td class="num">80%</td><td class="num">88%</td><td class="num">13.2</td><td>Widget AA, snackbar timing, sole-cue marks; radio semantics only partial</td></tr>
+<tr><td>Mobile ergonomics (targets, reach, keyboard)</td><td class="num">5</td><td class="num">85%</td><td class="num">88%</td><td class="num">4.4</td><td>Widget 48 dp; FAB decision accepted; calendar cells unchanged in practice</td></tr>
+<tr><td>Content, microcopy, feedback and delight</td><td class="num">10</td><td class="num">90%</td><td class="num">95%</td><td class="num">9.5</td><td>No zeros, no "Overdue", plurals and sign-in errors fixed</td></tr>
+<tr><td><b>Total</b></td><td class="num">100</td><td class="num">83</td><td class="num">—</td><td class="num"><b>89.4 → 89</b></td><td>No Critical or High, so no deduction</td></tr>
+</table>
+<p class="note">Confidence: the score rests on the code. If device testing shows TalkBack ignoring the radio states or the snackbar's Dismiss action, the accessibility row drops. If the widget's quick-log row does show at the default size, UX-043 becomes Low and the score rises by about one point.</p>
+</section>
+
+<!-- ============ 3. PREVIOUS FINDINGS ============ -->
+<section class="major">
+<h2>3. Previous findings status (round 2 → round 3)</h2>
+<p>Each of the 16 open round-2 findings was checked against the code at <code>7e2bfeb</code>, not against the commit messages. "Fixed" means the problem described in round 2 is gone from the code. Device behaviour is still <span class="unv">Unverified</span> where noted. Paths are relative to <code>apps/mobile/src/</code>.</p>
+<table>
+<thead><tr><th style="width:62px">ID · R2 sev.</th><th style="width:150px">Round-2 finding</th><th style="width:70px">Status</th><th>Evidence now</th></tr></thead>
+<tr><td>UX-031<br><span class="badge High">High</span></td><td>Widget missed the AA and 48 dp work</td><td><span class="st Fixed">Fixed</span></td><td><code>features/widget/widget-colors.ts:23-43</code> derives every colour from <code>palette</code> (words use <code>-text</code>, tints are flattened with <code>blend()</code>), and <code>test/contrast.test.ts:164-200</code> checks every widget pair. My script agrees: the lowest light pair is muted on the gradient end at 5.13, the lowest dark pair is sky-text on its tint at 4.92. <code>CAPTION = 13</code>, <code>TARGET = 48</code> (<code>safe-to-spend-widget.tsx:23-25, 78</code>). Amounts use <code>cache.numerals</code>. Quick-log has Undo for 10 minutes (<code>widget-quick-log.ts:4</code>), offline too (<code>widget-task-handler.tsx:56-82</code>). New side effect: UX-043.</td></tr>
+<tr><td>UX-032<br><span class="badge Medium">Medium</span></td><td>Undo snackbar fixed at 8 s</td><td><span class="st Fixed">Fixed</span></td><td><code>components/ui/snackbar.tsx:17-31</code> announces "… Undo available." and uses <code>getRecommendedTimeoutMillis</code>. With a screen reader on, <code>snackDuration</code> returns <code>null</code> (stays until used or replaced; <code>lib/snack-timing.ts:11-19</code>, tested). A "Dismiss" accessibility action closes it (<code>:53</code>). It is lifted over the running-timer bar (<code>:45</code>; <code>running-timer-bar.tsx:35-40</code>). TalkBack reading <span class="unv">Unverified</span>.</td></tr>
+<tr><td>UX-033<br><span class="badge Medium">Medium</span></td><td>One-tap money writes without Undo</td><td><span class="st Fixed">Fixed</span></td><td>Paid/Received on Today (<code>features/today/next-up.tsx:48-60</code>) and Paid/Received/Skip in the bill sheet (<code>features/money/recurring-sheet.tsx:111-133</code>) offer Undo. It deletes the transaction and restores <code>previousDueAt</code>, which the API now returns (<code>apps/api/src/modules/recurring/service.ts:159-160</code>). Widget quick-log has Undo. Planner moves say "Moved to Thu 8 Oct · Undo" (<code>features/plan/use-move-task.ts:17-35</code>). Offline edge: UX-042.</td></tr>
+<tr><td>UX-034<br><span class="badge Medium">Medium</span></td><td>Delete account one alert away, top of Settings</td><td><span class="st Fixed">Fixed</span></td><td>Account card is now last (<code>features/settings/settings-screen.tsx:141-142</code>). "Delete account…" opens its own page (<code>account-section.tsx:50-56</code>, <code>delete-account.tsx:40-77</code>): a summary that counts unsynced changes, "1. Keep a copy" with an inline export, then "2. Confirm" with typed DELETE. Errors go through <code>friendlyError</code> (<code>lib/auth.ts:149</code>). Login then says "Account deleted" (<code>app/login.tsx:110-116</code>).</td></tr>
+<tr><td>UX-035<br><span class="badge Low">Low</span></td><td>Non-text marks below 3:1 in light</td><td><span class="st Fixed">Fixed</span></td><td>Unchecked rings use <code>border-*-text</code> (<code>components/ui/checkbox.tsx:19-24</code>). The habit arc uses <code>grapeText</code> (<code>habit-chips.tsx:35-38</code>), and the calendar bar is <code>bg-coral-text</code> (<code>money-calendar.tsx:130</code>). <code>SOLE_CUE_MARKS</code> (<code>theme/palette.ts:80</code>) is tested against every surface. The lowest sole-cue pair is 3.31 (line-strong on grape-dusk light).</td></tr>
+<tr><td>UX-036<br><span class="badge Low">Low</span></td><td>Single-choice controls announce the wrong role</td><td><span class="st Partial">Partially fixed</span></td><td>Segmented is now a radiogroup of radios with <code>checked</code>, or a tablist for view switchers (<code>segmented.tsx</code>). Area swatches, the PickerField grid and 13 chip call sites pass <code>choice</code>. Still announced as "button, selected": 9 single-choice chip rows and 4 on/off chips. The tab bar's tabs have no tablist container. Carried as UX-036.</td></tr>
+<tr><td>UX-037<br><span class="badge Low">Low</span></td><td>Bills say "Overdue" in coral</td><td><span class="st Fixed">Fixed</span></td><td><code>billStatusText</code> returns "Was due Mon 5 Oct" (<code>features/money/bill-status.ts:9-12</code>), used on Today (<code>next-up.tsx:34</code>) and in Bills (<code>bills-screen.tsx:76</code>). Bill amounts are ink. No "Overdue" string is left in <code>src</code>.</td></tr>
+<tr><td>UX-038<br><span class="badge Low">Low</span></td><td>Developer strings, missing plurals</td><td><span class="st Fixed">Fixed</span></td><td>Sign-in throws <code>ApiError</code> and login words it via <code>friendlyError(e, "signIn")</code> (<code>app/login.tsx:58-60</code>, <code>lib/error-copy.ts:14-28, 65-66</code>). The stale-day line reads "…once you're back online". "1 day left" uses <code>plural</code> (<code>safe-to-spend-card.tsx:61</code>), as do the focus, quick-add and transaction hours copy.</td></tr>
+<tr><td>UX-039<br><span class="badge Low">Low</span></td><td>"New chat" drops drafts and Undo rows</td><td><span class="st Fixed">Fixed</span></td><td><code>clearChatWarning</code> counts pending drafts, pending deletions and undoable actions. When any exist, "Start a new chat?" asks first (<code>features/assistant/assistant-sheet.tsx:66-74</code>; <code>clear-chat-warning.ts</code>, tested).</td></tr>
+<tr><td>UX-040<br><span class="badge Low">Low</span></td><td>Targets and rows under spec</td><td><span class="st Partial">Partially fixed</span></td><td>Week-planner header is <code>min-h-12</code> (<code>week-planner.tsx:129</code>), and transaction rows are <code>min-h-[60px]</code>. Calendar cells got <code>hitSlop={{left:3,right:3}}</code> (<code>money-calendar.tsx:115</code>, <code>calendar-view.tsx:137</code>), as round 2 suggested. But the cells touch each other, so each cell's slop overlaps its neighbour and the usable width per day stays about 43-46 dp <span class="unv">Unverified</span>. Carried as UX-040. The flaw was in my round-2 recommendation.</td></tr>
+<tr><td>UX-041<br><span class="badge Low">Low</span></td><td>"Bangla digits" only on screen amounts</td><td><span class="st Fixed">Fixed</span></td><td>Keypad display and keys go through <code>toBanglaDigits</code> when Numbers is Bangla (<code>components/ui/amount-keypad.tsx:30-32, 57, 76</code>). The widget gets <code>numerals</code> through its cache. The caption now states the scope: "…on screen, on the keypad and on the widget. Dates and times stay 0-9." (<code>appearance-settings.tsx:51</code>).</td></tr>
+<tr><td>UX-007<br><span class="badge Medium">Medium</span></td><td>Purple, mango and coral mean several things</td><td><span class="st Fixed">Fixed</span></td><td>Every location named in round 2 is now neutral, sky or money-coloured (commit <code>0a1de0f</code>): debts, goals, someday, settings rows and the review list are muted; deadlines and high priority are ink plus a flag (<code>task-row.tsx:75-87</code>). <code>test/colour-meaning.test.ts</code> limits grape to habit code and bans mango list icons. Residue outside the test's regex: UX-044 (Low).</td></tr>
+<tr><td>UX-013<br><span class="badge Medium">Medium</span></td><td>Chip rows in eight sheets and pages</td><td><span class="st Partial">Partially fixed</span></td><td>Habit sheet (emoji grid behind "Emoji ▾", "How often ▾", "Nudge me at ▾"), "Today and planning" (one picker per setting) and notification settings now use PickerField. Still chip rows: account type and currency, bill currency and "Remind me" (5 chips), goal/event/category/area emoji, and time-entry durations. Carried as UX-013, lowered to Low because the busiest sheets are done.</td></tr>
+<tr><td>UX-011<br><span class="badge Low">Low</span></td><td>FAB off-centre when chat is on</td><td><span class="st Fixed">Fixed</span></td><td>Closed as an explicit decision, as round 2 allowed ("Either accept it explicitly…"). <code>DESIGN.md:72</code> now gives the offset (36 dp on a 360 dp phone), the reason (one tap to Tiki from every tab), the commit that introduced it, and when the FAB moves (only if AI is switched on or off). Reasonable (section 4.1).</td></tr>
+<tr><td>UX-026<br><span class="badge Low">Low</span></td><td>Weekly review leads with zeros</td><td><span class="st Fixed">Fixed</span></td><td><code>habitStreakText</code> → "A fresh start" / "🔥 3 days · best 5 days". <code>winLines</code> drops zero lines and falls back to "A quiet week. Next week is a fresh start." (<code>lib/gentle-progress.ts:20-49</code>; <code>weekly-review.tsx:155, 163</code>; tested).</td></tr>
+<tr><td>UX-029<br><span class="badge Low">Low</span></td><td>Screenshots predate the fixes</td><td><span class="st NotFixed">Not fixed</span></td><td><code>docs/screenshots/*.png</code> were last changed in <code>1f25750</code> (2026-10-05). The README still embeds all 23, with no note that they are out of date. Carried as UX-029.</td></tr>
+</table>
+<p><b>Tally:</b> 12 Fixed · 3 Partially fixed (UX-013, UX-036, UX-040) · 1 Not fixed (UX-029) · 0 Regressed. The partial and unfixed items continue in section 7 under their original IDs.</p>
+<p class="note">Commit-message accuracy. <code>d50237a</code> says the chip rows in the "habit, debt, recurring, shopping, project, category and time sheets" became picker fields. In the recurring, debt, shopping, project and category sheets it only added <code>label</code>/<code>choice</code> props, and the chip rows are still there. Read that commit as "roles fixed, pickers in habit, planning and notification screens only".</p>
+</section>
+
+<!-- ============ 4. PRINCIPLES ============ -->
+<section class="major">
+<h2>4. Fit to product principles</h2>
+<table>
+<thead><tr><th style="width:150px">Principle (PRODUCT.md)</th><th class="num">R2</th><th class="num">R3</th><th>Evidence</th></tr></thead>
+<tr><td>1. Today first, one glance</td><td class="num">5</td><td class="num">5</td><td>Unchanged and still right: a header with "Next: …", then safe-to-spend, Top three, Next up, habits, Later, with shortcuts last (<code>app/(tabs)/index.tsx</code>). The widget follows the same order: safe to spend, next up, progress.</td></tr>
+<tr><td>2. Capture beats organise</td><td class="num">4</td><td class="num">4</td><td>Quick-add is unchanged: one field, Save, "Saved: … · Undo". Widget quick-log works offline and can be undone, but by default it probably needs a resize to appear (UX-043). Pickers still show on every input rather than "only when the parser needs help", as noted in round 2.</td></tr>
+<tr><td>3. Big, calm, thumb-sized</td><td class="num">4</td><td class="num">4</td><td>Widget targets are 48 dp, the week-planner header 48 dp, transaction rows 60 dp. Remaining: calendar cells about 43-46 dp wide (UX-040); time-tracking rows are <code>min-h-12</code> (48 dp, DESIGN says 60), which is a minor gap.</td></tr>
+<tr><td>4. Colour means something</td><td class="num">3</td><td class="num">4</td><td>Grape now appears only on habit UI. The exceptions are the AI cost chart and progress bar (<code>ai-usage-screen.tsx:74, 113</code>), the thinking dots, and the user-chosen Purple area swatch, which is an explicit DESIGN.md rule. Mango is the FAB, primary buttons and the draft Save. It also tints the four keypad operator keys (<code>amount-keypad.tsx:73</code>) and the "on" track of switches. A test enforces the rule, but it can't see these cases (UX-044).</td></tr>
+<tr><td>5. Reward, never guilt</td><td class="num">4</td><td class="num">5</td><td>No "0 days", no "0 of 3", no "Overdue". Late bills say "Was due Mon 5 Oct" in muted text, and overdue tasks say "No rush. Bring them into today?". The stuck-change card uses a coral icon but calm words.</td></tr>
+<tr><td>Accessibility &amp; Inclusion commitments</td><td class="num">4</td><td class="num">4</td><td>Every text pair passes AA in both themes, both accent themes and the widget. Sole-cue marks are ≥ 3:1, and the snackbar honours WCAG 2.2.1. Not yet met: radio states on nine chip rows (UX-036), 10 px chart labels (UX-047) and calendar width (UX-040). All device behaviour is <span class="unv">Unverified</span>.</td></tr>
+</table>
+<p>Average of the six rows: <b>4.33 / 5</b> (round 2: 4.0).</p>
+
+<h3>4.1 Decisions recorded in DESIGN.md: are they explicit, or a moved yardstick?</h3>
+<table>
+<thead><tr><th style="width:150px">Decision</th><th style="width:125px">Where</th><th style="width:82px">Verdict</th><th>Why</th></tr></thead>
+<tr><td>Off-centre FAB beside Tiki's button</td><td><code>DESIGN.md:72</code> (<code>c744628</code>)</td><td><span class="st Fixed">Accepted</span></td><td>It states the measured cost (36 dp right of centre), the benefit, the originating commit and the only condition under which the FAB moves. The FAB stays in the lower middle, which is well inside a right thumb's reach. A left-handed user loses a little. This is a decision, not a rewording.</td></tr>
+<tr><td>Sole-cue marks use the <code>-text</code> tier or line-strong</td><td><code>DESIGN.md:42</code> (<code>cd63193</code>)</td><td><span class="st Fixed">Accepted</span></td><td>This tightens the yardstick rather than loosening it. It is backed by <code>SOLE_CUE_MARKS</code> and a test.</td></tr>
+<tr><td>Widget built from the same tokens</td><td><code>DESIGN.md:43</code></td><td><span class="st Fixed">Accepted</span></td><td>Verified in code and test (Appendix A, "widget" rows).</td></tr>
+<tr><td>Tab labels at 12 px</td><td><code>DESIGN.md:61, 72</code></td><td><span class="st Fixed">Accepted</span></td><td>Unchanged since round 2. It is one named exception, capped at 1.3×, with muted text at 5.75:1.</td></tr>
+<tr><td>Dates and times stay 0-9 under Bangla numerals</td><td>In-app caption, <code>appearance-settings.tsx:51</code></td><td><span class="st Fixed">Accepted</span></td><td>The user is told plainly. It should also go into DESIGN.md so the next audit doesn't flag it.</td></tr>
+<tr><td>Quick-log row only on a tall widget (≥ 240 dp)</td><td>Code only (<code>safe-to-spend-widget.tsx:28-29</code>)</td><td><span class="st Partial">Not recorded</span></td><td>This is a real trade-off (48 dp targets need height) but it is written down nowhere, and it changes default behaviour. Raised as UX-043.</td></tr>
+<tr><td>"Secondary = surface with hairline border"; mango = "selected state"</td><td><code>DESIGN.md:73, 21</code></td><td><span class="st Partial">Stale text</span></td><td>These contradict the same document's line-strong row and its rule that selected chips use ink. The code follows the newer rules. Raised as UX-048.</td></tr>
+</table>
+
+<figure style="max-width: 30%; margin-left: auto; margin-right: auto;">
+<img src="../../screenshots/login.png" alt="Login screen">
+<figcaption><code>docs/screenshots/login.png</code>, 2026-10-05, from before the round-2 and round-3 fixes. It still represents today's login screen: the same layout, the Habits line in grape, and Google sign-in in the lower half. The only differences are an "Account deleted" notice after a deletion (<code>app/login.tsx:110-116</code>) and the API host line, which release builds hide.</figcaption>
+</figure>
+</section>
+
+<!-- ============ 5. FLOWS ============ -->
+<section class="major">
+<h2>5. Core task flows</h2>
+<p>Taps are counted from Today, with the app already open. "Type" means one text entry. The target is "log in under five seconds". Times are <span class="unv">Unverified</span>.</p>
+<table>
+<thead><tr><th style="width:120px">Flow</th><th style="width:150px">Steps</th><th class="num">Taps</th><th>Friction, dead ends, undo (round 3)</th></tr></thead>
+<tr><td>Log an expense</td><td>+ → "cha 20" → Save</td><td class="num">2 + type</td><td>Meets the target. Unchanged: "Saved: Expense ৳20 · …" with Undo, which works offline. The keypad now follows Bangla numerals.</td></tr>
+<tr><td>Log income / task / time</td><td>+ → text → Save</td><td class="num">2 + type</td><td>Unchanged; good.</td></tr>
+<tr><td>Check safe-to-spend</td><td>Open the app, or glance at the widget</td><td class="num">0</td><td>In-app hero 5.85:1. The widget hero is now mint-text at 5.22 to 9.03 (was 2.97). TalkBack label is unchanged and tested.</td></tr>
+<tr><td>Quick-log from the widget</td><td>Tap "Cha ৳20"</td><td class="num">1</td><td>Now 48 dp. Then "Logged Cha ৳20" with 48 dp Undo and Keep pills for 10 minutes. Offline, it says "Saved Cha ৳20, syncs later" and Undo just drops it from the waiting list. <b>But the row only renders at ≥ 240 dp of height (UX-043)</b> <span class="unv">Unverified</span>.</td></tr>
+<tr><td>Pay a bill from Today</td><td>Next up → "Paid"</td><td class="num">1</td><td>"Rent logged · Undo" deletes the transaction and moves the due date back. A foreign-currency bill opens the sheet to ask for the rate (<code>pay-needs-rate.ts</code>). Offline + restart gap: UX-042.</td></tr>
+<tr><td>Reschedule in a planner</td><td>Drag card to a day/time</td><td class="num">drag</td><td>"Moved to Thu 8 Oct, 9:00 am · Undo" restores the earlier <code>doAt</code>, status and reminder (<code>use-move-task.ts</code>, <code>move-undo.ts</code>, tested). The message doesn't name the task, which is fine for a single drag.</td></tr>
+<tr><td>Delete a transaction</td><td>Swipe left → Delete</td><td class="num">2</td><td>Undo snackbar: 8 s by default, longer if the Android setting asks, and no timeout while TalkBack is on. "… Undo available." is announced.</td></tr>
+<tr><td>Complete a task / habit</td><td>Tap checkbox / ring</td><td class="num">1</td><td>Unchanged; the unchecked ring now reaches 3:1.</td></tr>
+<tr><td>Bring old tasks into today</td><td>Later → "Today"</td><td class="num">1</td><td>Unchanged; names the tasks and offers Undo after the server answers.</td></tr>
+<tr><td>Clear the chat</td><td>Broom</td><td class="num">1-2</td><td>Asks only when something would be lost, otherwise clears at once.</td></tr>
+<tr><td>A change the server keeps refusing</td><td>Card at top → Retry / Discard</td><td class="num">1</td><td>New in this round: refused writes are set aside, and the rest keep syncing. Discard is one tap with no Undo (UX-046).</td></tr>
+<tr><td>Sign out</td><td>Review → Settings → scroll → Sign out → confirm</td><td class="num">4 + scroll</td><td>Now at the end of Settings. Widget writes still waiting are counted in the warning too (<code>146861c</code>).</td></tr>
+<tr><td>Delete the account</td><td>Review → Settings → scroll → Delete account… → (Export) → type DELETE → Delete my account</td><td class="num">4-5 + type</td><td>Real friction, as it should be for the only irreversible action. Export is inline. The summary names unsynced changes. After success, login says "Account deleted".</td></tr>
+</table>
+</section>
+
+<!-- ============ 6. HEURISTICS ============ -->
+<section class="major">
+<h2>6. Heuristic review (Nielsen's 10)</h2>
+<table>
+<thead><tr><th style="width:170px">Heuristic</th><th class="num">R2</th><th class="num">R3</th><th>Evidence</th></tr></thead>
+<tr><td>1. Visibility of system status</td><td class="num">5</td><td class="num">5</td><td>The sync line now separates offline, stalled and stuck states and counts each (<code>components/ui/sync-status.tsx:67-103</code>). The widget says whether a log is "Logged" or "syncs later". One false positive: "Took back Rent" before the undo is actually queued (UX-042).</td></tr>
+<tr><td>2. Match with the real world</td><td class="num">4</td><td class="num">4</td><td>"Was due Mon 5 Oct", Bangla keypad, lakh grouping. Quiet hours and shutdown time are offered as "21:00" while the rest of the app says "9:00 pm" (UX-045).</td></tr>
+<tr><td>3. User control and freedom</td><td class="num">4</td><td class="num">5</td><td>Undo now covers every one-tap write: complete, delete, snooze, quick-add, bulk move, habit reset, Paid/Received/Skip, widget quick-log, planner drag and AI changes. Edges: offline restart (UX-042) and Discard (UX-046).</td></tr>
+<tr><td>4. Consistency and standards</td><td class="num">4</td><td class="num">4</td><td>PickerField is spreading (habit, planning, notifications), and <code>choiceA11y</code> gives one rule for roles. Chip rows remain in five sheets, and nine chip rows don't use the rule yet (UX-013, UX-036).</td></tr>
+<tr><td>5. Error prevention</td><td class="num">4</td><td class="num">5</td><td>Typed DELETE with export first, a "New chat" warning, foreign-currency pay routed to the sheet, and pay/skip idempotent through <code>dueAt</code>.</td></tr>
+<tr><td>6. Recognition rather than recall</td><td class="num">4</td><td class="num">4</td><td>Settings rows show current values. A picker whose stored value isn't in its preset list reads "Choose" instead of the value (UX-045).</td></tr>
+<tr><td>7. Flexibility and efficiency</td><td class="num">5</td><td class="num">5</td><td>Unchanged: natural-language capture, AI, widget, launcher shortcuts, swipe.</td></tr>
+<tr><td>8. Aesthetic and minimalist design</td><td class="num">4</td><td class="num">4</td><td>"Today and planning" is a calm list of fields. Account, bill, goal and event sheets are still chip-heavy.</td></tr>
+<tr><td>9. Help users recover from errors</td><td class="num">4</td><td class="num">5</td><td>Sign-in and delete errors go through <code>error-copy.ts</code>. Stuck writes can be retried or discarded instead of blocking the queue. Export failures notify calmly.</td></tr>
+<tr><td>10. Help and documentation</td><td class="num">4</td><td class="num">4</td><td>The Numbers caption now says exactly what it covers. The delete page explains what goes. README screenshots are out of date (UX-029).</td></tr>
+</table>
+<p>Average <b>4.5 / 5</b> (round 2: 4.2).</p>
+</section>
+
+<!-- ============ 7. FINDINGS ============ -->
+<section class="major">
+<h2>7. Findings</h2>
+<p>Open findings at <code>7e2bfeb</code>. New ones are numbered from UX-042. Round-2 findings that are only partly fixed keep their IDs, marked "carried". Paths are relative to <code>apps/mobile/src/</code> unless they start at the repo root. Findings are sorted by severity within each group.</p>
+
+<h3>7.1 User control and data trust</h3>
+<div class="finding">
+<h4>UX-042 · An offline "Paid" Undo can be lost, though the app already said "Took back"</h4>
+<div class="meta"><span class="badge Medium">Medium</span> User control / visibility of status · New · code path verified, device run <span class="unv">Unverified</span></div>
+<dl>
+<dt>Where</dt><dd><code>features/money/recurring-pay.ts:41-60</code>; <code>features/today/next-up.tsx:48-60</code>; <code>features/money/recurring-sheet.tsx:124-133</code>; <code>lib/outbox-queue.ts:69, 169-180</code> (waiters are an in-memory <code>Map</code>)</dd>
+<dt>What's wrong</dt><dd>The pay request goes into the persisted outbox, but its Undo waits on the in-memory promise <code>send.async(...)</code>. The DELETE and PATCH that reverse it are only queued once the pay's reply arrives. Offline, the user taps Paid, then Undo, and sees "Took back Rent" at once. If Android kills the app before the phone reconnects (common for a backgrounded app on a rickshaw ride), the waiter is gone. On the next launch the outbox sends the pay, nobody sends the undo, and the bill is paid with a transaction logged. Undo also does nothing if the pay is refused or set aside as stuck, while still saying "Took back". Quick-add and the widget avoid this because their Undo uses a client-made id that can be deleted later.</dd>
+<dt>Evidence</dt><dd><pre>const paid = send.async({ method: "POST", path: `/recurring/${item.id}/pay`, body, ... })
+  .catch(() =&gt; null) as Promise&lt;PayReply | null&gt;;
+return () =&gt; {
+  void paid.then((reply) =&gt; {          // only after the reply, only in this process
+    if (!reply) return;
+    for (const request of undoPayRequests(item.id, item.name, reply)) send(request);
+  });
+};
+// next-up.tsx:56-59
+onPress: () =&gt; { undo(); notify(`Took back ${item.name}`); }   // said immediately</pre></dd>
+<dt>Why it matters</dt><dd>A phantom payment changes safe-to-spend and moves the bill's next date. The user was told it didn't happen, so they won't look for it. That breaks trust in "can I afford it?", the question the app exists to answer.</dd>
+<dt>Recommendation</dt><dd>Make the undo durable and say what is true:
+<ul><li>If the pay is still waiting in the outbox, remove it from the queue (an <code>outbox.cancel(entryId)</code>, as the widget does with its pending list) and say "Took back Rent".</li>
+<li>If it has been sent, queue the reversal with what the client already knows: DELETE <code>/transactions/{transactionId}</code> (the id is made on the phone) plus a PATCH to the <code>dueAt</code> it sent.</li>
+<li>If neither is possible, say "Rent will be taken back once it syncs".</li>
+<li>Add a test that persists the queue between "pay" and "undo".</li></ul></dd>
+<dt>Effort</dt><dd>M</dd>
+</dl></div>
+
+<div class="finding">
+<h4>UX-046 · "Discard" on a stuck change is one tap with no Undo</h4>
+<div class="meta"><span class="badge Low">Low</span> User control / error prevention · New</div>
+<dl>
+<dt>Where</dt><dd><code>components/ui/sync-status.tsx:42-53</code>; <code>lib/outbox.ts:59-64</code></dd>
+<dt>What's wrong</dt><dd>When the server keeps refusing a write, it is set aside in a card with "Retry" (secondary) and "Discard" (ghost) right next to each other. Discard throws the change away at once. Everywhere else the app offers Undo instead of "Are you sure?".</dd>
+<dt>Why it matters</dt><dd>The card can hold a money write (for example "Couldn't log Rent"). A mis-tap loses something the user typed, with no way back. It happens rarely, but when it does the change is gone for good.</dd>
+<dt>Recommendation</dt><dd><code>notify("Discarded “Couldn't log Rent”", { label: "Undo", onPress: () =&gt; outbox.restoreStuck(entry) })</code>, or keep discarded entries for a session. Put a gap between the two buttons, or put Discard behind "More".</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl></div>
+
+<h3>7.2 Widget</h3>
+<div class="finding long">
+<h4>UX-043 · The widget's quick-log row is probably hidden at the default size, and labels clip at minimum width</h4>
+<div class="meta"><span class="badge Medium">Medium</span> Core flow / principle 2 · New (side effect of the UX-031 fix) · <span class="unv">Unverified</span></div>
+<dl>
+<dt>Where</dt><dd><code>features/widget/safe-to-spend-widget.tsx:27-29</code> (<code>COMPACT = 160</code>, <code>TALL = 240</code>), <code>:152-155</code>, <code>:281-295</code>, <code>:296-333</code>; <code>apps/mobile/app.json:71-74</code> (<code>minWidth 250dp</code>, <code>minHeight 130dp</code>, <code>targetCellWidth 4</code>, <code>targetCellHeight 2</code>)</dd>
+<dt>What's wrong</dt><dd>Making every widget target 48 dp was right, but the quick-log row ("Cha ৳20", "Rickshaw ৳60") now appears only when the widget is at least 240 dp tall. Before, the threshold was 170 dp (<code>git show df29d67:…safe-to-spend-widget.tsx:58</code>). A 2-row widget on common Android launchers is about 180-220 dp, so at the default 4×2 size the one-tap logs, the feature the widget description advertises, probably don't show, and nothing hints that resizing brings them back. At the 250 dp minimum width, the four action pills (<code>flex: 1</code>, 6 dp gaps, 12 dp padding) get about 52 dp each. "－ Expense" in 13 px bold needs about 65 dp, and with <code>maxLines={1}</code> and no truncation it clips.</dd>
+<dt>Evidence</dt><dd><pre>/** At or above this height (dp) there's room for the quick-log row. */
+const TALL = 240;
+...
+const tall = height &gt;= TALL;
+const showQuick = tall &amp;&amp; !undo &amp;&amp; cache.quick.length &gt; 0;</pre>
+<figure style="max-width:55%; margin-left:auto; margin-right:auto;"><img src="../../screenshots/widget.png" alt="Widget before the fixes"><figcaption><code>docs/screenshots/widget.png</code> (2026-10-05) shows the <b>pre-fix</b> widget: old palette, 36 dp pills, quick-log chips visible at the default height. It is the "before" state for UX-031 and for this trade-off. It is not what the current code renders.</figcaption></figure></dd>
+<dt>Why it matters</dt><dd>PRODUCT.md's money scene is "at a shop counter… log an expense in under five seconds". The widget's quick-log is the fastest path the app has (1 tap). If it hides by default, most users never find it.</dd>
+<dt>Recommendation</dt><dd>Check the real <code>widgetInfo.height</code> on a Pixel and a Samsung launcher at 4×2.
+<ul><li>If the row is hidden, let quick-log replace the four action pills in the normal size: two quick-logs plus "＋ Task" and "－ Expense" fit in one 48 dp row.</li>
+<li>Or drop the Next-up card's progress line in that size to make room.</li>
+<li>Use two-letter glyph labels ("＋", "－", "▶", "🎙") with full <code>accessibilityLabel</code>s below 300 dp width.</li>
+<li>Record the trade in DESIGN.md.</li></ul></dd>
+<dt>Effort</dt><dd>M</dd>
+</dl></div>
+
+<h3>7.3 Accessibility</h3>
+<div class="finding">
+<h4>UX-036 (carried) · Radio semantics reached only part of the chip rows</h4>
+<div class="meta"><span class="badge Low">Low</span> Accessibility / screen reader · Round 2: Low → partly fixed · <span class="unv">Unverified</span> on device</div>
+<dl>
+<dt>Where</dt><dd><code>components/ui/chip.tsx:24</code> (default <code>choice = "action"</code>). Still "button, selected": <code>features/money/account-sheet.tsx:156, 168</code>; <code>features/money/recurring-sheet.tsx:220, 251</code>; <code>features/money/goal-sheet.tsx:97</code>; <code>features/money/event-sheet.tsx:82</code>; <code>features/settings/category-sheet.tsx:124</code>; <code>features/plan/area-sheet.tsx:112</code>; <code>features/time/time-entry-sheet.tsx:117</code>. On/off as buttons: <code>time-entry-sheet.tsx:142</code>, <code>time/time-tracking.tsx:114</code> ("Billable"), <code>tasks/task-more-fields.tsx:52, 90</code>. Tabs without a tablist: <code>components/navigation/tab-bar.tsx:45, 105</code>.</dd>
+<dt>What's wrong</dt><dd><code>choiceA11y</code> is a good single rule (radio/checkbox with <code>checked</code>, tab with <code>selected</code>), and Segmented, swatches, the picker grid and 13 chip call sites use it. Because Chip defaults to "action", every call site that wasn't touched still says "button, selected". Toggle chips such as "Billable" / "Not billable" change their label instead of reporting a state. The tab bar is the same "tab without tablist" pattern that round 2 flagged in Segmented.</dd>
+<dt>Recommendation</dt><dd>Make <code>choice</code> required on Chip, so the compiler lists every call site. Use <code>accessibilityRole="switch"</code> with <code>checked</code> and a fixed label ("Billable") for on/off chips. Give the tab-bar capsule <code>accessibilityRole="tablist"</code>.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl></div>
+
+<div class="finding">
+<h4>UX-047 · Report chart axis labels are 10 px</h4>
+<div class="meta"><span class="badge Low">Low</span> Accessibility / type scale · New (pre-existing, missed in round 2)</div>
+<dl>
+<dt>Where</dt><dd><code>features/review/insights-screen.tsx:99-105</code> (<code>yAxisTextStyle</code> / <code>xAxisLabelTextStyle</code> <code>fontSize: 10</code>); <code>features/time/focus-stats.tsx</code> and <code>features/review/ai-usage-screen.tsx</code> leave the chart library's default size</dd>
+<dt>What's wrong</dt><dd>DESIGN.md: "Caption (13) is the smallest text; nothing goes below it except tab labels (12)." The chart axes in Reports are 10 px muted text, drawn by the chart library, so they may not follow the system font size. Insights does list the monthly figures as text below the chart, which keeps the data accessible.</dd>
+<dt>Recommendation</dt><dd><code>fontSize: 13</code> for both axis styles. Fewer x labels if needed (every 2nd month, every 5th day, as the AI chart already does).</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl></div>
+
+<div class="finding">
+<h4>UX-040 (carried) · Calendar cells are still about 43-46 dp wide in practice</h4>
+<div class="meta"><span class="badge Low">Low</span> Mobile ergonomics · Round 2: Low → partly fixed · <span class="unv">Unverified</span></div>
+<dl>
+<dt>Where</dt><dd><code>features/money/money-calendar.tsx:115</code> (inside <code>Card p-2</code>: (360 − 40 − 16) / 7 ≈ 43 dp); <code>features/plan/calendar-view.tsx:137</code> (≈ 46 dp)</dd>
+<dt>What's wrong</dt><dd>The week-planner header and transaction rows are fixed. The calendar cells got <code>hitSlop={{ left: 3, right: 3 }}</code>, which is what round 2 suggested. But the cells touch each other, so each cell's slop lies on top of its neighbour. RN hit-testing checks later siblings first, so a touch in cell <i>n</i>'s rightmost 3 dp may go to cell <i>n+1</i>. The usable width per day doesn't grow. This is my round-2 recommendation's flaw, not the implementer's. Heights (56-64 dp) are fine, and WCAG 2.5.8 (24 px) passes.</dd>
+<dt>Recommendation</dt><dd>Remove the slop. Let the money calendar drop the card's horizontal padding (<code>px-0</code>) or bleed to the screen edge, which gives about 46 dp. Or accept 46 dp × 64 dp explicitly in DESIGN.md for 7-column grids.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl></div>
+
+<h3>7.4 Visual design and consistency</h3>
+<div class="finding">
+<h4>UX-013 (carried) · Chip rows remain in five less-used sheets</h4>
+<div class="meta"><span class="badge Low">Low</span> Visual design / minimalism (anti-reference) · Round 2: Medium → partly fixed, lowered to Low</div>
+<dl>
+<dt>Where</dt><dd><code>features/money/account-sheet.tsx:155-170</code> (5 type chips + currency chips); <code>features/money/recurring-sheet.tsx:216-258</code> (BDT/USD/EUR chips, "Next due" date chip, 5 "Remind me" chips); <code>features/money/goal-sheet.tsx:95-118</code> and <code>event-sheet.tsx:80-107</code> (emoji rows + date chips); <code>features/time/time-entry-sheet.tsx:113-147</code> (duration chips, "Started" chip, "Billable" chip); <code>features/settings/category-sheet.tsx:122-140</code>, <code>features/plan/area-sheet.tsx:110-114</code> (emoji rows)</dd>
+<dt>What's wrong</dt><dd>The habit sheet shows the target pattern: emoji grid behind "Emoji ▾", "How often ▾", "Nudge me at ▾". "Today and planning" and notifications are now one field per setting. The other money and time sheets weren't converted, although commit <code>d50237a</code> says they were. Chips are neutral now, so the "colourful chips" problem is gone. What remains is the wall-of-options look in a few sheets that are opened rarely.</dd>
+<dt>Recommendation</dt><dd>Same PickerField approach: <code>layout="grid"</code> for emoji, a list for currency, account type, reminder days and durations. Date chips can stay as "Next due Mon 5 Oct ▾"-style fields. Correct the commit history note in the PR description.</dd>
+<dt>Effort</dt><dd>M</dd>
+</dl></div>
+
+<div class="finding">
+<h4>UX-044 · Colour drift outside the new colour-meaning test</h4>
+<div class="meta"><span class="badge Low">Low</span> Visual design / principle 4 · New</div>
+<dl>
+<dt>Where</dt><dd><code>features/review/ai-usage-screen.tsx:74</code> (<code>frontColor: colors.grape</code>), <code>:113</code> (<code>tone={… ? "coral" : "grape"}</code>); <code>components/ui/amount-keypad.tsx:73</code> (<code>bg-mango/30</code> on ÷ × − +); <code>features/assistant/thinking-indicator.tsx:19</code> (mango, sky, grape dots); <code>features/settings/setting-row.tsx:31</code> (switch "on" track mango); <code>apps/mobile/test/colour-meaning.test.ts:33, 40</code></dd>
+<dt>What's wrong</dt><dd>The test's pattern <code>/(iconColor|tone|color)(=|: )["{]*"grape"/</code> only catches a literal right after the prop. It misses <code>className="bg-grape…"</code>, <code>colors.grape</code> and ternaries, which is how the AI cost screen's purple bars got through. Mango, "reserved for the one primary action per screen", also tints four keypad keys on the same screen as the mango Save button.</dd>
+<dt>Recommendation</dt><dd>Make the AI cost bars and bar neutral (<code>muted</code>, or <code>coral</code> when over the cap). Make keypad operators <code>bg-line</code>. Widen the test to match <code>grape</code> in any form (<code>/\bgrape\b|bg-grape|text-grape|colors\.grape/</code>) with the same allow-list, and add an allow-list for mango (FAB, primary button, draft Save, Tiki).</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl></div>
+
+<div class="finding">
+<h4>UX-048 · DESIGN.md contradicts itself in two places</h4>
+<div class="meta"><span class="badge Low">Low</span> Design system / documentation · New</div>
+<dl>
+<dt>Where</dt><dd><code>DESIGN.md:21</code> (mango role "Primary action, FAB, selected state") vs <code>:34</code> ("Selected chips use the ink colour inverted… mango is reserved for the one primary action"); <code>DESIGN.md:73</code> ("secondary = surface with hairline border") vs <code>:20</code> (line-strong: "Input, outlined-button and switch-track boundaries") and <code>components/ui/button.tsx:18</code> (<code>border-line-strong</code>)</dd>
+<dt>What's wrong</dt><dd>The code follows the newer rules (ink selection, line-strong outlines), but the older sentences are still in the yardstick. A future change could follow the stale line and reintroduce a 1.25:1 button border or mango selection.</dd>
+<dt>Recommendation</dt><dd>Change the mango role to "Primary action, FAB" and the secondary button to "surface with line-strong border". Also record the "dates stay 0-9" and widget quick-log decisions (UX-043) while editing.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl></div>
+
+<h3>7.5 Content and settings</h3>
+<div class="finding">
+<h4>UX-045 · Settings pickers say "Choose" for values set elsewhere, and show 24-hour times</h4>
+<div class="meta"><span class="badge Low">Low</span> Recognition / match with the real world · New</div>
+<dl>
+<dt>Where</dt><dd><code>components/ui/picker-field.tsx:66-70</code> (falls back to <code>placeholder</code>); <code>features/settings/planning-settings.tsx:22-29, 55-88</code> (preset lists); <code>features/settings/notification-settings.tsx:10, 23-43</code>; <code>features/habits/habit-sheet.tsx:21, 100-106</code>; <code>apps/api/src/modules/ai/assistant/tools.ts:107</code> (<code>update_settings</code>)</dd>
+<dt>What's wrong</dt><dd>The pickers offer fixed presets: daily goal 0/3/5/7/10, work 15/25/45/50/90 min, quiet hours 21:00-00:00 and 06:00-08:00, 10 habit emoji. The schema allows any goal from 0 to 50 and any work length from 5 to 120, and Tiki can set them ("set my daily goal to 4"). Habits made by the assistant can have any emoji. In those cases the field reads "Daily task goal: Choose", which looks unset. The event sheet already handles this ("Keep an emoji picked elsewhere selectable", <code>event-sheet.tsx:80</code>). Separately, the time options read "21:00" and "22:30" while every other time in the app is "9:00 pm" (<code>formatClock</code>).</dd>
+<dt>Recommendation</dt><dd>In PickerField, when <code>value</code> isn't in <code>options</code>, prepend it as an option labelled with its own value. Label time options with <code>formatClock</code> and keep the "HH:mm" id.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl></div>
+
+<h3>7.6 Documentation</h3>
+<div class="finding">
+<h4>UX-029 (carried) · README screenshots predate every fix</h4>
+<div class="meta"><span class="badge Low">Low</span> Documentation · Round 1 and 2: not fixed</div>
+<dl>
+<dt>Where</dt><dd><code>docs/screenshots/*.png</code> (23 files, last commit <code>1f25750</code>, 2026-10-05); <code>README.md:11-13, 44-72</code></dd>
+<dt>What's wrong</dt><dd>The README and any store or OAuth listing still show the old widget (2.84:1 "Expense" pill), unsigned coral expenses, the chip-wall task sheet and the old Today order. It is understandable that they couldn't be re-shot without Play services, but the README doesn't say they are out of date.</dd>
+<dt>Recommendation</dt><dd>Re-shoot on a real device once UX-042 and UX-043 are settled. Until then, add one line under "Screenshots": "Taken 2026-10-05, before the accessibility and colour fixes."</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl></div>
+</section>
+
+<!-- ============ 8. QUICK WINS ============ -->
+<section class="major">
+<h2>8. Top 10 quick wins</h2>
+<table>
+<thead><tr><th class="num">#</th><th>Change</th><th>Fixes</th><th>Effort</th></tr></thead>
+<tr><td class="num">1</td><td>Pay Undo: cancel the queued pay if it is still in the outbox, otherwise queue DELETE + PATCH from client-known ids. Say "will be taken back once it syncs" when neither is possible.</td><td>UX-042</td><td>M</td></tr>
+<tr><td class="num">2</td><td>Measure the widget at 4×2 on two launchers. If the row is hidden, swap two action pills for quick-logs at normal height.</td><td>UX-043</td><td>S-M</td></tr>
+<tr><td class="num">3</td><td>Make <code>choice</code> required on Chip; use <code>switch</code> for on/off chips; add a tablist on the tab-bar capsule.</td><td>UX-036</td><td>S</td></tr>
+<tr><td class="num">4</td><td>Widen the colour-meaning regex; neutral AI cost bars; <code>bg-line</code> keypad operators.</td><td>UX-044</td><td>S</td></tr>
+<tr><td class="num">5</td><td>PickerField: show an off-list stored value instead of "Choose"; format times with <code>formatClock</code>.</td><td>UX-045</td><td>S</td></tr>
+<tr><td class="num">6</td><td>Undo on "Discard" for stuck changes.</td><td>UX-046</td><td>S</td></tr>
+<tr><td class="num">7</td><td>Chart axis labels at 13 px.</td><td>UX-047</td><td>S</td></tr>
+<tr><td class="num">8</td><td>Fix the two stale DESIGN.md sentences; record "dates stay 0-9" and the widget height trade.</td><td>UX-048</td><td>S</td></tr>
+<tr><td class="num">9</td><td>Remove the overlapping calendar hitSlop; drop the card padding on the money calendar.</td><td>UX-040</td><td>S</td></tr>
+<tr><td class="num">10</td><td>One line under README › Screenshots saying when they were taken.</td><td>UX-029</td><td>S</td></tr>
+</table>
+
+<h2 style="margin-top:20px">9. Three bigger redesign suggestions</h2>
+<h3>R1. One durable "reversible write" primitive (UX-042, UX-046)</h3>
+<p>The app now has four Undo mechanisms: client-id DELETE (quick-add, widget), the server's <code>before</code> state (bulk moves), the server's <code>previousDueAt</code> (pay), and local <code>previousFields</code> (planner moves). Only the first survives a restart. Put them behind one outbox call: <code>outbox.reversible(request, inverse)</code>. It stores the inverse next to the entry. Undo either cancels the queued entry or enqueues the stored inverse, and both are persisted. The snackbar copy then comes from the outcome ("Took back" or "Will be taken back once it syncs"), not from the tap.</p>
+<h3>R2. A widget layout per size class (UX-043)</h3>
+<p>Define three named layouts: compact (&lt;160), normal (160-239) and tall (≥240). Write down what each must show, in this priority order: safe-to-spend, then one-tap logging, then Next up, then shortcuts. Add a pure <code>widgetLayout(height, width)</code> function with tests, as the colours already have. That makes the 48 dp versus content trade a recorded decision instead of a constant in the code.</p>
+<h3>R3. Finish the form vocabulary (UX-013, UX-036, UX-045)</h3>
+<p>Three field types cover every remaining chip row: <code>ChoiceField</code> (PickerField + radio semantics + off-list value), <code>ToggleField</code> (a switch row) and <code>DateField</code> ("Next due Mon 5 Oct ▾"). With those, Chip is left for true actions and multi-select, and its <code>choice</code> prop can become required. Converting the account, bill, goal, event and time-entry sheets is then a mechanical change.</p>
+</section>
+
+<!-- ============ 10. STRENGTHS ============ -->
+<section class="major">
+<h2>10. Strengths (keep these)</h2>
+<ul>
+<li><b>Tests that guard the design system.</b> <code>contrast.test.ts</code> covers text, tints, fills, sole-cue marks, both accent themes and the widget. <code>colour-meaning.test.ts</code> limits purple to habits. <code>snack-timing.test.ts</code> pins the WCAG 2.2.1 behaviour. My independent script found 0 token mismatches across palette.ts, global.css and DESIGN.md, and no text pair under 4.5:1 anywhere.</li>
+<li><b>The widget fix went to the root cause.</b> Instead of new hex values, the widget derives its colours from the tested palette (<code>widget-colors.ts</code>), so it can't drift again. It also gained numerals, 48 dp targets and an offline-safe Undo with a "Keep" option.</li>
+<li><b>Undo is now the rule, not the exception.</b> Paid, Received, Skip, planner drags, widget quick-logs, quick-add, bulk moves, deletes and AI changes can all be taken back, and the snackbar waits for TalkBack users.</li>
+<li><b>Real friction exactly once.</b> Account deletion has its own page with export first, an unsynced-change count, typed DELETE, mapped errors, and a confirmation on login afterwards. Nothing else in the app asks "Are you sure?".</li>
+<li><b>Copy is kind and specific:</b> "Was due Mon 5 Oct", "A fresh start", "A quiet week. Next week is a fresh start.", "2 changes are waiting for your answer… A new chat drops them." Plurals come from one helper.</li>
+<li><b>Honest scope statements:</b> the Numbers caption says what it covers, and the FAB trade-off is measured and recorded.</li>
+<li><b>Sync status that informs without alarming:</b> offline, stalled and stuck are told apart, and a stuck write no longer blocks everything behind it.</li>
+<li><b>Reduce motion, font scaling and roles</b> stay as solid as in round 2: 6 components check <code>useReducedMotion</code>, 0 uses of <code>allowFontScaling={false}</code>, and 84 <code>accessibilityRole</code> props.</li>
+</ul>
+
+<h2 style="margin-top:18px">11. Action plan</h2>
+<table>
+<thead><tr><th class="num">Order</th><th>ID</th><th>Title</th><th>Severity</th><th>Effort</th></tr></thead>
+<tr><td class="num">1</td><td>UX-042</td><td>Durable, truthful Undo for offline Paid/Received/Skip</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+<tr><td class="num">2</td><td>UX-043</td><td>Widget quick-log visible at the default size; no clipped pills</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+<tr><td class="num">3</td><td>UX-036</td><td>Required <code>choice</code> on Chip; switches; tablist</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+<tr><td class="num">4</td><td>UX-044</td><td>Colour drift outside the test; widen the test</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+<tr><td class="num">5</td><td>UX-045</td><td>Off-list picker values; 12-hour time labels</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+<tr><td class="num">6</td><td>UX-046</td><td>Undo for Discard</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+<tr><td class="num">7</td><td>UX-047</td><td>13 px chart labels</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+<tr><td class="num">8</td><td>UX-048</td><td>DESIGN.md self-contradictions</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+<tr><td class="num">9</td><td>UX-040</td><td>Calendar cell width (remove overlapping slop)</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+<tr><td class="num">10</td><td>UX-013</td><td>Pickers in the account, bill, goal, event and time-entry sheets</td><td><span class="badge Low">Low</span></td><td>M</td></tr>
+<tr><td class="num">11</td><td>UX-029</td><td>Re-shoot screenshots (or date them)</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+</table>
+<p>11 open findings. The order is impact over effort. UX-042 comes first because it is the only place the app can tell the user something about their money that isn't true.</p>
+</section>
+
+<!-- ============ APPENDIX A ============ -->
+<section class="major">
+<h2>Appendix A. WCAG contrast ratios (computed)</h2>
+<p><b>Method.</b> WCAG 2.x relative luminance, (L1 + 0.05) / (L2 + 0.05). A script parsed <code>theme/palette.ts</code> (base and accent themes), checked it equal to <code>global.css</code> and to the DESIGN.md table (0 mismatches in 70 comparisons), and rebuilt the widget palette with the same <code>blend()</code> as <code>widget-colors.ts</code>. Translucent fills are flattened onto the surface below. Thresholds: 4.5 for text, 3.0 for sole-cue marks and component boundaries. "Informative" rows show the bright marks where they sit beside a label or value (allowed by DESIGN.md), so a ratio under 3 there is <i>not</i> a failure. "n/a" marks decorative hairlines and fills where 1.4.11 does not apply. The ratios DESIGN.md quotes all reproduce (tokens unchanged since round 2).</p>
+<h3>light</h3>
+<table class="small"><thead><tr><th>Foreground</th><th>Background</th><th>Hex</th><th class="num">Ratio</th><th class="num">Needs</th><th>Result</th><th>Use</th></tr></thead>
+<tr><td>ink</td><td>background</td><td><code>#23202B / #FFF8EE</code></td><td class="num">15.17</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>ink</td><td>card</td><td><code>#23202B / #FFFFFF</code></td><td class="num">15.99</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>background</td><td><code>#6B655F / #FFF8EE</code></td><td class="num">5.45</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#6B655F / #FFFFFF</code></td><td class="num">5.75</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>background</td><td><code>#8A5A00 / #FFF8EE</code></td><td class="num">5.62</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>card</td><td><code>#8A5A00 / #FFFFFF</code></td><td class="num">5.93</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#2C5BCB / #FFF8EE</code></td><td class="num">5.75</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#2C5BCB / #FFFFFF</code></td><td class="num">6.06</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#11725D / #FFF8EE</code></td><td class="num">5.55</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#11725D / #FFFFFF</code></td><td class="num">5.85</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#B23A2A / #FFF8EE</code></td><td class="num">5.64</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#B23A2A / #FFFFFF</code></td><td class="num">5.95</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#6E44D6 / #FFF8EE</code></td><td class="num">5.75</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#6E44D6 / #FFFFFF</code></td><td class="num">6.07</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>sky/15 over background</td><td><code>#2C5BCB / #E6E8F1</code></td><td class="num">4.96</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>skyText</td><td>sky/15 over card</td><td><code>#2C5BCB / #E6EEFF</code></td><td class="num">5.20</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>mintText</td><td>mint/15 over background</td><td><code>#11725D / #E0F0E2</code></td><td class="num">4.94</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>mintText</td><td>mint/15 over card</td><td><code>#11725D / #E0F6F1</code></td><td class="num">5.19</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>coralText</td><td>coral/15 over background</td><td><code>#B23A2A / #FFE5DA</code></td><td class="num">4.95</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>coralText</td><td>coral/15 over card</td><td><code>#B23A2A / #FFEBE9</code></td><td class="num">5.19</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>grapeText</td><td>grape/15 over background</td><td><code>#6E44D6 / #F2E5F1</code></td><td class="num">4.99</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>grapeText</td><td>grape/15 over card</td><td><code>#6E44D6 / #F2EBFF</code></td><td class="num">5.23</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>muted</td><td>line/60 over background</td><td><code>#6B655F / #F5EDE1</code></td><td class="num">4.95</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>segmented (unselected)</td></tr>
+<tr><td>ink</td><td>card (segmented selected)</td><td><code>#23202B / #FFFFFF</code></td><td class="num">15.99</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>segmented (selected)</td></tr>
+<tr><td>on-mango</td><td>mango fill</td><td><code>#23202B / #FFB547</code></td><td class="num">9.10</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>on-mango</td><td>sky fill</td><td><code>#23202B / #5B8CFF</code></td><td class="num">5.06</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>on-mango</td><td>mint fill</td><td><code>#23202B / #2EC4A0</code></td><td class="num">7.25</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>on-mango</td><td>coral fill</td><td><code>#23202B / #FF7A6B</code></td><td class="num">6.28</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>on-mango</td><td>grape fill</td><td><code>#23202B / #A57BFF</code></td><td class="num">5.24</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>background</td><td>ink</td><td><code>#FFF8EE / #23202B</code></td><td class="num">15.17</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>selected chip, snackbar text</td></tr>
+<tr><td>mangoInverse</td><td>ink</td><td><code>#FFB547 / #23202B</code></td><td class="num">9.10</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>snackbar Undo</td></tr>
+<tr><td>ink</td><td>mango/30 over background</td><td><code>#23202B / #FFE4BC</code></td><td class="num">13.01</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>keypad operator key</td></tr>
+<tr><td>ink</td><td>mango/30 over card</td><td><code>#23202B / #FFE9C8</code></td><td class="num">13.51</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>keypad operator key</td></tr>
+<tr><td>ink</td><td>coral/10 over card</td><td><code>#23202B / #FFF2F0</code></td><td class="num">14.63</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>login error box</td></tr>
+<tr><td>ink</td><td>sky/15 over card</td><td><code>#23202B / #E6EEFF</code></td><td class="num">13.74</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>calendar today cell</td></tr>
+<tr><td>ink</td><td>line (tab pill)</td><td><code>#23202B / #EEE5D8</code></td><td class="num">12.82</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>active tab icon on pill</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#6B655F / #FFFFFF</code></td><td class="num">5.75</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>inactive tab label 12px</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#2C5BCB / #FFF8EE</code></td><td class="num">5.75</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#2C5BCB / #FFFFFF</code></td><td class="num">6.06</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#11725D / #FFF8EE</code></td><td class="num">5.55</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#11725D / #FFFFFF</code></td><td class="num">5.85</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#B23A2A / #FFF8EE</code></td><td class="num">5.64</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#B23A2A / #FFFFFF</code></td><td class="num">5.95</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#6E44D6 / #FFF8EE</code></td><td class="num">5.75</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#6E44D6 / #FFFFFF</code></td><td class="num">6.07</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>background</td><td><code>#8F8475 / #FFF8EE</code></td><td class="num">3.48</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>card</td><td><code>#8F8475 / #FFFFFF</code></td><td class="num">3.67</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>sky (bright)</td><td>background</td><td><code>#5B8CFF / #FFF8EE</code></td><td class="num">2.999</td><td class="num">3.0*</td><td><span class="na">below 3 (informative)</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>sky (bright)</td><td>card</td><td><code>#5B8CFF / #FFFFFF</code></td><td class="num">3.16</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>mint (bright)</td><td>background</td><td><code>#2EC4A0 / #FFF8EE</code></td><td class="num">2.09</td><td class="num">3.0*</td><td><span class="na">below 3 (informative)</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>mint (bright)</td><td>card</td><td><code>#2EC4A0 / #FFFFFF</code></td><td class="num">2.21</td><td class="num">3.0*</td><td><span class="na">below 3 (informative)</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>coral (bright)</td><td>background</td><td><code>#FF7A6B / #FFF8EE</code></td><td class="num">2.41</td><td class="num">3.0*</td><td><span class="na">below 3 (informative)</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>coral (bright)</td><td>card</td><td><code>#FF7A6B / #FFFFFF</code></td><td class="num">2.55</td><td class="num">3.0*</td><td><span class="na">below 3 (informative)</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>grape (bright)</td><td>background</td><td><code>#A57BFF / #FFF8EE</code></td><td class="num">2.90</td><td class="num">3.0*</td><td><span class="na">below 3 (informative)</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>grape (bright)</td><td>card</td><td><code>#A57BFF / #FFFFFF</code></td><td class="num">3.05</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>mango (bright)</td><td>background</td><td><code>#FFB547 / #FFF8EE</code></td><td class="num">1.67</td><td class="num">3.0*</td><td><span class="na">below 3 (informative)</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>mango (bright)</td><td>card</td><td><code>#FFB547 / #FFFFFF</code></td><td class="num">1.76</td><td class="num">3.0*</td><td><span class="na">below 3 (informative)</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>line</td><td>background</td><td><code>#EEE5D8 / #FFF8EE</code></td><td class="num">1.18</td><td class="num">—</td><td><span class="na">n/a</span></td><td>hairline (decorative)</td></tr>
+<tr><td>line</td><td>card</td><td><code>#EEE5D8 / #FFFFFF</code></td><td class="num">1.25</td><td class="num">—</td><td><span class="na">n/a</span></td><td>hairline (decorative)</td></tr>
+</table>
+<h3>light / mint-breeze</h3>
+<table class="small"><thead><tr><th>Foreground</th><th>Background</th><th>Hex</th><th class="num">Ratio</th><th class="num">Needs</th><th>Result</th><th>Use</th></tr></thead>
+<tr><td>ink</td><td>background</td><td><code>#23202B / #ECFAF5</code></td><td class="num">14.90</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>ink</td><td>card</td><td><code>#23202B / #FFFFFF</code></td><td class="num">15.99</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>background</td><td><code>#6B655F / #ECFAF5</code></td><td class="num">5.36</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#6B655F / #FFFFFF</code></td><td class="num">5.75</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>background</td><td><code>#8A5A00 / #ECFAF5</code></td><td class="num">5.52</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>card</td><td><code>#8A5A00 / #FFFFFF</code></td><td class="num">5.93</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#2C5BCB / #ECFAF5</code></td><td class="num">5.64</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#2C5BCB / #FFFFFF</code></td><td class="num">6.06</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#11725D / #ECFAF5</code></td><td class="num">5.45</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#11725D / #FFFFFF</code></td><td class="num">5.85</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#B23A2A / #ECFAF5</code></td><td class="num">5.54</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#B23A2A / #FFFFFF</code></td><td class="num">5.95</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#6E44D6 / #ECFAF5</code></td><td class="num">5.65</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#6E44D6 / #FFFFFF</code></td><td class="num">6.07</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#2C5BCB / #ECFAF5</code></td><td class="num">5.64</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#2C5BCB / #FFFFFF</code></td><td class="num">6.06</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#11725D / #ECFAF5</code></td><td class="num">5.45</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#11725D / #FFFFFF</code></td><td class="num">5.85</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#B23A2A / #ECFAF5</code></td><td class="num">5.54</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#B23A2A / #FFFFFF</code></td><td class="num">5.95</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#6E44D6 / #ECFAF5</code></td><td class="num">5.65</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#6E44D6 / #FFFFFF</code></td><td class="num">6.07</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>background</td><td><code>#8F8475 / #ECFAF5</code></td><td class="num">3.42</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>card</td><td><code>#8F8475 / #FFFFFF</code></td><td class="num">3.67</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+</table>
+<h3>light / grape-dusk</h3>
+<table class="small"><thead><tr><th>Foreground</th><th>Background</th><th>Hex</th><th class="num">Ratio</th><th class="num">Needs</th><th>Result</th><th>Use</th></tr></thead>
+<tr><td>ink</td><td>background</td><td><code>#23202B / #F6F1FF</code></td><td class="num">14.43</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>ink</td><td>card</td><td><code>#23202B / #FFFFFF</code></td><td class="num">15.99</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>background</td><td><code>#6B655F / #F6F1FF</code></td><td class="num">5.19</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#6B655F / #FFFFFF</code></td><td class="num">5.75</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>background</td><td><code>#8A5A00 / #F6F1FF</code></td><td class="num">5.35</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>card</td><td><code>#8A5A00 / #FFFFFF</code></td><td class="num">5.93</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#2C5BCB / #F6F1FF</code></td><td class="num">5.47</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#2C5BCB / #FFFFFF</code></td><td class="num">6.06</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#11725D / #F6F1FF</code></td><td class="num">5.28</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#11725D / #FFFFFF</code></td><td class="num">5.85</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#B23A2A / #F6F1FF</code></td><td class="num">5.36</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#B23A2A / #FFFFFF</code></td><td class="num">5.95</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#6E44D6 / #F6F1FF</code></td><td class="num">5.47</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#6E44D6 / #FFFFFF</code></td><td class="num">6.07</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#2C5BCB / #F6F1FF</code></td><td class="num">5.47</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#2C5BCB / #FFFFFF</code></td><td class="num">6.06</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#11725D / #F6F1FF</code></td><td class="num">5.28</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#11725D / #FFFFFF</code></td><td class="num">5.85</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#B23A2A / #F6F1FF</code></td><td class="num">5.36</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#B23A2A / #FFFFFF</code></td><td class="num">5.95</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#6E44D6 / #F6F1FF</code></td><td class="num">5.47</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#6E44D6 / #FFFFFF</code></td><td class="num">6.07</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>background</td><td><code>#8F8475 / #F6F1FF</code></td><td class="num">3.31</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>card</td><td><code>#8F8475 / #FFFFFF</code></td><td class="num">3.67</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+</table>
+<h3>dark</h3>
+<table class="small"><thead><tr><th>Foreground</th><th>Background</th><th>Hex</th><th class="num">Ratio</th><th class="num">Needs</th><th>Result</th><th>Use</th></tr></thead>
+<tr><td>ink</td><td>background</td><td><code>#F4F1EA / #16151C</code></td><td class="num">16.07</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>ink</td><td>card</td><td><code>#F4F1EA / #22202B</code></td><td class="num">14.22</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>background</td><td><code>#A09AA6 / #16151C</code></td><td class="num">6.62</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#A09AA6 / #22202B</code></td><td class="num">5.86</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>background</td><td><code>#FFC266 / #16151C</code></td><td class="num">11.36</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>card</td><td><code>#FFC266 / #22202B</code></td><td class="num">10.05</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#7AA2FF / #16151C</code></td><td class="num">7.29</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#7AA2FF / #22202B</code></td><td class="num">6.44</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#4FD8B5 / #16151C</code></td><td class="num">10.21</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#4FD8B5 / #22202B</code></td><td class="num">9.03</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#FF9385 / #16151C</code></td><td class="num">8.43</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#FF9385 / #22202B</code></td><td class="num">7.46</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#B996FF / #16151C</code></td><td class="num">7.66</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#B996FF / #22202B</code></td><td class="num">6.77</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>sky/15 over background</td><td><code>#7AA2FF / #252A3E</code></td><td class="num">5.70</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>skyText</td><td>sky/15 over card</td><td><code>#7AA2FF / #2F344B</code></td><td class="num">4.92</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>mintText</td><td>mint/15 over background</td><td><code>#4FD8B5 / #1F3233</code></td><td class="num">7.57</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>mintText</td><td>mint/15 over card</td><td><code>#4FD8B5 / #293C40</code></td><td class="num">6.51</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>coralText</td><td>coral/15 over background</td><td><code>#FF9385 / #39282C</code></td><td class="num">6.45</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>coralText</td><td>coral/15 over card</td><td><code>#FF9385 / #433138</code></td><td class="num">5.63</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>grapeText</td><td>grape/15 over background</td><td><code>#B996FF / #2E283E</code></td><td class="num">5.96</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>grapeText</td><td>grape/15 over card</td><td><code>#B996FF / #39324B</code></td><td class="num">5.12</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>tinted chip / icon circle</td></tr>
+<tr><td>muted</td><td>line/60 over background</td><td><code>#A09AA6 / #282631</code></td><td class="num">5.43</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>segmented (unselected)</td></tr>
+<tr><td>ink</td><td>card (segmented selected)</td><td><code>#F4F1EA / #22202B</code></td><td class="num">14.22</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>segmented (selected)</td></tr>
+<tr><td>on-mango</td><td>mango fill</td><td><code>#23202B / #FFC266</code></td><td class="num">10.02</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>on-mango</td><td>sky fill</td><td><code>#23202B / #7AA2FF</code></td><td class="num">6.43</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>on-mango</td><td>mint fill</td><td><code>#23202B / #4FD8B5</code></td><td class="num">9.00</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>on-mango</td><td>coral fill</td><td><code>#23202B / #FF9385</code></td><td class="num">7.44</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>on-mango</td><td>grape fill</td><td><code>#23202B / #B996FF</code></td><td class="num">6.76</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text/icon on fill</td></tr>
+<tr><td>background</td><td>ink</td><td><code>#16151C / #F4F1EA</code></td><td class="num">16.07</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>selected chip, snackbar text</td></tr>
+<tr><td>mangoInverse</td><td>ink</td><td><code>#8A5A00 / #F4F1EA</code></td><td class="num">5.25</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>snackbar Undo</td></tr>
+<tr><td>ink</td><td>mango/30 over background</td><td><code>#F4F1EA / #5C4932</code></td><td class="num">7.59</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>keypad operator key</td></tr>
+<tr><td>ink</td><td>mango/30 over card</td><td><code>#F4F1EA / #64513D</code></td><td class="num">6.68</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>keypad operator key</td></tr>
+<tr><td>ink</td><td>coral/10 over card</td><td><code>#F4F1EA / #382C34</code></td><td class="num">11.80</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>login error box</td></tr>
+<tr><td>ink</td><td>sky/15 over card</td><td><code>#F4F1EA / #2F344B</code></td><td class="num">10.86</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>calendar today cell</td></tr>
+<tr><td>ink</td><td>line (tab pill)</td><td><code>#F4F1EA / #34313F</code></td><td class="num">11.23</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>active tab icon on pill</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#A09AA6 / #22202B</code></td><td class="num">5.86</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>inactive tab label 12px</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#7AA2FF / #16151C</code></td><td class="num">7.29</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#7AA2FF / #22202B</code></td><td class="num">6.44</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#4FD8B5 / #16151C</code></td><td class="num">10.21</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#4FD8B5 / #22202B</code></td><td class="num">9.03</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#FF9385 / #16151C</code></td><td class="num">8.43</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#FF9385 / #22202B</code></td><td class="num">7.46</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#B996FF / #16151C</code></td><td class="num">7.66</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#B996FF / #22202B</code></td><td class="num">6.77</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>background</td><td><code>#7A748C / #16151C</code></td><td class="num">4.06</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>card</td><td><code>#7A748C / #22202B</code></td><td class="num">3.59</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>sky (bright)</td><td>background</td><td><code>#7AA2FF / #16151C</code></td><td class="num">7.29</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>sky (bright)</td><td>card</td><td><code>#7AA2FF / #22202B</code></td><td class="num">6.44</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>mint (bright)</td><td>background</td><td><code>#4FD8B5 / #16151C</code></td><td class="num">10.21</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>mint (bright)</td><td>card</td><td><code>#4FD8B5 / #22202B</code></td><td class="num">9.03</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>coral (bright)</td><td>background</td><td><code>#FF9385 / #16151C</code></td><td class="num">8.43</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>coral (bright)</td><td>card</td><td><code>#FF9385 / #22202B</code></td><td class="num">7.46</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>grape (bright)</td><td>background</td><td><code>#B996FF / #16151C</code></td><td class="num">7.66</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>grape (bright)</td><td>card</td><td><code>#B996FF / #22202B</code></td><td class="num">6.77</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>mango (bright)</td><td>background</td><td><code>#FFC266 / #16151C</code></td><td class="num">11.36</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>mango (bright)</td><td>card</td><td><code>#FFC266 / #22202B</code></td><td class="num">10.05</td><td class="num">3.0*</td><td><span class="pass">PASS</span></td><td>bright mark beside a label (informative)</td></tr>
+<tr><td>line</td><td>background</td><td><code>#34313F / #16151C</code></td><td class="num">1.43</td><td class="num">—</td><td><span class="na">n/a</span></td><td>hairline (decorative)</td></tr>
+<tr><td>line</td><td>card</td><td><code>#34313F / #22202B</code></td><td class="num">1.27</td><td class="num">—</td><td><span class="na">n/a</span></td><td>hairline (decorative)</td></tr>
+</table>
+<h3>dark / mint-breeze</h3>
+<table class="small"><thead><tr><th>Foreground</th><th>Background</th><th>Hex</th><th class="num">Ratio</th><th class="num">Needs</th><th>Result</th><th>Use</th></tr></thead>
+<tr><td>ink</td><td>background</td><td><code>#F4F1EA / #101C1A</code></td><td class="num">15.47</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>ink</td><td>card</td><td><code>#F4F1EA / #1A2825</code></td><td class="num">13.55</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>background</td><td><code>#A09AA6 / #101C1A</code></td><td class="num">6.37</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#A09AA6 / #1A2825</code></td><td class="num">5.58</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>background</td><td><code>#FFC266 / #101C1A</code></td><td class="num">10.94</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>card</td><td><code>#FFC266 / #1A2825</code></td><td class="num">9.58</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#7AA2FF / #101C1A</code></td><td class="num">7.02</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#7AA2FF / #1A2825</code></td><td class="num">6.14</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#4FD8B5 / #101C1A</code></td><td class="num">9.83</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#4FD8B5 / #1A2825</code></td><td class="num">8.60</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#FF9385 / #101C1A</code></td><td class="num">8.12</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#FF9385 / #1A2825</code></td><td class="num">7.11</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#B996FF / #101C1A</code></td><td class="num">7.37</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#B996FF / #1A2825</code></td><td class="num">6.45</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#7AA2FF / #101C1A</code></td><td class="num">7.02</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#7AA2FF / #1A2825</code></td><td class="num">6.14</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#4FD8B5 / #101C1A</code></td><td class="num">9.83</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#4FD8B5 / #1A2825</code></td><td class="num">8.60</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#FF9385 / #101C1A</code></td><td class="num">8.12</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#FF9385 / #1A2825</code></td><td class="num">7.11</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#B996FF / #101C1A</code></td><td class="num">7.37</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#B996FF / #1A2825</code></td><td class="num">6.45</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>background</td><td><code>#7A748C / #101C1A</code></td><td class="num">3.91</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>card</td><td><code>#7A748C / #1A2825</code></td><td class="num">3.42</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+</table>
+<h3>dark / grape-dusk</h3>
+<table class="small"><thead><tr><th>Foreground</th><th>Background</th><th>Hex</th><th class="num">Ratio</th><th class="num">Needs</th><th>Result</th><th>Use</th></tr></thead>
+<tr><td>ink</td><td>background</td><td><code>#F4F1EA / #181424</code></td><td class="num">15.99</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>ink</td><td>card</td><td><code>#F4F1EA / #241E34</code></td><td class="num">14.21</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>background</td><td><code>#A09AA6 / #181424</code></td><td class="num">6.59</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#A09AA6 / #241E34</code></td><td class="num">5.85</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>background</td><td><code>#FFC266 / #181424</code></td><td class="num">11.30</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mangoText</td><td>card</td><td><code>#FFC266 / #241E34</code></td><td class="num">10.04</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#7AA2FF / #181424</code></td><td class="num">7.25</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#7AA2FF / #241E34</code></td><td class="num">6.44</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#4FD8B5 / #181424</code></td><td class="num">10.15</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#4FD8B5 / #241E34</code></td><td class="num">9.02</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#FF9385 / #181424</code></td><td class="num">8.39</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#FF9385 / #241E34</code></td><td class="num">7.45</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#B996FF / #181424</code></td><td class="num">7.62</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#B996FF / #241E34</code></td><td class="num">6.77</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>text</td></tr>
+<tr><td>skyText</td><td>background</td><td><code>#7AA2FF / #181424</code></td><td class="num">7.25</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>skyText</td><td>card</td><td><code>#7AA2FF / #241E34</code></td><td class="num">6.44</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>background</td><td><code>#4FD8B5 / #181424</code></td><td class="num">10.15</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>mintText</td><td>card</td><td><code>#4FD8B5 / #241E34</code></td><td class="num">9.02</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>background</td><td><code>#FF9385 / #181424</code></td><td class="num">8.39</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>coralText</td><td>card</td><td><code>#FF9385 / #241E34</code></td><td class="num">7.45</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>background</td><td><code>#B996FF / #181424</code></td><td class="num">7.62</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>grapeText</td><td>card</td><td><code>#B996FF / #241E34</code></td><td class="num">6.77</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>background</td><td><code>#7A748C / #181424</code></td><td class="num">4.04</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+<tr><td>lineStrong</td><td>card</td><td><code>#7A748C / #241E34</code></td><td class="num">3.59</td><td class="num">3.0</td><td><span class="pass">PASS</span></td><td>sole-cue mark / boundary</td></tr>
+</table>
+<h3>widget light</h3>
+<table class="small"><thead><tr><th>Foreground</th><th>Background</th><th>Hex</th><th class="num">Ratio</th><th class="num">Needs</th><th>Result</th><th>Use</th></tr></thead>
+<tr><td>muted 13px</td><td>from</td><td><code>#6B655F / #FFF8EE</code></td><td class="num">5.45</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>label</td></tr>
+<tr><td>mintText 26 bold</td><td>from</td><td><code>#11725D / #FFF8EE</code></td><td class="num">5.55</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>hero</td></tr>
+<tr><td>coralText 26 bold</td><td>from</td><td><code>#B23A2A / #FFF8EE</code></td><td class="num">5.64</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>hero (over)</td></tr>
+<tr><td>ink 13px</td><td>from</td><td><code>#23202B / #FFF8EE</code></td><td class="num">15.17</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Undo-row status line</td></tr>
+<tr><td>muted 13px</td><td>to</td><td><code>#6B655F / #FFF0DA</code></td><td class="num">5.13</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>label</td></tr>
+<tr><td>mintText 26 bold</td><td>to</td><td><code>#11725D / #FFF0DA</code></td><td class="num">5.22</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>hero</td></tr>
+<tr><td>coralText 26 bold</td><td>to</td><td><code>#B23A2A / #FFF0DA</code></td><td class="num">5.30</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>hero (over)</td></tr>
+<tr><td>ink 13px</td><td>to</td><td><code>#23202B / #FFF0DA</code></td><td class="num">14.26</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Undo-row status line</td></tr>
+<tr><td>ink</td><td>card</td><td><code>#23202B / #FFFFFF</code></td><td class="num">15.99</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>next-up title, quick-log, Undo, Tiki pills</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#6B655F / #FFFFFF</code></td><td class="num">5.75</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Next up label, Keep pill</td></tr>
+<tr><td>skyText 13 bold</td><td>card</td><td><code>#2C5BCB / #FFFFFF</code></td><td class="num">6.06</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>next-up time</td></tr>
+<tr><td>skyText 13 bold</td><td>skyTint</td><td><code>#2C5BCB / #E6EEFF</code></td><td class="num">5.20</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Task / Focus pills</td></tr>
+<tr><td>coralText 13 bold</td><td>coralTint</td><td><code>#B23A2A / #FFEBE9</code></td><td class="num">5.19</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Expense pill</td></tr>
+<tr><td>mint bar</td><td>track</td><td><code>#2EC4A0 / #EEE5D8</code></td><td class="num">1.77</td><td class="num">—</td><td><span class="na">n/a</span></td><td>spend bar (beside text)</td></tr>
+<tr><td>card pill</td><td>to</td><td><code>#FFFFFF / #FFF0DA</code></td><td class="num">1.12</td><td class="num">—</td><td><span class="na">n/a</span></td><td>pill boundary (label identifies it)</td></tr>
+</table>
+<h3>widget dark</h3>
+<table class="small"><thead><tr><th>Foreground</th><th>Background</th><th>Hex</th><th class="num">Ratio</th><th class="num">Needs</th><th>Result</th><th>Use</th></tr></thead>
+<tr><td>muted 13px</td><td>from</td><td><code>#A09AA6 / #22202B</code></td><td class="num">5.86</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>label</td></tr>
+<tr><td>mintText 26 bold</td><td>from</td><td><code>#4FD8B5 / #22202B</code></td><td class="num">9.03</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>hero</td></tr>
+<tr><td>coralText 26 bold</td><td>from</td><td><code>#FF9385 / #22202B</code></td><td class="num">7.46</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>hero (over)</td></tr>
+<tr><td>ink 13px</td><td>from</td><td><code>#F4F1EA / #22202B</code></td><td class="num">14.22</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Undo-row status line</td></tr>
+<tr><td>muted 13px</td><td>to</td><td><code>#A09AA6 / #16151C</code></td><td class="num">6.62</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>label</td></tr>
+<tr><td>mintText 26 bold</td><td>to</td><td><code>#4FD8B5 / #16151C</code></td><td class="num">10.21</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>hero</td></tr>
+<tr><td>coralText 26 bold</td><td>to</td><td><code>#FF9385 / #16151C</code></td><td class="num">8.43</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>hero (over)</td></tr>
+<tr><td>ink 13px</td><td>to</td><td><code>#F4F1EA / #16151C</code></td><td class="num">16.07</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Undo-row status line</td></tr>
+<tr><td>ink</td><td>card</td><td><code>#F4F1EA / #2A2833</code></td><td class="num">12.84</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>next-up title, quick-log, Undo, Tiki pills</td></tr>
+<tr><td>muted</td><td>card</td><td><code>#A09AA6 / #2A2833</code></td><td class="num">5.29</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Next up label, Keep pill</td></tr>
+<tr><td>skyText 13 bold</td><td>card</td><td><code>#7AA2FF / #2A2833</code></td><td class="num">5.82</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>next-up time</td></tr>
+<tr><td>skyText 13 bold</td><td>skyTint</td><td><code>#7AA2FF / #2F344B</code></td><td class="num">4.92</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Task / Focus pills</td></tr>
+<tr><td>coralText 13 bold</td><td>coralTint</td><td><code>#FF9385 / #433138</code></td><td class="num">5.63</td><td class="num">4.5</td><td><span class="pass">PASS</span></td><td>Expense pill</td></tr>
+<tr><td>mint bar</td><td>track</td><td><code>#4FD8B5 / #34313F</code></td><td class="num">7.13</td><td class="num">—</td><td><span class="na">n/a</span></td><td>spend bar (beside text)</td></tr>
+<tr><td>card pill</td><td>to</td><td><code>#2A2833 / #16151C</code></td><td class="num">1.25</td><td class="num">—</td><td><span class="na">n/a</span></td><td>pill boundary (label identifies it)</td></tr>
+</table>
+<p class="note"><b>Summary.</b> 244 pairs. Real failures: 0. Every text pair passes 4.5:1 in light, dark, both accent themes (including the dark accent cards #1A2825 and #241E34) and the widget. The lowest is 4.92, dark sky-text on its own 15% tint. Every sole-cue mark and boundary passes 3:1; the lowest is 3.31, line-strong on the grape-dusk light background. The rows marked "below 3 (informative)" are the bright light-mode marks. DESIGN.md allows them only beside a label or value, and the sole-cue cases now use the -text tier (UX-035 fixed). Light sky on the background is 2.999 before rounding. *Needs 3.0 only if it is the only cue.</p>
+</section>
+
+<!-- ============ APPENDIX B ============ -->
+<section class="major">
+<h2>Appendix B. Accessibility and touch-target scan</h2>
+<table>
+<thead><tr><th>Check (grep / parse over <code>apps/mobile/src</code>)</th><th class="num">R2</th><th class="num">R3</th><th>Note</th></tr></thead>
+<tr><td><code>&lt;Pressable&gt;</code> + <code>&lt;SwipeRowPressable&gt;</code> tags</td><td class="num">70</td><td class="num">71 (44 files)</td><td></td></tr>
+<tr><td>Tags without an explicit role</td><td class="num">4</td><td class="num">4</td><td>The parser sees 11, but 7 are <code>SwipeRowPressable</code>, which sets <code>accessibilityRole="button"</code> itself (<code>swipe-row.tsx:222-224</code>). The 4 real ones are the <code>accessible={false}</code> shutdown rows, by design.</td></tr>
+<tr><td><code>accessibilityRole</code> / <code>accessibilityLabel</code></td><td class="num">76 / 76</td><td class="num">84 / 92</td><td></td></tr>
+<tr><td><code>choiceA11y(</code> users · <code>"radio"</code> · <code>radiogroup</code></td><td class="num">0 · 1 · 0</td><td class="num">3 · 3 · 4</td><td>Chip, Segmented, a11y-actions; swatches, picker grid</td></tr>
+<tr><td><code>"tab"</code> roles · <code>tablist</code></td><td class="num">—</td><td class="num">5 · 1</td><td>Segmented tabs have a tablist; the tab bar doesn't (UX-036)</td></tr>
+<tr><td>Chips with <code>choice</code> / without</td><td class="num">—</td><td class="num">13 / 28</td><td>Of the 28, 9 are single-choice rows and 4 are on/off (UX-036). The rest are real actions or date fields.</td></tr>
+<tr><td><code>announceForAccessibility</code> · <code>getRecommendedTimeoutMillis</code> · <code>isScreenReaderEnabled</code></td><td class="num">— · 0 · —</td><td class="num">2 · 1 · 1</td><td>Snackbar (UX-032 fixed)</td></tr>
+<tr><td><code>accessibilityLiveRegion</code> · <code>accessibilityHint</code></td><td class="num">7 · 14</td><td class="num">7 · 14</td><td></td></tr>
+<tr><td><code>hitSlop</code></td><td class="num">12</td><td class="num">14</td><td>+2 calendar cells (UX-040)</td></tr>
+<tr><td><code>maxFontSizeMultiplier</code> · <code>adjustsFontSizeToFit</code> · <code>allowFontScaling={false}</code></td><td class="num">11 · 4 · 0</td><td class="num">12 · 4 · 0</td><td>+1 picker emoji grid</td></tr>
+<tr><td><code>useReducedMotion</code> (components)</td><td class="num">6</td><td class="num">6 (14 calls)</td><td>Reanimated 4.5.1 springs and layout animations default to <code>ReduceMotion.System</code> <span class="unv">Unverified</span></td></tr>
+<tr><td>Text below 13 px (excluding the 12 px tab label)</td><td class="num">widget 10-12</td><td class="num">2</td><td>Chart axes, <code>insights-screen.tsx:102-103</code> (UX-047). Widget now uses 13 as its floor.</td></tr>
+<tr><td><code>Alert.alert</code></td><td class="num">—</td><td class="num">4</td><td>Sign-out (2), New chat, account action. The delete-account alert is gone.</td></tr>
+</table>
+<h3>Targets after this round</h3>
+<table>
+<thead><tr><th>Location</th><th>Size (dp)</th><th>Status</th></tr></thead>
+<tr><td>Widget pills, quick-log chips, Undo / Keep (<code>safe-to-spend-widget.tsx:78</code>)</td><td>48 tall</td><td>OK (were 36 / ~28). Width at 250 dp minimum is about 52 per pill (UX-043)</td></tr>
+<tr><td>Week-planner day header (<code>week-planner.tsx:129</code>)</td><td>≥ 48</td><td>Fixed</td></tr>
+<tr><td>Transaction rows (<code>transaction-row.tsx:59</code>)</td><td>≥ 60</td><td>Fixed</td></tr>
+<tr><td>Calendar cells (<code>money-calendar.tsx:115</code>, <code>calendar-view.tsx:137</code>)</td><td>~43-46 × 56-64</td><td>Slop overlaps neighbours (UX-040)</td></tr>
+<tr><td>Small buttons (<code>button.tsx:52, 57</code>: <code>min-h-11</code> + 4 slop)</td><td>52</td><td>OK (Paid/Received, Retry/Discard, Move, Today)</td></tr>
+<tr><td>Tabs with chat on, 360 dp phone</td><td>≈ 48 wide × 64</td><td>OK</td></tr>
+<tr><td>Snackbar action (<code>snackbar.tsx:59-62</code>)</td><td>40 + 12 slop</td><td>OK</td></tr>
+</table>
+
+<h2 style="margin-top:18px">Appendix C. Requirement checklist (UX-relevant)</h2>
+<table>
+<thead><tr><th>Requirement (source)</th><th>R2</th><th>R3</th><th>Ref</th></tr></thead>
+<tr><td>Log anything in under 5 s (PRODUCT, spec)</td><td>Met by design</td><td>Met by design; widget quick-log may need a resize</td><td>§5, UX-043</td></tr>
+<tr><td>Targets ≥ 48 dp (PRODUCT)</td><td>Mostly</td><td>Met except calendar width</td><td>UX-040</td></tr>
+<tr><td>WCAG AA in light and dark (PRODUCT)</td><td>App only; widget failed</td><td><b>Met</b> in app, accent themes and widget; tested</td><td>App. A</td></tr>
+<tr><td>Dark text on mango and every fill</td><td>Met</td><td>Met</td><td>App. A</td></tr>
+<tr><td>Colour never the only signal</td><td>Met (marks &lt; 3:1)</td><td>Met; sole-cue marks ≥ 3:1</td><td>UX-035 fixed</td></tr>
+<tr><td>Colour means something (PRODUCT, DESIGN)</td><td>Partial</td><td>Met, with small residue</td><td>UX-044</td></tr>
+<tr><td>Reduce motion respected</td><td>Met</td><td>Met (device <span class="unv">Unverified</span>)</td><td>App. B</td></tr>
+<tr><td>Tabular digits for amounts and timers</td><td>Met</td><td>Met (keypad <code>numeric</code>)</td><td><code>amount-keypad.tsx:55</code></td></tr>
+<tr><td>Delete → Undo snackbar, not a dialog (spec)</td><td>Met; time limit fixed</td><td>Met; adjustable, held for TalkBack</td><td>UX-032 fixed</td></tr>
+<tr><td>Pickers in sheets instead of chip rows (DESIGN)</td><td>Partial</td><td>Partial (5 sheets left)</td><td>UX-013</td></tr>
+<tr><td>Caption 13 is the smallest text (DESIGN)</td><td>App met; widget below</td><td>Met except chart axes</td><td>UX-047</td></tr>
+<tr><td>Rows ≥ 60 dp (DESIGN)</td><td>Mostly</td><td>Mostly (time-tracking rows 48)</td><td>—</td></tr>
+<tr><td>Guilt-free UI (PRODUCT)</td><td>Mostly</td><td><b>Met</b></td><td>UX-026, UX-037 fixed</td></tr>
+<tr><td>Bangla and English (README)</td><td>Met; keypad gap</td><td>Met; scope stated</td><td>UX-041 fixed</td></tr>
+<tr><td>Offline: changes queue up, then sync (README)</td><td>Met</td><td>Met; stuck writes set aside; pay-undo gap</td><td>UX-042</td></tr>
+<tr><td>Tab bar per DESIGN.md</td><td>Met as amended</td><td>Met; FAB trade accepted</td><td>UX-011 fixed</td></tr>
+</table>
+
+<h2 style="margin-top:18px">Appendix D. Files reviewed and commands</h2>
+<pre>git log --oneline df29d67..HEAD; git diff --stat df29d67..HEAD -- apps/mobile/src DESIGN.md README.md
+git show d50237a 0a1de0f cd63193 eb45efa c744628 (--stat and diffs); git show df29d67:…/safe-to-spend-widget.tsx
+git blame apps/mobile/src/features/review/insights-screen.tsx; git log -- docs/screenshots
+python3 -I _ux_tmp/contrast.py   → 244 pairs, 0 token mismatches / 70, 0 text pairs &lt; 4.5
+python3 -I _ux_tmp/scan.py       → 71 pressables, role/label/size/hitSlop, prop counts
+grep: Chip call sites with/without choice; grape/mango uses; "Overdue"; "server" in user copy;
+      fontSize &lt; 13; Alert.alert; previousDueAt in apps/api
+Reused from _raw/: lint.txt (Biome 523 files, exit 0), typecheck.txt (exit 0),
+      test.txt (shared 247, mobile 233, api 209 pass; 0 fail)
+
+Read: theme/palette.ts, global.css, tailwind.config.js, components/ui/{snackbar, button, chip,
+segmented, picker-field, checkbox, amount-keypad, sync-status, swipe-row, a11y-actions},
+components/navigation/tab-bar.tsx, features/widget/*, features/today/{next-up, later-today,
+safe-to-spend-card, pay-needs-rate}, features/money/{recurring-pay, recurring-sheet, bills-screen,
+bill-status, money-home, money-calendar, account-sheet, goal-sheet, event-sheet},
+features/plan/{use-move-task, move-undo, week-planner, calendar-view, plan-home, area-sheet},
+features/settings/{settings-screen, account-section, delete-account, delete-account-rules,
+use-export-data, planning-settings, notification-settings, setting-row, themed-root},
+features/assistant/{assistant-sheet, clear-chat-warning}, features/review/{weekly-review,
+review-home, ai-usage-screen, insights-screen}, features/habits/{habit-chips, habit-sheet},
+features/tasks/task-row, features/time/time-entry-sheet, app/login.tsx, app/(tabs)/index.tsx,
+lib/{auth, error-copy, gentle-progress, snack-timing, notify, outbox, outbox-queue},
+test/{contrast, colour-meaning, snack-timing}.test.ts, apps/mobile/app.json,
+apps/api/src/modules/recurring/service.ts (pay reply), PRODUCT.md, DESIGN.md, README.md</pre>
+</section>
+</body>
+</html>

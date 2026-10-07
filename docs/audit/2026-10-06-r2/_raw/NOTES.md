@@ -1,0 +1,13 @@
+# Round-2 discovery notes (2026-10-06, commit df29d67, branch fix/audit-2026-10-06)
+- Same monorepo as round 1 (see ../../2026-10-06/_raw/NOTES.md). 75 commits since round 1 (3b5438b) — list in commits-since-first-audit.txt — made to fix the round-1 findings.
+- Round-1 reports (for context only; judge independently): ../../2026-10-06/{QA,UX,Code_Quality}_Report.html
+- Commands run now (raw output here):
+  - `bunx biome check apps packages *.json .github` → 484 files, exit 0 (root `biome check .` also works in a clean checkout; local agent worktrees under .claude/ were the only reason to scope paths)
+  - `bun run typecheck` → 3 workspaces exit 0
+  - `bun run test` → shared 237, mobile 165, api 166 pass, 0 fail
+  - coverage per workspace in coverage-*.txt (note: Bun 1.3.11 under-reports line coverage for files with uncalled default-param functions; see commit "test(shared): cover every dates and money helper directly")
+  - `bun audit` → 6 advisories, all in mobile/build tooling transitive deps (audit.txt)
+  - `bunx expo export --platform android` → bundles OK (15 MB)
+- CI: .github/workflows/check.yml (frozen lockfile, bun run check, non-blocking audit).
+- Device testing is NOT possible in this environment: the only emulator image has no Google Play services and sign-in is Google-only. Screenshots in docs/screenshots are from before these fixes.
+- PDF tool: /usr/bin/google-chrome headless. Use CSS @page margin boxes for "Page X of Y" and --no-pdf-header-footer (Chrome 154 supports them), so no local file path is printed.

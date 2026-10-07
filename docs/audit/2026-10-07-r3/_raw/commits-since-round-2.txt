@@ -1,0 +1,42 @@
+7e2bfeb chore: keep the audit reports out of Biome and explain the coverage figures
+0a1de0f fix(mobile): keep purple for habits and mango for the one primary action
+19bd4f1 fix(mobile): show the keypad in Bangla digits when Numbers is set to Bangla
+eb45efa fix(mobile): make the last small targets thumb-sized
+c744628 docs(design): record the off-centre FAB beside Tiki's button as a decision
+f3ead60 fix(mobile): don't list the phone's own synced writes as the assistant's changes
+146861c fix(mobile): keep widget taps made during the hand-over and count them at sign-out
+d2778ab build: pin uuid to a patched 11.x and record the accepted advisories
+12f31b5 refactor(api): move the bulk task moves out of taskService
+a942d12 refactor(api): move the assistant's act handlers into a handler table
+b29becc refactor: forbid non-null assertions in source and narrow instead
+9eec813 perf: cap /sync/changes per table and ask only for counts when refreshing
+b33289b feat(api): copy backups off the server with BACKUP_OFFSITE_CMD
+308b9c7 build(deploy): keep the live HTTPS site in the repo
+db987f5 fix(api): stop honouring pre-session tokens after 7 November 2026
+d0c9863 chore: drop unused exports and log broken foreign keys as JSON
+b4417cf perf(api): keep per-user AI totals in users.db for the owner's report
+d50237a fix(mobile): announce choices as radios and pick from fields, not chip rows
+cd63193 fix(mobile): marks that are the only cue keep 3:1 in light mode
+63ef8ce fix(mobile): ask before "New chat" drops drafts and Undo rows
+64b909a fix: late bills say "Was due Mon 5 Oct" instead of a coral "Overdue"
+d980a87 fix(mobile): weekly review speaks of what was done, without zeros
+f22e5d3 fix(mobile): word sign-in errors through error-copy and use one plural helper
+2e5092a feat(mobile): give account deletion its own page with export and a typed confirm
+b176dda feat(mobile): undo for moving a task in the planners
+ccd1515 feat: undo for Paid, Received and Skip on bills and income
+d0ca316 fix(mobile): honour the accessibility timeout in the snackbar and announce its action
+d9cb84b fix(mobile): build the widget from the app's AA tokens and let quick-logs be undone
+c48c6e0 feat(mobile): set aside writes the server keeps failing on
+0edc021 fix(mobile): keep encrypted data when the storage key can't be read
+563944d fix(mobile): never sign out on a 401 that races the token refresh
+663be06 fix(api): keep a refreshed token working until its replacement is used
+b22277e fix(api): repair rows that break the new CHECKs before migration 0004
+2891c9c fix(api): answer CHECK and NOT NULL violations with 400 invalid_data
+17789e8 fix(api): skip accounts deleted while the hourly jobs run
+aa0d27b fix(api): refuse unknown time zones and keep the job loop alive
+f1440e8 feat: make assistant budget and money-field changes drafts
+e6f3267 fix(mobile): keep foreign-currency money out of taka safe-to-spend
+340ad55 fix: send focus times in server time and remember the clock offset
+97f0672 fix: keep an offline edit made after a bulk task move
+87fb7f4 fix(mobile): read Bangla digits in habit targets and routine minutes
+b2d2d90 fix(shared): keep every amount in a multi-item quick-add line

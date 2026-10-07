@@ -1,0 +1,130 @@
+bun test v1.3.11 (af24e281)
+-----------------------------------------------|---------|---------|-------------------
+File                                           | % Funcs | % Lines | Uncovered Line #s
+-----------------------------------------------|---------|---------|-------------------
+All files                                      |   88.20 |   94.50 |
+ src/ai/json-schema.ts                         |  100.00 |  100.00 | 
+ src/ai/pricing.ts                             |  100.00 |  100.00 | 
+ src/ai/usage.ts                               |  100.00 |  100.00 | 
+ src/app.ts                                    |  100.00 |  100.00 | 
+ src/db/client.ts                              |  100.00 |   84.62 | 34-37
+ src/db/columns.ts                             |   33.33 |   93.75 | 
+ src/db/handle-cache.ts                        |  100.00 |  100.00 | 
+ src/db/job-runs.ts                            |  100.00 |  100.00 | 
+ src/db/schema/money.ts                        |    0.00 |   80.90 | 48-52,70-71,89-90,105-108,131-135,164-172,189-192,208-210,243-246
+ src/db/schema/system.ts                       |    0.00 |  100.00 | 
+ src/db/schema/time.ts                         |    0.00 |   79.72 | 40-42,77-88,107-110,130-132,148-151,174-176
+ src/db/seed.ts                                |  100.00 |  100.00 | 
+ src/db/sessions.ts                            |  100.00 |  100.00 | 
+ src/db/tables.ts                              |  100.00 |  100.00 | 
+ src/db/usage-totals.ts                        |  100.00 |  100.00 | 
+ src/db/user-files.ts                          |  100.00 |  100.00 | 
+ src/db/user-registry.ts                       |  100.00 |   96.40 | 186,188-191
+ src/env.ts                                    |   88.89 |   95.24 | 81,83-84
+ src/jobs/backup.ts                            |  100.00 |   95.56 | 49-50
+ src/jobs/offsite.ts                           |  100.00 |   96.30 | 
+ src/jobs/scheduler.ts                         |  100.00 |  100.00 | 
+ src/lib/client-ip.ts                          |  100.00 |  100.00 | 
+ src/lib/crud.ts                               |  100.00 |  100.00 | 
+ src/lib/deps.ts                               |  100.00 |  100.00 | 
+ src/lib/errors.ts                             |  100.00 |  100.00 | 
+ src/lib/log.ts                                |   91.67 |   93.55 | 6-7
+ src/lib/money-queries.ts                      |   90.00 |   96.60 | 139-143
+ src/lib/params.ts                             |  100.00 |  100.00 | 
+ src/lib/resource-routes.ts                    |  100.00 |  100.00 | 
+ src/lib/sql-like.ts                           |  100.00 |  100.00 | 
+ src/lib/user-scope.ts                         |  100.00 |  100.00 | 
+ src/lib/user-time.ts                          |  100.00 |  100.00 | 
+ src/lib/validate.ts                           |  100.00 |  100.00 | 
+ src/middleware/auth.ts                        |  100.00 |  100.00 | 
+ src/middleware/error-handler.ts               |  100.00 |  100.00 | 
+ src/middleware/rate-limit.ts                  |  100.00 |  100.00 | 
+ src/middleware/request-log.ts                 |  100.00 |  100.00 | 
+ src/modules/accounts/routes.ts                |   77.78 |   94.59 | 33
+ src/modules/accounts/service.ts               |  100.00 |  100.00 | 
+ src/modules/ai/ask.ts                         |   48.15 |   62.68 | 95,114-118,120-127,129-152,154-187,225,230-234
+ src/modules/ai/assistant/actions.ts           |  100.00 |   96.63 | 112-118
+ src/modules/ai/assistant/agent.ts             |  100.00 |   92.35 | 108,182-189,202,219,221-224
+ src/modules/ai/assistant/dispatch.ts          |   80.00 |  100.00 | 
+ src/modules/ai/assistant/entities.ts          |   50.00 |   97.56 | 44
+ src/modules/ai/assistant/fields.ts            |   93.33 |   97.12 | 108-109,111
+ src/modules/ai/assistant/records.ts           |  100.00 |   91.67 | 62-63
+ src/modules/ai/assistant/tools.ts             |  100.00 |   99.67 | 
+ src/modules/ai/coach.ts                       |   53.85 |   90.74 | 29,31,35-38,92-95
+ src/modules/ai/context.ts                     |   90.91 |  100.00 | 
+ src/modules/ai/parse.ts                       |  100.00 |   95.36 | 111-121
+ src/modules/ai/planning.ts                    |   75.00 |  100.00 | 
+ src/modules/ai/prompts.ts                     |  100.00 |  100.00 | 
+ src/modules/ai/routes.ts                      |   94.29 |   90.97 | 152-164
+ src/modules/ai/usage-report.ts                |   77.78 |  100.00 | 
+ src/modules/ai/voice.ts                       |  100.00 |  100.00 | 
+ src/modules/areas/routes.ts                   |  100.00 |  100.00 | 
+ src/modules/auth/routes.ts                    |  100.00 |  100.00 | 
+ src/modules/auth/session-token.ts             |  100.00 |  100.00 | 
+ src/modules/budgets/routes.ts                 |  100.00 |  100.00 | 
+ src/modules/budgets/service.ts                |  100.00 |  100.00 | 
+ src/modules/categories/routes.ts              |   66.67 |   79.25 | 21-26,44-45,58,61
+ src/modules/category-rules/routes.ts          |   83.33 |   94.12 | 
+ src/modules/category-rules/service.ts         |  100.00 |  100.00 | 
+ src/modules/debts/routes.ts                   |   60.00 |   86.21 | 17,29,32
+ src/modules/debts/service.ts                  |   92.86 |   92.86 | 102-108
+ src/modules/events/routes.ts                  |   85.71 |   96.23 | 61
+ src/modules/gamification/routes.ts            |  100.00 |  100.00 | 
+ src/modules/gamification/service.ts           |   66.67 |  100.00 | 
+ src/modules/goals/routes.ts                   |   88.89 |   96.55 | 
+ src/modules/goals/service.ts                  |   90.00 |   92.13 | 41-44,90-95
+ src/modules/habits/routes.ts                  |   55.56 |   87.50 | 31,34,37,40-41
+ src/modules/habits/service.ts                 |   80.00 |   95.50 | 108-112
+ src/modules/insights/recap.ts                 |   83.33 |   96.72 | 62-63
+ src/modules/insights/routes.ts                |   87.50 |   96.30 | 
+ src/modules/insights/spotter.ts               |   62.50 |  100.00 | 
+ src/modules/insights/summary.ts               |   89.74 |   93.49 | 147-157
+ src/modules/projects/routes.ts                |   50.00 |   88.89 | 28,31
+ src/modules/recurring/routes.ts               |   80.00 |   92.31 | 24
+ src/modules/recurring/service.ts              |  100.00 |   99.36 | 
+ src/modules/reviews/routes.ts                 |  100.00 |  100.00 | 
+ src/modules/reviews/service.ts                |   75.00 |   96.83 | 101-107
+ src/modules/routines/routes.ts                |   62.50 |   84.21 | 13,19
+ src/modules/routines/service.ts               |   78.57 |   81.43 | 45,63-74
+ src/modules/settings/routes.ts                |  100.00 |  100.00 | 
+ src/modules/settings/service.ts               |  100.00 |  100.00 | 
+ src/modules/shopping/routes.ts                |   88.89 |   98.56 | 152
+ src/modules/site/layout.ts                    |  100.00 |  100.00 | 
+ src/modules/site/pages.ts                     |  100.00 |  100.00 | 
+ src/modules/site/routes.ts                    |  100.00 |  100.00 | 
+ src/modules/sync/routes.ts                    |  100.00 |   98.94 | 
+ src/modules/tasks/bulk-move.ts                |  100.00 |  100.00 | 
+ src/modules/tasks/routes.ts                   |  100.00 |  100.00 | 
+ src/modules/tasks/service.ts                  |  100.00 |   94.67 | 47-54,96-97,185-187
+ src/modules/time-entries/routes.ts            |   71.43 |   89.47 | 31,44,47
+ src/modules/time-entries/service.ts           |   85.00 |   94.12 | 156-160,175-179
+ src/modules/today/routes.ts                   |  100.00 |  100.00 | 
+ src/modules/today/service.ts                  |   84.21 |   95.19 | 127-134
+ src/modules/transactions/routes.ts            |  100.00 |  100.00 | 
+ src/modules/transactions/service.ts           |  100.00 |   94.59 | 63-68
+ src/modules/uploads/routes.ts                 |  100.00 |  100.00 | 
+ test/assistant-helpers.ts                     |  100.00 |  100.00 | 
+ test/fake-ai.ts                               |   85.71 |  100.00 | 
+ test/helpers.ts                               |  100.00 |  100.00 | 
+ test/money-helpers.ts                         |  100.00 |  100.00 | 
+ ../../packages/shared/src/dates.ts            |   90.32 |    5.86 | 6-211,226-228
+ ../../packages/shared/src/defaults.ts         |  100.00 |  100.00 | 
+ ../../packages/shared/src/defined.ts          |  100.00 |  100.00 | 
+ ../../packages/shared/src/digits.ts           |   25.00 |    8.33 | 6-14,22-23
+ ../../packages/shared/src/finance.ts          |   75.00 |   86.79 | 49-52,108-109
+ ../../packages/shared/src/gamification.ts     |  100.00 |   81.58 | 58-69,71-72
+ ../../packages/shared/src/ids.ts              |  100.00 |  100.00 | 
+ ../../packages/shared/src/money.ts            |   72.73 |   76.47 | 106,114-119,124-132
+ ../../packages/shared/src/recurrence.ts       |   58.82 |   73.89 | 74,125-126,160-166,183,191-194,280-282,302-307,345-347,359-362,371-374,380-382,387-396,424-431,436-437,440-442,446-447,452-482
+ ../../packages/shared/src/schemas/ai.ts       |  100.00 |  100.00 | 
+ ../../packages/shared/src/schemas/common.ts   |  100.00 |  100.00 | 
+ ../../packages/shared/src/schemas/money.ts    |  100.00 |   95.52 | 101-104,107-110,114-117
+ ../../packages/shared/src/schemas/settings.ts |  100.00 |  100.00 | 
+ ../../packages/shared/src/schemas/time.ts     |  100.00 |  100.00 | 
+ ../../packages/shared/src/tiki.ts             |   75.00 |   80.00 | 61-63,69-75
+-----------------------------------------------|---------|---------|-------------------
+
+ 236 pass
+ 0 fail
+ 848 expect() calls
+Ran 236 tests across 31 files. [9.44s]

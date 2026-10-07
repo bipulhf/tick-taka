@@ -1,0 +1,23 @@
+$ bun run --filter '*' test
+@tick-taka/shared test: bun test v1.3.11 (af24e281)
+@tick-taka/shared test: 
+@tick-taka/shared test:  237 pass
+@tick-taka/shared test:  0 fail
+@tick-taka/shared test:  486 expect() calls
+@tick-taka/shared test: Ran 237 tests across 12 files. [835.00ms]
+@tick-taka/shared test: Exited with code 0
+@tick-taka/mobile test: bun test v1.3.11 (af24e281)
+@tick-taka/api test: bun test v1.3.11 (af24e281)
+@tick-taka/mobile test: 
+@tick-taka/mobile test:  165 pass
+@tick-taka/mobile test:  0 fail
+@tick-taka/mobile test:  453 expect() calls
+@tick-taka/mobile test: Ran 165 tests across 31 files. [318.00ms]
+@tick-taka/mobile test: Exited with code 0
+@tick-taka/api test: 
+@tick-taka/api test:  166 pass
+@tick-taka/api test:  0 fail
+@tick-taka/api test:  621 expect() calls
+@tick-taka/api test: Ran 166 tests across 26 files. [6.58s]
+@tick-taka/api test: Exited with code 0
+exit 0

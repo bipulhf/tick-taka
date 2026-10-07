@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UX Report — Tick &amp; Taka</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm;
+  @bottom-left { content: "UX Report — Tick & Taka · commit 3b5438b"; font: 8.5pt Arial, sans-serif; color: #777; }
+  @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt Arial, sans-serif; color: #777; } }
+@page :first { @bottom-left { content: none; } @bottom-right { content: none; } }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Noto Sans", "DejaVu Sans", "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1d1b22; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 6pt; }
+  h2 { font-size: 15pt; margin: 0 0 8pt; padding-bottom: 4pt; border-bottom: 2px solid #23202B; }
+  h3 { font-size: 12pt; margin: 14pt 0 6pt; }
+  h4 { font-size: 11pt; margin: 0 0 4pt; }
+  p { margin: 4pt 0 6pt; }
+  .section { page-break-before: always; break-before: page; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; }
+  .cover .sub { font-size: 13pt; color: #555; }
+  .cover table { width: auto; margin-top: 18pt; }
+  .cover td { padding: 3pt 14pt 3pt 0; border: none; font-size: 11pt; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 9.5pt; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  th, td { border: 1px solid #d6d1c8; padding: 3pt 5pt; text-align: left; vertical-align: top; }
+  th { background: #f1ece3; }
+  code { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.8pt; background: #f4f1ea; padding: 0 2px; border-radius: 2px; word-break: break-word; }
+  pre { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.4pt; background: #f6f3ee; border: 1px solid #e3ddd2; border-radius: 4px; padding: 5pt 7pt; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; margin: 4pt 0 6pt; }
+  .badge { display: inline-block; color: #fff; font-weight: bold; font-size: 8.5pt; padding: 1pt 6pt; border-radius: 3px; }
+  .Critical { background: #c62828; } .High { background: #ef6c00; } .Medium { background: #f9a825; color: #1d1b22; } .Low { background: #607d8b; }
+  .unv { display: inline-block; font-size: 8pt; font-weight: bold; color: #6a1b9a; border: 1px solid #6a1b9a; border-radius: 3px; padding: 0 4px; margin-left: 4px; }
+  .finding { border: 1px solid #d6d1c8; border-left: 5px solid #607d8b; border-radius: 4px; padding: 6pt 9pt; margin: 0 0 9pt; page-break-inside: auto; break-inside: auto; }
+  .finding.sev-Critical { border-left-color: #c62828; } .finding.sev-High { border-left-color: #ef6c00; }
+  .finding.sev-Medium { border-left-color: #f9a825; } .finding.sev-Low { border-left-color: #607d8b; }
+  .finding.long { page-break-inside: auto; break-inside: auto; }
+  h2, h3, h4 { page-break-after: avoid; break-after: avoid; }
+  .finding dt, .finding dd, pre, .shots, figure { break-inside: avoid; page-break-inside: avoid; }
+  .finding > h4 { break-after: avoid; }
+  .finding dl { margin: 3pt 0 0; display: grid; grid-template-columns: 30mm 1fr; gap: 2pt 6pt; }
+  .finding dt { font-weight: bold; color: #444; font-size: 9.3pt; }
+  .finding dd { margin: 0; }
+  .shots { display: flex; gap: 8pt; flex-wrap: wrap; margin: 4pt 0; }
+  .shots figure { margin: 0; text-align: center; font-size: 8pt; color: #555; }
+  .shots img { width: 150px; border: 1px solid #ccc; border-radius: 6px; display: block; }
+  .shots.small img { width: 120px; }
+  .shots img.wide { width: 230px; }
+  .score { font-size: 30pt; font-weight: 800; }
+  .kpis { display: flex; gap: 10pt; margin: 6pt 0; }
+  .kpi { border: 1px solid #d6d1c8; border-radius: 6px; padding: 6pt 10pt; }
+  .pass { color: #1b5e20; font-weight: bold; } .fail { color: #b71c1c; font-weight: bold; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border: 1px solid #999; vertical-align: middle; margin-right: 3px; }
+  ul, ol { margin: 3pt 0 6pt 16pt; padding: 0; }
+  li { margin: 1pt 0; }
+  .muted { color: #666; }
+  .small { font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="sub">Audit report 2 of 3</div>
+  <h1>UX Report</h1>
+  <div class="sub">Tick &amp; Taka: Android app for one person's day and money</div>
+  <table>
+    <tr><td><b>Project</b></td><td>Tick &amp; Taka (monorepo: apps/mobile, apps/api, packages/shared)</td></tr>
+    <tr><td><b>Date</b></td><td>2026-10-06</td></tr>
+    <tr><td><b>Commit</b></td><td><code>3b5438b</code> (main)</td></tr>
+    <tr><td><b>Auditor role</b></td><td>UX Lead</td></tr>
+    <tr><td><b>Yardstick</b></td><td>PRODUCT.md, DESIGN.md, README.md, tick_taka_spec.pdf (text in <code>_raw/spec.txt</code>)</td></tr>
+    <tr><td><b>Mode</b></td><td>Read-only. Static review of code and screenshots; the app was not run on a device.</td></tr>
+  </table>
+  <div class="shots" style="margin-top:24pt">
+    <img src="../../screenshots/today.png" alt="Today">
+    <img src="../../screenshots/money.png" alt="Money">
+    <img src="../../screenshots/today-dark.png" alt="Today dark">
+  </div>
+</div>
+
+<!-- EXEC SUMMARY -->
+<div class="section">
+<h2>1. Executive summary</h2>
+<div class="kpis">
+  <div class="kpi"><div class="muted small">Overall UX score</div><div class="score">64<span style="font-size:14pt">/100</span></div></div>
+  <div class="kpi" style="flex:1">
+    <p style="margin-top:0">The app's tone and structure fit the brief closely. Quick-add is one field and one button with a live preview. Overdue work is called "from earlier" and offered back with "No rush". Deletes and completions come with Undo, and the empty and offline states are well considered. The weak point is the promises in PRODUCT.md's "Accessibility &amp; Inclusion" section. In the <b>light theme</b> (daylight at a shop counter is the main use case), the semantic colours fail WCAG AA as text: the mint safe-to-spend hero is 2.21:1 and coral expense amounts are 2.55:1. In dark mode the Undo snackbar action is 1.41:1. Expense amounts carry no minus sign, so colour is the only cue. Colour meaning has also drifted: Focus and unscheduled tasks are purple, which DESIGN.md reserves for habits. The one data-loss risk: <b>Sign out wipes queued offline changes</b> with no warning.</p>
+  </div>
+</div>
+
+<table>
+  <thead><tr><th>Severity</th><th><span class="badge Critical">Critical</span></th><th><span class="badge High">High</span></th><th><span class="badge Medium">Medium</span></th><th><span class="badge Low">Low</span></th><th>Total</th></tr></thead>
+  <tbody><tr><td>Findings</td><td>1</td><td>6</td><td>16</td><td>7</td><td><b>30</b></td></tr></tbody>
+</table>
+
+<h3>Top 5 issues to fix first</h3>
+<ol>
+  <li><b>UX-001</b> <span class="badge Critical">Critical</span> Sign out deletes unsynced offline changes without asking (<code>features/settings/account-section.tsx:38</code>, <code>lib/user-data.ts:20-23</code>).</li>
+  <li><b>UX-002</b> <span class="badge High">High</span> In light mode the mint, coral, sky and grape text colours fail AA (2.09 to 3.16:1). Muted text is 4.24 to 4.47:1.</li>
+  <li><b>UX-003</b> <span class="badge High">High</span> The dark-mode snackbar "Undo" is mango on cream at 1.41:1. It is the only safeguard for deletes.</li>
+  <li><b>UX-005</b> <span class="badge High">High</span> Expense amounts have no sign, so colour alone separates spending from transfers and income (<code>features/money/transaction-row.tsx:97-104</code>).</li>
+  <li><b>UX-006</b> <span class="badge High">High</span> TalkBack never reads the safe-to-spend number: the card's <code>accessibilityLabel</code> replaces its content (<code>features/today/safe-to-spend-card.tsx:25-29</code>).</li>
+</ol>
+
+<h3>Score breakdown</h3>
+<table>
+  <thead><tr><th>Area</th><th>Weight</th><th>Score</th><th>Points</th></tr></thead>
+  <tbody>
+    <tr><td>Fit to the 5 product principles (avg 3.2/5)</td><td>25</td><td>64%</td><td>16</td></tr>
+    <tr><td>Core task flows (taps, friction, undo)</td><td>20</td><td>80%</td><td>16</td></tr>
+    <tr><td>Nielsen heuristics (avg 3.6/5)</td><td>15</td><td>72%</td><td>11</td></tr>
+    <tr><td>Visual design and token consistency</td><td>10</td><td>60%</td><td>6</td></tr>
+    <tr><td>Accessibility (contrast, SR, scaling, motion)</td><td>15</td><td>40%</td><td>6</td></tr>
+    <tr><td>Mobile ergonomics (targets, reach, keyboard)</td><td>5</td><td>70%</td><td>3.5</td></tr>
+    <tr><td>Content, microcopy, feedback and delight</td><td>10</td><td>85%</td><td>8.5</td></tr>
+    <tr><td><b>Total</b></td><td>100</td><td></td><td><b>67 → 64</b> (−3 for the Critical data-loss risk)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- SCOPE -->
+<div class="section">
+<h2>2. Scope and method</h2>
+<h3>What was reviewed</h3>
+<ul>
+  <li><b>Product intent:</b> PRODUCT.md (users, purpose, 5 principles, accessibility commitments), DESIGN.md (tokens, type scale, layout, components, motion), README.md, and the spec text (<code>_raw/spec.txt</code>: interaction rules, Today layout, quick-add).</li>
+  <li><b>Screens:</b> all 23 screenshots in <code>docs/screenshots/*.png</code>, viewed one by one.</li>
+  <li><b>Code</b> (apps/mobile/src, 17,325 lines): every expo-router route in <code>app/</code>, all <code>components/ui</code> and <code>components/navigation</code>, <code>theme/colors.ts</code>, <code>global.css</code>, <code>tailwind.config.js</code>, <code>app.json</code>. Read in full: Today, quick-add, task sheet and row, swipe row, snackbar, money rows, focus, shutdown, weekly review, settings, the widget palette, and the shared <code>money.ts</code>, <code>tiki.ts</code> and <code>quick-add.ts</code>.</li>
+</ul>
+<h3>Commands and scripted checks (read-only)</h3>
+<ul>
+  <li>WCAG 2.x relative-luminance contrast for every DESIGN.md token pair in light and dark, plus the real fills used in code (Python, scratch file in <code>_ux_tmp/</code>, since deleted). Output: Appendix A.</li>
+  <li>Parsed every <code>&lt;Pressable&gt;</code> opening tag (60 in 40 files) for <code>accessibilityRole</code>, <code>accessibilityLabel</code>, height/width classes and <code>hitSlop</code>. Output: Appendix B.</li>
+  <li><code>grep</code> counts: accessibility props, <code>useReducedMotion</code>, <code>allowFontScaling</code>/<code>maxFontSizeMultiplier</code>, hard-coded hex values, off-scale font sizes, guilt wording ("overdue", "missed", "failed", "behind"), and error strings.</li>
+  <li><code>git log</code> on the screenshots and the tab bar, to check that screenshots match the code.</li>
+</ul>
+<h3>What could not be verified</h3>
+<ul>
+  <li>No device or emulator was run. Runtime behaviour is marked <span class="unv">Unverified</span>: TalkBack output, layout at 200% font scale, keyboard overlap, and actual logging times.</li>
+  <li><b>Some screenshots are out of date.</b> They were last committed on 2026-10-05 (<code>1f25750</code>), but the tab bar changed on 2026-10-06 (<code>871e55b</code>). The screenshots show an active tab that grows into a labelled pill; the code (<code>components/navigation/tab-bar.tsx:26-31</code>) now draws four equal labelled tabs. Settings in the screenshot is one long page; the code splits it into sub-pages. Where they disagree, the code is treated as correct.</li>
+</ul>
+</div>
+
+<!-- PRINCIPLES + FLOWS -->
+<div class="section">
+<h2>3. Fit to product principles</h2>
+<table>
+  <thead><tr><th style="width:24%">Principle (PRODUCT.md)</th><th style="width:7%">Score</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td>1. Today first, one glance</td><td><b>3/5</b></td><td>Safe-to-spend is above the fold (today.png). "What now?" is not: the greeting, Tiki and a 4-tile shortcut row push "Next up" to y≈795 of 960, so only its heading shows. The spec's order puts safe-to-spend second, with no shortcut row (spec.txt:266-272). UX-012.</td></tr>
+    <tr><td>2. Capture beats organise</td><td><b>4/5</b></td><td>Quick-add is one field and Save, with a live "what I understood" preview and a local parser that works offline (<code>quick-add-sheet.tsx:113-152</code>). Two things cost points: the 5 type chips are always visible, not only "when the parser needs help", and the task edit sheet is a wall of chips (task.png). UX-013, UX-015.</td></tr>
+    <tr><td>3. Big, calm, thumb-sized</td><td><b>3/5</b></td><td>Base components meet 48 dp: Button 52, Checkbox 48, Chip 40+4 slop, ListRow 60. But 10 call sites fall below (32–44 dp). The FAB is 48 dp against the 64 dp spec. 9 px and 11 px text exists. UX-010, UX-011, UX-025.</td></tr>
+    <tr><td>4. Colour means something</td><td><b>2/5</b></td><td>Focus is grape (purple, the habits colour) on Today and on the widget. Unscheduled tasks are grape bars. Users can colour habits sky, mint, mango or coral. A budget "running ahead" bar is mango, which is reserved for the main action. Focus and the running timer use large sky fills. Expense amounts are told apart by colour alone. UX-005, UX-007, UX-027.</td></tr>
+    <tr><td>5. Reward, never guilt</td><td><b>4/5</b></td><td>The copy is excellent. Overdue becomes "From earlier. Bring it into today?" (<code>later-today.tsx:67-72</code>). Overspending gets "No stress…" (<code>shared/src/tiki.ts:41-43</code>). Reminders say "A gentle reminder". Points lost for: "Daily goal: 0 days · best 0 days" shown prominently, "1/7 this week" bars on daily habits, a drooping plant ("The plant missed you"), and coral warning lines. UX-026.</td></tr>
+    <tr><td><i>Accessibility &amp; Inclusion commitments</i></td><td><b>2/5</b></td><td>Reduce-motion is handled well (Amount count-up, confetti, Tiki, skeleton, plant, thinking indicator). Tabular digits are used for amounts. But AA contrast fails across light mode, colour is the only sign for expenses, and screen-reader coverage has gaps. UX-002 to UX-006, UX-008, UX-009.</td></tr>
+  </tbody>
+</table>
+
+<h2 style="margin-top:14pt">4. Core task flows</h2>
+<p class="small muted">Taps are counted from the app already open on Today. "Type" means one text entry. The target is "log in under five seconds" (PRODUCT.md). Timings are <span class="unv">Unverified</span> because nothing was run.</p>
+<table>
+  <thead><tr><th style="width:18%">Flow</th><th style="width:22%">Steps</th><th style="width:8%">Taps</th><th>Friction, dead ends, undo</th></tr></thead>
+  <tbody>
+    <tr><td>Log an expense</td><td>Expense tile → type "cha 20" → Save (or keyboard Done)</td><td>2 + type</td><td>Meets the target. Account and category are inferred. After saving there is only a generic "Saved" with <b>no Undo</b>, so fixing a misparse means finding the record (UX-015). From the widget, frequent items take 1 tap.</td></tr>
+    <tr><td>Log income</td><td>Income tile → "+45000 salary" → Save</td><td>2 + type</td><td>Same as above. Bangla digits ("৳৪৫০০০") are not parsed locally (UX-021).</td></tr>
+    <tr><td>Add a task</td><td>FAB → "call bank tomorrow 5pm" → Save</td><td>2 + type</td><td>Good. The day chips (Today/Tomorrow/Evening/Inbox/Someday) appear only for tasks.</td></tr>
+    <tr><td>Log time</td><td>FAB → "2h thesis" → Save</td><td>2 + type</td><td>Good. The Area picker opens by default for time entries.</td></tr>
+    <tr><td>Check safe-to-spend</td><td>Open the app</td><td>0</td><td>Visible above the fold, also on the widget. The number is hidden from TalkBack (UX-006) and fails contrast in light mode (UX-002).</td></tr>
+    <tr><td>Complete a task</td><td>Tap checkbox (or swipe right)</td><td>1</td><td>Spring pop, haptic, chime, and an Undo snackbar (<code>use-task-actions.ts:71-75</code>). A model for the rest of the app.</td></tr>
+    <tr><td>Check off a habit</td><td>Tap ring on Today</td><td>1 per count</td><td>"8 a day" takes 8 taps. Tapping once more at target <b>silently resets to 0</b> with no Undo (UX-017).</td></tr>
+    <tr><td>Start focus</td><td>Focus tile → Start focus</td><td>2</td><td>Good. The Start button is white on sky at 3.16:1 (UX-004).</td></tr>
+    <tr><td>Pick top three</td><td>Pick → tick up to 3 → Done</td><td>5</td><td>Fine. An empty Top three shows a clear inline call to action.</td></tr>
+    <tr><td>Daily shutdown</td><td>Review tab → Shutdown → tick habits / tomorrow's tasks → Done</td><td>4+</td><td><b>Checkboxes never show as ticked</b> (hard-coded <code>checked={false}</code>, no optimistic update), so taps look ignored (UX-014).</td></tr>
+    <tr><td>Delete a transaction</td><td>Swipe left → Delete</td><td>2 gestures</td><td>Undo in the snackbar, which is unreadable in dark mode (UX-003). Not reachable with TalkBack (UX-009).</td></tr>
+    <tr><td>Bring old tasks into today</td><td>Later → "Today"</td><td>1</td><td>Kind wording, but it is a bulk move with <b>no preview and no Undo</b> (UX-016).</td></tr>
+    <tr><td>Sign out</td><td>Review → Settings → Sign out</td><td>3</td><td><b>No confirmation. Queued offline writes are deleted</b> (UX-001).</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- HEURISTICS -->
+<div class="section">
+<h2>5. Heuristic review (Nielsen's 10)</h2>
+<table>
+  <thead><tr><th style="width:26%">Heuristic</th><th style="width:7%">Score</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td>1. Visibility of system status</td><td>4</td><td>The offline pill counts pending changes (<code>sync-status.tsx:22-37</code>). Skeletons on every async screen. A running-timer bar. But shutdown ticks never show (UX-014), and quick-add's "Saved" doesn't say what was saved.</td></tr>
+    <tr><td>2. Match with the real world</td><td>4</td><td>৳ on every amount, plain copy ("Safe to spend today"), Bangla and English input. Grouping uses Western thousands ("৳272,490") instead of lakh ("৳2,72,490"), and Bangla digits are not accepted (UX-021). Some errors talk about "the server" (UX-018).</td></tr>
+    <tr><td>3. User control and freedom</td><td>3</td><td>Undo for delete, complete and snooze. No Undo for quick-add saves, bulk moves or habit resets. Sign out cannot be undone and loses data.</td></tr>
+    <tr><td>4. Consistency and standards</td><td>3</td><td>Strong shared components. But colour meaning drifts (UX-007), the FAB and tab sizes differ from DESIGN.md (UX-011), and 18 of 60 Pressables lack a role.</td></tr>
+    <tr><td>5. Error prevention</td><td>3</td><td>The quick-add preview shows what will be saved before Save. Sign out has no guard. Habit over-tap resets. The bulk "Move" acts at once.</td></tr>
+    <tr><td>6. Recognition rather than recall</td><td>4</td><td>Labelled tabs, labelled shortcuts, and a quick-add placeholder that teaches the syntax ("lunch 250 · call bank tomorrow 5pm"). Swipe actions are discoverable only through hints.</td></tr>
+    <tr><td>7. Flexibility and efficiency</td><td>5</td><td>Natural-language capture, AI fallback, widget one-tap logging, launcher shortcuts, swipe gestures, voice chat.</td></tr>
+    <tr><td>8. Aesthetic and minimalist design</td><td>3</td><td>Today and Money are calm. The task sheet, transaction filters and settings use rows of chips, which PRODUCT.md lists as an anti-reference (UX-013).</td></tr>
+    <tr><td>9. Help users recover from errors</td><td>3</td><td>The ErrorState has a retry, and the offline message is reassuring. Mutation errors join a label with the raw <code>error.message</code> (<code>lib/query-client.ts:45</code>), which can be "Request failed (500)" or a long server-URL sentence cut to 2 lines (UX-018).</td></tr>
+    <tr><td>10. Help and documentation</td><td>4</td><td>No onboarding (the brief says "never onboarded"), but placeholders, empty states with one action, and the Tiki chat starter prompts (chat.png) do the teaching.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- FINDINGS -->
+<div class="section">
+<h2>6. Findings</h2>
+<p class="small muted">Paths are relative to <code>apps/mobile/src/</code> unless they start with <code>packages/</code> or <code>docs/</code>. Grouped by category and sorted by severity within each group.</p>
+
+<h3>6.1 Data safety and user control</h3>
+
+<div class="finding sev-Critical">
+<h4>UX-001 · Sign out silently discards unsynced offline changes</h4>
+<span class="badge Critical">Critical</span> · User control / data loss
+<dl>
+<dt>Where</dt><dd><code>features/settings/account-section.tsx:38</code>; <code>lib/auth.ts:103-109</code>; <code>lib/user-data.ts:20-23</code></dd>
+<dt>What's wrong</dt><dd>One tap on "Sign out" signs out at once, with no confirmation. <code>clearUserData()</code> clears the mutation cache, which is the offline outbox. Anything logged on a rickshaw with no signal and not yet synced is lost. The same path runs on any 401 (<code>auth.ts:111</code>). The button is the first control on the Settings screen.</dd>
+<dt>Evidence</dt><dd><pre>// user-data.ts
+await queryClient.cancelQueries();
+queryClient.getMutationCache().clear();   // queued offline writes
+queryClient.clear();
+// account-section.tsx:38
+&lt;Button label="Sign out" ... onPress={() =&gt; void signOut()} /&gt;</pre></dd>
+<dt>Why it matters</dt><dd>The product promises "Works offline… changes queue up, then sync". Losing expenses without a word breaks trust in the money numbers.</dd>
+<dt>Recommendation</dt><dd>Check <code>usePendingWrites()</code> first. If it is above 0, show a sheet: "3 changes haven't synced yet. Sync now / Sign out anyway". Otherwise use a light confirmation, since sign-out also wipes the phone. Move Account to the bottom of Settings. For a 401, keep the outbox and re-authenticate instead of wiping.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-015 · Quick-add "Saved" has no detail and no Undo</h4>
+<span class="badge Medium">Medium</span> · User control / feedback
+<dl>
+<dt>Where</dt><dd><code>features/quick-add/quick-add-sheet.tsx:98-105</code></dd>
+<dt>What's wrong</dt><dd>After Save, the snackbar says only "Saved". The parser can guess wrong (a category, account or kind), and the sheet has already closed. Deletes, completions and snoozes all get "Deleted X · Undo".</dd>
+<dt>Evidence</dt><dd><pre>for (const request of requests) send(request);
+haptic.success(); playSound("pop");
+notify("Saved");
+router.back();</pre></dd>
+<dt>Why it matters</dt><dd>Capture speed depends on trusting the parser. Undo makes a misparse cheap to fix.</dd>
+<dt>Recommendation</dt><dd>Use the preview text, e.g. <code>notify(`Saved: ${preview}`, { label: "Undo", onPress: () =&gt; send({ method: "DELETE", ... }) })</code>. Ids are made on the client, so the DELETE path is known.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-016 · Bulk "Move" and "Today" buttons act without preview or Undo</h4>
+<span class="badge Medium">Medium</span> · User control
+<dl>
+<dt>Where</dt><dd><code>features/today/later-today.tsx:40-53</code> (move low-priority tasks to tomorrow), <code>:75-88</code> (rescue overdue)</dd>
+<dt>What's wrong</dt><dd>One small secondary button moves an unknown set of tasks. The server decides which ones, and the snackbar has no Undo. The confirmation is shown before the server responds.</dd>
+<dt>Why it matters</dt><dd>Users can't predict the result and can't take it back. That makes the gentle feature feel risky.</dd>
+<dt>Recommendation</dt><dd>Return the moved ids from the API. Name them in the snackbar ("Moved 3 tasks to tomorrow") with Undo that restores <code>doAt</code>. Or open a small sheet listing the tasks with checkboxes.</dd>
+<dt>Effort</dt><dd>M</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-017 · A habit ring resets to zero on one extra tap</h4>
+<span class="badge Medium">Medium</span> · Error prevention
+<dl>
+<dt>Where</dt><dd><code>features/habits/habit-chips.tsx:212-218</code></dd>
+<dt>What's wrong</dt><dd>When the count is at target, the next tap sets it to 0 (<code>habit.todayCount &gt;= habit.targetCount ? 0 : +1</code>). A long press also resets. Neither offers Undo. For "Drink water, 8 a day", one stray tap erases a full day.</dd>
+<dt>Why it matters</dt><dd>Losing progress to an accidental tap is the "broken streak" feeling the product wants to avoid.</dd>
+<dt>Recommendation</dt><dd>Stop at target. Make reset a long press with a snackbar "Reset Drink water · Undo". Or keep the cycle but add Undo.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<h3>6.2 Accessibility</h3>
+
+<div class="finding sev-High">
+<h4>UX-002 · Light-mode semantic colours and muted text fail WCAG AA</h4>
+<span class="badge High">High</span> · Accessibility / contrast
+<dl>
+<dt>Where</dt><dd>Tokens: <code>theme/colors.ts:10-21</code>, <code>global.css:5-16</code>. Uses as text: <code>features/today/safe-to-spend-card.tsx:164-168</code> (hero amount in mint), <code>features/money/transaction-row.tsx:97-104</code> (coral amounts), <code>components/ui/section.tsx:54</code> (sky "Change / Full day / All" links), <code>features/habits/habit-chips.tsx:158</code> (grape counts), <code>features/tasks/task-row.tsx:74</code> (coral "Due"), <code>components/ui/text-field.tsx:50-53</code> (coral error text)</dd>
+<dt>What's wrong</dt><dd>Measured ratios in light mode (full table in Appendix A):
+<table>
+<thead><tr><th>Text</th><th>on background #FFF8EE</th><th>on surface #FFFFFF</th><th>Needed</th></tr></thead>
+<tbody>
+<tr><td><span class="swatch" style="background:#2EC4A0"></span>mint #2EC4A0 (hero 44px)</td><td class="fail">2.09</td><td class="fail">2.21</td><td>3.0 (large)</td></tr>
+<tr><td><span class="swatch" style="background:#FF7A6B"></span>coral #FF7A6B (amounts 17px)</td><td class="fail">2.41</td><td class="fail">2.55</td><td>4.5</td></tr>
+<tr><td><span class="swatch" style="background:#5B8CFF"></span>sky #5B8CFF (links 15px bold)</td><td class="fail">3.00</td><td class="fail">3.16</td><td>4.5</td></tr>
+<tr><td><span class="swatch" style="background:#A57BFF"></span>grape #A57BFF (13px counts)</td><td class="fail">2.90</td><td class="fail">3.05</td><td>4.5</td></tr>
+<tr><td><span class="swatch" style="background:#7D7670"></span>muted #7D7670 (all secondary text)</td><td class="fail">4.24</td><td class="fail">4.47</td><td>4.5</td></tr>
+</tbody></table>
+The safe-to-spend hero fails even the 3.0 large-text threshold. Every dark-mode pair passes (6.4 to 16:1).</dd>
+<dt>Evidence</dt><dd>The widget already uses darker text-safe variants: <code>features/widget/safe-to-spend-widget.tsx:16-24</code> (mint <code>#1E9E80</code>, coral <code>#E8604F</code>, sky <code>#3F6FE0</code>, grape <code>#7B4FE0</code>). <code>theme/colors.ts:46</code> even says "Text never uses these colours" about the chart palette, yet the app uses the brighter tokens for text everywhere.
+<div class="shots small"><figure><img src="../../screenshots/today.png"><figcaption>Mint hero on white</figcaption></figure><figure><img src="../../screenshots/transactions.png"><figcaption>Coral amounts</figcaption></figure><figure><img src="../../screenshots/budgets.png"><figcaption>Mint/mango bars</figcaption></figure></div></dd>
+<dt>Why it matters</dt><dd>PRODUCT.md commits to "WCAG AA contrast in both light and dark themes". The main use is "one-handed in daylight at a shop counter", where low contrast hurts most. The single most important number on the home screen is the worst case.</dd>
+<dt>Recommendation</dt><dd>Add text tokens, used only by <code>Text</code> tones in light mode: <code>mint-ink #13785F</code> (5.41:1 on white), <code>coral-ink #C8412F</code> (4.94:1), <code>sky-ink #2F5FD0</code> (5.72:1), <code>grape-ink #6E44D6</code> (6.07:1). Keep the bright tokens for dots, rings and bars. Darken muted to <code>#6E6862</code> (5.21:1 on #FFF8EE). Run the contrast script in CI.</dd>
+<dt>Effort</dt><dd>M</dd>
+</dl>
+</div>
+
+<div class="finding sev-High">
+<h4>UX-003 · Dark-mode snackbar "Undo" is 1.41:1</h4>
+<span class="badge High">High</span> · Accessibility / contrast
+<dl>
+<dt>Where</dt><dd><code>components/ui/snackbar.tsx:146</code> (<code>bg-ink</code>), <code>:162</code> (<code>tone="mango"</code>)</dd>
+<dt>What's wrong</dt><dd>The snackbar background is <code>ink</code>, which flips to cream <code>#F4F1EA</code> in dark mode. The action text is <code>mango</code>, <code>#FFC266</code> in dark. Result: 1.41:1, close to invisible. Light mode is fine (9.10:1).</dd>
+<dt>Why it matters</dt><dd>The spec swaps "Are you sure?" dialogs for an Undo snackbar (spec.txt:223). Every delete, completion and snooze depends on that one button. Dark mode is the "in bed at night doing the shutdown" scene.</dd>
+<dt>Recommendation</dt><dd>Use <code>tone="background"</code> plus bold or underline for the action, or a fixed <code>#8A5A00</code> (the widget's mango text colour, 5.25:1 on cream) when the scheme is dark. Better still, give the snackbar a fixed dark surface in both themes.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-High">
+<h4>UX-004 · White text on sky and coral fills fails AA</h4>
+<span class="badge High">High</span> · Accessibility / contrast
+<dl>
+<dt>Where</dt><dd><code>components/ui/button.tsx:11</code> (<code>time</code> variant: Start focus, Focus, Log time); <code>features/timer/running-timer-bar.tsx:38-44</code>; <code>components/ui/swipe-row.tsx:141-146</code> (Edit/Snooze/Delete tray labels, 13px); <code>features/assistant/message-bubble.tsx:156-163</code> (Delete pill); <code>features/plan/calendar-view.tsx:127-133</code> (selected day); <code>components/ui/shortcut-row.tsx:43-45</code> (11px badge)</dd>
+<dt>What's wrong</dt><dd>White on sky is 3.16:1 in light and 2.49:1 in dark. White on coral is 2.55:1 in light and 2.15:1 in dark. The labels are 13–17px, so 4.5:1 is required.
+<div class="shots small"><figure><img src="../../screenshots/focus.png"><figcaption>Start focus: white on sky</figcaption></figure></div></dd>
+<dt>Why it matters</dt><dd>These are primary controls (start focus, stop timer, delete) and they are hard to read in sunlight.</dd>
+<dt>Recommendation</dt><dd>Use <code>on-mango</code> dark text on sky and coral fills (5.06 to 7.44:1 across both themes), as the <code>money</code> variant already does on mint. Or use the darker text tokens from UX-002 as fills. Also see UX-007: DESIGN.md says semantic colours should be small marks, not large fills.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-High">
+<h4>UX-005 · Expense amounts have no sign; colour is the only cue</h4>
+<span class="badge High">High</span> · Accessibility / colour meaning
+<dl>
+<dt>Where</dt><dd><code>features/money/transaction-row.tsx:97-104</code>; seen on Money, Transactions and Today</dd>
+<dt>What's wrong</dt><dd>Income gets <code>signed</code> ("+৳15,000"). Expenses show "৳62,000" in coral, and outgoing transfers show "৳…" in ink. Spending and money moving between your own accounts look the same except for colour. PRODUCT.md: "Colour is never the only signal (amounts carry a sign…)".</dd>
+<dt>Evidence</dt><dd><pre>&lt;Amount minor={amount} signed={incoming}
+  tone={incoming ? "mint" : tx.type === "transfer" ? "ink" : "coral"} /&gt;</pre>
+<div class="shots small"><figure><img src="../../screenshots/money.png"><figcaption>"৳20" coral, no sign</figcaption></figure><figure><img src="../../screenshots/money-dark.png"><figcaption>Same in dark</figcaption></figure></div></dd>
+<dt>Why it matters</dt><dd>Colour-blind users and people in bright light can't tell money in from money out. Coral already fails contrast (UX-002), so the sign is the only reliable cue.</dd>
+<dt>Recommendation</dt><dd>Pass a negative minor value for expenses so <code>formatAmount</code> prints "−৳62,000" (it already uses U+2212, <code>packages/shared/src/money.ts:70</code>). Show transfers with a ⇄ glyph or "→ bKash".</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-High">
+<h4>UX-006 · TalkBack never reads the safe-to-spend amount</h4>
+<span class="badge High">High</span> · Accessibility / screen reader
+<dl>
+<dt>Where</dt><dd><code>features/today/safe-to-spend-card.tsx:25-29</code>; <code>components/ui/card.tsx:13-17</code></dd>
+<dt>What's wrong</dt><dd>The card is a <code>Pressable</code> with <code>accessibilityLabel="Safe to spend today"</code>. On Android, a focusable element with a content description announces that label instead of its children's text. TalkBack users hear "Safe to spend today, button" without the amount, the amount spent, the days left or the pace alert. <span class="unv">Unverified</span> on a device, but this is standard RN/Android behaviour.</dd>
+<dt>Evidence</dt><dd><pre>&lt;Card onPress={() =&gt; router.push("/money/budgets")}
+  accessibilityLabel="Safe to spend today" className="gap-3"&gt;</pre></dd>
+<dt>Why it matters</dt><dd>It hides the answer to one of the app's two core questions ("can I afford it?").</dd>
+<dt>Recommendation</dt><dd>Build a full label: <code>`Safe to spend today, ${formatAmount(left)}. ${formatAmount(spent)} spent of ${formatAmount(daily)}, ${daysLeft} days left`</code> (or "Hidden" in privacy mode), with <code>accessibilityHint="Opens budgets"</code>.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-008 · 18 of 60 Pressables have no accessibilityRole; form labels are not linked</h4>
+<span class="badge Medium">Medium</span> · Accessibility / screen reader
+<dl>
+<dt>Where</dt><dd>No role: <code>features/tasks/task-row.tsx:52</code> (every task row), <code>features/plan/compact-task.tsx:18</code>, <code>features/plan/week-planner.tsx:57,64</code>, <code>features/plan/calendar-view.tsx:81,88,127</code>, <code>features/money/budgets-screen.tsx:62,69</code>, <code>features/money/money-calendar.tsx:68,75,106</code>, <code>features/money/shopping-screen.tsx:174</code>, <code>features/timer/running-timer-bar.tsx:47</code>, <code>features/routines/routine-runner.tsx:92,99</code>, <code>features/tasks/task-sheet.tsx:501</code>, <code>components/ui/swipe-row.tsx:166</code>. Label: <code>components/ui/text-field.tsx:22-36</code></dd>
+<dt>What's wrong</dt><dd>Without a role, TalkBack doesn't say "button", so users can't tell the row is actionable. <code>TextField</code> draws its label as a separate <code>Text</code> and passes no <code>accessibilityLabel</code> to the <code>TextInput</code>, so fields are announced by placeholder or not at all. Errors are 13px coral (2.55:1) with no live region.</dd>
+<dt>Evidence</dt><dd>Totals: 60 Pressables, 57 <code>accessibilityRole</code>, 53 <code>accessibilityLabel</code>, 10 <code>accessibilityHint</code>, 5 <code>accessibilityLiveRegion</code>, 1 <code>accessibilityActions</code> (Appendix B).</dd>
+<dt>Recommendation</dt><dd>Add <code>accessibilityRole="button"</code> at these sites. In <code>TextField</code>, set <code>accessibilityLabel={label}</code> on the input and give the error <code>accessibilityLiveRegion="polite"</code>. A Biome or ESLint rule for role on Pressable keeps it fixed.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-009 · Swipe actions and drag-to-schedule are out of reach for TalkBack</h4>
+<span class="badge Medium">Medium</span> · Accessibility / gestures <span class="unv">Unverified</span>
+<dl>
+<dt>Where</dt><dd><code>components/ui/swipe-row.tsx:153-161</code>; <code>features/tasks/task-row.tsx:56</code>; <code>features/money/transaction-row.tsx:68</code>; <code>features/plan/compact-task.tsx:21</code></dd>
+<dt>What's wrong</dt><dd><code>accessibilityActions</code> sits on the wrapping <code>Animated.View</code>, which is not focusable. TalkBack focuses the inner Pressable, which has no actions, so the "Actions" menu is probably empty. The hints tell screen-reader users to "Swipe right to complete, left for snooze and delete", which they can't do. Planner cards say "Long-press and drag to move" with no alternative action.</dd>
+<dt>Recommendation</dt><dd>Move <code>accessibilityActions</code> and <code>onAccessibilityAction</code> onto the focusable child (pass them through SwipeRow as props). Add "Complete" to the list. Rewrite hints as "Actions available". For planner cards, add "Schedule for…" actions that open the time picker.</dd>
+<dt>Effort</dt><dd>M</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-019 · The focus timer announces itself every second</h4>
+<span class="badge Medium">Medium</span> · Accessibility / screen reader
+<dl>
+<dt>Where</dt><dd><code>features/focus/focus-screen.tsx:150</code></dd>
+<dt>What's wrong</dt><dd>The <code>mm:ss</code> text has <code>accessibilityLiveRegion="polite"</code> and changes every second, so TalkBack reads it out constantly during a 25-minute session. <span class="unv">Unverified</span> on a device.</dd>
+<dt>Recommendation</dt><dd>Drop the live region from the ticking text. Announce only phase changes and whole minutes (e.g. a hidden <code>Text</code> updated every 5 minutes).</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-020 · No plan for large font sizes; fixed-height containers will clip</h4>
+<span class="badge Medium">Medium</span> · Accessibility / dynamic type <span class="unv">Unverified</span>
+<dl>
+<dt>Where</dt><dd><code>components/navigation/tab-bar.tsx:47,72</code> (h-12 tab holding a 22px icon and an 11px label); <code>features/plan/calendar-view.tsx:131</code> (h-14 cells) and <code>features/money/money-calendar.tsx:110</code> (h-16 cells); 20 × <code>numberOfLines={1}</code>; hero 44px</dd>
+<dt>What's wrong</dt><dd>There are zero uses of <code>allowFontScaling</code> or <code>maxFontSizeMultiplier</code>. Scaling is on by default (good), but containers are fixed-height. At 1.5–2× the tab labels and calendar numbers will overflow, and "৳272,490" at 88px will wrap.</dd>
+<dt>Recommendation</dt><dd>Set <code>maxFontSizeMultiplier</code> around 1.6 on chrome only (tab labels, calendar cells, badges). Change <code>h-*</code> to <code>min-h-*</code> on text containers. Use <code>adjustsFontSizeToFit</code> on hero amounts. Test at 200% on a device.</dd>
+<dt>Effort</dt><dd>M</dd>
+</dl>
+</div>
+
+<div class="finding sev-Low">
+<h4>UX-030 · Input and secondary-button borders are 1.25:1</h4>
+<span class="badge Low">Low</span> · Accessibility / non-text contrast
+<dl>
+<dt>Where</dt><dd><code>components/ui/text-field.tsx:35</code> (<code>border-line</code>), <code>components/ui/button.tsx:13</code></dd>
+<dt>What's wrong</dt><dd>The <code>line</code> token on surface is 1.25:1 in light and 1.27:1 in dark. WCAG 1.4.11 asks for 3:1 for component boundaries. On the cream background, white inputs are barely outlined (task.png: Notes, Repeat).</dd>
+<dt>Recommendation</dt><dd>Add a <code>line-strong</code> token (#968A7B light = 3.38:1 on surface, #757087 dark = 3.38:1) for input borders only. Keep hairlines for separators.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<h3>6.3 Visual design and colour meaning</h3>
+
+<div class="finding sev-High">
+<h4>UX-007 · Colour meaning has drifted from DESIGN.md</h4>
+<span class="badge High">High</span> · Visual design / principle 4
+<dl>
+<dt>Where</dt><dd>Focus as grape: <code>features/today/quick-actions.tsx:28-30</code>, <code>features/widget/safe-to-spend-widget.tsx:282</code>. Unscheduled tasks as grape: <code>features/plan/week-planner.tsx:87</code>, <code>features/plan/day-timeline.tsx:144</code>. "Timed task" dot as grape: <code>features/plan/calendar-view.tsx:146</code>. User-picked habit colours across the palette: <code>features/habits/habit-sheet.tsx:21</code>, <code>features/habits/habit-chips.tsx:134-146</code>. Large sky fills: <code>button.tsx:11</code>, <code>running-timer-bar.tsx:38</code>. Coral heat fill: <code>money-calendar.tsx:112-115</code>.</dd>
+<dt>What's wrong</dt><dd>DESIGN.md: "blue for time… purple for habits… semantic colours appear as small marks, not as large fills; mango is reserved for the one primary action". In the app: Focus (time) is purple. Planner task bars are purple. Habit rings on Today come in sky, grape and mint (today2.png). The Budgets "running ahead" bar is mango (budgets.png). Start focus is a full-width sky slab.
+<div class="shots small"><figure><img src="../../screenshots/week.png"><figcaption>Purple task bars</figcaption></figure><figure><img src="../../screenshots/today2.png"><figcaption>Multi-colour habit rings</figcaption></figure><figure><img class="wide" src="../../screenshots/widget.png"><figcaption>Widget: Focus in purple</figcaption></figure></div></dd>
+<dt>Why it matters</dt><dd>"So I always know which half of the app I'm in at a glance" (spec.txt:185). Once purple means three things, it means nothing.</dd>
+<dt>Recommendation</dt><dd>Focus, the timer and all planner bars use sky. Keep the habit ring colour fixed to grape and use the habit's emoji for identity. Show "running ahead" as a coral text mark, not a mango bar. Change the time button to secondary style with a sky icon.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-011 · Tab bar and FAB differ from the design spec</h4>
+<span class="badge Medium">Medium</span> · Visual design / ergonomics
+<dl>
+<dt>Where</dt><dd><code>components/navigation/tab-bar.tsx:47,67,72,104-114</code></dd>
+<dt>What's wrong</dt><dd>DESIGN.md: "centre mango FAB (64 dp)… Icons 26, labels 12". The code uses a FAB of <code>h-12 w-12</code> (48 dp), icons of 22 and labels of 11px. The Tiki chat button (64 dp) sits left of the capsule, so the FAB is about 36 dp right of screen centre.</dd>
+<dt>Why it matters</dt><dd>Capture is the product's main action. A smaller, off-centre FAB is easier to miss one-handed.</dd>
+<dt>Recommendation</dt><dd>Bring the FAB back to 56–64 dp, raised slightly above the capsule and centred on the screen. Move the Tiki chat button to the Today header or into the FAB's long-press. Use 12px labels and 24–26 icons.</dd>
+<dt>Effort</dt><dd>M</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-013 · Edit sheets and filters are rows of chips (an anti-reference)</h4>
+<span class="badge Medium">Medium</span> · Visual design / minimalism
+<dl>
+<dt>Where</dt><dd><code>features/tasks/task-sheet.tsx:275-441</code> (Do it ×7, deadline, top three, urgency, energy ×2, estimate ×6, area, project chips); Transactions filter (transactions.png); Settings (settings.png); quick-add kind row <code>quick-add-sheet.tsx:159-168</code></dd>
+<dt>What's wrong</dt><dd>PRODUCT.md lists "rows of colourful chips… competing for attention" and "form-like screens" as anti-references. DESIGN.md asks for a compact picker field ("Cash ▾") in sheets instead of rows of chips. The task sheet has about 25 chips across 5 groups, and quick-add's 5-chip kind row runs off the edge ("Time" is cut off in quickadd.png).
+<div class="shots small"><figure><img src="../../screenshots/task.png"><figcaption>Task sheet</figcaption></figure><figure><img src="../../screenshots/quickadd.png"><figcaption>Kind chips clipped</figcaption></figure></div></dd>
+<dt>Recommendation</dt><dd>The task sheet should show title, notes, a "When ▾" picker (Today, Tomorrow, Evening, Pick date, Someday) and an "Estimate ▾" picker. Hide priority, energy, urgency, area and project behind "More". In quick-add, show the kind chips only when <code>confidence</code> is low, and show the inferred kind as a single "Expense ▾" picker otherwise. Transactions: one "Filter ▾" picker.</dd>
+<dt>Effort</dt><dd>M</dd>
+</dl>
+</div>
+
+<div class="finding sev-Low">
+<h4>UX-025 · Text sizes outside the type scale (9px, 11px)</h4>
+<span class="badge Low">Low</span> · Typography
+<dl>
+<dt>Where</dt><dd><code>features/money/money-calendar.tsx:122</code> and <code>features/plan/calendar-view.tsx:150</code> (<code>text-[9px]</code>); <code>tab-bar.tsx:72</code> and <code>shortcut-row.tsx:44</code> (<code>text-[11px]</code>); <code>segmented.tsx:28</code> (13px muted labels); <code>text-field.tsx:35</code> (<code>text-base</code> 16 against body 17)</dd>
+<dt>What's wrong</dt><dd>The smallest DESIGN.md step is Caption 13. A 9px spend figure in the money calendar can't be read on a rickshaw.</dd>
+<dt>Recommendation</dt><dd>Use 13 as the floor. In the calendar, show spend only for the selected day, below the grid.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Low">
+<h4>UX-022 · Accent themes don't reach <code>useColors()</code></h4>
+<span class="badge Low">Low</span> · Theming consistency
+<dl>
+<dt>Where</dt><dd><code>features/settings/reward-theme.ts:34-42</code>; <code>theme/colors.ts:41-43</code>; <code>components/navigation/tab-bar.tsx:84</code></dd>
+<dt>What's wrong</dt><dd>"Mint breeze" and "Grape dusk" override the CSS variables only. JS colours from <code>useColors()</code> stay Classic, so the tab-bar fade goes to <code>#FFF8EE</code> over a mint or lilac background, leaving a visible band. Muted text on those backgrounds drops to 4.16:1 and 4.03:1. <span class="unv">Unverified</span> visually.</dd>
+<dt>Recommendation</dt><dd>Make <code>useColors()</code> merge the active reward theme, or draw the fade with a class-based background.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Low">
+<h4>UX-027 · Money calendar uses large coral fills with a light-mode colour in both themes</h4>
+<span class="badge Low">Low</span> · Visual design / dark parity
+<dl>
+<dt>Where</dt><dd><code>features/money/money-calendar.tsx:112-115</code></dd>
+<dt>What's wrong</dt><dd><code>rgba(255,122,107, 0.12 + intensity*0.55)</code> is hard-coded light coral. Up to 67% coral fills on big-spend days read as an alarm, and the colour doesn't adapt to dark mode.</dd>
+<dt>Recommendation</dt><dd>Use a small coral dot or bar scaled by intensity, with neutral cells and the token colour.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Low">
+<h4>UX-028 · Area colour swatches are announced as hex codes</h4>
+<span class="badge Low">Low</span> · Accessibility / content
+<dl>
+<dt>Where</dt><dd><code>features/plan/area-sheet.tsx:21,110-113</code>; <code>features/habits/habit-sheet.tsx:21</code></dd>
+<dt>What's wrong</dt><dd>TalkBack reads "Colour #5B8CFF". The swatches are light-mode hex values that never adapt to dark. Colour is the only identity on area chips.</dd>
+<dt>Recommendation</dt><dd>Store token names ("sky", "grape"…), announce "Blue" or "Purple", and draw from the palette per scheme.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<h3>6.4 Layout, ergonomics and flows</h3>
+
+<div class="finding sev-Medium">
+<h4>UX-010 · Ten touch targets are below 48 dp</h4>
+<span class="badge Medium">Medium</span> · Mobile ergonomics
+<dl>
+<dt>Where</dt><dd>
+<table>
+<thead><tr><th>Location</th><th>Size (dp)</th><th>hitSlop</th></tr></thead>
+<tbody>
+<tr><td><code>features/routines/routine-runner.tsx:92,99</code> (Move up / Remove step)</td><td>32 wide</td><td>none</td></tr>
+<tr><td><code>features/routines/routine-runner.tsx:37</code> (step timer)</td><td>40 tall</td><td>none</td></tr>
+<tr><td><code>features/money/shopping-screen.tsx:174</code> (remove item)</td><td>40 wide</td><td>none</td></tr>
+<tr><td><code>components/ui/segmented.tsx:25</code> (all segmented controls)</td><td>44 tall</td><td>none</td></tr>
+<tr><td><code>features/assistant/message-bubble.tsx:150,160</code> (Keep / Delete)</td><td>44 tall</td><td>none</td></tr>
+<tr><td><code>features/plan/area-sheet.tsx:110</code> (colour swatch)</td><td>44×44</td><td>none</td></tr>
+<tr><td><code>features/review/subscriptions-screen.tsx:141</code></td><td>44 tall</td><td>none</td></tr>
+<tr><td><code>features/plan/compact-task.tsx:20</code> (py-2.5, about 44)</td><td>~44</td><td>none</td></tr>
+<tr><td><code>features/tasks/task-sheet.tsx:501</code> (Logbook link, py-2 + 13px)</td><td>~34</td><td>none</td></tr>
+<tr><td><code>features/review/shutdown-flow.tsx:68-83,104-117</code> (row text beside checkbox isn't tappable)</td><td>48 box only</td><td>10</td></tr>
+</tbody></table></dd>
+<dt>What's wrong</dt><dd>PRODUCT.md and the spec both say every target is at least 48 dp. The shared components comply; these call sites don't.</dd>
+<dt>Recommendation</dt><dd>Use <code>min-h-12</code>, or add <code>hitSlop</code> to reach 48. Make the shutdown and pick rows fully pressable, as <code>TaskRow</code> is.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-012 · Today's "what now?" sits below the fold</h4>
+<span class="badge Medium">Medium</span> · Information hierarchy / principle 1
+<dl>
+<dt>Where</dt><dd><code>app/(tabs)/index.tsx:46-52</code>; today.png</dd>
+<dt>What's wrong</dt><dd>The order is: date line → 34px greeting with a 72px Tiki → 4 shortcut tiles (about 100 dp) → safe-to-spend card → Top three → Next up. On a 960px-tall screen, Next up's rows are hidden behind the tab bar. The shortcut tiles repeat the FAB and the quick-add kinds.
+<div class="shots small"><figure><img src="../../screenshots/today.png"><figcaption>Next up cut off</figcaption></figure></div></dd>
+<dt>Why it matters</dt><dd>Principle 1: answer "what now?" and "can I afford it?" before anything else. Right now a greeting and a launcher answer first.</dd>
+<dt>Recommendation</dt><dd>Fold the greeting into one line beside Tiki ("Good evening · 1 of 5 done"). Turn the shortcuts into a single row of compact pills, or drop them (the FAB plus a kind picker covers them). Show the first Next-up item inside the hero area ("Next: Standup call, 8:00 pm").</dd>
+<dt>Effort</dt><dd>M</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-014 · Shutdown checkboxes don't respond to taps</h4>
+<span class="badge Medium">Medium</span> · Feedback / system status
+<dl>
+<dt>Where</dt><dd><code>features/review/shutdown-flow.tsx:68-79</code> (habits), <code>:104-114</code> (tomorrow's top three)</dd>
+<dt>What's wrong</dt><dd>Both lists render <code>&lt;Checkbox checked={false} …&gt;</code>. Habit ticks call <code>send()</code> with no optimistic cache update and no <code>label</code>. Top-three ticks patch only the Today cache, not the shutdown query. The box pops, but the row stays unticked until a refetch about 250 ms after the server confirms. Offline, it never ticks. Picking a 4th shows "Three is enough.", which is abrupt.</dd>
+<dt>Recommendation</dt><dd>Keep the picked state locally or patch <code>keys.shutdown</code>. Move ticked habits into a "Done" group. Replace the toast with a disabled state and the caption "3 of 3 picked".</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-023 · The running-timer bar covers the end of Today</h4>
+<span class="badge Medium">Medium</span> · Layout <span class="unv">Unverified</span>
+<dl>
+<dt>Where</dt><dd><code>components/ui/screen.tsx:65</code> (bottom padding 120 + inset); <code>features/timer/running-timer-bar.tsx:32</code> (bottom = inset + 12 + 64 + 8, height about 56)</dd>
+<dt>What's wrong</dt><dd>The bar's top edge is about inset + 140 dp, but the scroll padding is only inset + 120. The last ~20 dp of Today (the "Later" group) can't scroll clear of the bar while a timer runs.</dd>
+<dt>Recommendation</dt><dd>Pass extra bottom padding to <code>Screen</code> when <code>running</code> is set (e.g. a <code>bottomInset</code> prop of 72).</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-024 · Inputs outside sheets have no keyboard avoidance</h4>
+<span class="badge Medium">Medium</span> · Keyboard handling <span class="unv">Unverified</span>
+<dl>
+<dt>Where</dt><dd>Only <code>components/ui/sheet.tsx:7-20,33</code> and <code>features/assistant/assistant-sheet.tsx:26</code> track the keyboard. In-screen inputs are not handled: <code>features/money/goals-screen.tsx:138</code> (Add money), <code>features/money/shopping-screen.tsx:119,197</code>, <code>features/review/payday-plan.tsx:91,104</code>, <code>features/routines/routine-runner.tsx:85-91</code>, the Transactions search.</dd>
+<dt>What's wrong</dt><dd>With Android edge-to-edge (RN 0.86), <code>softwareKeyboardLayoutMode: "resize"</code> (<code>app.json</code>) may not resize the window. Fields low on a <code>Screen</code> ScrollView can end up under the keyboard. The Sheet's manual padding suggests the team has already run into this.</dd>
+<dt>Recommendation</dt><dd>Move <code>useKeyboardHeight()</code> padding into <code>Screen</code>, or use <code>automaticallyAdjustKeyboardInsets</code> / react-native-keyboard-controller. Better still, move these inline inputs into sheets, as the spec's interaction rules ask ("Creating and editing happen in bottom sheets").</dd>
+<dt>Effort</dt><dd>M</dd>
+</dl>
+</div>
+
+<h3>6.5 Content, microcopy and localisation</h3>
+
+<div class="finding sev-Medium">
+<h4>UX-018 · Error copy written for developers reaches the user</h4>
+<span class="badge Medium">Medium</span> · Microcopy / error recovery
+<dl>
+<dt>Where</dt><dd><code>lib/http.ts:20-26</code>; <code>lib/query-client.ts:43-45</code>; <code>components/ui/snackbar.tsx:149</code> (<code>numberOfLines={2}</code>); <code>lib/api.ts:34</code>; <code>app/login.tsx:126-131</code>; <code>components/ui/empty-state.tsx:92</code></dd>
+<dt>What's wrong</dt><dd>A failed write shows <code>"&lt;label&gt;: Can't reach the server at https://… Check that it's running and you're on the same network."</code>, cut to 2 lines. Server errors fall back to <code>"Request failed (500)"</code>. The sign-in screen footer shows the API host (login.png: "10.0.2.2:3000"). The ErrorState says "Check the connection to your server".
+<div class="shots small"><figure><img src="../../screenshots/login.png"><figcaption>Dev host on sign-in</figcaption></figure></div></dd>
+<dt>Why it matters</dt><dd>The brand voice is "short and friendly", and the user isn't meant to think about a server. Writes are queued and will retry, so the alarming message is also misleading.</dd>
+<dt>Recommendation</dt><dd>Map error types to copy: unreachable → "Saved on this phone. It'll sync when you're back online". 5xx → "Something went wrong on our side. Your change is kept and will retry". Show the host only in a debug build or behind a long press on the version.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Medium">
+<h4>UX-021 · No Bangla digits and no lakh grouping for amounts</h4>
+<span class="badge Medium">Medium</span> · Localisation
+<dl>
+<dt>Where</dt><dd><code>packages/shared/src/money.ts:51-53</code> (thousands grouping), <code>:79-80</code> (<code>parseAmountToMinor</code> regex is ASCII <code>\d</code> only); <code>packages/shared/src/quick-add.ts:173,203</code> (ASCII digit patterns). No <code>০-৯</code> handling anywhere in the repo.</dd>
+<dt>What's wrong</dt><dd>README: "Bangla and English, typed or spoken, in quick-add". Typing "চা ২০" or "+৪৫০০০ বেতন" isn't recognised locally, so it falls to the AI parser (not available offline or without a key). Amount fields reject Bangla digits. Totals show "৳272,490"; Bangladeshi convention is "৳2,72,490".</dd>
+<dt>Recommendation</dt><dd>Normalise <code>[০-৯]</code> to ASCII at the start of <code>parseQuickAdd</code> and <code>parseAmountToMinor</code> (one <code>replace</code> using a 10-entry map). Add a <code>grouping: "lakh" | "intl"</code> setting, defaulting to lakh for BDT.</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Low">
+<h4>UX-026 · Small leftovers of guilt UI: zero streaks, over-plan bars, the drooping plant</h4>
+<span class="badge Low">Low</span> · Microcopy / principle 5
+<dl>
+<dt>Where</dt><dd><code>features/review/review-home.tsx:97-98</code> ("Daily goal: 0 days · best 0 days"); <code>features/habits/habit-list.tsx:107-111</code> ("1/7 this week" on a daily habit); <code>features/review/weekly-review.tsx:94-101</code> ("11h of 1h planned" shows the same full bar as on-plan); <code>features/focus/focus-screen.tsx:153-156</code> ("The plant missed you"); <code>features/plan/week-planner.tsx:117</code> (coral over-capacity text)</dd>
+<dt>What's wrong</dt><dd>None of these scold, but each shows a shortfall first. review.png opens Streaks with "0 days" twice.
+<div class="shots small"><figure><img src="../../screenshots/review.png"><figcaption>"0 days · best 0 days"</figcaption></figure><figure><img src="../../screenshots/weekly.png"><figcaption>11h of 1h = full bar</figcaption></figure></div></dd>
+<dt>Recommendation</dt><dd>Hide a streak at 0 or replace it with "Start a streak today". Show weekly habit progress as dots for days done. In weekly review, show over-plan in a different shade with "+10h". Change the plant line to "Back with it. The plant perks up".</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+
+<div class="finding sev-Low">
+<h4>UX-029 · README screenshots are behind the code</h4>
+<span class="badge Low">Low</span> · Documentation
+<dl>
+<dt>Where</dt><dd><code>docs/screenshots/*.png</code> (last commit <code>1f25750</code>, 2026-10-05) against <code>components/navigation/tab-bar.tsx</code> (<code>871e55b</code>, 2026-10-06) and the split Settings pages</dd>
+<dt>What's wrong</dt><dd>The screenshots show the old growing-pill tab bar and a single-page Settings. Reviewers, and Google OAuth verification, see a different app from the one that ships.</dd>
+<dt>Recommendation</dt><dd>Re-shoot after the fixes in this report. Add a short checklist item: "UI change → refresh screenshots".</dd>
+<dt>Effort</dt><dd>S</dd>
+</dl>
+</div>
+</div>
+
+<!-- QUICK WINS + REDESIGN -->
+<div class="section">
+<h2>7. Top 10 quick wins</h2>
+<table>
+  <thead><tr><th>#</th><th>Change</th><th>Fixes</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Guard Sign out: check pending writes, confirm, move to the bottom of Settings</td><td>UX-001</td><td>S</td></tr>
+    <tr><td>2</td><td>Snackbar action uses <code>tone="background"</code> + bold, not mango</td><td>UX-003</td><td>S</td></tr>
+    <tr><td>3</td><td>Pass negative amounts for expenses so "−৳" shows</td><td>UX-005</td><td>S</td></tr>
+    <tr><td>4</td><td>Full spoken label on the safe-to-spend card</td><td>UX-006</td><td>S</td></tr>
+    <tr><td>5</td><td>Add light-mode <code>*-ink</code> text tones and darken <code>muted</code> to #6E6862</td><td>UX-002</td><td>M</td></tr>
+    <tr><td>6</td><td>Dark <code>on-mango</code> text on sky and coral fills</td><td>UX-004</td><td>S</td></tr>
+    <tr><td>7</td><td>Focus, timer and planner bars use sky; habit rings always grape</td><td>UX-007</td><td>S</td></tr>
+    <tr><td>8</td><td>"Saved: Expense ৳850 · Food · Cash · Undo" after quick-add</td><td>UX-015</td><td>S</td></tr>
+    <tr><td>9</td><td>Add <code>accessibilityRole</code> to 18 Pressables, link TextField labels, remove the per-second live region</td><td>UX-008, UX-019</td><td>S</td></tr>
+    <tr><td>10</td><td>Normalise Bangla digits in the parsers; friendly copy for offline and 5xx errors; hide the host on sign-in</td><td>UX-021, UX-018</td><td>S</td></tr>
+  </tbody>
+</table>
+
+<h2 style="margin-top:14pt">8. Three bigger redesign suggestions</h2>
+<h3>R1. A Today header that answers both questions at once (UX-012, UX-011, UX-006)</h3>
+<p>Replace greeting + shortcut tiles + hero card with a single hero: a one-line greeting beside a small Tiki, then two stacked answers: <b>"Safe to spend today ৳434"</b> (mint-ink, 44px) and <b>"Next: Standup call · 8:00 pm"</b> with an inline check. Remove the 4 shortcut tiles. Instead, make the FAB a 64 dp centred button whose quick-add sheet opens on a single "Kind ▾" picker. Long-press on the FAB gives Expense, Income, Task and Focus. Today then shows "what now" and "can I afford it" within the first 400 dp, and capture stays one thumb-tap away.</p>
+<h3>R2. Split text colours from mark colours in the design tokens (UX-002, UX-004, UX-005, UX-007, UX-030)</h3>
+<p>The current tokens give each semantic colour one value, which has to work both as a bright ring and as readable text. It can't do both on a cream background. Formalise two tiers in <code>global.css</code>, <code>theme/colors.ts</code> and DESIGN.md: <code>mint</code> / <code>mint-ink</code> and so on, plus <code>line</code> / <code>line-strong</code>. Make the <code>Text</code> component's tones resolve to the <code>*-ink</code> tier. Add a unit test that runs the contrast check over every tone-and-background pair, so a token change can't regress AA. The widget already does this by hand (<code>safe-to-spend-widget.tsx:16-24</code>), so the values exist.</p>
+<h3>R3. Calm sheets: progressive disclosure for task and transaction editing (UX-013, UX-024, UX-010)</h3>
+<p>Rebuild the task sheet around the DESIGN.md "Cash ▾" picker pattern. Show title, "When ▾", "Estimate ▾" and Notes; put everything else in a "More" disclosure that remembers its state. Use the same pattern for transaction filters and the routine editor (moving the inline in-screen inputs into sheets, which also fixes keyboard overlap). Every row inside a sheet uses the 60 dp <code>ListRow</code>, so the small inline targets go away.</p>
+</div>
+
+<!-- STRENGTHS -->
+<div class="section">
+<h2>9. Strengths (keep these)</h2>
+<ul>
+  <li><b>Gentle copy throughout.</b> Overdue becomes "From earlier… No rush. Bring them into today?" (<code>later-today.tsx:62-73</code>). Overspend lines read "No stress…" and "It happens…" (<code>shared/src/tiki.ts:41-43</code>). Reminders say "A small one for today" and "A gentle reminder" (<code>plan-notifications.ts:95,112</code>). A grep for "overdue/missed/failed/behind" in UI strings finds none shown to the user.</li>
+  <li><b>Undo instead of "Are you sure?"</b> for delete, complete and snooze (<code>lib/use-remove.ts</code>, <code>use-task-actions.ts:71-94</code>), with an 8-second window when there's an action (<code>snackbar.tsx:10-11</code>).</li>
+  <li><b>Quick-add design</b>: a single field, a live preview with an icon, a local parser first and AI only when needed, and the keyboard "done" key saves.</li>
+  <li><b>Reduce-motion respected</b> in Amount count-up, confetti, Tiki, skeleton, plant and thinking indicator (6 components use <code>useReducedMotion</code>). Reanimated 4's default <code>ReduceMotion.System</code> covers the checkbox spring.</li>
+  <li><b>Base components meet the spec</b>: Button 52 dp, Checkbox 48 dp + 10 slop, Chip 40 + 4 slop, ListRow 60 dp, tab 48 dp, back button 48 + slop. Type scale tokens match DESIGN.md exactly (<code>components/ui/text.tsx:4-15</code>). Tabular digits on all amounts and timers.</li>
+  <li><b>Empty, offline and error states</b> on every list: 44 <code>EmptyState</code> uses in 36 files, an offline pill with a pending count, and a calm ErrorState with retry. Most of the empty-state copy is warm ("Enjoy the room to breathe").</li>
+  <li><b>Dark mode</b> passes every token contrast pair (6.4 to 16:1) and uses warm charcoal, never pure black. Selected chips use inverted ink, which works in both themes.</li>
+  <li><b>Haptics and sounds</b> can each be turned off (<code>lib/haptics.ts</code>, <code>feedback-prefs.ts</code>). Celebrations are rare (all top three done, a goal reached, a routine finished), as the spec says.</li>
+  <li><b>Privacy toggle</b> on Today hides every amount, including screen-reader labels ("Amount hidden", <code>amount.tsx:50</code>).</li>
+  <li><b>The widget</b> already uses text-safe colours and gives one-tap logging.</li>
+</ul>
+</div>
+
+<!-- ACTION PLAN -->
+<div class="section">
+<h2>10. Action plan</h2>
+<table>
+  <thead><tr><th>Order</th><th>ID</th><th>Title</th><th>Severity</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>UX-001</td><td>Guard Sign out against losing unsynced changes</td><td><span class="badge Critical">Critical</span></td><td>S</td></tr>
+    <tr><td>2</td><td>UX-003</td><td>Dark snackbar Undo contrast</td><td><span class="badge High">High</span></td><td>S</td></tr>
+    <tr><td>3</td><td>UX-005</td><td>Signed expense amounts</td><td><span class="badge High">High</span></td><td>S</td></tr>
+    <tr><td>4</td><td>UX-006</td><td>Safe-to-spend screen-reader label</td><td><span class="badge High">High</span></td><td>S</td></tr>
+    <tr><td>5</td><td>UX-004</td><td>Dark text on sky and coral fills</td><td><span class="badge High">High</span></td><td>S</td></tr>
+    <tr><td>6</td><td>UX-002</td><td>Light-mode text tokens for AA</td><td><span class="badge High">High</span></td><td>M</td></tr>
+    <tr><td>7</td><td>UX-007</td><td>Restore colour meaning</td><td><span class="badge High">High</span></td><td>S</td></tr>
+    <tr><td>8</td><td>UX-008</td><td>Roles and linked field labels</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>9</td><td>UX-019</td><td>Remove the per-second timer announcement</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>10</td><td>UX-015</td><td>Quick-add Undo and detailed confirmation</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>11</td><td>UX-014</td><td>Shutdown checkboxes reflect state</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>12</td><td>UX-017</td><td>Habit over-tap reset</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>13</td><td>UX-018</td><td>Friendly error copy, hide host</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>14</td><td>UX-021</td><td>Bangla digits and lakh grouping</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>15</td><td>UX-010</td><td>Fix 10 small touch targets</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>16</td><td>UX-023</td><td>Timer bar padding on Today</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>17</td><td>UX-016</td><td>Undo or preview for bulk moves</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+    <tr><td>18</td><td>UX-009</td><td>Accessibility actions on swipe rows and planners</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+    <tr><td>19</td><td>UX-020</td><td>Font-scaling plan and 200% test</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+    <tr><td>20</td><td>UX-024</td><td>Keyboard avoidance outside sheets</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+    <tr><td>21</td><td>UX-012</td><td>Today hierarchy (see R1)</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+    <tr><td>22</td><td>UX-011</td><td>FAB size and position (see R1)</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+    <tr><td>23</td><td>UX-013</td><td>Chip walls → pickers (see R3)</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+    <tr><td>24</td><td>UX-030</td><td>Stronger input borders</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>25</td><td>UX-025</td><td>Remove 9 and 11px text</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>26</td><td>UX-026</td><td>Soften zero-streak and over-plan visuals</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>27</td><td>UX-027</td><td>Calendar heat fills</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>28</td><td>UX-028</td><td>Named, theme-aware area and habit colours</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>29</td><td>UX-022</td><td>Accent themes in <code>useColors()</code></td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>30</td><td>UX-029</td><td>Refresh README screenshots</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+  </tbody>
+</table>
+<p class="small muted">30 findings. Planner drag-without-alternative is folded into UX-009. Order is impact over effort: the S items first, then the M items that the redesigns in section 8 cover.</p>
+</div>
+
+<!-- APPENDIX -->
+<div class="section">
+<h2>Appendix A. WCAG contrast ratios (computed)</h2>
+<p class="small">Method: WCAG 2.x relative luminance, (L1+0.05)/(L2+0.05). Thresholds: 4.5 for normal text, 3.0 for large text (≥24px, or ≥18.66px bold) and UI components. Background = <code>background</code> token, surface = <code>card</code> token.</p>
+<table>
+<thead><tr><th>Mode</th><th>Foreground</th><th>Background</th><th>Hex pair</th><th>Ratio</th><th>AA text 4.5</th><th>AA large/UI 3.0</th></tr></thead>
+<tbody>
+<tr><td>Light</td><td>ink</td><td>background</td><td>#23202B / #FFF8EE</td><td>15.17</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>ink</td><td>surface</td><td>#23202B / #FFFFFF</td><td>15.99</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>muted</td><td>background</td><td>#7D7670 / #FFF8EE</td><td>4.24</td><td class="fail">FAIL</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>muted</td><td>surface</td><td>#7D7670 / #FFFFFF</td><td>4.47</td><td class="fail">FAIL</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>sky</td><td>background</td><td>#5B8CFF / #FFF8EE</td><td>3.00</td><td class="fail">FAIL</td><td class="fail">FAIL*</td></tr>
+<tr><td>Light</td><td>sky</td><td>surface</td><td>#5B8CFF / #FFFFFF</td><td>3.16</td><td class="fail">FAIL</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>mint</td><td>background</td><td>#2EC4A0 / #FFF8EE</td><td>2.09</td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Light</td><td>mint</td><td>surface</td><td>#2EC4A0 / #FFFFFF</td><td>2.21</td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Light</td><td>coral</td><td>background</td><td>#FF7A6B / #FFF8EE</td><td>2.41</td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Light</td><td>coral</td><td>surface</td><td>#FF7A6B / #FFFFFF</td><td>2.55</td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Light</td><td>grape</td><td>background</td><td>#A57BFF / #FFF8EE</td><td>2.90</td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Light</td><td>grape</td><td>surface</td><td>#A57BFF / #FFFFFF</td><td>3.05</td><td class="fail">FAIL</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>mango (as text)</td><td>surface</td><td>#FFB547 / #FFFFFF</td><td>1.76</td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Light</td><td>on-mango</td><td>mango</td><td>#23202B / #FFB547</td><td>9.10</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>white</td><td>sky fill</td><td>#FFFFFF / #5B8CFF</td><td>3.16</td><td class="fail">FAIL</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>white</td><td>coral fill</td><td>#FFFFFF / #FF7A6B</td><td>2.55</td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Light</td><td>on-mango</td><td>mint fill</td><td>#23202B / #2EC4A0</td><td>7.25</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>line (border)</td><td>surface</td><td>#EEE5D8 / #FFFFFF</td><td>1.25</td><td>n/a</td><td class="fail">FAIL</td></tr>
+<tr><td>Light</td><td>mango (Undo)</td><td>ink (snackbar)</td><td>#FFB547 / #23202B</td><td>9.10</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>muted</td><td>mint-breeze bg</td><td>#7D7670 / #ECFAF5</td><td>4.16</td><td class="fail">FAIL</td><td class="pass">PASS</td></tr>
+<tr><td>Light</td><td>muted</td><td>grape-dusk bg</td><td>#7D7670 / #F6F1FF</td><td>4.03</td><td class="fail">FAIL</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>ink</td><td>background</td><td>#F4F1EA / #16151C</td><td>16.07</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>ink</td><td>surface</td><td>#F4F1EA / #22202B</td><td>14.22</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>muted</td><td>background</td><td>#A09AA6 / #16151C</td><td>6.62</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>muted</td><td>surface</td><td>#A09AA6 / #22202B</td><td>5.86</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>sky</td><td>background / surface</td><td>#7AA2FF</td><td>7.29 / 6.44</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>mint</td><td>background / surface</td><td>#4FD8B5</td><td>10.21 / 9.03</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>coral</td><td>background / surface</td><td>#FF9385</td><td>8.43 / 7.46</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>grape</td><td>background / surface</td><td>#B996FF</td><td>7.66 / 6.77</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>mango</td><td>background / surface</td><td>#FFC266</td><td>11.36 / 10.05</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>on-mango</td><td>mango</td><td>#23202B / #FFC266</td><td>10.02</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>white</td><td>sky fill</td><td>#FFFFFF / #7AA2FF</td><td>2.49</td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Dark</td><td>white</td><td>coral fill</td><td>#FFFFFF / #FF9385</td><td>2.15</td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Dark</td><td>on-mango</td><td>mint fill</td><td>#23202B / #4FD8B5</td><td>9.00</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+<tr><td>Dark</td><td>line (border)</td><td>surface</td><td>#34313F / #22202B</td><td>1.27</td><td>n/a</td><td class="fail">FAIL</td></tr>
+<tr><td>Dark</td><td><b>mango (Undo)</b></td><td><b>ink (snackbar)</b></td><td>#FFC266 / #F4F1EA</td><td><b>1.41</b></td><td class="fail">FAIL</td><td class="fail">FAIL</td></tr>
+<tr><td>Widget</td><td>mint / coral / sky / grape text</td><td>white card</td><td>#1E9E80 / #E8604F / #3F6FE0 / #7B4FE0</td><td>3.36 / 3.38 / 4.60 / 5.20</td><td>sky, grape pass</td><td class="pass">all PASS</td></tr>
+</tbody>
+</table>
+<p class="small muted">*Shown as 3.00 after rounding, but the exact value is 2.999, so it fails.</p>
+
+<h2 style="margin-top:12pt">Appendix B. Accessibility and touch-target scan</h2>
+<pre>grep counts in apps/mobile/src (*.tsx)
+  &lt;Pressable                   60   (in 40 files)
+  accessibilityRole            57   (18 Pressables have none, listed in UX-008)
+  accessibilityLabel           53
+  accessibilityHint            10
+  accessibilityLiveRegion       5
+  accessibilityActions          1   (swipe-row.tsx, on a non-focusable view)
+  hitSlop                      12
+  allowFontScaling / maxFontSizeMultiplier   0
+  adjustsFontSizeToFit          1
+  useReducedMotion             6 components (amount, confetti, tiki, skeleton, plant, thinking-indicator)
+  numberOfLines={1}            20
+  hard-coded hex outside theme/colors.ts: widget 37 (intended), tiki 12, area-sheet 6,
+    habit-sheet 6, plant 5, confetti 5, google-logo 4, icon 2, button 2
+  off-scale text: text-[9px] x2, text-[11px] x2</pre>
+
+<h2 style="margin-top:12pt">Appendix C. Requirement checklist (UX-relevant)</h2>
+<table>
+<thead><tr><th>Requirement (source)</th><th>Status</th><th>Ref</th></tr></thead>
+<tbody>
+<tr><td>Log anything in under 5 s (PRODUCT, spec:18)</td><td>Met by design (2 taps + typing)</td><td>§4</td></tr>
+<tr><td>Quick-add: one field, one Save, preview before saving (spec:290-296)</td><td>Met</td><td>quick-add-sheet.tsx</td></tr>
+<tr><td>Today order: greeting → safe-to-spend → top three → timeline → habits → timer → evening (spec:266-277)</td><td>Partial (shortcut row inserted; Next up below the fold)</td><td>UX-012</td></tr>
+<tr><td>Tab bar: 4 tabs + centre 64 dp mango FAB, icons 26, labels 12 (DESIGN)</td><td>Partial</td><td>UX-011</td></tr>
+<tr><td>Targets ≥ 48 dp (PRODUCT, spec:220)</td><td>Partial (10 sites)</td><td>UX-010</td></tr>
+<tr><td>WCAG AA in light and dark (PRODUCT)</td><td>Dark met; Light not met</td><td>UX-002/003/004</td></tr>
+<tr><td>Dark text on mango (PRODUCT)</td><td>Met</td><td>button.tsx:10</td></tr>
+<tr><td>Colour never the only signal; amounts carry a sign (PRODUCT)</td><td>Not met for expenses</td><td>UX-005</td></tr>
+<tr><td>Reduce-motion respected (PRODUCT, spec:209)</td><td>Met</td><td>§9</td></tr>
+<tr><td>Tabular digits for amounts and timers (PRODUCT)</td><td>Met</td><td>text.tsx:54</td></tr>
+<tr><td>Delete → Undo snackbar, not a dialog (spec:223)</td><td>Met (contrast issue in dark)</td><td>UX-003</td></tr>
+<tr><td>Every empty state: Tiki + exactly one action (spec)</td><td>Partial (inline variant has no Tiki; some have no action)</td><td>empty-state.tsx:16-41</td></tr>
+<tr><td>Creating and editing in bottom sheets (DESIGN, spec)</td><td>Mostly (inline inputs on goals, shopping, payday, routines)</td><td>UX-024</td></tr>
+<tr><td>Pickers in sheets instead of chip rows (DESIGN)</td><td>Not met in the task sheet</td><td>UX-013</td></tr>
+<tr><td>Section labels 13 SemiBold muted, sentence case (DESIGN)</td><td>Met (<code>label</code> variant)</td><td>text.tsx:14</td></tr>
+<tr><td>Rows ≥ 60 dp (DESIGN)</td><td>Mostly (transaction rows <code>min-h-14</code> = 56)</td><td>transaction-row.tsx:66</td></tr>
+<tr><td>Guilt-free UI: no red alarms, overdue alarms or broken-streak shame (PRODUCT)</td><td>Mostly</td><td>UX-026</td></tr>
+<tr><td>Bangla and English input (README)</td><td>Partial (letters yes, digits no)</td><td>UX-021</td></tr>
+</tbody>
+</table>
+
+<h2 style="margin-top:12pt">Appendix D. Files reviewed (main)</h2>
+<pre>apps/mobile/src/app/**                        all 70 routes (most are 5–13 line wrappers)
+apps/mobile/src/components/ui/*.tsx           text, button, checkbox, chip, list-row, amount, card, section,
+                                              screen, sheet, snackbar, swipe-row, segmented, text-field,
+                                              empty-state, progress-bar, privacy-toggle, sync-status, shortcut-row
+apps/mobile/src/components/navigation/tab-bar.tsx
+apps/mobile/src/theme/colors.ts, global.css, tailwind.config.js, app.json
+apps/mobile/src/features/today/*              header, quick-actions, safe-to-spend-card, top-three, later-today
+apps/mobile/src/features/quick-add/quick-add-sheet.tsx
+apps/mobile/src/features/tasks/task-row.tsx, task-sheet.tsx, use-task-actions.ts
+apps/mobile/src/features/habits/habit-chips.tsx, habit-list.tsx, habit-sheet.tsx
+apps/mobile/src/features/money/transaction-row.tsx, money-calendar.tsx, budgets-screen.tsx, shopping-screen.tsx
+apps/mobile/src/features/plan/week-planner.tsx, day-timeline.tsx, calendar-view.tsx, compact-task.tsx, area-sheet.tsx
+apps/mobile/src/features/focus/focus-screen.tsx; timer/running-timer-bar.tsx
+apps/mobile/src/features/review/shutdown-flow.tsx, weekly-review.tsx, review-home.tsx
+apps/mobile/src/features/settings/account-section.tsx, appearance-settings.tsx, themed-root.tsx, reward-theme.ts
+apps/mobile/src/features/widget/safe-to-spend-widget.tsx; assistant/*
+apps/mobile/src/lib/http.ts, query-client.ts, notify.ts, user-data.ts, auth.ts, haptics.ts, format.ts, use-remove.ts
+packages/shared/src/money.ts, tiki.ts, quick-add.ts
+docs/screenshots/*.png (23)</pre>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,40 @@
+[0m[1mbun audit [0m[2mv1.3.11 (af24e281)[0m
+postcss-selector-parser  <7.1.6
+  workspace:@tick-taka/mobile › tailwindcss
+  moderate: PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+
+decode-uri-component  <=0.4.2
+  workspace:@tick-taka/mobile › expo-router
+  moderate: decode-uri-component: Denial of service via exponential decoding of malformed percent-encoded input - https://github.com/advisories/GHSA-vcc3-ghjq-m6fr
+
+braces  <=3.0.3
+  workspace:@tick-taka/mobile › tailwindcss
+  workspace:@tick-taka/mobile › expo
+  workspace:@tick-taka/mobile › react-native
+  workspace:@tick-taka/mobile › react-native-worklets
+  high: braces vulnerable to stack-exhaustion denial of service through deeply nested patterns - https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
+
+node-forge  <=1.4.0
+  workspace:@tick-taka/mobile › expo
+  high: node-forge RSA PKCS#1 v1.5 signature verification accepts extra nested DigestAlgorithm elements - https://github.com/advisories/GHSA-86w9-cpqp-85rv
+
+esbuild  <=0.24.2
+  workspace:@tick-taka/api › drizzle-kit
+  workspace:@tick-taka/mobile › tailwindcss
+  moderate: esbuild enables any website to send any requests to the development server and read the response - https://github.com/advisories/GHSA-67mh-4wv8-2f99
+
+uuid  <11.1.1
+  workspace:@tick-taka/mobile › expo
+  workspace:@tick-taka/mobile › expo-sharing
+  workspace:@tick-taka/mobile › expo-splash-screen
+  moderate: uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq
+
+6 vulnerabilities (2 high, 4 moderate)
+
+To update all dependencies to the latest compatible versions:
+  bun update
+
+To update all dependencies to the latest versions (including breaking changes):
+  bun update --latest
+
+exit 1

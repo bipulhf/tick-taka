@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Code Quality Report — Tick &amp; Taka (round 2)</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 16mm;
+    @bottom-left { content: "Code Quality Report — Tick & Taka · commit df29d67"; font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #666; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #666; }
+  }
+  @page :first {
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 11pt; }
+  body { font-family: "Helvetica Neue", Arial, "Liberation Sans", sans-serif; color: #1f1f24; line-height: 1.45; margin: 0; }
+  h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; color: #16151c; }
+  h2 { font-size: 17pt; margin: 0 0 10pt; padding-bottom: 4pt; border-bottom: 2px solid #16151c; }
+  h3 { font-size: 13pt; margin: 16pt 0 6pt; }
+  h4 { font-size: 11.5pt; margin: 0; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  code { font-family: "DejaVu Sans Mono", "Liberation Mono", Menlo, monospace; font-size: 8.8pt; background: #f2f1ee; padding: 0 2pt; border-radius: 2pt; overflow-wrap: anywhere; word-break: break-word; }
+  pre { font-family: "DejaVu Sans Mono", "Liberation Mono", Menlo, monospace; font-size: 8.3pt; line-height: 1.38; background: #f6f5f2; border: 1px solid #e3e1dc; border-left: 3px solid #9a968c; padding: 6pt 8pt; margin: 4pt 0 6pt; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; page-break-inside: avoid; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 9.6pt; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  th { background: #16151c; color: #fff; text-align: left; font-weight: 600; padding: 4pt 6pt; }
+  td:first-child { white-space: nowrap; }
+  td { border-bottom: 1px solid #e3e1dc; padding: 4pt 6pt; vertical-align: top; overflow-wrap: anywhere; }
+  tbody tr:nth-child(even) td { background: #faf9f7; }
+  .section { page-break-before: always; }
+  .badge { display: inline-block; font-size: 8.5pt; font-weight: 700; color: #fff; padding: 1pt 6pt; border-radius: 3pt; letter-spacing: .2pt; white-space: nowrap; }
+  .Critical { background: #c62828; }
+  .High { background: #ef6c00; }
+  .Medium { background: #f9a825; color: #1f1f24; }
+  .Low { background: #607d8b; }
+  .st { display: inline-block; font-size: 8.3pt; font-weight: 700; padding: 1pt 5pt; border-radius: 3pt; white-space: nowrap; }
+  .fixed { background: #e3f1e6; color: #1b5e20; }
+  .partial { background: #fff3cd; color: #7a5b00; }
+  .notfixed { background: #fde2e1; color: #9b1c1c; }
+  .unver { display: inline-block; font-size: 8.3pt; font-weight: 700; background: #e8eaf6; color: #283593; padding: 1pt 5pt; border-radius: 3pt; }
+  .finding { border: 1px solid #dedbd4; border-radius: 4pt; margin: 0 0 12pt; break-inside: avoid; page-break-inside: avoid; }
+  .finding.long { break-inside: auto; page-break-inside: auto; }
+  table.prio td:nth-child(2), table.fn td:nth-child(1), table.fn td:nth-child(3) { white-space: nowrap; }
+  .finding-head { background: #f4f2ee; padding: 6pt 9pt; border-bottom: 1px solid #dedbd4; break-after: avoid; page-break-after: avoid; }
+  .finding-body dl > dt { break-after: avoid; page-break-after: avoid; }
+  .finding-body dl > dt:first-child, .finding-body dl > dd:nth-child(2) { break-before: avoid; }
+  h3 { break-after: avoid; }
+  .scope ul li, .scope table { font-size: 9.6pt; }
+  .finding-head .meta { font-size: 9.3pt; color: #4a4850; margin-top: 3pt; }
+  .finding-body { padding: 4pt 9pt 6pt; }
+  .finding-body dl { margin: 0; }
+  .finding-body dt { font-weight: 700; font-size: 9.6pt; color: #4a4850; margin-top: 6pt; }
+  .finding-body dd { margin: 1pt 0 0 0; }
+  .cover { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .kicker { font-size: 11pt; letter-spacing: 1.5pt; text-transform: uppercase; color: #6b6875; margin-top: 30mm; }
+  .cover h1 { font-size: 30pt; margin: 6pt 0 8pt; }
+  .cover .sub { font-size: 13pt; color: #4a4850; }
+  .cover table { font-size: 10.5pt; width: 80%; }
+  .cover td:first-child { width: 34%; font-weight: 600; color: #4a4850; }
+  .scorebox { display: flex; gap: 14pt; align-items: flex-start; margin-bottom: 8pt; }
+  .score { min-width: 92pt; text-align: center; border: 2px solid #16151c; border-radius: 6pt; padding: 6pt 4pt; }
+  .score .num { font-size: 28pt; font-weight: 800; line-height: 1; }
+  .score .of { font-size: 9pt; color: #6b6875; }
+  .note { font-size: 9.3pt; color: #4a4850; }
+  .small { font-size: 9pt; }
+  .two { display: flex; gap: 12pt; }
+  .two > div { flex: 1; }
+  .keep { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <div>
+    <div class="kicker">Audit report · round 2</div>
+    <h1>Code Quality Report — Tick &amp; Taka (round 2)</h1>
+    <div class="sub">Bun monorepo: Hono API, Expo Android app, shared package</div>
+  </div>
+  <table>
+    <tbody>
+      <tr><td>Project</td><td>Tick &amp; Taka (tick-taka)</td></tr>
+      <tr><td>Date</td><td>2026-10-06</td></tr>
+      <tr><td>Commit</td><td>df29d67 (branch fix/audit-2026-10-06)</td></tr>
+      <tr><td>Previous audit</td><td>Round 1 at 3b5438b, score 70/100, 26 findings. 75 commits since.</td></tr>
+      <tr><td>Auditor role</td><td>Staff Engineer (architecture, maintainability, security, performance)</td></tr>
+      <tr><td>Companion reports</td><td>QA_Report.pdf and UX_Report.pdf, written in parallel by other auditors</td></tr>
+      <tr><td>Mode</td><td>Read-only. No source, config, dependency or git state was changed. Probe scripts ran against in-memory test databases from a scratch folder that was deleted afterwards.</td></tr>
+    </tbody>
+  </table>
+  <div class="note">Severity: <span class="badge Critical">Critical</span> <span class="badge High">High</span> <span class="badge Medium">Medium</span> <span class="badge Low">Low</span></div>
+</div>
+
+<!-- Executive summary -->
+<div class="section">
+<h2>1. Executive summary</h2>
+<div class="scorebox">
+  <div class="score"><div class="num">72</div><div class="of">/ 100<br>round 1: 70</div></div>
+  <div>
+    <p>The 75 fix commits are real work. I checked every round-1 finding against the code: 19 are fixed, 5 partly fixed, 2 not fixed, none regressed. The 401-wipes-the-queue bug is gone. Sessions are revocable, the outbox has its own storage and survives a 401, the cache is encrypted, the API binds to loopback, AI calls abort and stop at the cap, and CI now runs lint, typecheck and 568 tests on every push.</p>
+    <p>The score barely moves for one reason. Any signed-in user can take the whole API down. The <code>timeZone</code> setting accepts any string, and the hourly job loop has no per-user error handling. One bad value makes the job promise reject with nothing to catch it, and Bun exits. The catch-up run 10 seconds after start then crashes it again, so pm2 restarts it into the same crash. I reproduced this. The fix is an hour's work, and with it the codebase would sit near 80.</p>
+  </div>
+</div>
+<div class="two">
+<div>
+<table>
+  <thead><tr><th>Severity (open findings)</th><th>Count</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge Critical">Critical</span></td><td>1</td></tr>
+    <tr><td><span class="badge High">High</span></td><td>0</td></tr>
+    <tr><td><span class="badge Medium">Medium</span></td><td>3</td></tr>
+    <tr><td><span class="badge Low">Low</span></td><td>12</td></tr>
+    <tr><td><b>Total</b></td><td><b>16</b> (9 new, 7 carried over)</td></tr>
+  </tbody>
+</table>
+</div>
+<div>
+<table>
+  <thead><tr><th>Round-1 status</th><th>Count</th></tr></thead>
+  <tbody>
+    <tr><td><span class="st fixed">Fixed</span></td><td>19</td></tr>
+    <tr><td><span class="st partial">Partially fixed</span></td><td>5</td></tr>
+    <tr><td><span class="st notfixed">Not fixed</span></td><td>2</td></tr>
+    <tr><td>Regressed</td><td>0</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
+<h3>Top 5 issues to fix first</h3>
+<ol>
+  <li><b>CQ-027</b> <span class="badge Critical">Critical</span> An invalid time zone in settings crashes the API process every time the job loop runs, and the loop runs 10 s after every start. Any account can trigger it, and so can the assistant's <code>update_settings</code> action.</li>
+  <li><b>CQ-029</b> <span class="badge Medium">Medium</span> <code>/auth/refresh</code> revokes the old token at once. Requests already in flight with it come back 401, and the phone can sign itself out during its own daily refresh.</li>
+  <li><b>CQ-030</b> <span class="badge Medium">Medium</span> CHECK-constraint violations return 500, and the outbox retries any 5xx forever at the head of the queue, so one bad write holds back every write behind it.</li>
+  <li><b>CQ-028</b> <span class="badge Medium">Medium</span> Encrypted storage deletes a value whenever decryption fails. That includes the case where the key could not be read for a moment, so the queued writes are lost.</li>
+  <li><b>CQ-031</b> <span class="badge Low">Low</span> Deleting an account while the hourly job runs recreates that user's database and a backup (reproduced).</li>
+</ol>
+</div>
+
+<!-- Scorecard -->
+<div class="section">
+<h2>2. Scorecard</h2>
+<table>
+  <thead><tr><th style="width:22%">Area</th><th style="width:8%">R1</th><th style="width:8%">R2</th><th>Justification</th></tr></thead>
+  <tbody>
+    <tr><td>Architecture</td><td>8</td><td>8</td><td>Clear module-per-domain API, shared zod package, typed RPC. The new handle cache with leases is a good design. One new import cycle (<code>db/schema/time.ts</code> ↔ <code>money.ts</code>) is harmless because the FK references are lazy.</td></tr>
+    <tr><td>Readability &amp; maintainability</td><td>7</td><td>7</td><td>No file over 800 lines (largest is 583), no TODOs, little duplication. The mobile sheets were split, but <code>taskService</code> (378 lines) and <code>createToolRunner</code> (342 lines) both grew (CQ-020).</td></tr>
+    <tr><td>Type safety</td><td>8</td><td>7</td><td>Strict mode, 1 <code>any</code>, no <code>@ts-ignore</code>. Non-null <code>!</code> went from 44 to 60 and the lint rule is still off. <code>timeZone</code> is an unchecked string at a trust boundary, which is the root of CQ-027.</td></tr>
+    <tr><td>Error handling</td><td>5</td><td>6</td><td>The client got much better: a 401 keeps data, start-up never hangs, there is an error boundary, and logs are structured. The server job loop has no per-user isolation (CQ-027), CHECK errors are 500s (CQ-030), and storage deletes on any decrypt error (CQ-028).</td></tr>
+    <tr><td>Security</td><td>6</td><td>6</td><td>Big gains: revocable sessions, header-only tokens, loopback bind, a trusted-proxy check, per-user AI limits, encryption at rest, account deletion, cleartext only in dev builds. Offset by a denial of service that any user can trigger (CQ-027).</td></tr>
+    <tr><td>Performance</td><td>6</td><td>8</td><td>LRU handle cache, jobs yield between users, abortable AI, scoped invalidation, streamed export, <code>updated_at</code> indexes. <code>/sync/changes</code> is still unbounded (CQ-016) and the owner's usage report opens every database (CQ-034).</td></tr>
+    <tr><td>Data layer</td><td>7</td><td>8</td><td>40 CHECKs and the missing FKs added in a tested rebuild migration. LIKE fixed. CHECK errors are not mapped (CQ-030), and there is no clean-up for rows that break a new CHECK (CQ-032).</td></tr>
+    <tr><td>Tooling &amp; DX</td><td>6</td><td>8</td><td>CI with a frozen lockfile, <code>packageManager</code> pinned, all 75 commits are Conventional Commits, README matches the deploy files. Audit advisories are unchanged (CQ-012).</td></tr>
+    <tr><td>Testing</td><td>6</td><td>7</td><td>185 tests became 568, mobile went from 14 to 165, and the outbox, session and storage rules are pure and tested. Nothing tests a failing user in the job loop, an invalid time zone, a refresh racing other requests, or a key-read failure.</td></tr>
+    <tr><td>Dependencies</td><td>7</td><td>7</td><td>Lockfile frozen in CI and deploy, Bun pinned, unused <code>expo-navigation-bar</code> removed. The same 6 advisories remain, all in build tooling.</td></tr>
+  </tbody>
+</table>
+<p class="note">The overall score is a weighted judgement, not an average. Security, error handling and data integrity count double because the app holds personal finance records. A verified, one-request outage keeps the score from rising with the other areas.</p>
+
+</div>
+<div class="section">
+<h2>3. Scope &amp; method</h2><div class="scope">
+<h3>What was reviewed</h3>
+<ul>
+  <li>Every changed area named in the brief: <code>db/sessions.ts</code>, <code>modules/auth/*</code>, <code>middleware/auth.ts</code>, <code>lib/client-ip.ts</code>, <code>middleware/rate-limit.ts</code>, <code>middleware/request-log.ts</code>, <code>lib/log.ts</code>, <code>db/handle-cache.ts</code>, <code>db/user-registry.ts</code>, <code>db/user-files.ts</code>, <code>jobs/*</code>, <code>db/job-runs.ts</code>, <code>ai/openai-client.ts</code>, <code>ai/usage.ts</code>, <code>modules/ai/routes.ts</code>, <code>modules/ai/assistant/*</code>, <code>modules/sync/routes.ts</code>, migrations 0003 to 0005, <code>.github/workflows/check.yml</code>, <code>deploy/nginx-tick-taka.conf</code>.</li>
+  <li>Mobile: <code>lib/auth.ts</code>, <code>http.ts</code>, <code>session.ts</code>, <code>outbox*.ts</code>, <code>encrypted-storage.ts</code>, <code>secure-storage.ts</code>, <code>query-client.ts</code>, <code>invalidation.ts</code>, <code>sync-changes.ts</code>, <code>event-stream.ts</code>, <code>user-data.ts</code>, <code>app/_layout.tsx</code>, <code>features/app/error-screen.tsx</code>, <code>app.config.ts</code>, <code>app.json</code>.</li>
+  <li>Whole-repo scans: file and function sizes (TypeScript AST), type-safety counts (AST), import cycles (Tarjan SCC over 390 files), duplicate 8-line blocks, unused exports, <code>console.*</code>, swallowed catches, TODOs.</li>
+  <li>Yardstick: README.md, PRODUCT.md, docs/IMPLEMENTATION_PLAN.md, the spec (<code>_raw/spec.txt</code>), the round-1 report, and the owner's rules: an 800-line ceiling, no barrel files, strict TypeScript, Conventional Commits.</li>
+</ul>
+<h3>Commands run</h3>
+<table>
+  <thead><tr><th style="width:45%">Command</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td><code>bunx biome check apps packages *.json .github</code></td><td>484 files, 0 diagnostics, exit 0 (from <code>_raw/lint.txt</code>)</td></tr>
+    <tr><td><code>bun run typecheck</code></td><td>shared, api, mobile: exit 0</td></tr>
+    <tr><td><code>bun run test</code></td><td>shared 237, mobile 165, api 166 pass; 0 fail</td></tr>
+    <tr><td><code>bun test --coverage</code> per workspace</td><td>api 93.78% lines / 86.91% funcs; shared 96.07 / 81.14; mobile 92.08 / 91.93 (37 files loaded)</td></tr>
+    <tr><td><code>bun audit</code></td><td>6 advisories (2 high, 4 moderate), exit 1</td></tr>
+    <tr><td>AST scan (TypeScript compiler API)</td><td>135 <code>as</code> casts, 91 <code>as const</code>, 60 non-null <code>!</code>, 1 <code>any</code>; function sizes in Appendix C</td></tr>
+    <tr><td>Import-graph SCC</td><td>1 cycle: <code>db/schema/time.ts</code> ↔ <code>db/schema/money.ts</code></td></tr>
+    <tr><td>Probe scripts (Appendix F) against <code>createTestContext()</code></td><td>Reproduced CQ-027 (process exit), CQ-030 (500 on CHECK) and CQ-031 (deleted user's files recreated)</td></tr>
+    <tr><td><code>bun -e</code> unhandled-rejection check</td><td>Bun 1.3.11 exits with code 1 on an unhandled rejection</td></tr>
+  </tbody>
+</table>
+<h3>Not verified</h3>
+<ul>
+  <li><span class="unver">Unverified</span> No device run. The emulator image has no Google Play services and sign-in is Google-only. CQ-028 and CQ-029 come from reading the code. I could not measure how often the refresh race or a Keystore read failure happens on a real phone.</li>
+  <li><span class="unver">Unverified</span> The production server: whether <code>.env</code> sets <code>TRUST_PROXY=true</code>, whether the rsync off-site backup in the README is installed, and whether real data has rows that break the new CHECKs (CQ-032).</li>
+  <li>No <code>bun outdated</code> (it needs the network). CQ-027 was proved through the job path. I did not run pm2 itself, so the restart loop follows from pm2's documented autorestart, not from an observed loop.</li>
+</ul>
+</div></div>
+
+<!-- Round-1 status -->
+<div class="section">
+<h2>4. Round-1 findings status</h2>
+<p class="note">Each row was checked against the code at df29d67. Line numbers refer to df29d67.</p>
+<table>
+  <thead><tr><th style="width:7%">ID</th><th style="width:22%">Round-1 finding</th><th style="width:12%">Status</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td>CQ-001</td><td>401 deletes the offline queue; no refresh <span class="badge Critical">Critical</span></td><td><span class="st fixed">Fixed</span></td><td>A 401 now calls <code>expireSession()</code>, which drops only the token (<code>mobile/lib/auth.ts:139-145</code>, <code>http.ts:45-53</code>). The outbox lives under <code>tt.outbox</code> outside the query cache (<code>outbox.ts:19,38-42</code>) and pauses while <code>canSend()</code> is false. Sliding refresh: <code>POST /auth/refresh</code>, used after 24 h (<code>session.ts:15</code>). New race: CQ-029.</td></tr>
+    <tr><td>CQ-002</td><td>Splash hang if SecureStore fails <span class="badge High">High</span></td><td><span class="st fixed">Fixed</span></td><td><code>readStoredSession()</code> never throws and validates the profile with zod (<code>session.ts:44-79</code>). <code>_layout.tsx:80</code> also catches. Tested in <code>test/session.test.ts</code>.</td></tr>
+    <tr><td>CQ-003</td><td>No error boundary <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td>Root <code>ErrorBoundary</code> (<code>_layout.tsx:39-42</code>) shows <code>ErrorScreen</code> with Try again and Reset cached data, and keeps the outbox.</td></tr>
+    <tr><td>CQ-004</td><td>Bare console logging <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td>JSON lines through <code>lib/log.ts</code>, request ids and HMAC user tags (<code>middleware/request-log.ts</code>), and error-mapper branches tested (<code>test/logging.test.ts</code>). One leftover <code>console.warn</code> at <code>db/client.ts:33</code> (CQ-035).</td></tr>
+    <tr><td>CQ-005</td><td>Token in receipt URLs <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td>The server reads the token from the header only (<code>middleware/auth.ts:18-19</code>). Receipts load with <code>headers: authHeaders()</code> (<code>mobile/lib/receipts.ts:66</code>).</td></tr>
+    <tr><td>CQ-006</td><td>Sessions not revocable <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td><code>sessions</code> table keyed by <code>jti</code> (<code>db/sessions.ts</code>), plus refresh, logout and revocation checks in <code>requireAuth</code>; 8 tests in <code>sessions.test.ts</code>. Follow-ups: CQ-029, CQ-033.</td></tr>
+    <tr><td>CQ-007</td><td>0.0.0.0 default, spoofable limiter <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td><code>HOST</code> defaults to 127.0.0.1 (<code>env.ts:6</code>). X-Real-IP is used only with <code>TRUST_PROXY</code> and a loopback peer (<code>lib/client-ip.ts</code>). Keys are pruned every 100 attempts. 30 AI calls a minute per user (<code>ai/routes.ts:39-55</code>). Production <code>TRUST_PROXY</code> value <span class="unver">Unverified</span>.</td></tr>
+    <tr><td>CQ-008</td><td>Assistant paths built from model strings <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td>Every id goes through the ULID <code>idSchema</code> (<code>tools.ts:196-202</code>), status must match <code>^[a-z_]+(,[a-z_]+)*$</code> (<code>tools.ts:205-209</code>), and <code>isPlainPath()</code> refuses dot segments and encoded slashes (<code>dispatch.ts:19-24</code>). Tested in <code>assistant-paths.test.ts</code>.</td></tr>
+    <tr><td>CQ-009</td><td>Cleartext in release builds <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td><code>app.json</code> sets <code>usesCleartextTraffic: false</code>. <code>app.config.ts</code> turns it on only outside EAS release profiles and refuses non-https release builds. A local release build with no <code>EAS_BUILD_PROFILE</code> still allows cleartext, which is minor.</td></tr>
+    <tr><td>CQ-010</td><td>Unencrypted cache and queue <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td>AES-GCM through expo-crypto with the key in SecureStore (<code>secure-storage.ts</code>), used by the cache persister and the outbox. <code>allowBackup: false</code>. New issue in the failure path: CQ-028.</td></tr>
+    <tr><td>CQ-011</td><td>No account deletion <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td><code>DELETE /auth/account</code> removes sessions, job runs, the handle, DB/WAL files, uploads and backups (<code>user-registry.ts:208-214</code>, <code>user-files.ts</code>). Settings calls it. Edge case: CQ-031.</td></tr>
+    <tr><td>CQ-012</td><td>6 audit advisories <span class="badge Low">Low</span></td><td><span class="st notfixed">Not fixed</span></td><td>The same 6 advisories (braces, node-forge, postcss-selector-parser, decode-uri-component, esbuild, uuid). CI now reports them in a non-blocking job.</td></tr>
+    <tr><td>CQ-013</td><td>DB handles never closed; jobs block <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td>LRU plus idle cache (max 50, 10 min) with leases (<code>handle-cache.ts</code>), a 60 s sweep (<code>index.ts:27</code>), and jobs that <code>setImmediate</code> between users and close what they opened (<code>scheduler.ts:28,61</code>). One user's <code>VACUUM INTO</code> still runs synchronously. Exception: CQ-034.</td></tr>
+    <tr><td>CQ-014</td><td>AI loop not aborted <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td>An <code>AbortController</code> is wired to the request and stream abort (<code>ai/routes.ts:122-131</code>). The signal goes into OpenAI calls and is checked between rounds and tools (<code>agent.ts:211-219</code>). The cap is checked before every call (<code>usage.ts:94-109</code>). 25 s timeout with 1 retry. The plain JSON AI routes still finish after a disconnect, which is minor.</td></tr>
+    <tr><td>CQ-015</td><td>Every mutation invalidates every query <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td>Route-to-key mapping in <code>invalidation.ts</code>, used by <code>scheduleRefresh(path)</code> (<code>query-client.ts:21-33</code>), with tests.</td></tr>
+    <tr><td>CQ-016</td><td>/sync unused and unbounded; /export in memory <span class="badge Low">Low</span></td><td><span class="st partial">Partially fixed</span></td><td>/export streams in pages of 500 (<code>sync/routes.ts:47-88</code>). Migration 0005 indexes <code>updated_at</code> and the phone now calls /sync/changes. The endpoint still returns every changed row with no limit. Carried as CQ-016.</td></tr>
+    <tr><td>CQ-017</td><td>LIKE escaping broken <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td><code>likeContains()</code> adds <code>ESCAPE '\'</code> and escapes the backslash (<code>lib/sql-like.ts</code>). Used by tasks and transactions; <code>search.test.ts</code>.</td></tr>
+    <tr><td>CQ-018</td><td>No CHECKs, no self-reference FKs <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td><code>0004_constraints.sql</code> rebuilds 16 tables with 40 CHECKs and FKs on <code>parent_id</code>, <code>goal_id</code>, <code>next_id</code>. Dangling links are cleared first, and the migration is tested on a populated DB (<code>migrations.test.ts</code>). Follow-ups: CQ-030, CQ-032.</td></tr>
+    <tr><td>CQ-019</td><td>Backups on the same disk <span class="badge Medium">Medium</span></td><td><span class="st partial">Partially fixed</span></td><td>Each backup is integrity-checked before it is kept (<code>backup.ts:18-61</code>). The server warns at start when backups share the data disk (<code>index.ts:21-25</code>), and the README gives an rsync cron. Nothing copies backups off the box automatically. Carried as CQ-019.</td></tr>
+    <tr><td>CQ-020</td><td>Oversized components and closures <span class="badge Medium">Medium</span></td><td><span class="st partial">Partially fixed</span></td><td>TaskSheet went from 443 to 292 lines and TransactionSheet from 373 to 284; <code>use-quick-add</code> was split. <code>taskService</code> grew from 333 to 378, <code>createToolRunner</code> from 310 to 342, <code>tools.ts</code> from 487 to 556 and <code>quick-add.ts</code> from 475 to 583. Carried as CQ-020.</td></tr>
+    <tr><td>CQ-021</td><td>TZ/week fallbacks repeated <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td><code>mobile/lib/user-time.ts</code>. No <code>"Asia/Dhaka"</code> or <code>?? 6</code> literals remain in <code>apps/mobile/src</code>.</td></tr>
+    <tr><td>CQ-022</td><td><code>!</code> allowed; unchecked client casts <span class="badge Low">Low</span></td><td><span class="st notfixed">Not fixed</span></td><td><code>biome.json:23</code> still has <code>noNonNullAssertion: "off"</code>. The count went from 44 to 60, and the same sites remain (<code>planning.ts:50,53,69</code>, <code>today/service.ts:119</code>). <code>api.ts:49,66</code> still cast JSON. The profile is now zod-checked. Carried as CQ-022.</td></tr>
+    <tr><td>CQ-023</td><td>No CI <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td><code>.github/workflows/check.yml</code>: frozen install, <code>bun run check</code>, non-blocking <code>bun audit</code>. The README deploy uses <code>--frozen-lockfile</code>.</td></tr>
+    <tr><td>CQ-024</td><td>Mobile data path untested <span class="badge Medium">Medium</span></td><td><span class="st partial">Partially fixed</span></td><td>31 mobile test files, including <code>outbox-queue</code>, <code>outbox-policy</code>, <code>session</code>, <code>http-auth</code> and <code>encrypted-storage</code>. <code>auth.ts</code> (the refresh and expire flow), <code>secure-storage.ts</code> and <code>sync-changes.ts</code> are untested, and that is where CQ-028 and CQ-029 sit. Carried as CQ-024.</td></tr>
+    <tr><td>CQ-025</td><td>Deploy config drift <span class="badge Low">Low</span></td><td><span class="st partial">Partially fixed</span></td><td>One host (<code>tick.mehedismathacademy.com</code>) and port 3003 across README, eas.json and Nginx. <code>/ai/</code> has <code>proxy_read_timeout 120s</code> and <code>proxy_buffering off</code>. The TLS server block is still produced by certbot on the server and is not in the repo. Carried as CQ-025.</td></tr>
+    <tr><td>CQ-026</td><td>Dependency hygiene <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td><code>"packageManager": "bun@1.3.11"</code>; <code>expo-navigation-bar</code> removed (9b1d346). <code>expo-system-ui</code> stays and is needed for <code>userInterfaceStyle</code> on Android. zod 3 remains only through <code>@expo/cli</code> (build time).</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- Findings -->
+<div class="section">
+<h2>5. Findings</h2>
+<p class="note">Grouped by category, sorted by severity. New findings are numbered from CQ-027. Carried-over findings keep their round-1 IDs. Effort: S &lt; 1 h, M &lt; 1 day, L &gt; 1 day.</p>
+
+<h3>5.1 Reliability &amp; data integrity</h3>
+
+<div class="finding long">
+  <div class="finding-head">
+    <h4>CQ-027 · An invalid time zone setting crashes the API in a restart loop</h4>
+    <div class="meta"><span class="badge Critical">Critical</span> · Reliability / security (denial of service) · Effort S · New · Reproduced</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>packages/shared/src/schemas/settings.ts:24</code>, <code>apps/api/src/jobs/scheduler.ts:36-65, 72-86</code>, <code>apps/api/src/lib/user-time.ts:14</code>, <code>apps/api/src/modules/ai/assistant/tools.ts:517-522</code></dd>
+    <dt>What's wrong</dt>
+    <dd>
+      <p><code>timeZone</code> is <code>z.string()</code>, so <code>PATCH /settings {"timeZone":"Not/AZone"}</code> is saved with a 200. After that, <code>localParts()</code> throws <code>RangeError</code> for this user. Every screen that reads their time (<code>/today</code> and others) returns 500.</p>
+      <p>The bigger problem is the job loop. In <code>runHourlyJobs</code> only <code>job.run()</code> sits inside a try/catch. <code>deps.users.lease(user)</code>, <code>readSettings()</code> and <code>localParts()</code> are outside it, so one user's error rejects the whole run. Neither caller handles that rejection: the catch-up is <code>setTimeout(() =&gt; void tick(), 10_000)</code>, and croner runs with <code>catch: false</code> and does not await <code>_trigger()</code>. Bun 1.3.11 exits on an unhandled rejection. pm2 restarts the process, the catch-up runs 10 s later, and it crashes again.</p>
+      <p>Sign-up is open to any Google account. The assistant can also hit this by accident: <code>update_settings</code> passes the model's fields straight to <code>PATCH /settings</code>, so "set my time zone to Dhaka" can save <code>"Dhaka"</code>. A user DB that fails to open, for example a failed migration (CQ-032), takes the same path through <code>lease()</code>.</p>
+    </dd>
+    <dt>Evidence</dt>
+    <dd>
+<pre>// scheduler.ts:40-46 (no catch around the per-user body)
+const lease = deps.users.lease(user);            // throws if the DB can't open
+try {
+  runAsUser({ user, data }, () =&gt; {
+    const timeZone = readSettings(data.db).timeZone;
+    const { hour } = localParts(now, timeZone);  // RangeError: invalid time zone
+// scheduler.ts:80-81
+const job = new Cron("5 * * * *", { name: "per-user-jobs" }, tick);
+const catchUp = setTimeout(() =&gt; void tick(), 10_000);</pre>
+<pre>$ bun probe-tz.ts       (second user, in-memory test app)
+PATCH settings bad tz: 200
+GET /today for that user: 500 {"error":{"code":"internal_error",...}}
+runHourlyJobs REJECTED: RangeError: invalid time zone: Not/AZone
+$ bun probe-crash.ts    (same setup, then startJobs(deps))
+  at localParts (packages/shared/src/dates.ts:50:17)
+  at runHourlyJobs (apps/api/src/jobs/scheduler.ts:44:7)
+exit=1                  (about 10 s after start)</pre>
+    </dd>
+    <dt>Why it matters</dt>
+    <dd>One request from any account takes the API down for every user, and it stays down across restarts until someone fixes that user's settings row by hand in SQLite. The affected user's own app also breaks, because the phone computes dates with the same value.</dd>
+    <dt>Recommendation</dt>
+    <dd>Fix all three layers.
+<pre>// shared/schemas/settings.ts: only real IANA zones
+const isTimeZone = (tz: string) =&gt; { try { new Intl.DateTimeFormat("en", { timeZone: tz }); return true; } catch { return false; } };
+timeZone: z.string().refine(isTimeZone, "Unknown time zone").default(DEFAULT_TIME_ZONE),
+// readSettings already falls back field by field, so stored bad values heal on read.
+
+// scheduler.ts: one user's failure is logged and skipped
+for (const user of deps.users.list()) {
+  await yieldToRequests();
+  try { runJobsFor(deps, user, now); }                 // lease + runAsUser + release
+  catch (error) { log("error", "user jobs failed", { user: userTag(...), ...errorFields(error) }); }
+}
+// and nothing can reject unseen
+running ??= runHourlyJobs(deps).catch((e) =&gt; log("error", "job run failed", errorFields(e))).finally(...);
+process.on("unhandledRejection", (e) =&gt; log("error", "unhandled rejection", errorFields(e)));</pre>
+    Add tests: PATCH with a bad zone returns 400, and <code>runHourlyJobs</code> still runs user B's jobs when user A's DB throws.</dd>
+  </dl></div>
+</div>
+
+<div class="finding long">
+  <div class="finding-head">
+    <h4>CQ-030 · CHECK violations return 500, and the outbox retries any 5xx forever at the head of the queue</h4>
+    <div class="meta"><span class="badge Medium">Medium</span> · Error handling / offline sync · Effort M · New · Reproduced (API side)</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/api/src/middleware/error-handler.ts:17-31</code>, <code>apps/api/src/modules/events/routes.ts:48-50</code>, <code>packages/shared/src/schemas/money.ts:264-273</code>, <code>apps/mobile/src/lib/outbox-policy.ts:73</code>, <code>apps/mobile/src/lib/outbox-queue.ts:160-199</code></dd>
+    <dt>What's wrong</dt>
+    <dd>Migration 0004 added 40 CHECKs, but the error mapper only knows FOREIGNKEY (400) and UNIQUE/PRIMARYKEY (409). A CHECK failure becomes <code>internal_error</code> 500. Partial PATCH schemas cannot check two fields against each other. <code>eventUpdateSchema</code> accepts <code>endsOn</code> alone, the route does not compare it with the stored <code>startsOn</code>, and the database refuses the row. On the phone, the outbox classifies every 5xx as <code>retry</code>, retries forever (capped at 60 s), and only ever sends <code>entries[0]</code>. A write the server always rejects with 5xx stays at the head, and every write queued after it waits behind it.</dd>
+    <dt>Evidence</dt>
+    <dd>
+<pre>$ bun probe-check.ts
+POST /events {startsOn:"2026-10-10", endsOn:"2026-10-12"}  -&gt; 201
+PATCH /events/:id {endsOn:"2026-10-01"}  -&gt; 500 {"error":{"code":"internal_error",...}}
+// outbox-policy.ts:73
+if (status &gt;= 500 || status === 408 || status === 429) return "retry";
+// outbox-queue.ts:164-165
+while (this.entries.length &gt; 0 &amp;&amp; this.deps.canSend()) {
+  const entry = this.entries[0]!;</pre>
+    </dd>
+    <dt>Why it matters</dt>
+    <dd>The event sheet clamps <code>endsOn</code> (<code>event-sheet.tsx:56</code>), so this exact payload does not come from today's UI. The pattern is general, though. Any deterministic 5xx, whether an unmapped constraint or a bug in one service, quietly stops all syncing on that phone. The sync bar shows a count, but nothing lets the user see or drop the stuck write. Unsynced writes then pile up behind it, which the offline queue exists to prevent.</dd>
+    <dt>Recommendation</dt>
+    <dd>Map <code>SQLITE_CONSTRAINT_CHECK</code> and <code>_NOTNULL</code> to 400 <code>invalid_value</code>, so the outbox rejects the write and tells the user. Check cross-field ranges on PATCH against the stored row, as <code>time-entries/service.ts:174-176</code> already does. In the outbox, mark an entry as stuck after about 8 failed 5xx attempts, keep sending the entries after it, and list stuck writes in Settings with Retry and Discard. Add a test with one poison entry followed by a good one.</dd>
+  </dl></div>
+</div>
+
+<div class="finding long">
+  <div class="finding-head">
+    <h4>CQ-028 · Encrypted storage deletes the queued writes when the key can't be read</h4>
+    <div class="meta"><span class="badge Medium">Medium</span> · Data integrity (client) · Effort S · New · <span class="unver">Unverified on device</span> (how often the trigger happens)</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/mobile/src/lib/encrypted-storage.ts:28-58</code>, <code>apps/mobile/src/lib/secure-storage.ts:11-35</code>, <code>apps/mobile/src/lib/outbox.ts:38-42</code>, <code>apps/mobile/src/lib/outbox-queue.ts:85-102, 236-245</code></dd>
+    <dt>What's wrong</dt>
+    <dd>
+      <p><code>getItem</code> treats any error from <code>cipher.decrypt</code> as "the key is gone for good" and deletes the value. <code>decrypt</code> awaits <code>storageKey()</code>, which rejects whenever <code>SecureStore.getItemAsync</code> fails. That is the same Keystore read failure round 1 flagged in CQ-002, and here it can be temporary. A failed key read at start-up therefore deletes <code>tt.outbox</code> and the cached screens. Nobody is told.</p>
+      <p>Writes are protected the other way round: <code>setItem</code> falls back to plain text when the cipher fails, so writes are never lost but reads are. Even if <code>getItem</code> threw instead of deleting, <code>OutboxQueue.load</code> catches the error, marks itself loaded and persists an empty queue on the next write, which overwrites the unread data.</p>
+      <p>There is also a small race. Reading a plain value starts a re-seal (<code>void cipher.encrypt(raw).then(setItem)</code>) that is not ordered against later <code>setItem</code> calls, so it can write the older value over a newer one.</p>
+    </dd>
+    <dt>Evidence</dt>
+<dd>
+<pre>// encrypted-storage.ts:33-45
+if (!raw.startsWith(SEALED_PREFIX)) {
+  void cipher.encrypt(raw).then((sealed) =&gt; base.setItem(key, SEALED_PREFIX + sealed)).catch(() =&gt; {});
+  return raw;
+}
+try { return await cipher.decrypt(raw.slice(SEALED_PREFIX.length)); }
+catch { await base.removeItem(key).catch(() =&gt; {}); return null; }   // also on "key unreadable"
+// secure-storage.ts:13, 32
+const saved = await SecureStore.getItemAsync(KEY_NAME);
+const bytes = await aesDecryptAsync(AESSealedData.fromCombined(sealed), await storageKey());</pre>
+    </dd>
+    <dt>Why it matters</dt>
+    <dd>The queued writes are the data round 1's Critical fix set out to protect. A real Keystore reset makes them unreadable anyway. A temporary read failure should not destroy them.</dd>
+    <dt>Recommendation</dt>
+    <dd>Delete only when the key loaded and decryption failed (a wrong key or a tag mismatch). If the key cannot be loaded, throw a <code>KeyUnavailableError</code> and keep the sealed value. In <code>OutboxQueue.load</code>, on a load error, keep new writes in memory and do not persist until a read succeeds. A retry on the next foreground can merge them, the same way <code>discardSaved</code> already works. Drop the background re-seal; the next <code>setItem</code> seals the value anyway. Add tests where <code>storageKey</code> rejects once and then succeeds.</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-031 · Deleting an account during the hourly job run recreates its database and a backup</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Data lifecycle / privacy · Effort S · New · Reproduced</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/api/src/jobs/scheduler.ts:37-40</code>, <code>apps/api/src/db/user-registry.ts:171-181, 208-214</code></dd>
+    <dt>What's wrong</dt>
+    <dd><code>runHourlyJobs</code> takes <code>deps.users.list()</code> once and then yields before each user. If <code>DELETE /auth/account</code> lands during the run, the loop still reaches the deleted user. <code>lease()</code> then calls <code>data()</code>, which opens (and so creates) a fresh <code>users/&lt;id&gt;.db</code> and seeds it. The backup job then writes <code>backups/users/&lt;id&gt;/app-YYYY-MM-DD.db</code>, and <code>job_runs</code> gets rows for a user who no longer exists.</dd>
+    <dt>Evidence</dt>
+    <dd><pre>$ bun probe-delete.ts   (runHourlyJobs started, then users.remove(gone))
+db file right after delete: false
+db file after job run: true
+backups for deleted user: [ "app-2026-10-04.db" ]
+users row: gone</pre></dd>
+    <dt>Why it matters</dt>
+    <dd>The recreated files hold only seeded defaults, so no personal data comes back. They are orphans that nothing will ever clean up, though, and they make "we delete your account" less exact.</dd>
+    <dt>Recommendation</dt>
+    <dd>Re-check <code>deps.users.find(user.id)</code> after the yield, and skip the user if it is gone. Give <code>data()</code> an <code>{ create: false }</code> mode for existing users, so it never creates a file for a missing registry row.</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-032 · Migration 0004 has no clean-up for rows that break the new CHECKs</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Data layer / migrations · Effort S · New · <span class="unver">Unverified</span> (no production data)</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/api/drizzle/0004_constraints.sql:1-7</code> (it clears only dangling FKs), <code>apps/api/src/db/client.ts:18-35</code></dd>
+    <dt>What's wrong</dt>
+    <dd>Each rebuild copies rows with <code>INSERT INTO __new_x SELECT … FROM x</code>. If one existing row breaks a new CHECK, the whole migration aborts and <code>openDatabase</code> throws. That user's every request then returns 500, and through CQ-027 the job loop rejects too. At least one way to create such a row existed before this release and still exists: an event PATCHed through the API with <code>ends_on &lt; starts_on</code> (see CQ-030). <code>migrations.test.ts</code> covers a populated database with valid rows only.</dd>
+    <dt>Why it matters</dt>
+    <dd>Migrations run lazily the first time each user's database is opened, so a bad row shows up as "the app is broken for me" with nothing in the logs that points at the migration.</dd>
+    <dt>Recommendation</dt>
+    <dd>Normalise known violators before the rebuild, for example <code>UPDATE events SET ends_on = starts_on WHERE ends_on &lt; starts_on</code>. Run the migration against copies of the production backups before deploying. Log the migration error with the user tag when <code>openDatabase</code> fails.</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-019 · Off-site backups still depend on a manual cron (carried over)</h4>
+    <div class="meta"><span class="badge Low">Low</span> (was Medium) · Data layer / operations · Effort M · <span class="st partial">Partially fixed</span> · <span class="unver">Unverified</span> (server)</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>apps/api/src/index.ts:21-25</code>, <code>apps/api/src/jobs/backup.ts:74-77</code>, <code>README.md:311</code></dd>
+    <dt>What's wrong</dt><dd>The server now warns at start-up when backups share the data disk, and the README suggests <code>rsync</code> to another host. The code still writes backups only to local disk, unencrypted. Whether the cron is installed is unknown.</dd>
+    <dt>Why it matters</dt><dd>If the VPS volume is lost, the live data and all 14 backups go with it unless the cron exists.</dd>
+    <dt>Recommendation</dt><dd>Confirm the rsync cron on the server and keep the start-up warning. If you want it in code, add an optional encrypted push with <code>age</code> to S3 or B2 after <code>runBackup</code>, and add a restore check to the README.</dd>
+  </dl></div>
+</div>
+
+<h3 style="break-before: page; page-break-before: always; margin-top: 0">5.2 Security &amp; sessions</h3>
+
+<div class="finding long">
+  <div class="finding-head">
+    <h4>CQ-029 · Token refresh revokes the old session at once; concurrent 401s can sign the phone out</h4>
+    <div class="meta"><span class="badge Medium">Medium</span> · Security / session handling · Effort S · New · <span class="unver">Unverified on device</span> (timing)</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/api/src/modules/auth/routes.ts:60-64</code>, <code>apps/mobile/src/lib/auth.ts:81-91, 139-173</code>, <code>apps/mobile/src/lib/http.ts:45-53</code>, <code>apps/mobile/src/lib/event-stream.ts:39</code></dd>
+    <dt>What's wrong</dt>
+    <dd>
+      <p>The refresh and the screen refetches both start on <code>AppState</code> "active". After 24 h, <code>refreshSessionIfStale()</code> posts to <code>/auth/refresh</code>, and <code>focusManager</code> refetches every stale query with the same old token at the same moment. The server revokes the old session as soon as it has issued the new one. Any of those GETs whose <code>requireAuth</code> runs after the revoke gets 401 <code>session_expired</code>.</p>
+      <p>On the phone, <code>saveSession</code> awaits three Keystore writes before it switches <code>tokenStore</code>. A 401 for the old token that arrives in that window passes the ky hook's "is this the current token?" check, so <code>expireSession()</code> runs and the login screen appears. If this happens before line 161, the refresh's own <code>tokenStore.get() === token</code> check fails and the new token is thrown away. If it happens during <code>saveSession</code>, the delete of <code>TOKEN_KEY</code> can run after the write, and the next cold start opens on login.</p>
+      <p><code>event-stream.ts:39</code> calls <code>reportUnauthorized()</code> on any 401 without the token check.</p>
+    </dd>
+    <dt>Evidence</dt>
+    <dd><pre>// api auth/routes.ts:60-64
+.post("/refresh", requireAuth(deps), async (c) =&gt; {
+  const { token, expiresAt } = await issue(user);
+  if (sessionId) deps.users.sessions.revoke(sessionId);     // old token dead now
+// mobile auth.ts:83-89
+await SecureStore.setItemAsync(TOKEN_KEY, session.token);
+await SecureStore.setItemAsync(PROFILE_KEY, JSON.stringify(session.user));
+await SecureStore.setItemAsync(ISSUED_KEY, String(now));
+...
+tokenStore.set(session.token);                               // only now
+// mobile auth.ts:161
+if (session.success &amp;&amp; tokenStore.get() === token) await saveSession(session.data);</pre></dd>
+    <dt>Why it matters</dt>
+    <dd>The queue is safe, because the outbox survives expiry. The likely symptom is an occasional "sign in again" with Google right when the app opens, about once a day for an active user. That is the friction sliding sessions were meant to remove. <code>http-auth.test.ts</code> covers a 401 that arrives after the new token is in place, not during the switch.</dd>
+    <dt>Recommendation</dt>
+    <dd>On the server, give the old session a short grace period after refresh: set <code>expires_at = now + 60 s</code> instead of <code>revoked_at</code>, and revoke at once only on logout. On the phone, set <code>tokenStore</code> before persisting. In the 401 hook, ignore 401s while <code>refreshing</code> is pending and re-check once it settles. Use the same token check in <code>event-stream.ts</code>. Add a test for a 401 that arrives mid-refresh.</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-033 · Tokens issued before sessions existed stay valid and can't be revoked</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Security · Effort S · New</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>apps/api/src/middleware/auth.ts:31-43</code>, <code>apps/api/src/modules/auth/routes.ts:66-70</code></dd>
+    <dt>What's wrong</dt><dd>A JWT with no <code>jti</code> skips the session lookup. Logout cannot revoke it (<code>sessionId</code> is undefined), so it works until its 30-day <code>exp</code>. This is a deliberate migration path and it is tested (<code>sessions.test.ts:113</code>), but nothing marks when it should be removed.</dd>
+    <dt>Why it matters</dt><dd>For up to 30 days after the sessions release reached the server, "sign out" does not end those sessions. After that, the branch is dead code that weakens the auth path.</dd>
+    <dt>Recommendation</dt><dd>Add a dated comment and remove the branch 30 days after the deploy. If one forced re-sign-in is acceptable, reject jti-less tokens now with <code>session_expired</code>; the outbox survives it.</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-012 · The same 6 dependency advisories (carried over)</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Security / dependencies · Effort S · <span class="st notfixed">Not fixed</span></div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>docs/audit/2026-10-06-r2/_raw/audit.txt</code>, <code>.github/workflows/check.yml:19-28</code></dd>
+    <dt>What's wrong</dt><dd>2 high (braces through tailwindcss, expo, react-native and worklets; node-forge through expo) and 4 moderate (postcss-selector-parser, decode-uri-component through expo-router, esbuild through drizzle-kit and tailwindcss, uuid). All are in build or CLI tooling. Only decode-uri-component may be bundled, and the risk there is a DoS on malformed deep links. CI now reports them without blocking.</dd>
+    <dt>Why it matters</dt><dd>Low runtime exposure. Left alone, the non-blocking job turns into noise that people learn to skip.</dd>
+    <dt>Recommendation</dt><dd>Run <code>bun update</code> inside the current ranges and re-audit. Add <code>overrides</code> for braces and uuid if Expo pins them. Record any advisories you accept in the README so the CI output means something.</dd>
+  </dl></div>
+</div>
+
+<h3>5.3 Performance</h3>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-034 · The owner's usage report opens every user's database in one request</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Performance / scalability · Effort S · New</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>apps/api/src/modules/ai/usage-report.ts:67-79</code></dd>
+    <dt>What's wrong</dt><dd>For the owner, <code>GET /ai/usage</code> calls <code>deps.users.data(user)</code> for every user, synchronously and without a lease. Each first open runs migrations and seeding on the event loop. The handle cache's over-limit sweep closes only handles idle for 30 s or more, so a single call can push the open count far past 50. It keeps 2 to 3 file descriptors per database, with WAL, until the next sweep.</dd>
+    <dt>Why it matters</dt><dd>It undoes the CQ-013 fix exactly where the user count is largest. With open sign-up, a few hundred accounts would come near the default 1024 file-descriptor limit and block requests while the report runs.</dd>
+    <dt>Recommendation</dt><dd>Use <code>lease(user)</code> plus <code>release({ closeIfOpened: true })</code> as the jobs do, with a yield between users. Better still, record per-user monthly AI cost in <code>users.db</code> when usage is logged, so the report needs no user database at all.</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-016 · /sync/changes still returns every changed row with no limit (carried over)</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Performance · Effort S · <span class="st partial">Partially fixed</span></div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>apps/api/src/modules/sync/routes.ts:16-37</code>, <code>apps/mobile/src/lib/sync-changes.ts:38-62</code></dd>
+    <dt>What's wrong</dt><dd>The endpoint now has a client and indexes, but it still reads every row with <code>updated_at &gt; since</code> from 20 tables into one JSON body. <code>pullChanges</code> only needs the table names, and the assistant recovery needs only rows from a short window. A phone that comes back after weeks offline, or any caller sending <code>since=0</code>, gets the whole database.</dd>
+    <dt>Why it matters</dt><dd>Memory and payload grow with history. Data volumes are personal-scale today.</dd>
+    <dt>Recommendation</dt><dd>Add <code>?tables=only</code> (counts per table) for <code>pullChanges</code>, and cap rows per table, for example 500 with a <code>more: true</code> flag that makes the phone refresh everything.</dd>
+  </dl></div>
+</div>
+
+<h3>5.4 Maintainability &amp; type safety</h3>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-020 · The API's two largest closures keep growing (carried over)</h4>
+    <div class="meta"><span class="badge Low">Low</span> (was Medium) · Maintainability · Effort M · <span class="st partial">Partially fixed</span></div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>apps/api/src/modules/tasks/service.ts:58-435</code> (taskService, 378 lines), <code>apps/api/src/modules/ai/assistant/tools.ts:215-556</code> (createToolRunner, 342 lines; its <code>act</code> switch covers lines 380-526), <code>packages/shared/src/quick-add.ts</code> (583 lines)</dd>
+    <dt>What's wrong</dt><dd>The mobile sheets were split along their real seams, and TaskSheet went from 443 to 292 lines. The API side went the other way. <code>createToolRunner</code> gained money drafts, and <code>taskService</code> gained lossless undo. Both are under the 800-line ceiling. <code>tools.ts</code> is the assistant's security boundary, and it is the least covered API file (73.89% lines; 412-483 and 491-522 uncovered).</dd>
+    <dt>Why it matters</dt><dd>Changes to the assistant's write rules land in one 342-line closure with 10 action cases. Reviewing such changes, and testing each case, gets harder with every feature.</dd>
+    <dt>Recommendation</dt><dd>Move each <code>act</code> case into a handler table in a sibling <code>assistant/actions.ts</code> (<code>Record&lt;ActionName, (ctx, id, raw) =&gt; Promise&lt;unknown&gt;&gt;</code>). That is a move, not a rewrite. Do the same for the undo and bulk-move parts of <code>taskService</code>. Add tests for the uncovered <code>act</code> cases.</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-022 · Non-null assertions are still allowed and growing; client JSON is still cast (carried over)</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Type safety · Effort M · <span class="st notfixed">Not fixed</span></div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>biome.json:23</code>; 60 <code>!</code> sites (top: <code>shared/quick-add.ts</code> 9, <code>assistant/fields.ts</code> 5, <code>ai/planning.ts</code> 3, <code>tasks/service.ts</code> 3); <code>mobile/src/lib/api.ts:49,66</code></dd>
+    <dt>What's wrong</dt><dd>The same domain-field assertions as in round 1 remain (<code>t.doAt!</code> at <code>planning.ts:50,53,69</code>; <code>debt.remindAt!</code> at <code>today/service.ts:119</code>; <code>task.doAt!</code> at <code>tasks/service.ts:364,417,418</code>), and the count rose from 44 to 60. <code>unwrap</code> and <code>send&lt;T&gt;</code> still cast server JSON without checking it. Typed RPC covers the fresh-response case. Cached data restored from an older build is never re-validated, but the error boundary now limits the damage.</dd>
+    <dt>Why it matters</dt><dd>Each <code>!</code> depends on a filter somewhere else. If that filter changes, the result is <code>NaN</code> times rather than a compile error.</dd>
+    <dt>Recommendation</dt><dd>Set the rule to <code>warn</code> and narrow with type guards (<code>.filter((t): t is Task &amp; { doAt: number } =&gt; t.doAt !== null)</code>). Bump the persister <code>buster</code> whenever a response shape changes.</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-035 · Dead schema and small hygiene leftovers</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Maintainability / dead code · Effort S · New</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>apps/api/src/db/schema/money.ts:227</code> (<code>smsImports</code>), <code>db/tables.ts:11,47</code>, <code>drizzle/0004_constraints.sql:173-192</code>, <code>drizzle/0005_sync_updated_at.sql:5</code>, <code>mobile/src/lib/sync-paths.ts:34</code>; <code>packages/shared/src/finance.ts:127</code>; <code>packages/shared/src/schemas/common.ts:38</code>; <code>apps/api/src/db/client.ts:33</code>; <code>db/schema/time.ts:11</code> ↔ <code>money.ts:11</code></dd>
+    <dt>What's wrong</dt>
+    <dd><ul>
+      <li>SMS capture was dropped (IMPLEMENTATION_PLAN.md:11), yet <code>sms_imports</code> is still created, rebuilt with CHECKs in 0004, indexed in 0005, exported and synced.</li>
+      <li><code>monthlySetAside</code> and <code>paginationQuerySchema</code> are referenced nowhere, not even in tests. About 40 more exports are used only inside their own file.</li>
+      <li><code>openDatabase</code> logs FK problems with <code>console.warn</code> instead of <code>log()</code>, so they skip the JSON format.</li>
+      <li>The new FK from <code>tasks.goal_id</code> creates the repo's only import cycle (time.ts ↔ money.ts). It is safe because <code>.references(() =&gt; …)</code> is lazy.</li>
+    </ul></dd>
+    <dt>Why it matters</dt><dd>Small, but dead tables cost a rebuild in every migration that touches them, and every new reader has to work out that they do nothing. That goes against "Every feature earns its place" (spec).</dd>
+    <dt>Recommendation</dt><dd>Drop <code>sms_imports</code> in the next migration, delete the two unused exports, and route the FK warning through <code>log("warn", …)</code>. If you want the cycle gone, move <code>goals</code> to its own schema module.</dd>
+  </dl></div>
+</div>
+
+<h3>5.5 Tooling &amp; testing</h3>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-024 · The riskiest new client and job paths have no tests (carried over)</h4>
+    <div class="meta"><span class="badge Low">Low</span> (was Medium) · Testing · Effort M · <span class="st partial">Partially fixed</span></div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>apps/mobile/src/lib/auth.ts</code>, <code>secure-storage.ts</code>, <code>sync-changes.ts</code> (none loaded by any test); <code>apps/api/src/jobs/scheduler.ts:71-83</code> uncovered; <code>apps/mobile/src/lib/http.ts</code> 46% of functions</dd>
+    <dt>What's wrong</dt><dd>The owner moved the rules into pure modules and tested them well: <code>outbox-queue</code>, <code>outbox-policy</code>, <code>session</code>, <code>encrypted-storage</code>. The glue around them has no tests, and every new bug in this report sits in that glue. Nothing covers the refresh-versus-401 ordering (CQ-029), a key-load failure through the real <code>secureStorage</code> (CQ-028), a failing user inside <code>runHourlyJobs</code> (CQ-027), or <code>startJobs</code> itself.</dd>
+    <dt>Why it matters</dt><dd>A green CI gives confidence the rules are correct, but none about how they are wired.</dd>
+    <dt>Recommendation</dt><dd>Test the cases with Given/When/Then.
+<pre>Given user A's settings hold an invalid time zone, when runHourlyJobs runs, then user B's backup is written and the promise resolves.
+Given a refresh is in flight, when a 401 for the old token arrives, then tokenStore keeps a token and expireSession is not called.
+Given storageKey() rejects once, when the outbox loads, then tt.outbox is still in storage and loads on the next try.</pre>
+    For <code>auth.ts</code>, inject SecureStore and the ky instance through a small factory, the way <code>OutboxQueue</code> takes its deps.</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-025 · The live TLS server block is not in the repo (carried over)</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Tooling / operations · Effort S · <span class="st partial">Partially fixed</span></div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt><dd><code>deploy/nginx-tick-taka.conf:1-36</code></dd>
+    <dt>What's wrong</dt><dd>Host, port and AI timeouts now agree across files. The file still listens on port 80 only and expects certbot to rewrite it on the server, so the config actually serving traffic (TLS, redirect, HSTS) is not version-controlled. <code>location /</code> also keeps Nginx's default 60 s read timeout, which a slow <code>/export</code> stream could reach.</dd>
+    <dt>Why it matters</dt><dd>Rebuilding the server means re-running certbot and hoping the output matches, and nobody reviews changes made on the box.</dd>
+    <dt>Recommendation</dt><dd>Copy the post-certbot file back into <code>deploy/</code> with the certificate paths, add HSTS, and give <code>/export</code> the same 120 s timeout.</dd>
+  </dl></div>
+</div>
+</div>
+
+<!-- Strengths -->
+<div class="section">
+<h2>6. Strengths: keep these</h2>
+<ul>
+  <li><b>Fixes that follow the recommendations closely and come with tests.</b> All 75 commits are Conventional Commits. Test count went from 185 to 568, and 46 new test files cover exactly the round-1 issues: sessions, handles, limits, logging, search, constraints, migrations, account deletion and assistant paths.</li>
+  <li><b>Pure rule modules on the phone.</b> <code>outbox-policy.ts</code>, <code>session.ts</code>, <code>encrypted-storage.ts</code>, <code>invalidation.ts</code> and <code>sync-paths.ts</code> hold the decisions with no React Native imports, so they test fast and read clearly. <code>classifyFailure</code> and <code>followCreatedRecords</code> are careful work.</li>
+  <li><b>Handle cache with leases.</b> <code>handle-cache.ts</code> is small and correct. Leases keep the SSE assistant and the streamed export safe from the sweep, and in-memory test databases are never closed.</li>
+  <li><b>Assistant hardening.</b> ULID-only ids, a status grammar, <code>isPlainPath()</code>, the cap checked before every model call, abort on disconnect, and money changes drafted for the user to confirm.</li>
+  <li><b>Careful logging.</b> One JSON line per request with a request id. Users appear as an HMAC tag. Query strings, bodies and tokens are never logged. Caller-supplied request ids must match a strict pattern.</li>
+  <li><b>Migration discipline.</b> 0004 clears dangling links before adding FKs, recreates every index, and is tested on a database migrated to 0003 and filled with realistic rows.</li>
+  <li><b>Backups that check themselves.</b> <code>VACUUM INTO</code> writes to a <code>.partial</code> file, <code>PRAGMA integrity_check</code> runs on the copy, and only then is it renamed and older ones trimmed. A missed nightly job catches up on the next tick.</li>
+  <li><b>Unchanged strengths from round 1.</b> One SQLite file per user, integer money, zod at every boundary, typed RPC from server to phone, no secrets in git, no barrel files, no file over 800 lines (largest 583), 0 TODO/FIXME, little duplication (10 small 8-line clusters across 390 files).</li>
+</ul>
+
+<h2 style="margin-top:16pt">7. Action plan</h2>
+<h3>Refactoring roadmap</h3>
+<table>
+  <thead><tr><th style="width:18%">When</th><th>Items</th></tr></thead>
+  <tbody>
+    <tr><td>Now (this week)</td><td>CQ-027: validate <code>timeZone</code>, isolate each user in the job loop, catch the tick, log unhandled rejections. Deploy this first. · CQ-029: 60 s grace on refresh, and ignore 401s during a refresh · CQ-028: keep sealed data when the key can't be read · CQ-030: map CHECK to 400 and validate the event range on PATCH</td></tr>
+    <tr><td>Next (this month)</td><td>CQ-030: stuck-write handling in the outbox · CQ-024: tests for the cases above · CQ-031: re-check the user before each job · CQ-032: pre-clean plus a dry run against production backups · CQ-034: lease and yield in the usage report · CQ-033: date-stamp the jti-less branch</td></tr>
+    <tr><td>Later</td><td>CQ-020: action-handler table for the assistant · CQ-022: <code>!</code> rule to warn, type guards · CQ-016: bounded /sync/changes · CQ-035: drop <code>sms_imports</code> and dead exports · CQ-019: automate the off-site copy · CQ-025: commit the TLS block · CQ-012: dependency refresh</td></tr>
+  </tbody>
+</table>
+<h3>Prioritised table</h3>
+<table class="prio">
+  <thead><tr><th style="width:7%">Order</th><th style="width:9%">ID</th><th>Title</th><th style="width:12%">Severity</th><th style="width:8%">Effort</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>CQ-027</td><td>Invalid time zone crashes the API in a restart loop</td><td><span class="badge Critical">Critical</span></td><td>S</td></tr>
+    <tr><td>2</td><td>CQ-029</td><td>Refresh revokes the old token at once; concurrent 401 signs out</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>3</td><td>CQ-028</td><td>Encrypted storage deletes the queue when the key can't be read</td><td><span class="badge Medium">Medium</span></td><td>S</td></tr>
+    <tr><td>4</td><td>CQ-030</td><td>CHECK violations are 500; a 5xx write blocks the outbox forever</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+    <tr><td>5</td><td>CQ-024</td><td>Glue code around the new rules is untested</td><td><span class="badge Low">Low</span></td><td>M</td></tr>
+    <tr><td>6</td><td>CQ-031</td><td>Deleted account recreated by the job run</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>7</td><td>CQ-032</td><td>No pre-clean for rows that break the new CHECKs</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>8</td><td>CQ-034</td><td>Usage report opens every user's database</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>9</td><td>CQ-033</td><td>Pre-session tokens can't be revoked</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>10</td><td>CQ-019</td><td>Off-site backup is a manual cron</td><td><span class="badge Low">Low</span></td><td>M</td></tr>
+    <tr><td>11</td><td>CQ-016</td><td>/sync/changes unbounded</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>12</td><td>CQ-020</td><td>taskService and createToolRunner growing</td><td><span class="badge Low">Low</span></td><td>M</td></tr>
+    <tr><td>13</td><td>CQ-022</td><td>Non-null assertions and unchecked casts</td><td><span class="badge Low">Low</span></td><td>M</td></tr>
+    <tr><td>14</td><td>CQ-035</td><td>Dead <code>sms_imports</code> schema and small leftovers</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>15</td><td>CQ-025</td><td>TLS server block not in the repo</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>16</td><td>CQ-012</td><td>6 tooling advisories</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- Appendix -->
+<div class="section">
+<h2>8. Appendix</h2>
+<h3>A. Raw command output (trimmed)</h3>
+<pre>$ bunx biome check apps packages *.json .github
+Checked 484 files in 284ms. No fixes applied.                       exit 0
+$ bun run typecheck
+@tick-taka/shared typecheck: Exited with code 0
+@tick-taka/api typecheck: Exited with code 0
+@tick-taka/mobile typecheck: Exited with code 0
+$ bun run test
+@tick-taka/shared test:  237 pass, 0 fail, 486 expect()  (12 files)
+@tick-taka/mobile test:  165 pass, 0 fail, 453 expect()  (31 files)
+@tick-taka/api test:     166 pass, 0 fail, 621 expect()  (26 files) [6.58s]
+$ bun test --coverage   (All files: % Funcs | % Lines)
+api     86.91 | 93.78   lowest: ai/ask.ts 62.68, ai/assistant/tools.ts 73.89,
+                        jobs/scheduler.ts 76.36, categories/routes.ts 79.25
+shared  81.14 | 96.07   tiki.ts 68.52, quick-add.ts 88.75
+mobile  91.93 | 92.08   http.ts 46.15 funcs, quick-add-requests.ts 72.90 lines
+$ bun audit
+braces &lt;=3.0.3            high      via tailwindcss, expo, react-native, react-native-worklets
+node-forge &lt;=1.4.0        high      via expo
+postcss-selector-parser   moderate  via tailwindcss
+decode-uri-component      moderate  via expo-router
+esbuild &lt;=0.24.2          moderate  via drizzle-kit (api), tailwindcss
+uuid &lt;11.1.1              moderate  via expo, expo-sharing, expo-splash-screen
+6 vulnerabilities (2 high, 4 moderate)                              exit 1
+$ bun -e '(async()=&gt;{await null; throw new Error("boom")})().finally(()=&gt;{})'
+error: boom                                                        exit 1   (Bun 1.3.11)</pre>
+
+<h3>B. Code health counts (source only: apps/api/src, apps/mobile/src, packages/shared/src; 390 files)</h3>
+<table>
+  <thead><tr><th style="width:28%">Pattern</th><th style="width:12%">R1</th><th style="width:12%">R2</th><th>Notes / locations</th></tr></thead>
+  <tbody>
+    <tr><td><code>any</code></td><td>1</td><td>1</td><td><code>api/src/lib/crud.ts:45</code>, with a justified biome-ignore</td></tr>
+    <tr><td><code>@ts-ignore</code> / <code>@ts-expect-error</code></td><td>0</td><td>0</td><td></td></tr>
+    <tr><td>biome-ignore</td><td>4</td><td>7</td><td>crud.ts:44; chat-composer.tsx:66; message-bubble.tsx:24,65,211; habit-list.tsx:115; use-notification-scheduler.ts:107. All have a reason.</td></tr>
+    <tr><td><code>as X</code> casts (AST, excl. <code>as const</code>)</td><td>~187 (regex)</td><td>135</td><td>Top: assistant/tools.ts 15, lib/resource-routes.ts 10, lib/crud.ts 9, mobile/lib/outbox-policy.ts 6. <code>as const</code>: 91. The methods differ, so don't compare the two numbers directly.</td></tr>
+    <tr><td><code>as unknown as</code></td><td>1</td><td>1</td><td><code>mobile/src/lib/receipts.ts:51</code> (RN FormData file)</td></tr>
+    <tr><td>Non-null <code>!</code></td><td>44</td><td>60</td><td>Rule off. Top: shared/quick-add.ts 9, assistant/fields.ts 5, ai/planning.ts 3, tasks/service.ts 3</td></tr>
+    <tr><td>TODO / FIXME / HACK</td><td>0</td><td>0</td><td></td></tr>
+    <tr><td><code>console.*</code></td><td>5</td><td>5</td><td>log.ts:7,8 (the sink); db/client.ts:33; mobile use-notification-scheduler.ts:89, sync-changes.ts:58</td></tr>
+    <tr><td><code>.catch(() =&gt; {})</code> / empty <code>catch {}</code></td><td>20 / 2</td><td>27 / 2</td><td>Mostly best-effort calls. Notable: <code>outbox-queue.ts:244</code> drops save failures with no signal.</td></tr>
+    <tr><td>Runtime import cycles</td><td>0</td><td>1</td><td>db/schema/time.ts ↔ money.ts (lazy FK thunks, safe)</td></tr>
+    <tr><td>Files over 800 lines</td><td>0</td><td>0</td><td>Largest source file: shared/quick-add.ts 583. Largest test file: api/test/money.test.ts 548.</td></tr>
+    <tr><td>Barrel index files</td><td>0</td><td>0</td><td>index files are entry points (api/src/index.ts, mobile/index.ts) or routes only</td></tr>
+    <tr><td>Duplicate 8-line blocks</td><td>n/a</td><td>10 clusters</td><td>All small JSX or query fragments. None crosses API and mobile.</td></tr>
+    <tr><td>Exports referenced nowhere</td><td>n/a</td><td>2 values, 10 types</td><td>monthlySetAside, paginationQuerySchema; unused type aliases in shared/schemas</td></tr>
+    <tr><td>Virtualised lists</td><td>1 / 35</td><td>1</td><td>transaction-list.tsx (SectionList). Server lists are capped. No change.</td></tr>
+  </tbody>
+</table>
+
+<h3>C. Largest functions and files (TypeScript AST)</h3>
+<div class="two">
+<div>
+<table class="small fn">
+  <thead><tr><th>Lines</th><th>Function</th><th>R1</th></tr></thead>
+  <tbody>
+    <tr><td>378</td><td>taskService (api tasks/service.ts:58)</td><td>333</td></tr>
+    <tr><td>342</td><td>createToolRunner (assistant/tools.ts:215)</td><td>310</td></tr>
+    <tr><td>292</td><td>TaskSheet (tasks/task-sheet.tsx:33)</td><td>443</td></tr>
+    <tr><td>284</td><td>TransactionSheet (money/transaction-sheet.tsx:35)</td><td>373</td></tr>
+    <tr><td>260</td><td>InsightsScreen (review/insights-screen.tsx:43)</td><td>260</td></tr>
+    <tr><td>229</td><td>RecurringForm (money/recurring-sheet.tsx:49)</td><td>238</td></tr>
+    <tr><td>211</td><td>WeeklyReview (review/weekly-review.tsx:26)</td><td>198</td></tr>
+    <tr><td>209</td><td>useAssistant (assistant/use-assistant.ts:65)</td><td>n/a</td></tr>
+    <tr><td>205</td><td>PlanHome (plan/plan-home.tsx:24)</td><td>205</td></tr>
+    <tr><td>201</td><td>MoneyHome (money/money-home.tsx:31)</td><td>n/a</td></tr>
+  </tbody>
+</table>
+</div>
+<div>
+<table class="small">
+  <thead><tr><th>Lines</th><th>Largest source files</th></tr></thead>
+  <tbody>
+    <tr><td>583</td><td>packages/shared/src/quick-add.ts</td></tr>
+    <tr><td>556</td><td>api/src/modules/ai/assistant/tools.ts</td></tr>
+    <tr><td>484</td><td>packages/shared/src/recurrence.ts</td></tr>
+    <tr><td>435</td><td>api/src/modules/tasks/service.ts</td></tr>
+    <tr><td>379</td><td>api/drizzle/0004_constraints.sql</td></tr>
+    <tr><td>324</td><td>mobile/src/features/tasks/task-sheet.tsx</td></tr>
+    <tr><td>318</td><td>mobile/src/features/money/transaction-sheet.tsx</td></tr>
+    <tr><td>315</td><td>packages/shared/src/schemas/money.ts</td></tr>
+    <tr><td>303</td><td>packages/shared/src/defaults.ts</td></tr>
+    <tr><td>302</td><td>mobile/src/features/review/insights-screen.tsx</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+<h3>D. Requirement checklist (engineering commitments from the docs)</h3>
+<table>
+  <thead><tr><th style="width:42%">Commitment (source)</th><th style="width:16%">Status</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td>TypeScript strict everywhere (PLAN Phase 0, owner rules)</td><td>Met</td><td>tsconfig.base.json strict + noUncheckedIndexedAccess; mobile repeats both</td></tr>
+    <tr><td>800-line ceiling, no barrels (owner rules)</td><td>Met</td><td>Appendix B and C</td></tr>
+    <tr><td>Conventional Commits, no agent attribution (owner rules)</td><td>Met</td><td>75 of 75 subjects match; 0 co-author or agent mentions in bodies</td></tr>
+    <tr><td>Money as integers (PLAN)</td><td>Met</td><td>*_minor integer columns, now with CHECKs</td></tr>
+    <tr><td>Per-user data isolation (README)</td><td>Met</td><td>user-registry.ts, user-scope.ts, users.test.ts</td></tr>
+    <tr><td>Offline queue never loses writes (PLAN Phase 7, PRODUCT)</td><td>Partial</td><td>401 path fixed (CQ-001); CQ-028 and CQ-030 remain</td></tr>
+    <tr><td>Login rate limit, 5 per 15 min per IP (PLAN Phase 2)</td><td>Met in code</td><td>limits.test.ts. Production TRUST_PROXY <span class="unver">Unverified</span></td></tr>
+    <tr><td>Nightly backups, 14 kept, restore check (PLAN Phase 5)</td><td>Met in code</td><td>integrity check per backup; off-site copy manual (CQ-019)</td></tr>
+    <tr><td>AI cap and off switch, tested with a fake (PLAN Phase 6)</td><td>Met</td><td>cap checked before every call; ai-guardrails.test.ts</td></tr>
+    <tr><td>Every phase ends with tests passing (PLAN)</td><td>Met, enforced</td><td>check.yml on push to main and on PRs</td></tr>
+    <tr><td>Account and data deletion (privacy page)</td><td>Met</td><td>DELETE /auth/account and Settings; edge case CQ-031</td></tr>
+    <tr><td>Service stays up for all users (implicit; "My data, my server")</td><td>Not met</td><td>CQ-027</td></tr>
+  </tbody>
+</table>
+
+<h3>E. File inventory</h3>
+<table>
+  <thead><tr><th>Workspace</th><th>Source files</th><th>Source lines</th><th>Test files</th><th>Test lines</th></tr></thead>
+  <tbody>
+    <tr><td>apps/api</td><td>100</td><td>9,424</td><td>30</td><td>4,143</td></tr>
+    <tr><td>apps/mobile</td><td>273</td><td>20,439</td><td>31</td><td>1,859</td></tr>
+    <tr><td>packages/shared</td><td>17</td><td>3,169</td><td>12</td><td>1,371</td></tr>
+    <tr><td><b>Total</b></td><td><b>390</b></td><td><b>33,032</b></td><td><b>73</b></td><td><b>7,373</b></td></tr>
+  </tbody>
+</table>
+<p class="note">Round 1 had 342 source files with 28,330 lines and 27 test files with 3,421 lines. Migrations are now 0000 to 0005, adding 0003_task_next_id, 0004_constraints and 0005_sync_updated_at. CI lives in .github/workflows/check.yml.</p>
+
+<h3>F. Probe scripts (run from the scratch folder against the in-memory test app, then deleted)</h3>
+<pre>// probe-tz.ts / probe-crash.ts (CQ-027)
+const ctx = await createTestContext();
+const other = await ctx.tokenFor("other-user", "other@example.com");
+await ctx.request("PATCH", "/settings", { timeZone: "Not/AZone" }, { authorization: `Bearer ${other}` });
+await runHourlyJobs(ctx.deps);          // rejects: RangeError
+startJobs(ctx.deps);                    // process exits about 10 s later (exit=1)
+
+// probe-check.ts (CQ-030)
+const ev = await ctx.request("POST", "/events", { name: "Trip", startsOn: "2026-10-10", endsOn: "2026-10-12" });
+await ctx.request("PATCH", `/events/${ev.body.id}`, { endsOn: "2026-10-01" });   // 500 internal_error
+
+// probe-delete.ts (CQ-031), USER_DATA_DIR and BACKUPS_DIR pointed at a scratch folder
+const run = runHourlyJobs(ctx.deps);    // takes the user list, then yields
+ctx.deps.users.remove(gone);
+await run;                              // gone's .db and a backup exist again</pre>
+</div>
+
+</body>
+</html>

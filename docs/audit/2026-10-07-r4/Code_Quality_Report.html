@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Code Quality Report — Tick &amp; Taka (round 4)</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 16mm;
+    @bottom-left { content: "Code Quality Report — Tick & Taka · commit 801dd5f"; font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #666; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt "Helvetica Neue", Arial, sans-serif; color: #666; }
+  }
+  @page :first {
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 11pt; }
+  body { font-family: "Helvetica Neue", Arial, "Liberation Sans", sans-serif; color: #1f1f24; line-height: 1.45; margin: 0; }
+  h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; color: #16151c; }
+  h2 { font-size: 17pt; margin: 0 0 10pt; padding-bottom: 4pt; border-bottom: 2px solid #16151c; }
+  h3 { font-size: 13pt; margin: 16pt 0 6pt; break-after: avoid; page-break-after: avoid; }
+  h4 { font-size: 11.5pt; margin: 0; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  code { font-family: "DejaVu Sans Mono", "Liberation Mono", Menlo, monospace; font-size: 8.8pt; background: #f2f1ee; padding: 0 2pt; border-radius: 2pt; overflow-wrap: anywhere; word-break: break-word; }
+  pre { font-family: "DejaVu Sans Mono", "Liberation Mono", Menlo, monospace; font-size: 8.3pt; line-height: 1.38; background: #f6f5f2; border: 1px solid #e3e1dc; border-left: 3px solid #9a968c; padding: 6pt 8pt; margin: 4pt 0 6pt; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; page-break-inside: avoid; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 9.6pt; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  th { background: #16151c; color: #fff; text-align: left; font-weight: 600; padding: 4pt 6pt; }
+  td:first-child { white-space: nowrap; }
+  td { border-bottom: 1px solid #e3e1dc; padding: 4pt 6pt; vertical-align: top; overflow-wrap: anywhere; }
+  tbody tr:nth-child(even) td { background: #faf9f7; }
+  .section { page-break-before: always; break-before: page; }
+  .badge { display: inline-block; font-size: 8.5pt; font-weight: 700; color: #fff; padding: 1pt 6pt; border-radius: 3pt; letter-spacing: .2pt; white-space: nowrap; }
+  .Critical { background: #c62828; }
+  .High { background: #ef6c00; }
+  .Medium { background: #f9a825; color: #1f1f24; }
+  .Low { background: #607d8b; }
+  .st { display: inline-block; font-size: 8.3pt; font-weight: 700; padding: 1pt 5pt; border-radius: 3pt; white-space: nowrap; }
+  .fixed { background: #e3f1e6; color: #1b5e20; }
+  .partial { background: #fff3cd; color: #7a5b00; }
+  .notfixed { background: #fde2e1; color: #9b1c1c; }
+  .unver { display: inline-block; font-size: 8.3pt; font-weight: 700; background: #e8eaf6; color: #283593; padding: 1pt 5pt; border-radius: 3pt; white-space: nowrap; }
+  .finding { border: 1px solid #dedbd4; border-radius: 4pt; margin: 0 0 12pt; break-inside: auto; page-break-inside: auto; }
+  .finding-head { background: #f4f2ee; padding: 6pt 9pt; border-bottom: 1px solid #dedbd4; break-after: avoid; page-break-after: avoid; }
+  .finding-head .meta { font-size: 9.3pt; color: #4a4850; margin-top: 3pt; }
+  .finding-body { padding: 4pt 9pt 6pt; }
+  .finding-body dl { margin: 0; }
+  .finding-body dt { font-weight: 700; font-size: 9.6pt; color: #4a4850; margin-top: 6pt; break-after: avoid; page-break-after: avoid; }
+  .finding-body dd { margin: 1pt 0 0 0; orphans: 3; widows: 3; }
+  table.prio td:nth-child(2), table.prio td:nth-child(4), table.fn td:nth-child(1) { white-space: nowrap; }
+  table.status td:nth-child(3) { white-space: nowrap; }
+  table.check td:nth-child(2) { white-space: nowrap; }
+  .cover { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .kicker { font-size: 11pt; letter-spacing: 1.5pt; text-transform: uppercase; color: #6b6875; margin-top: 30mm; }
+  .cover h1 { font-size: 28pt; margin: 6pt 0 8pt; }
+  .cover .sub { font-size: 13pt; color: #4a4850; }
+  .cover table { font-size: 10.5pt; width: 86%; }
+  .cover td:first-child { width: 30%; font-weight: 600; color: #4a4850; }
+  .scorebox { display: flex; gap: 14pt; align-items: flex-start; margin-bottom: 8pt; }
+  .score { min-width: 92pt; text-align: center; border: 2px solid #16151c; border-radius: 6pt; padding: 6pt 4pt; }
+  .score .num { font-size: 28pt; font-weight: 800; line-height: 1; }
+  .score .of { font-size: 9pt; color: #6b6875; }
+  .note { font-size: 9.3pt; color: #4a4850; }
+  .small { font-size: 9pt; }
+  .two { display: flex; gap: 12pt; }
+  .two > div { flex: 1; }
+  .keep { page-break-inside: avoid; break-inside: avoid; }
+  .scorebox p { font-size: 10pt; margin-bottom: 5pt; }
+  table.tight { font-size: 9pt; margin-bottom: 6pt; }
+  table.tight td, table.tight th { padding: 3pt 5pt; }
+  .exec h3 { margin-top: 8pt; }
+  table.check td:first-child { white-space: normal; width: 36%; }
+  table.check td:nth-child(2) { width: 13%; }
+  table.fn td:nth-child(3) { white-space: nowrap; }
+  table.counts td:nth-child(2), table.counts td:nth-child(3), table.counts td:nth-child(4), table.counts td:nth-child(5) { white-space: nowrap; }
+  table.counts td:first-child { white-space: normal; width: 20%; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div>
+    <div class="kicker">Audit report · round 4</div>
+    <h1>Code Quality Report — Tick &amp; Taka (round 4)</h1>
+    <div class="sub">Bun monorepo: Hono API, Expo Android app, shared package</div>
+  </div>
+  <table>
+    <tr><td>Project</td><td>Tick &amp; Taka (<code>tick-taka</code>)</td></tr>
+    <tr><td>Date</td><td>2026-10-07</td></tr>
+    <tr><td>Commit</td><td><code>801dd5f</code> (branch <code>fix/audit-2026-10-06</code>)</td></tr>
+    <tr><td>Previous audits</td><td>Round 1 at <code>3b5438b</code>: 70/100. Round 2 at <code>df29d67</code>: 72/100. Round 3 at <code>7e2bfeb</code>: 83/100, 10 open findings. 36 commits since round 3.</td></tr>
+    <tr><td>Auditor role</td><td>Staff Engineer (architecture, maintainability, security, performance)</td></tr>
+    <tr><td>Companion reports</td><td>QA_Report.pdf and UX_Report.pdf, written in parallel by other auditors</td></tr>
+    <tr><td>Mode</td><td>Read-only. No source, config, dependency or git state was changed. Scan and probe scripts ran from <code>docs/audit/2026-10-07-r4/_cq_tmp/</code> and were deleted afterwards.</td></tr>
+  </table>
+  <div class="note">Severity: <span class="badge Critical">Critical</span> <span class="badge High">High</span> <span class="badge Medium">Medium</span> <span class="badge Low">Low</span></div>
+</div>
+
+<!-- ============ EXECUTIVE SUMMARY ============ -->
+<div class="section exec">
+<h2>1. Executive summary</h2>
+<div class="scorebox">
+  <div class="score"><div class="num">89</div><div class="of">/ 100</div><div class="of">R1 70 · R2 72 · R3 83</div></div>
+  <div>
+    <p>The 36 commits fixed what round 3 asked for, and the tests now feed in the inputs production actually produces. A reply with no <code>x-server-time</code> header can no longer reset the edit clock to 1970. The phone ignores it, the saved offset is checked on restore, and the server applies an edit stamped before 2024 instead of quietly dropping it. Stuck writes now take the writes that depend on them along. Save failures show in the sync bar. The widget keeps its own copy of a write until the outbox has saved it, and the screen cache survives a Keystore failure without ever being written in plain text. Of the 10 open round-3 findings, 7 are fixed, 3 are partly fixed, and none were ignored or regressed.</p>
+    <p>No High was found. The one Medium comes from the stuck-write fix itself. A write counts as dependent on a stuck one if it <em>names</em> the same record, even when it doesn't need it. So a category rename the server keeps refusing holds back every later expense in that category, and tapping Discard throws those expenses away along with the rename (reproduced). The six Lows are small. The CI audit passes when <code>bun audit</code> can't reach the registry (reproduced). The API's own <code>http_error</code> code looks to the phone like an error page from a proxy. Two exported hooks are both named <code>useToday</code>. And three round-3 items are only partly done.</p>
+  </div>
+</div>
+<div class="two">
+<div>
+<table class="tight">
+  <thead><tr><th>Severity (open findings)</th><th>Count</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge Critical">Critical</span></td><td>0</td></tr>
+    <tr><td><span class="badge High">High</span></td><td>0</td></tr>
+    <tr><td><span class="badge Medium">Medium</span></td><td>1</td></tr>
+    <tr><td><span class="badge Low">Low</span></td><td>7</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>8</strong> (5 new, 3 carried)</td></tr>
+  </tbody>
+</table>
+</div>
+<div>
+<table class="tight">
+  <thead><tr><th>Round-3 status</th><th>Count</th></tr></thead>
+  <tbody>
+    <tr><td><span class="st fixed">Fixed</span></td><td>7</td></tr>
+    <tr><td><span class="st partial">Partially fixed</span></td><td>3</td></tr>
+    <tr><td><span class="st notfixed">Not fixed</span></td><td>0</td></tr>
+    <tr><td><span class="st notfixed">Regressed</span></td><td>0</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
+<h3>Top 5 issues to fix first</h3>
+<table class="prio tight">
+  <thead><tr><th>ID</th><th>Severity</th><th>Issue</th></tr></thead>
+  <tbody>
+    <tr><td>CQ-043</td><td><span class="badge Medium">Medium</span></td><td>A stuck edit of a category or account holds back every later expense that names it. Retry can't get them through, and Discard drops them with the edit. The sync bar labels the group with the edit's error text (reproduced). Effort M.</td></tr>
+    <tr><td>CQ-044</td><td><span class="badge Low">Low</span></td><td>The CI audit script exits 0 when <code>bun audit</code> fails to run, and suggests removing every accepted advisory (reproduced). Effort S.</td></tr>
+    <tr><td>CQ-045</td><td><span class="badge Low">Low</span></td><td>The API sends <code>http_error</code> for its own HTTPExceptions (such as malformed JSON). The phone reads that code as "a proxy answered", so the write is retried forever and the user is told they're offline (reproduced). Effort S.</td></tr>
+    <tr><td>CQ-037</td><td><span class="badge Low">Low</span></td><td>Carried: if SecureStore fails to save a refreshed token, the error is swallowed. The token is kept only in memory and the next cold start asks the user to sign in.</td></tr>
+    <tr><td>CQ-046</td><td><span class="badge Low">Low</span></td><td>"Today" is worked out three ways on the phone, through two exported hooks both named <code>useToday</code> that return different types.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============ SCORECARD ============ -->
+<div class="section">
+<h2>2. Scorecard</h2>
+<table class="tight">
+  <thead><tr><th>Area</th><th>R1</th><th>R2</th><th>R3</th><th>R4</th><th>Justification</th></tr></thead>
+  <tbody>
+    <tr><td>Architecture</td><td>8</td><td>8</td><td>8</td><td>8</td><td>The splits follow real seams. quick-add is now three siblings, imported by name with no barrel. Widget layout is a pure module, and the cache wrapper is a small Persister decorator. The phone now has three "today" helpers (CQ-046), and the lazy schema cycle is still the only import cycle.</td></tr>
+    <tr><td>Readability &amp; maintainability</td><td>7</td><td>7</td><td>8</td><td>8</td><td>No file is over 800 lines, and there are 0 TODOs and 0 dead value exports. The month stepper, icon button, toggle row and date field are shared components with named variants. But <code>outbox-queue.ts</code> grew 59% to 534 lines and does three jobs. ToggleRow isn't used in three sheets, and one orphaned doc line is still there (CQ-047, CQ-041).</td></tr>
+    <tr><td>Type safety</td><td>8</td><td>7</td><td>8</td><td>9</td><td>Error bodies are now parsed with the shared <code>errorBodySchema</code>, and the clock header with <code>serverTimeOf</code>. There are 0 <code>!</code>, 1 justified <code>any</code>, 0 <code>@ts-ignore</code> and 143 <code>as</code> casts (144 in R3). The assistant's settings allow-list is typed <code>Set&lt;SettingsKey&gt;</code>, so a typo won't compile.</td></tr>
+    <tr><td>Error handling</td><td>5</td><td>6</td><td>8</td><td>8</td><td>Save failures are reported once and shown until a save works. Too-large replies (413/414/431) are final. Two gaps are left: the API and the phone both use the <code>http_error</code> code (CQ-045), and a failed token save is swallowed (CQ-037).</td></tr>
+    <tr><td>Security</td><td>6</td><td>6</td><td>8</td><td>9</td><td>The screen cache is never written in plain text. The assistant can no longer change app lock, AI, currency, accounts or time zone. The plain-text export is deleted after sharing and on sign-out. One gap: the advisory check fails open in CI (CQ-044).</td></tr>
+    <tr><td>Performance</td><td>6</td><td>8</td><td>9</td><td>9</td><td>A refreshed session now writes once and then only reads (tested by counting UPDATEs). Sync pulls ask for counts, not rows. No new hot paths were found.</td></tr>
+    <tr><td>Data layer &amp; sync integrity</td><td>7</td><td>8</td><td>7</td><td>8</td><td>Both round-3 sync bugs are fixed with real-input tests. Unpay needs nothing from the pay's reply and is safe to repeat. Budget drafts write one line. Against that, stuck-group parking now pulls in writes that don't depend on the stuck one (CQ-043).</td></tr>
+    <tr><td>Tooling &amp; DX</td><td>6</td><td>8</td><td>8</td><td>8</td><td>Biome, typecheck and 774 tests are green. CI audits against an allow-list, and 36 of 36 commits are Conventional, with no attribution lines and 35 <code>Refs:</code> trailers. The audit script itself fails open (CQ-044), and nothing typechecks <code>scripts/</code>.</td></tr>
+    <tr><td>Testing</td><td>6</td><td>7</td><td>8</td><td>8</td><td>The idealised inputs are gone: a ky <code>Response</code> without the header, the real TanStack persister on a cipher that can be locked, and a stuck create followed by its PATCH and DELETE. <code>ai/ask.ts</code> is still at 62.7% lines and <code>describeDraft</code> has no test (CQ-042).</td></tr>
+    <tr><td>Dependencies</td><td>7</td><td>7</td><td>8</td><td>8</td><td>uuid is pinned through overrides. The 5 tooling advisories are accepted with a reason each in <code>scripts/audit-allowlist.json</code>. Bun is pinned and installs use a frozen lockfile.</td></tr>
+  </tbody>
+</table>
+<p class="note">The overall score is a weighted judgement, not an average. Security, error handling and data integrity count double, because the app holds personal finance records. Round 3 put the codebase "close to 90" once CQ-036 and CQ-038 were fixed. Both are fixed, along with five Lows. The CQ-038 fix brought in a Medium of the same kind, on the same path, so the score stops just under 90. With CQ-043 fixed, the codebase is in the low 90s.</p>
+</div>
+
+<!-- ============ SCOPE ============ -->
+<div class="section">
+<h2>3. Scope &amp; method</h2>
+<h3>What was reviewed</h3>
+<ul>
+  <li>Every open round-3 finding, re-checked line by line at <code>801dd5f</code> (section 4).</li>
+  <li>Everything in <code>git diff 7e2bfeb..HEAD</code> (138 files, +4,498/−1,412). That covers <code>server-clock.ts</code>, <code>http.ts</code> and <code>event-stream.ts</code>; the pre-2024 branch in <code>crud.ts</code>; and in the outbox, the stuck groups, cancel, the side key, <code>durable()</code> and save-failure reporting. Also: <code>recurring/service.ts</code> unpay and <code>recurring-pay.ts</code>; the error envelope and <code>CACHE_BUSTER</code>; <code>cache-persister.ts</code> and <code>secureCacheStorage</code>; export clean-up; the per-line budget route; the assistant settings allow-list and Undo; <code>sessions.touch</code>; the quick-add split; <code>scripts/audit.ts</code> and CI; the shared UI components (month-stepper, icon-button, date-field, toggle-row, picker-options, chart-axis, calendar-grid); <code>widget-layout.ts</code> and the widget hand-over; <code>use-today.ts</code>; and all new and changed tests.</li>
+  <li>Whole-repo scans: file and function sizes and type-safety counts (TypeScript AST), import cycles (Tarjan SCC over 425 source files, runtime imports only), duplicate 8-line blocks, exports referenced nowhere, <code>console.*</code>, swallowed catches, TODOs and committed secrets.</li>
+  <li>Yardstick: README.md, PRODUCT.md, DESIGN.md, docs/IMPLEMENTATION_PLAN.md, the spec (<code>_raw/spec.txt</code>), the round-3 report, and the owner's rules: an 800-line ceiling, no barrel files, strict TypeScript, Conventional Commits, and a shared component with named variants for markup repeated in 3 or more files.</li>
+</ul>
+<h3>Commands run</h3>
+<table>
+  <thead><tr><th>Command</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td><code>bunx biome check .</code></td><td>555 files, 0 diagnostics, exit 0 (<code>_raw/lint.txt</code>)</td></tr>
+    <tr><td><code>bun run typecheck</code></td><td>shared, api, mobile: exit 0</td></tr>
+    <tr><td><code>bun run test</code></td><td>shared 247, mobile 291, api 236 pass, 0 fail (774 in all; R3 689)</td></tr>
+    <tr><td><code>bun test --coverage</code> per workspace</td><td>api 94.50% lines / 88.20% funcs; shared 95.08 / 84.16; mobile 93.05 / 90.97</td></tr>
+    <tr><td><code>bun run audit</code></td><td>5 accepted, no new advisories, exit 0 (<code>_raw/audit.txt</code>)</td></tr>
+    <tr><td><code>bunx expo export --platform android</code></td><td>Bundles OK: 2,855 modules, 7.7 MB Hermes bytecode</td></tr>
+    <tr><td>AST scan (TypeScript 6.0.3 compiler API)</td><td>143 <code>as</code> casts, 96 <code>as const</code>, 0 non-null <code>!</code>, 1 <code>any</code>, 0 <code>@ts-ignore</code>; sizes in Appendix C</td></tr>
+    <tr><td>Import-graph SCC</td><td>1 cycle: <code>db/schema/time.ts</code> ↔ <code>db/schema/money.ts</code> (unchanged, lazy)</td></tr>
+    <tr><td><code>bun scripts/audit.ts</code> with the registry pointed at <code>127.0.0.1:9</code></td><td>Reproduced CQ-044: bun audit fails ("ConnectionRefused"), yet the script prints "No new advisories" and exits 0</td></tr>
+    <tr><td>Probe <code>probe.test.ts</code> (Appendix G)</td><td>Reproduced CQ-043 (a stuck PATCH /categories/C holds back two expenses in C) and CQ-045 (an API envelope with code <code>http_error</code> maps to <code>{unreachable: true}</code> and "retry", which never counts as a server fault)</td></tr>
+  </tbody>
+</table>
+<h3>Not verified</h3>
+<p><span class="unver">Unverified</span> No device run. The emulator image has no Google Play services, and sign-in is Google-only. How often Keystore reads or SecureStore writes fail (CQ-037) and how often a server bug produces a stuck write (CQ-043) could not be measured.</p>
+<p><span class="unver">Unverified</span> Export clean-up timing. <code>use-export-data.ts:26-33</code> deletes the shared file as soon as <code>shareAsync</code> resolves. On Android, that happens in <code>onActivityResult</code> (expo-sharing <code>SharingModule.kt:80-85</code>), when the target activity returns. A target that reads the content URI later, such as a background upload, would then find the file gone. Whether any common target does this needs a device.</p>
+<p><span class="unver">Unverified</span> The production server: whether <code>.env</code> sets <code>TRUST_PROXY=true</code> and <code>BACKUP_OFFSITE_CMD</code>, and whether the installed Nginx site matches <code>deploy/nginx-tick-taka.conf</code>.</p>
+<p><span class="unver">Unverified</span> I did not run <code>bun outdated</code> (it needs the network), and I could not check the allow-list's claim that braces and node-forge have no patched release.</p>
+</div>
+
+<!-- ============ PREVIOUS FINDINGS ============ -->
+<div class="section">
+<h2>4. Previous findings status (round 3 → round 4)</h2>
+<p class="note">Each row was checked against the code at <code>801dd5f</code>. Line numbers refer to <code>801dd5f</code>.</p>
+<table class="status">
+  <thead><tr><th>ID</th><th>Round-3 finding</th><th>Status</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td>CQ-036</td><td>A reply without <code>x-server-time</code> sets the edit clock to 1970 <span class="badge High">High</span></td><td><span class="st fixed">Fixed</span></td><td><code>serverTimeOf</code> returns NaN for a missing or empty header (<code>server-clock.ts:39-42</code>). <code>noteServerTime</code> ignores anything that isn't finite or is before <code>EARLIEST_PLAUSIBLE_MS</code> (2024-01-01, :29-54). Both request paths use it (<code>http.ts:73</code>, <code>event-stream.ts:39</code>). On restore, an offset that puts "now" before 2024 is rejected (:57-72). On the server, a stamp before 2024 counts as no stamp, so the edit applies in arrival order (<code>crud.ts:86-90</code>). Tests use real inputs: <code>Number(new Headers().get(…))</code> and a ky request answered by a header-less 502 (<code>server-clock.test.ts:40-94</code>), plus <code>time.test.ts</code> on the API. One recommendation was skipped, keeping <code>editTime()</code> from ever going backwards. It's optional now that bad offsets are refused.</td></tr>
+    <tr><td>CQ-038</td><td>Parking a stuck write lets dependent writes go first <span class="badge Medium">Medium</span></td><td><span class="st fixed">Fixed</span></td><td><code>park()</code> moves every later entry that names an id the stuck write touches into its group (<code>outbox-queue.ts:424-443</code>). New writes join the group when they're queued (:260-276, 446-456). Retry and Discard act on the whole group, and Discard has an Undo (:116-172, <code>sync-status.tsx:62-79</code>). The test covers exactly the case asked for: a stuck POST, then its PATCH and DELETE, with an unrelated write that goes through (<code>outbox-queue.test.ts:327-379</code>). The way "dependent" is matched is too broad, though; see the new CQ-043.</td></tr>
+    <tr><td>CQ-039</td><td>Silent outbox save failures; widget hand-over drops its durable copy <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td>Saves are chained through <code>queueSave</code>, which reports the first failure, shows it until a save works and exposes <code>notSaved</code> (<code>outbox-queue.ts:514-529</code>). <code>outbox.ts:45-50</code> logs it and notifies the user, and the sync bar names it (<code>sync-status.tsx:112-113</code>). Writes queued before the saved queue is read go to a side key (<code>tt.outbox.early</code>, :493-512) and are merged in on load. The widget trims its own lists only after <code>durable()</code> is true (<code>widget-pending.ts:32-47</code>). Tests: <code>outbox-durability.test.ts</code>, <code>widget-handover.test.ts</code>.</td></tr>
+    <tr><td>CQ-037</td><td>Key failure at start discards the cache; plain-text fallback <span class="badge Low">Low</span></td><td><span class="st partial">Partially fixed</span></td><td>The cache half is done well. <code>keepCacheOnKeyFailure</code> turns <code>KeyUnavailableError</code> into "restore nothing", won't save over the kept cache, and merges it in once the key reads again (<code>cache-persister.ts:14-58</code>). The cache storage has <code>plainFallback: false</code> (<code>secure-storage.ts:67-76</code>). It's tested against the real TanStack persister (<code>cache-persister.test.ts</code>). The token half is untouched: <code>refreshIfStale</code> still swallows a failed SecureStore write (<code>session-manager.ts:66-76, 108-127</code>). Carried, narrowed.</td></tr>
+    <tr><td>CQ-042</td><td>Tests use inputs the real code never passes <span class="badge Low">Low</span></td><td><span class="st partial">Partially fixed</span></td><td>Three of the four Given/When/Then cases now exist, all with real inputs: the header-less reply, the stuck create with its dependants, and the key failure at cache restore. <code>pullChanges</code> (<code>sync-pull.test.ts</code>) and turn recovery (<code>turn-recovery.test.ts</code>) are covered too. The fourth case, the "ask my data" tools, is not: <code>ai/ask.ts</code> is still at 62.68% lines, with 114-187 uncovered. Carried, narrowed.</td></tr>
+    <tr><td>CQ-041</td><td>Small leftovers <span class="badge Low">Low</span></td><td><span class="st partial">Partially fixed</span></td><td>5 of the 6 actionable items are done. requireAuth has its own doc again (<code>auth.ts:17-22</code>). <code>expireSession</code> is gone. offsite uses <code>errorFields</code> (<code>offsite.ts:37</code>). <code>touch()</code> reads before it writes (<code>sessions.ts:110-119</code>, tested by counting UPDATEs). The README now says which assistant changes have Undo (README.md:124-127), and settings gained one. Still open: the stranded doc line at <code>outbox-policy.ts:86</code>. The lazy schema cycle is unchanged and harmless. Carried, narrowed.</td></tr>
+    <tr><td>CQ-040</td><td>Month stepper in 3 files; no IconButton <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td><code>MonthStepper</code> (<code>components/ui/month-stepper.tsx</code>) is used by all three screens. <code>IconButton</code> has the named shapes <code>plain</code> and <code>round</code> and is used at 11 sites. <code>ToggleRow</code>, <code>DateField</code> (named <code>kind</code>/<code>span</code>), <code>useChartAxis</code> and <code>CALENDAR_GRID</code> follow the same rule. The duplicate scan finds no block shared by 3 or more files. A remainder is in CQ-047.</td></tr>
+    <tr><td>CQ-020</td><td>quick-add.ts at 649 lines and growing <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td>Split along the seams named in round 3: <code>quick-add-money.ts</code> (251), <code>quick-add-task.ts</code> (160), <code>quick-add-guess.ts</code> (78), and <code>quick-add.ts</code> (186) for the entry point and preview. The siblings are imported by name, with no barrel, and they import back only types.</td></tr>
+    <tr><td>CQ-022</td><td>Client JSON casts; cache buster never bumped <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td>Error bodies are parsed with the shared <code>errorBodySchema</code> (<code>api.ts:34-38</code>), and <code>event-stream.ts</code> uses the same reader. <code>CACHE_BUSTER</code> is a named constant at "3" with a written bump rule and a changelog (<code>query-client.ts:100-110</code>). It was bumped twice this round, the second time in 6010dc9, when the phone started sending Today's <code>dueAt</code>. The remaining <code>as</code> in <code>unwrap</code> is the typed-RPC contract. Bumping the buster is a matter of discipline; nothing enforces it.</td></tr>
+    <tr><td>CQ-012</td><td>CI audit job always red <span class="badge Low">Low</span></td><td><span class="st fixed">Fixed</span></td><td><code>scripts/audit.ts</code> reads <code>bun audit --json</code> and fails only on a GHSA id that isn't in <code>scripts/audit-allowlist.json</code>. CI runs it without <code>continue-on-error</code> (<code>check.yml:19-28</code>), and the README points to it. The script fails open when the audit itself can't run; see the new CQ-044.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============ FINDINGS ============ -->
+<div class="section">
+<h2>5. Findings</h2>
+<p class="note">Grouped by category and sorted by severity. New findings are numbered from CQ-043. Carried findings keep their earlier IDs. Effort: S &lt; 1 h, M &lt; 1 day, L &gt; 1 day.</p>
+
+<h3>5.1 Offline sync &amp; error handling</h3>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-043 · A stuck edit holds back every later write that names its record, and Discard drops them with it</h4>
+    <div class="meta"><span class="badge Medium">Medium</span> · Offline sync / data integrity · Effort M · New · Reproduced (probe B)</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/mobile/src/lib/outbox-policy.ts:103-136</code> (<code>writtenIds</code>, <code>mentionsAny</code>), <code>apps/mobile/src/lib/outbox-queue.ts:138-146, 260-276, 424-456</code>, <code>apps/mobile/src/components/ui/sync-status.tsx:19-26, 52-79</code></dd>
+    <dt>What's wrong</dt>
+    <dd><p>To fix CQ-038, a stuck write's group is defined by <em>mention</em>. <code>writtenIds</code> takes every ULID in the stuck write's path, plus <code>id</code>/<code>transactionId</code> in its body. <code>mentionsAny</code> then matches any later write that carries one of those ids anywhere in its path or body, up to 3 levels deep. That rule is right when the stuck write <em>creates</em> the record, because a later edit would get 404. It's wrong when the stuck write only edits a record the server already has: <code>PATCH /categories/C</code>, <code>PATCH /accounts/A</code>, <code>PUT /budgets/2026-10/C</code> (the category id is in the path), <code>POST /recurring/R/pay</code>. Every later expense with <code>categoryId: C</code> or <code>accountId: A</code> is set aside too, though the server would accept it, and so is every one queued after the park (<code>parkedHeadFor</code>).</p>
+    <p>Getting out isn't easy. Retry sends the failing head first, so the group is parked again after another 8 server faults (about two minutes). The only other way out is Discard, which drops the whole group (<code>discardStuck</code>), expenses included. The bar describes the group by the head's <code>label</code>, and labels are written as rejection messages. The row therefore reads "Couldn't save, and 2 later changes to it", and the snackbar says "Discarded “Couldn't save”". Nothing tells the user that two expenses are in the group.</p></dd>
+    <dt>Evidence</dt>
+    <dd><pre><code>// outbox-policy.ts:132-135: any id, anywhere in path or body
+export function mentionsAny(request: OutboxRequest, ids: ReadonlySet&lt;string&gt;): boolean {
+  if (ids.size === 0) return false;
+  const inPath = (request.path.split("?", 1)[0] ?? "").split("/").some((s) =&gt; ids.has(s));
+  return inPath || bodyMentions(request.body, ids, 0);
+}
+$ bun test probe.test.ts     (stuck: PATCH /categories/C answered 500 every time)
+probe B: {"STUCK_AFTER":8,"sentTransactions":0,
+  "stuck":["PATCH /categories/01M4…Q50","POST /transactions","POST /transactions"]}</code></pre>
+    Two expenses in category C, one queued before the park and one after, were never sent. All three writes sit in one group.</dd>
+    <dt>Why it matters</dt>
+    <dd>Expenses are the core capture flow. While they're held back, safe-to-spend on the server, the widget and any other device are wrong. The one action that unblocks the queue throws them away. The trigger is the same as CQ-038's, a write the API keeps failing with 5xx (a server bug), so it's rare. When it happens, though, it drops money records, and the UI doesn't tell the user that's what Discard will do.</dd>
+    <dt>Recommendation</dt>
+    <dd>Make a write depend on the ids the stuck group <em>creates</em>, not on every id it mentions. For a stuck write that isn't a create, park only later writes to the same record (its path, or a sub-path of it). Describe the group by kind rather than by its error label, and say what Discard drops.
+    <pre><code>// outbox-policy.ts
+export function createdIds(r: OutboxRequest): string[] {   // POST that brings a record into being
+  const id = (r.body as { id?: unknown } | undefined)?.id;
+  return r.method === "POST" &amp;&amp; typeof id === "string" &amp;&amp; RECORD_ID.test(id) ? [id] : [];
+}
+export function sameRecord(r: OutboxRequest, head: OutboxRequest): boolean {
+  const base = head.path.split("?", 1)[0] ?? "";
+  return r.path === base || r.path.startsWith(`${base}/`);
+}
+// park(): depends = mentionsAny(later, createdIds(group)) || sameRecord(later, entry.request)</code></pre>
+    Add a test: given a stuck <code>PATCH /categories/C</code>, when <code>POST /transactions {categoryId: C}</code> is queued, then it is sent. Keep the existing test for a stuck create.</dd>
+    <dt>Effort</dt><dd>M</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-045 · The API's own <code>http_error</code> code is read by the phone as "a proxy answered", so such a write is retried forever</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Error handling / API contract · Effort S · New · Reproduced (probe A)</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/api/src/middleware/error-handler.ts:17-19</code>, <code>node_modules/hono/dist/validator/validator.js:18</code> (hono 4.13.13), <code>apps/mobile/src/lib/api.ts:34-37</code>, <code>apps/mobile/src/lib/outbox-failure.ts:15</code>, <code>apps/mobile/src/lib/error-copy.ts:62</code></dd>
+    <dt>What's wrong</dt>
+    <dd>87daf33 made the phone tag any error body that fails <code>errorBodySchema</code> with code <code>http_error</code>, meaning "something in front of the API answered". <code>describeFailure</code> turns that code into <code>{unreachable: true}</code>. But the API already sends <code>http_error</code> in its own, valid envelope for every <code>HTTPException</code>. Hono's JSON validator throws one, <code>HTTPException(400, "Malformed JSON in request body")</code>, on any <code>validate("json")</code> route. The phone checks the code string, not whether the body parsed, so it can't tell the two apart. A permanent 400 becomes "retry forever". It never counts as a server fault, so it is never parked, and the error copy says the user is offline.</dd>
+    <dt>Evidence</dt>
+    <dd><pre><code>// error-handler.ts:17-19
+if (error instanceof HTTPException) {
+  return c.json(errorBody("http_error", error.message || "Request failed"), error.status);
+}
+// outbox-failure.ts:15
+if (error.code === "http_error" &amp;&amp; error.status !== 401) return { unreachable: true };
+probe A: {"code":"http_error","info":{"unreachable":true},"kind":"retry","serverFault":false}</code></pre></dd>
+    <dt>Why it matters</dt>
+    <dd>Today's trigger is rare, because ky serialises the JSON itself. But it's a contract collision. Any future <code>HTTPException</code>, such as a body limit or a header check, would silently block its write at the head of the queue forever, and every write behind it would wait in order.</dd>
+    <dt>Recommendation</dt>
+    <dd>Give the API's code its own name (for example <code>bad_request</code>), or map 4xx <code>HTTPException</code>s to <code>validation_error</code>. On the phone, mark the "not our envelope" case with a field of its own (for example <code>ApiError.fromProxy = true</code>) instead of reusing a code string the server also sends. Add a test that a valid envelope with status 400 and any code is classified <code>reject</code>.</dd>
+    <dt>Effort</dt><dd>S</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-037 · If SecureStore fails to save a refreshed token, the next cold start asks the user to sign in (carried, narrowed)</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Error handling (client) · Effort S · Partially fixed · Unverified on device (how often)</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/mobile/src/lib/session-manager.ts:66-76, 108-127</code></dd>
+    <dt>What's wrong</dt>
+    <dd>The cache half of round 3's finding is fixed (section 4). The token half is unchanged. <code>save()</code> sets <code>issuedAt</code> and the in-memory token first, then awaits three SecureStore writes. <code>refreshIfStale</code> calls it inside a <code>try</code> whose empty <code>catch</code> is meant for "offline". If <code>setItem(TOKEN_KEY)</code> throws, the new token exists only in memory, and <code>issuedAt</code> says it's fresh, so no retry follows. Meanwhile the old token is retired 60 s after the new one is first used. The next cold start loads the old token, gets <code>session_expired</code> and shows the login screen.</dd>
+    <dt>Evidence</dt>
+    <dd><pre><code>// session-manager.ts:119-124
+const session = sessionResponseSchema.safeParse(await response.json().catch(() =&gt; null));
+if (session.success &amp;&amp; tokenStore.get() === token) await save(session.data);
+} catch {
+  // Offline or unreachable: try again on the next start or foreground.
+}</code></pre></dd>
+    <dt>Why it matters</dt>
+    <dd>The outbox keeps queued writes through a sign-in, so nothing is lost. But an unexpected sign-in with Google is the kind of friction the spec wants to avoid, and nothing is logged to explain it.</dd>
+    <dt>Recommendation</dt>
+    <dd>Handle a failed <code>save()</code> on its own: log it, and set <code>issuedAt = null</code> so the next foreground refreshes again (the old token still works until the new one is used). Add a test with a storage fake whose <code>setItem</code> rejects.</dd>
+    <dt>Effort</dt><dd>S</dd>
+  </dl></div>
+</div>
+
+<h3>5.2 Tooling &amp; security</h3>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-044 · The CI audit passes when <code>bun audit</code> can't run</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Tooling / security · Effort S · New · Reproduced</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>scripts/audit.ts:19-27, 39-56</code>, <code>.github/workflows/check.yml:20-28</code></dd>
+    <dt>What's wrong</dt>
+    <dd>The script's header says it exits 1 "when the audit can't run". But it ignores <code>audit.exited</code>, and it reads empty output as <code>"{}"</code>. When the registry can't be reached, <code>bun audit --json</code> writes nothing to stdout and exits 1. The script then finds 0 advisories, prints a notice to delete each of the 5 accepted ids from the allow-list, reports "No new advisories" and exits 0. A registry outage, a rate limit or a bun change that breaks <code>--json</code> all turn the check green.</dd>
+    <dt>Evidence</dt>
+    <dd><pre><code>// scripts/audit.ts:21-25
+const output = await new Response(audit.stdout).text();
+await audit.exited;                                  // exit code never read
+let report: Record&lt;string, Advisory[]&gt;;
+try { report = JSON.parse(output || "{}") … }
+$ BUN_CONFIG_REGISTRY=http://127.0.0.1:9/ bun scripts/audit.ts
+ConnectionRefused: audit request failed
+::notice::GHSA-vfj7-8cjw-p6xm is accepted … but no longer reported; remove it.   (×5)
+No new advisories (0 accepted).
+exit=0</code></pre></dd>
+    <dt>Why it matters</dt>
+    <dd>The job exists to catch a new advisory, and it fails open in exactly the case where it learned nothing. The notices also tell whoever reads the log to empty the allow-list.</dd>
+    <dt>Recommendation</dt>
+    <dd>Fail when stdout is empty or isn't a JSON object, and when <code>exited !== 0</code> while no advisories were parsed (bun exits 1 when advisories exist, so the exit code alone can't decide). Have a run where every accepted id is missing say "audit returned nothing" instead of "remove it". <code>scripts/</code> also isn't covered by any <code>typecheck</code>; a root <code>tsconfig</code> include or a <code>tsc -p scripts</code> step would cover it.</dd>
+    <dt>Effort</dt><dd>S</dd>
+  </dl></div>
+</div>
+
+<h3>5.3 Maintainability</h3>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-046 · "Today" is worked out three ways on the phone, and two hooks are both named <code>useToday</code></h4>
+    <div class="meta"><span class="badge Low">Low</span> · Maintainability / naming · Effort S · New</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/mobile/src/lib/use-today.ts:6-19</code>, <code>apps/mobile/src/lib/queries.ts:42-69, 76-90</code>, plus 10 inline <code>toLocalDate</code>/<code>toLocalMonth(Date.now(), timeZone)</code> calls: <code>plan-home.tsx:31</code>, <code>logbook-list.tsx:24</code>, <code>calendar-view.tsx:39</code>, <code>money-calendar.tsx:41</code>, <code>time-tracking.tsx:35</code>, <code>events-screen.tsx:33</code>, <code>insights-screen.tsx:53</code>, <code>goal-sheet.tsx:121</code>, <code>focus-stats.tsx:28</code>, <code>quick-add-requests.ts:31</code></dd>
+    <dt>What's wrong</dt>
+    <dd>1fc2209 correctly moved ten screens to the user's time zone. It did so by adding <code>useToday()</code> and <code>useThisMonth()</code> in <code>use-today.ts</code>, which compute a string at render time. <code>queries.ts</code> already exports <code>useLocalToday()</code>, which turns over at local midnight and on foreground, and a <em>different</em> <code>useToday(date?)</code> that returns the Today screen's <code>UseQueryResult</code>. Which one an editor auto-imports decides whether the code compiles against a string or a query. And because the new hook never schedules a render, <code>habits/queries.ts:7</code> and <code>app/plan/day.tsx:7</code> keep yesterday's date on a screen left open past midnight until something else re-renders it. The Today tab doesn't have that problem.</dd>
+    <dt>Why it matters</dt>
+    <dd>Dates are where this app's bugs have clustered (QA-308, CQ-027). Three helpers with different turn-over behaviour make the next midnight bug likely, and the name clash makes it easy to import the wrong one.</dd>
+    <dt>Recommendation</dt>
+    <dd>Rename the query hook <code>useTodayQuery</code>. Move <code>useLocalToday</code>'s timer into <code>use-today.ts</code> and build <code>useToday</code>/<code>useThisMonth</code> on it. Replace the ten inline calls. The existing <code>time-zone-use.test.ts</code> already guards the zone argument.</dd>
+    <dt>Effort</dt><dd>S</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-047 · Leftovers from this round's refactors</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Maintainability (owner rules) · Effort M · New</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where / what</dt>
+    <dd><ul>
+      <li><strong>The outbox queue is now the largest source file.</strong> <code>apps/mobile/src/lib/outbox-queue.ts</code> is 534 lines (R3 335, +59%, 67% of the ceiling). It does three separate jobs: the send loop (<code>run</code>, <code>finish</code>, <code>cancel</code>), stuck groups (<code>park</code>, <code>parkedHeadFor</code>, <code>requeue</code>, <code>discardStuck</code>, <code>restoreStuck</code>, <code>stuckGroup</code>) and persistence (<code>persist</code>, the side key, <code>readEarlier</code>, <code>queueSave</code>, <code>durable</code>). It's the most data-critical module in the app, and it's growing faster than any other.</li>
+      <li><strong>ToggleRow isn't adopted everywhere.</strong> c6a8012 extracted it, but <code>goal-sheet.tsx:133-141</code>, <code>debt-sheet.tsx:180-188</code> and <code>budget-edit-sheet.tsx:96-105</code> still use a raw <code>Switch</code> with <code>trackColor.true = colors.mint</code>. <code>ToggleRow</code> uses <code>ink</code> on purpose ("On reads like a selected chip"). Three files, against the owner's 3-file rule, and two "on" colours.</li>
+      <li><strong>Design rules are enforced by grep tests, each with its own file walker.</strong> <code>colour-meaning.test.ts:7</code>, <code>type-scale.test.ts:7</code> and <code>time-zone-use.test.ts:7</code> each define <code>files()</code>. <code>time-zone-use.test.ts:37-65</code> hand-writes an argument counter that doesn't skip comments or regex literals. The repo already ships <code>typescript</code>, whose parser counts arguments exactly.</li>
+    </ul></dd>
+    <dt>Recommendation</dt>
+    <dd>Move persistence into <code>outbox-store.ts</code> (side key, merge on load, ordered saves, <code>durable</code>) and stuck groups into <code>outbox-stuck.ts</code>, with <code>OutboxQueue</code> composing them. Do it in the same change as CQ-043, which touches the group rule anyway. Move the three toggle rows to <code>ToggleRow</code>, adding a <code>layout</code> option if the budget line needs it inline. Put <code>sourceFiles()</code> in one test helper, and count arguments with <code>ts.createSourceFile</code>.</dd>
+    <dt>Effort</dt><dd>M</dd>
+  </dl></div>
+</div>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-041 · One stranded doc line (carried, narrowed)</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Maintainability / docs · Effort S · Partially fixed</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where / what</dt>
+    <dd><code>apps/mobile/src/lib/outbox-policy.ts:86</code>: <code>/** Whether a failed attempt could have changed data on the server before it failed. */</code> still sits right above <code>STUCK_AFTER</code>'s doc block. Its function, <code>mayHaveReachedServer</code> (:138), has no doc, so editors show two stacked comments on the constant. The other five items were fixed (section 4). The lazy cycle <code>db/schema/time.ts:11</code> ↔ <code>money.ts:11</code> is still the only one in the repo, and it's harmless.</dd>
+    <dt>Recommendation</dt>
+    <dd>Move the line to :138.</dd>
+    <dt>Effort</dt><dd>S</dd>
+  </dl></div>
+</div>
+
+<h3>5.4 Testing</h3>
+
+<div class="finding">
+  <div class="finding-head">
+    <h4>CQ-042 · The new tests check behaviour with real inputs; a few paths still have none (carried, narrowed)</h4>
+    <div class="meta"><span class="badge Low">Low</span> · Testing · Effort M · Partially fixed</div>
+  </div>
+  <div class="finding-body"><dl>
+    <dt>Where</dt>
+    <dd><code>apps/api/src/modules/ai/ask.ts</code> (62.68% lines; 114-187 uncovered), <code>packages/shared/src/quick-add.ts:151-186</code> (<code>describeDraft</code>; the file is at 52.69% lines), <code>apps/mobile/src/features/quick-add/quick-add-requests.ts</code> (72.90% lines), <code>apps/mobile/src/lib/http.ts</code> (61.54% funcs)</dd>
+    <dt>What's wrong</dt>
+    <dd><p>This round's tests are good. They assert outcomes, not calls: what's on the "disk", what was sent and in what order, the TanStack cache contents after a locked restore, and UPDATE counts. They also use the shapes production produces. Gaps remain:</p>
+    <ul>
+      <li>The "ask my data" tools (<code>spendByCategory</code>, <code>accountBalances</code>, <code>budgetStatus</code> and others) never run in a test. This was the fourth case round 3 asked for.</li>
+      <li><code>describeDraft</code> builds the one-line preview shown above Save on the capture path ("Expense ৳250 · Food · Cash"). It has no test. The split put it in a 186-line file, so the gap now shows up as 52.69% line coverage.</li>
+      <li>The coverage table reports <code>server-clock.ts</code> at 63.89% lines, though its tests run every line. The test loads a second copy of the module (<code>?cold-start</code>), and bun seems to report that copy. Read that figure with care.</li>
+    </ul></dd>
+    <dt>Recommendation</dt>
+    <dd><ul>
+      <li>Given a fake OpenAI that calls each ask tool once, when <code>/ai/ask</code> runs, then each answer uses only default-currency rows.</li>
+      <li>Given an expense draft with a category and account, when <code>describeDraft</code> runs, then it returns "Expense ৳250 · Food · Cash". The same for a someday task, an evening task and a 1h30m time entry.</li>
+      <li>Given a stuck <code>PATCH /categories/C</code>, when an expense in C is queued, then it is sent (CQ-043).</li>
+    </ul></dd>
+    <dt>Effort</dt><dd>M</dd>
+  </dl></div>
+</div>
+</div>
+
+<!-- ============ STRENGTHS ============ -->
+<div class="section">
+<h2>6. Strengths: keep these</h2>
+<ul>
+  <li><strong>Fixes in layers, at the root cause.</strong> The clock bug was closed in three places: the phone ignores impossible times, a bad saved offset is refused on restore, and the server stops trusting pre-2024 stamps. Any one of them would have stopped the data loss.</li>
+  <li><strong>Tests that use production's inputs.</strong> A header-less 502 goes through the real ky instance. The cache test runs the real TanStack persister over the real encrypted storage, with a cipher that can be locked. The durability tests model the disk, a slow start and a failed save, and assert what ends up stored.</li>
+  <li><strong>Undo that needs nothing from the reply.</strong> <code>POST /recurring/:id/unpay</code> takes the pay's own <code>transactionId</code> and <code>dueAt</code>, deletes only what that pay logged, and moves the date back only if that pay moved it. It's safe to repeat and can be queued offline, and the phone cancels the pay instead if it hasn't been sent yet.</li>
+  <li><strong>Narrow write paths for the assistant.</strong> Budget drafts and their Undo write one line (<code>PUT /budgets/:month/:categoryId</code>), so a draft saved days later can't revert other lines. Settings changes go through a typed allow-list, record their previous values for Undo, and refuse the whole request if any field is off the list.</li>
+  <li><strong>Durability that's explicit.</strong> <code>durable()</code> means "read, and saved without error". The widget hands over its offline taps against that promise, and a write queued before the saved queue is readable goes to a side key instead of overwriting it.</li>
+  <li><strong>Owner's rules kept.</strong> No file is over 800 lines. There are no barrels and 0 TODOs. Every value export is used. New shared components take named variants (<code>IconButton shape</code>, <code>DateField kind/span</code>). The design rules (time zone, type scale, colour meaning) have tests that fail on a new violation.</li>
+  <li><strong>Commit discipline.</strong> All 36 commits are Conventional Commits, each one logical change. 35 carry a <code>Refs:</code> trailer, and none has co-author or agent lines. 801dd5f is a good example: a 5-line fix with its test, and a body that explains why 413 is final.</li>
+  <li><strong>Unchanged strengths.</strong> One SQLite file per user, integer money with CHECKs, zod at every boundary, typed RPC, no secrets in git (pattern scan clean), backups that check their own integrity, 0 non-null assertions, 1 justified <code>any</code>.</li>
+</ul>
+</div>
+
+<!-- ============ ACTION PLAN ============ -->
+<div class="section">
+<h2>7. Action plan</h2>
+<h3>Refactoring roadmap</h3>
+<table>
+  <thead><tr><th>When</th><th>Items</th></tr></thead>
+  <tbody>
+    <tr><td>Now (this week)</td><td><strong>CQ-043</strong>: make writes depend on the ids a stuck group creates, and on the same record path, not on every id they mention. Describe groups by kind, and say what Discard drops. · <strong>CQ-044</strong>: fail the audit when <code>bun audit</code> returns nothing. · <strong>CQ-045</strong>: stop sharing the <code>http_error</code> code between the API and the phone.</td></tr>
+    <tr><td>Next (this month)</td><td><strong>CQ-046</strong>: one module and one name for "today". · <strong>CQ-037</strong>: handle a failed token save. · <strong>CQ-047</strong>: split <code>outbox-queue.ts</code> along its seams (with CQ-043), finish the ToggleRow migration, share the grep-test walker. · <strong>CQ-042</strong>: ask tools and <code>describeDraft</code> tests.</td></tr>
+    <tr><td>Later</td><td><strong>CQ-041</strong>: move the stranded doc line. Keep an eye on <code>outbox-queue.ts</code> and <code>recurrence.ts</code> (484) relative to the ceiling.</td></tr>
+  </tbody>
+</table>
+<h3>Prioritised table</h3>
+<table class="prio">
+  <thead><tr><th>Order</th><th>ID</th><th>Title</th><th>Severity</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>CQ-043</td><td>A stuck edit holds back later writes that only name its record; Discard drops them</td><td><span class="badge Medium">Medium</span></td><td>M</td></tr>
+    <tr><td>2</td><td>CQ-044</td><td>The CI audit passes when <code>bun audit</code> can't run</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>3</td><td>CQ-045</td><td>API and phone both use the <code>http_error</code> code; such a write retries forever</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>4</td><td>CQ-037</td><td>A failed refreshed-token save is swallowed</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>5</td><td>CQ-046</td><td>Three "today" helpers; two hooks named <code>useToday</code></td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+    <tr><td>6</td><td>CQ-047</td><td>outbox-queue.ts 534 lines with three jobs; ToggleRow not adopted; grep-test walkers</td><td><span class="badge Low">Low</span></td><td>M</td></tr>
+    <tr><td>7</td><td>CQ-042</td><td>ask tools and <code>describeDraft</code> untested</td><td><span class="badge Low">Low</span></td><td>M</td></tr>
+    <tr><td>8</td><td>CQ-041</td><td>Stranded doc line in outbox-policy.ts</td><td><span class="badge Low">Low</span></td><td>S</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============ APPENDIX ============ -->
+<div class="section">
+<h2>8. Appendix</h2>
+<h3>A. Raw command output (trimmed)</h3>
+<pre><code>$ bunx biome check .
+Checked 555 files in 374ms. No fixes applied.            exit 0
+$ bun run typecheck
+@tick-taka/shared typecheck: Exited with code 0
+@tick-taka/api typecheck: Exited with code 0
+@tick-taka/mobile typecheck: Exited with code 0
+$ bun run test
+@tick-taka/shared test: 247 pass, 0 fail, 519 expect() (13 files)
+@tick-taka/mobile test: 291 pass, 0 fail, 865 expect() (56 files)
+@tick-taka/api test:    236 pass, 0 fail, 848 expect() (31 files) [9.65s]
+$ bun test --coverage   (All files: % Funcs | % Lines)
+api     88.20 | 94.50   lowest: ai/ask.ts 62.68, categories/routes.ts 79.25, schema/time.ts 79.72
+shared  84.16 | 95.08   quick-add.ts 52.69, tiki.ts 69.09, quick-add-task.ts 98.43
+mobile  90.97 | 93.05   server-clock.ts 63.89*, quick-add-requests.ts 72.90, plan-notifications.ts 80.82
+$ bun run audit
+accepted  GHSA-vfj7-8cjw-p6xm  braces … accepted  GHSA-vcc3-ghjq-m6fr  decode-uri-component …
+accepted  GHSA-67mh-4wv8-2f99  esbuild … accepted  GHSA-86w9-cpqp-85rv  node-forge …
+accepted  GHSA-rj75-hqrm-r3gf  postcss-selector-parser …
+No new advisories (5 accepted).                           exit 0
+$ bunx expo export --platform android
+Android Bundled 51854ms apps/mobile/index.ts (2855 modules) · index-….hbc (7.7MB)   exit 0</code></pre>
+<p class="note">* See CQ-042: the figure probably reflects the second module copy the test loads.</p>
+
+<h3>B. Code health counts (source only: apps/api/src, apps/mobile/src, packages/shared/src)</h3>
+<table class="counts">
+  <thead><tr><th>Pattern</th><th>R1</th><th>R2</th><th>R3</th><th>R4</th><th>Notes / locations</th></tr></thead>
+  <tbody>
+    <tr><td><code>any</code></td><td>1</td><td>1</td><td>1</td><td>1</td><td><code>api/src/lib/crud.ts:46</code>, with a justified biome-ignore</td></tr>
+    <tr><td>@ts-ignore / @ts-expect-error</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td></tr>
+    <tr><td>biome-ignore</td><td>4</td><td>7</td><td>7</td><td>7</td><td>crud.ts:45; message-bubble.tsx:24,65,211; chat-composer.tsx:66; use-notification-scheduler.ts:107; habit-list.tsx:116. All give a reason.</td></tr>
+    <tr><td><code>as X</code> casts (AST, excl. <code>as const</code>)</td><td>~187*</td><td>135</td><td>144</td><td>143</td><td>*R1 was counted by regex. Top in source: resource-routes.ts 10, crud.ts 9, assistant/tools.ts 9, outbox-policy.ts 7, assistant/actions.ts 6. <code>as const</code>: 96. Tests: 100.</td></tr>
+    <tr><td><code>as unknown as</code></td><td>1</td><td>1</td><td>1</td><td>1</td><td><code>mobile/src/lib/receipts.ts:47</code> (RN FormData file)</td></tr>
+    <tr><td>Non-null <code>!</code></td><td>44</td><td>60</td><td>0</td><td>0</td><td>The rule is an error outside tests (tests: 107)</td></tr>
+    <tr><td>TODO / FIXME / HACK</td><td>0</td><td>0</td><td>0</td><td>0</td><td>Source and tests</td></tr>
+    <tr><td><code>console.*</code></td><td>5</td><td>5</td><td>6</td><td>11</td><td>api <code>log.ts:7,8</code> (the sink). Mobile <code>console.warn</code> at secure-storage.ts:54,59,72; user-data.ts:24; sync-pull.ts:68; outbox.ts:46; use-export-data.ts:31; use-notification-scheduler.ts:89; use-widget-sync.tsx:67. Each logs a failure that was swallowed before. The phone has no log module of its own.</td></tr>
+    <tr><td><code>.catch(() =&gt; {})</code> / empty <code>catch {}</code></td><td>20 / 2</td><td>27 / 2</td><td>24 / 2</td><td>23 / 2</td><td>Best-effort calls (haptics, sounds, notifications, widget redraw). The outbox's swallow is gone. The 2 truly empty catches are <code>agent.ts:85,89</code> (a display-only JSON parse); 4 more have a comment.</td></tr>
+    <tr><td>Runtime import cycles</td><td>0</td><td>1</td><td>1</td><td>1</td><td>db/schema/time.ts ↔ money.ts (lazy FK thunks, safe). The quick-add siblings import back types only.</td></tr>
+    <tr><td>Files over 800 lines</td><td>0</td><td>0</td><td>0</td><td>0</td><td>Largest source file: mobile/lib/outbox-queue.ts, 534. Largest test: api/test/money.test.ts, 548.</td></tr>
+    <tr><td>Barrel index files</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td></tr>
+    <tr><td>Duplicate 8-line blocks</td><td>n/a</td><td>10</td><td>3</td><td>2</td><td>Each spans 2 files: the emoji picker (category-sheet.tsx:121, area-sheet.tsx:109) and the area row (areas-editor.tsx:95, plan-home.tsx:149). None spans 3 or more.</td></tr>
+    <tr><td>Exports referenced nowhere</td><td>n/a</td><td>2 / 10</td><td>1 / 14</td><td>0 / 13</td><td>Values / types. The types are store aliases (JobRunStore, SessionStore, UsageTotalStore, SessionManager) and schema-inferred aliases (TaskStatus, AreaCreate, ErrorBody and others).</td></tr>
+    <tr><td>Committed secrets / data files</td><td>0</td><td>0</td><td>0</td><td>0</td><td>Only the two <code>.env.example</code> files are tracked. The local APK is git-ignored. No key patterns found.</td></tr>
+  </tbody>
+</table>
+
+<h3>C. Largest functions and files (TypeScript AST)</h3>
+<div class="two">
+<div>
+<table class="fn">
+  <thead><tr><th>Lines</th><th>Function</th><th>R3</th></tr></thead>
+  <tbody>
+    <tr><td>297</td><td>TaskSheet (tasks/task-sheet.tsx:34)</td><td>297</td></tr>
+    <tr><td>282</td><td>TransactionSheet (money/transaction-sheet.tsx:35)</td><td>285</td></tr>
+    <tr><td>263</td><td>taskService (api tasks/service.ts:38)</td><td>263</td></tr>
+    <tr><td>254</td><td>InsightsScreen (review/insights-screen.tsx:44)</td><td>261</td></tr>
+    <tr><td>227</td><td>SafeToSpendWidget (widget/safe-to-spend-widget.tsx:159)</td><td>209</td></tr>
+    <tr><td>224</td><td>RecurringForm (money/recurring-sheet.tsx:54)</td><td>231</td></tr>
+    <tr><td>216</td><td>useAssistant (assistant/use-assistant.ts:66)</td><td>216</td></tr>
+    <tr><td>210</td><td>createToolRunner (assistant/tools.ts:151)</td><td>210</td></tr>
+    <tr><td>210</td><td>WeeklyReview (review/weekly-review.tsx:26)</td><td>210</td></tr>
+    <tr><td>207</td><td>PlanHome (plan/plan-home.tsx:24)</td><td>207</td></tr>
+  </tbody>
+</table>
+</div>
+<div>
+<table>
+  <thead><tr><th>Lines</th><th>Largest source files (vs 800)</th></tr></thead>
+  <tbody>
+    <tr><td>534</td><td>mobile/src/lib/outbox-queue.ts (R3 335)</td></tr>
+    <tr><td>484</td><td>shared/src/recurrence.ts</td></tr>
+    <tr><td>385</td><td>mobile/…/widget/safe-to-spend-widget.tsx (R3 336)</td></tr>
+    <tr><td>360</td><td>api/…/ai/assistant/tools.ts</td></tr>
+    <tr><td>343</td><td>api/…/budgets/service.ts (+61)</td></tr>
+    <tr><td>333</td><td>shared/src/schemas/money.ts</td></tr>
+    <tr><td>330</td><td>mobile/…/tasks/task-sheet.tsx</td></tr>
+    <tr><td>316</td><td>mobile/…/money/transaction-sheet.tsx</td></tr>
+    <tr><td>303</td><td>shared/src/defaults.ts</td></tr>
+    <tr><td>300</td><td>api/…/tasks/service.ts</td></tr>
+  </tbody>
+</table>
+<p class="note">All are under the ceiling. SQL: 0004_constraints.sql 428 and 0000_init.sql 332, both unchanged. quick-add.ts went from 649 to 186.</p>
+</div>
+</div>
+
+<h3>D. Requirement checklist (engineering commitments from the docs)</h3>
+<table class="check">
+  <thead><tr><th>Commitment (source)</th><th>Status</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td>TypeScript strict everywhere (PLAN, owner rules)</td><td>Met</td><td><code>tsconfig.base.json</code>: strict, noUncheckedIndexedAccess. <code>scripts/</code> isn't typechecked (CQ-044).</td></tr>
+    <tr><td>800-line ceiling; no barrels (owner rules)</td><td>Met</td><td>Appendix B and C. Watch outbox-queue.ts (CQ-047).</td></tr>
+    <tr><td>Markup in 3+ files is a shared component with named variants (owner rules)</td><td>Mostly met</td><td>MonthStepper, IconButton, ToggleRow, DateField, useChartAxis. Three raw Switch rows remain (CQ-047).</td></tr>
+    <tr><td>Conventional Commits, no attribution, one change per commit (owner rules)</td><td>Met</td><td>36 of 36</td></tr>
+    <tr><td>Money as integers (PLAN)</td><td>Met</td><td><code>*_minor</code> integer columns with CHECKs</td></tr>
+    <tr><td>Per-user data isolation (README)</td><td>Met</td><td>user-registry.ts, user-scope.ts</td></tr>
+    <tr><td>Offline queue never loses writes (PLAN Phase 7, README)</td><td>Partial</td><td>The round-3 losses are fixed and tested. CQ-043 can stall writes, and Discard can drop them.</td></tr>
+    <tr><td>Data encrypted at rest on the phone (README)</td><td>Met</td><td>The cache is never written in plain text, and only the outbox may fall back to plain text. The export file is removed (timing <span class="unver">Unverified</span>).</td></tr>
+    <tr><td>Login rate limit, 5 per 15 min per IP (PLAN)</td><td>Met in code</td><td>Production <code>TRUST_PROXY</code> <span class="unver">Unverified</span></td></tr>
+    <tr><td>Nightly backups, 14 kept, off-site copy (PLAN, README)</td><td>Met in code</td><td><code>BACKUP_OFFSITE_CMD</code> on the server <span class="unver">Unverified</span></td></tr>
+    <tr><td>No AI feature saves records without confirmation (spec)</td><td>Partial (documented)</td><td>Money changes are drafts, and deletions wait for a tap. Settings are now limited to an allow-list and come with Undo. Task, habit and timer changes still apply at once, as a documented product decision.</td></tr>
+    <tr><td>Dependency advisories watched (README)</td><td>Partial</td><td>The allow-list is in CI, but the check fails open (CQ-044).</td></tr>
+    <tr><td>Every phase ends with tests passing (PLAN)</td><td>Met</td><td><code>check.yml</code> on push to main and on PRs</td></tr>
+  </tbody>
+</table>
+
+<h3>E. File inventory</h3>
+<table>
+  <thead><tr><th>Workspace</th><th>Source files</th><th>Source lines</th><th>Test files</th><th>Test lines</th></tr></thead>
+  <tbody>
+    <tr><td>apps/api</td><td>105</td><td>10,111</td><td>35 (31 test + 4 helpers)</td><td>5,489</td></tr>
+    <tr><td>apps/mobile</td><td>299</td><td>22,778</td><td>56</td><td>4,078</td></tr>
+    <tr><td>packages/shared</td><td>21</td><td>3,319</td><td>13</td><td>1,486</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>425</strong></td><td><strong>36,208</strong></td><td><strong>104</strong></td><td><strong>11,053</strong></td></tr>
+  </tbody>
+</table>
+<p class="note">Round 3 had 411 source files with 34,944 lines and 91 test files with 9,314 lines. Migrations are still 0000 to 0005. The new unpay and per-line budget routes needed no schema change.</p>
+
+<h3>F. Previous-findings tally</h3>
+<table>
+  <thead><tr><th>Status</th><th>IDs</th></tr></thead>
+  <tbody>
+    <tr><td><span class="st fixed">Fixed (7)</span></td><td>CQ-012, 020, 022, 036, 038, 039, 040</td></tr>
+    <tr><td><span class="st partial">Partially fixed (3)</span></td><td>CQ-037, 041, 042 (carried, narrowed)</td></tr>
+    <tr><td><span class="st notfixed">Not fixed / Regressed</span></td><td>none</td></tr>
+  </tbody>
+</table>
+
+<h3>G. Probe scripts (run from _cq_tmp/, then deleted)</h3>
+<pre><code>// probe.test.ts (run with bun test from apps/mobile; imports the real modules)
+// A: CQ-045
+const error = apiErrorFrom(400, { error: { code: "http_error", message: "Malformed JSON in request body" } });
+describeFailure(error);           // { unreachable: true } → classifyFailure: "retry", isServerFault: false
+// B: CQ-043. A real OutboxQueue; send() answers 500 for /categories/* and 200 otherwise
+await queue.load();
+queue.enqueue({ method: "PATCH", path: `/categories/${cat}`, body: { name: "Food" } });
+queue.enqueue({ method: "POST", path: "/transactions", body: { id: newId(), categoryId: cat, amountMinor: 2000 } });
+// …after 8 faults the PATCH is parked; then a second expense in the same category is queued
+queue.stuck();                    // [PATCH /categories/C, POST /transactions, POST /transactions]; 0 transactions sent
+// scan.ts / graph.ts: TypeScript AST counts, Tarjan SCC over runtime imports (relative, @/ and
+// @tick-taka/shared), 8-line windows of normalised lines ≥ 200 chars, exports grepped across apps/* and packages/*.</code></pre>
+</div>
+
+</body>
+</html>

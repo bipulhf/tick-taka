@@ -1,0 +1,43 @@
+$ bun run --filter '*' test
+@tick-taka/shared test: bun test v1.3.11 (af24e281)
+@tick-taka/shared test: 
+@tick-taka/shared test:  71 pass
+@tick-taka/shared test:  0 fail
+@tick-taka/shared test:  173 expect() calls
+@tick-taka/shared test: Ran 71 tests across 10 files. [353.00ms]
+@tick-taka/shared test: Exited with code 0
+@tick-taka/api test: bun test v1.3.11 (af24e281)
+@tick-taka/mobile test: bun test v1.3.11 (af24e281)
+@tick-taka/mobile test: 
+@tick-taka/mobile test:  14 pass
+@tick-taka/mobile test:  0 fail
+@tick-taka/mobile test:  23 expect() calls
+@tick-taka/mobile test: Ran 14 tests across 5 files. [107.00ms]
+@tick-taka/mobile test: Exited with code 0
+@tick-taka/api test: 
+@tick-taka/api test: test/ai.test.ts:
+@tick-taka/api test: [ai] call failed 22 | 
+@tick-taka/api test: 23 |   async json(request: AiJsonRequest) {
+@tick-taka/api test: 24 |     this.jsonRequests.push(request);
+@tick-taka/api test: 25 |     if (this.failNext) {
+@tick-taka/api test: 26 |       this.failNext = false;
+@tick-taka/api test: 27 |       throw new Error("provider down");
+@tick-taka/api test:                      ^
+@tick-taka/api test: error: provider down
+@tick-taka/api test:       at json (/media/bipulhf/Drive2/mehedi_bhai_projects/tick_taka/apps/api/test/fake-ai.ts:27:17)
+@tick-taka/api test:       at callAi (/media/bipulhf/Drive2/mehedi_bhai_projects/tick_taka/apps/api/src/ai/usage.ts:86:18)
+@tick-taka/api test:       at aiBreakdown (/media/bipulhf/Drive2/mehedi_bhai_projects/tick_taka/apps/api/src/modules/ai/planning.ts:113:24)
+@tick-taka/api test:       at <anonymous> (/media/bipulhf/Drive2/mehedi_bhai_projects/tick_taka/apps/api/src/modules/ai/routes.ts:81:20)
+@tick-taka/api test:       at dispatch (/media/bipulhf/Drive2/mehedi_bhai_projects/tick_taka/node_modules/hono/dist/compose.js:35:17)
+@tick-taka/api test:       at <anonymous> (/media/bipulhf/Drive2/mehedi_bhai_projects/tick_taka/node_modules/hono/dist/validator/validator.js:60:16)
+@tick-taka/api test: 
+@tick-taka/api test: 
+@tick-taka/api test: test/users.test.ts:
+@tick-taka/api test: [job] nightly-backup for 01M48BN26D4GFY3Z6XXFYR5BPG: "/tmp/tt-jobs-falTje/users/01M48BN26D4GFY3Z6XXFYR5BPG/app-2026-10-04.db"
+@tick-taka/api test: 
+@tick-taka/api test:  100 pass
+@tick-taka/api test:  0 fail
+@tick-taka/api test:  332 expect() calls
+@tick-taka/api test: Ran 100 tests across 9 files. [2.69s]
+@tick-taka/api test: Exited with code 0
+exit 0

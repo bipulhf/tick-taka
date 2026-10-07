@@ -8,61 +8,20 @@ import { currentToken } from "./http";
 import { outbox } from "./outbox";
 import { scheduleRefresh } from "./query-client";
 import { editTime } from "./server-clock";
-import { changedPathsFromCounts, syncChangesSchema } from "./sync-paths";
+import { createChangePuller } from "./sync-pull";
 
-const KEY = "tt.last-sync";
-let running = false;
-
-function outboxEmpty(timeoutMs = 30_000): Promise<boolean> {
-  if (outbox.sending === 0) return Promise.resolve(true);
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      stop();
-      resolve(false);
-    }, timeoutMs);
-    const stop = outbox.subscribe(() => {
-      if (outbox.sending > 0) return;
-      clearTimeout(timer);
-      stop();
-      resolve(true);
-    });
-  });
-}
-
-/**
- * Asks the server what changed since the last look (GET /sync/changes): edits
- * made by the assistant, the widget or another device. Only the screens those
- * tables feed are refreshed, the same way a local write refreshes them. Waits for
- * queued writes to land first so a refetch doesn't hide them.
- */
-export async function pullChanges(): Promise<void> {
-  const userId = profileStore.get()?.id;
-  if (running || !userId || !currentToken() || !onlineManager.isOnline()) return;
-  running = true;
-  const key = `${KEY}.${userId}`;
-  try {
-    const stored = Number(await AsyncStorage.getItem(key));
-    if (!stored) {
-      // First run for this user: everything on screen was just fetched; start from now.
-      await AsyncStorage.setItem(key, String(editTime()));
-      return;
-    }
-    // Queued writes land first, so a refetch doesn't hide them; try later if they don't.
-    if (!(await outboxEmpty())) return;
-    // Only which tables changed matters here, so ask for counts, not rows.
-    const reply = syncChangesSchema.safeParse(
-      await send("GET", `/sync/changes?since=${stored}&summary=true`),
-    );
-    if (!reply.success) return;
-    for (const path of changedPathsFromCounts(reply.data.counts ?? {})) scheduleRefresh(path);
-    await AsyncStorage.setItem(key, String(reply.data.serverTime));
-  } catch (error) {
-    // Offline or refused: the next reconnect or foreground tries again.
-    console.warn("sync: couldn't pull changes", error);
-  } finally {
-    running = false;
-  }
-}
+/** Pulls what changed on the server since the last look; see createChangePuller. */
+export const pullChanges = createChangePuller({
+  readyUser: () => {
+    const userId = profileStore.get()?.id;
+    return userId && currentToken() && onlineManager.isOnline() ? userId : null;
+  },
+  storage: AsyncStorage,
+  outbox,
+  fetchSummary: (since) => send("GET", `/sync/changes?since=${since}&summary=true`),
+  refresh: scheduleRefresh,
+  now: editTime,
+});
 
 /** Pulls changes now, on reconnect and whenever the app comes back to the front. */
 export function useChangeSync(): void {

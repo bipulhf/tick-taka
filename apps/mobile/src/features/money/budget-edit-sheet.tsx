@@ -1,15 +1,15 @@
 import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Switch, View } from "react-native";
+import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { Toggle } from "@/components/ui/toggle-row";
 import { formatAmount, formatMonth } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
-import { useColors } from "@/theme/colors";
 import { useBudgets } from "./queries";
 
 interface Line {
@@ -27,7 +27,6 @@ export function BudgetEditSheet({
 }) {
   const router = useRouter();
   const send = useOutbox();
-  const colors = useColors();
   const budgets = useBudgets(month);
   const [lines, setLines] = useState<Record<string, Line>>({});
   useEffect(() => {
@@ -93,16 +92,15 @@ export function BudgetEditSheet({
               accessibilityLabel={`${line.name} limit`}
               className="w-28"
             />
-            <Switch
+            <Toggle
               value={lines[line.categoryId]?.rollover ?? false}
-              onValueChange={(rollover) =>
+              onChange={(rollover) =>
                 setLines((l) => ({
                   ...l,
                   [line.categoryId]: { limit: l[line.categoryId]?.limit ?? "", rollover },
                 }))
               }
-              trackColor={{ true: colors.mint, false: colors.lineStrong }}
-              accessibilityLabel={`Roll over unspent ${line.name}`}
+              label={`Roll over unspent ${line.name}`}
             />
           </View>
         ))

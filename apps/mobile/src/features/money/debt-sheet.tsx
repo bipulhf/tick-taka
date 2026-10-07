@@ -3,7 +3,7 @@ import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Switch, View } from "react-native";
+import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import { DeleteButton } from "@/components/ui/delete-button";
@@ -13,6 +13,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { formatAmount, formatLocalDate } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
@@ -20,7 +21,6 @@ import { useAccounts } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
 import { useUserTime } from "@/lib/use-today";
-import { useColors } from "@/theme/colors";
 import { useDebts } from "./queries";
 
 type Direction = "owed_to_me" | "i_owe";
@@ -46,7 +46,6 @@ function DebtForm({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
   const remove = useRemove();
-  const colors = useColors();
   const { timeZone } = useUserTime();
   const { data: debts } = useDebts();
   const { data: accounts = [] } = useAccounts();
@@ -176,17 +175,7 @@ function DebtForm({ id }: { id: string | null }) {
         onClear={() => setRemind(null)}
         clearLabel="No reminder"
       />
-      {debt ? (
-        <View className="flex-row items-center justify-between">
-          <Text className="flex-1">Settled</Text>
-          <Switch
-            value={closed}
-            onValueChange={setClosed}
-            accessibilityLabel="Settled"
-            trackColor={{ true: colors.mint, false: colors.lineStrong }}
-          />
-        </View>
-      ) : null}
+      {debt ? <ToggleRow label="Settled" value={closed} onChange={setClosed} /> : null}
     </Sheet>
   );
 }

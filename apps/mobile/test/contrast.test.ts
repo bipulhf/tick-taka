@@ -8,6 +8,7 @@ import {
   palette,
   rewardThemes,
   SOLE_CUE_MARKS,
+  SWITCH_TRACK,
   themedPalette,
 } from "../src/theme/palette";
 
@@ -149,6 +150,20 @@ describe("component boundaries reach 3:1", () => {
             pair: `${token} on ${surface}`,
             ok: contrast(colors[token], colors[surface]) >= UI_AA,
           }).toEqual({ pair: `${token} on ${surface}`, ok: true });
+        }
+      }
+    });
+  }
+
+  for (const { name, colors } of variants) {
+    test(`${name}: switch tracks, on and off, on background and cards`, () => {
+      for (const state of ["on", "off"] as const) {
+        for (const surface of ["background", "card"] as const) {
+          const pair = `${state} track (${SWITCH_TRACK[state]}) on ${surface}`;
+          expect({
+            pair,
+            ok: contrast(colors[SWITCH_TRACK[state]], colors[surface]) >= UI_AA,
+          }).toEqual({ pair, ok: true });
         }
       }
     });

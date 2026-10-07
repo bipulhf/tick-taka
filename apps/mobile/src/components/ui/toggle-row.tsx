@@ -1,5 +1,6 @@
 import { Pressable, Switch, View } from "react-native";
 import { useColors } from "@/theme/colors";
+import { SWITCH_TRACK } from "@/theme/palette";
 import { Text } from "./text";
 
 /**
@@ -10,9 +11,33 @@ import { Text } from "./text";
 function useSwitchColors(value: boolean) {
   const colors = useColors();
   return {
-    trackColor: { true: colors.ink, false: colors.lineStrong },
+    trackColor: { true: colors[SWITCH_TRACK.on], false: colors[SWITCH_TRACK.off] },
     thumbColor: value ? colors.background : undefined,
   };
+}
+
+/**
+ * A switch on its own, for a row that already names it (a budget line's rollover).
+ * Prefer ToggleRow, where the whole row toggles.
+ */
+export function Toggle({
+  label,
+  value,
+  onChange,
+}: {
+  /** What screen readers call it. */
+  label: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <Switch
+      value={value}
+      onValueChange={onChange}
+      accessibilityLabel={label}
+      {...useSwitchColors(value)}
+    />
+  );
 }
 
 /**

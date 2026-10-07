@@ -85,6 +85,16 @@ export const SOLE_CUE_MARKS = [
   "lineStrong",
 ] as const satisfies readonly ColorName[];
 
+/**
+ * A switch's track (components/ui/toggle-row.tsx): on reads like a selected chip, in
+ * ink. Its state is a sole cue, so both keep 3:1 on every surface; mint (2.21:1 on a
+ * light card) is too faint and means money in.
+ */
+export const SWITCH_TRACK = {
+  on: "ink",
+  off: "lineStrong",
+} as const satisfies Record<"on" | "off", ColorName>;
+
 /** Text and icons on mango and every other semantic fill: always dark, in both themes. */
 export const ON_ACCENT = "#23202B";
 

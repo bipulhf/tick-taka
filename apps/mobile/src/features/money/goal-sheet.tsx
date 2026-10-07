@@ -3,15 +3,15 @@ import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Switch, View } from "react-native";
+import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
-import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { formatLocalDate } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
@@ -20,7 +20,6 @@ import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
 import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
-import { useColors } from "@/theme/colors";
 import { useGoals } from "./queries";
 
 const EMOJIS = ["🫙", "💻", "🏍️", "✈️", "🏠", "🎓", "💍", "🕋", "🚑"];
@@ -41,7 +40,6 @@ function GoalForm({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
   const remove = useRemove();
-  const colors = useColors();
   const { data: goals } = useGoals();
   const { data: accounts = [] } = useAccounts();
   const { data: settings } = useSettings();
@@ -132,15 +130,11 @@ function GoalForm({ id }: { id: string | null }) {
         options={accounts.map((a) => ({ id: a.id, label: a.name }))}
         onChange={setAccountId}
       />
-      <View className="flex-row items-center justify-between">
-        <Text className="flex-1">Add a monthly “move money to the jar” task</Text>
-        <Switch
-          value={createTasks}
-          onValueChange={setCreateTasks}
-          accessibilityLabel="Add a monthly move money to the jar task"
-          trackColor={{ true: colors.mint, false: colors.lineStrong }}
-        />
-      </View>
+      <ToggleRow
+        label="Add a monthly “move money to the jar” task"
+        value={createTasks}
+        onChange={setCreateTasks}
+      />
     </Sheet>
   );
 }

@@ -105,6 +105,13 @@ describe("colour meaning", () => {
     expect(offenders("mango", MANGO_OK)).toEqual([]);
   });
 
+  test("every switch is the shared one (ink when on), never a hand-coloured track", () => {
+    const own = sources
+      .filter(({ path }) => path !== "components/ui/toggle-row.tsx")
+      .filter(({ text }) => /<Switch\b|trackColor/.test(text));
+    expect(own.map(({ path }) => path)).toEqual([]);
+  });
+
   test("list rows never use mango as an icon colour", () => {
     const rows = sources.filter(({ text }) => /iconColor=["{]*"mango"/.test(text));
     expect(rows.map(({ path }) => path)).toEqual([]);

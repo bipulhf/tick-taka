@@ -21,6 +21,7 @@ import { useArchiveHabit } from "./use-archive-habit";
 type Schedule = "daily" | "weekly" | "n_per_week";
 const EMOJIS = ["💧", "🏃", "📖", "🧘", "🥗", "😴", "✍️", "🙏", "💪", "🎸"];
 const REMIND = ["07:00", "09:00", "13:00", "18:00", "21:00"];
+const perWeekLabel = (n: number | string) => `${n}× a week`;
 
 function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
   const router = useRouter();
@@ -119,7 +120,9 @@ function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
         <PickerField
           label="How often"
           value={String(perWeek)}
-          options={[2, 3, 4, 5, 6].map((n) => ({ id: String(n), label: `${n}× a week` }))}
+          options={[2, 3, 4, 5, 6].map((n) => ({ id: String(n), label: perWeekLabel(n) }))}
+          // Tiki can set 1 or 7 (the schema allows 1-7): it reads "7× a week", not "7".
+          describe={perWeekLabel}
           onChange={(n) => setPerWeek(Number(n ?? perWeek))}
         />
       ) : null}

@@ -6,15 +6,26 @@ import {
   zonedTimeToUtc,
 } from "@tick-taka/shared/dates";
 
-/** Android date dialog; resolves to a local YYYY-MM-DD or null when dismissed. */
+/** A local YYYY-MM-DD as the dialog's Date (its own clock, not the user's zone). */
+function dialogDate(date: string): Date {
+  const [year, month, day] = date.split("-").map(Number) as [number, number, number];
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * Android date dialog; resolves to a local YYYY-MM-DD or null when dismissed. With
+ * `min` (a local YYYY-MM-DD), earlier days can't be picked.
+ */
 export function pickDate(
   initial: number = Date.now(),
   timeZone = DEFAULT_TIME_ZONE,
+  { min }: { min?: string } = {},
 ): Promise<string | null> {
   return new Promise((resolve) => {
     const p = localParts(initial, timeZone);
     DateTimePickerAndroid.open({
       value: new Date(p.year, p.month - 1, p.day),
+      minimumDate: min ? dialogDate(min) : undefined,
       mode: "date",
       onChange: (event, date) => {
         if (event.type !== "set" || !date) return resolve(null);

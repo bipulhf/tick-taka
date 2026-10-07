@@ -1,4 +1,4 @@
-import { endOfLocalDay } from "@tick-taka/shared/dates";
+import { addDays, endOfLocalDay, startOfLocalDay } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
@@ -13,6 +13,7 @@ import { SkeletonForm } from "@/components/ui/skeleton";
 import { TextField } from "@/components/ui/text-field";
 import { ToggleRow } from "@/components/ui/toggle-row";
 import { formatLocalDate } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { useAccounts, useSettings } from "@/lib/queries";
@@ -114,11 +115,18 @@ function GoalForm({ id }: { id: string | null }) {
         value={deadline ? formatLocalDate(deadline) : null}
         placeholder="No deadline"
         onPress={async () => {
+          // A deadline is a day still ahead: the dialog starts there and won't go earlier.
+          const tomorrow = addDays(today, 1);
           const picked = await pickDate(
-            deadline ? endOfLocalDay(deadline, timeZone) - 1 : Date.now(),
+            deadline && deadline >= tomorrow
+              ? endOfLocalDay(deadline, timeZone) - 1
+              : startOfLocalDay(tomorrow, timeZone),
             timeZone,
+            { min: tomorrow },
           );
-          if (picked) setDeadline(picked > today ? picked : deadline);
+          if (!picked) return;
+          if (picked > today) setDeadline(picked);
+          else notify("Pick a day after today for the deadline");
         }}
         onClear={() => setDeadline(null)}
         clearLabel="No deadline"

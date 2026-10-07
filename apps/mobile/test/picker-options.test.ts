@@ -23,6 +23,14 @@ describe("withCurrentOption", () => {
     ]);
   });
 
+  test("a habit frequency Tiki set outside the presets reads as a frequency", () => {
+    const perWeek = [2, 3, 4, 5, 6].map((n) => ({ id: String(n), label: `${n}× a week` }));
+    expect(withCurrentOption(perWeek, "7", (n) => `${n}× a week`)[0]).toEqual({
+      id: "7",
+      label: "7× a week",
+    });
+  });
+
   test("without describe the value labels itself (an emoji from Tiki)", () => {
     expect(withCurrentOption([{ id: "💧", label: "💧" }], "🦄")[0]).toEqual({
       id: "🦄",

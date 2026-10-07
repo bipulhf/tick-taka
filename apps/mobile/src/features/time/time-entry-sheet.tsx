@@ -127,9 +127,9 @@ function TimeEntryForm({ entry }: { entry: TimeEntry | null }) {
       <PickerField
         label="Area"
         value={areaId}
-        placeholder="No area"
+        noneLabel="No area"
         options={areas.map((area) => ({ id: area.id, label: area.name, emoji: area.emoji }))}
-        onChange={(id) => id && setAreaId(id)}
+        onChange={setAreaId}
       />
       <ToggleRow label="Billable" value={billable} onChange={setBillable} />
     </Sheet>

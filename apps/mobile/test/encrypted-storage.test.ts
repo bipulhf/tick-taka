@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  base64ToBytes,
   type Cipher,
   createEncryptedStorage,
   KeyUnavailableError,
@@ -131,5 +132,25 @@ describe("loading the storage key", () => {
     expect(await Promise.all([storageKey(), storageKey()])).toEqual(["key", "key"]);
     expect(await storageKey()).toBe("key");
     expect(loads).toBe(1);
+  });
+
+  test("a value moved aside opens again once the cipher can read it, and its copy goes", async () => {
+    const base = memory();
+    base.data.set(`tt.outbox${UNREADABLE_SUFFIX}`, SEALED_PREFIX + (await fake.encrypt("queued")));
+    const storage = createEncryptedStorage(base, fake);
+    expect(await storage.recover("tt.outbox")).toBe("queued");
+    expect(base.data.has(`tt.outbox${UNREADABLE_SUFFIX}`)).toBe(false);
+    expect(await storage.recover("tt.outbox")).toBeNull();
+  });
+
+  test("a value that still can't be opened stays aside", async () => {
+    const base = memory();
+    base.data.set(`tt.outbox${UNREADABLE_SUFFIX}`, `${SEALED_PREFIX}garbage`);
+    expect(await createEncryptedStorage(base, broken).recover("tt.outbox")).toBeNull();
+    expect(base.data.has(`tt.outbox${UNREADABLE_SUFFIX}`)).toBe(true);
+  });
+
+  test("base64 text turns back into the bytes it encodes", () => {
+    expect([...base64ToBytes(btoa("\u0000\u00ffhi"))]).toEqual([0, 255, 104, 105]);
   });
 });

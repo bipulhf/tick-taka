@@ -1,7 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AESEncryptionKey, AESSealedData, aesDecryptAsync, aesEncryptAsync } from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
-import { type Cipher, createEncryptedStorage, retryingKey } from "./encrypted-storage";
+import {
+  base64ToBytes,
+  type Cipher,
+  createEncryptedStorage,
+  retryingKey,
+} from "./encrypted-storage";
 import { notify } from "./notify";
 
 /** A random AES-256 key, created on first use and kept in the Android Keystore-backed store. */
@@ -23,7 +28,10 @@ const aesGcm: Cipher = {
     return sealed.combined("base64");
   },
   async decrypt(sealed) {
-    const bytes = await aesDecryptAsync(AESSealedData.fromCombined(sealed), await storageKey());
+    // Android's fromCombined takes bytes only: handed the base64 string as is, it
+    // throws, and every value read as "sealed with a lost key".
+    const combined = AESSealedData.fromCombined(base64ToBytes(sealed));
+    const bytes = await aesDecryptAsync(combined, await storageKey());
     return new TextDecoder().decode(bytes);
   },
 };

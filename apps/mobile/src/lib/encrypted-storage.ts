@@ -46,6 +46,24 @@ export const SEALED_PREFIX = "enc1:";
 /** Where a value that no key can open is kept, instead of being deleted. */
 export const UNREADABLE_SUFFIX = ".unreadable";
 
+/** Bytes from base64 text (native AES takes bytes; it can't take the string). */
+export function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+/** An encrypted storage, plus a way back for values that were moved aside. */
+export interface EncryptedStorage extends KeyValueStorage {
+  /**
+   * Opens `${key}.unreadable` if the key can open it now, deletes that copy and
+   * returns the value; null when there is none or it still can't be opened. Throws
+   * KeyUnavailableError while the key can't be loaded.
+   */
+  recover(key: string): Promise<string | null>;
+}
+
 export interface EncryptedStorageEvents {
   /** A value was sealed with a key that is gone; it was moved to `${key}.unreadable`. */
   onUnreadable?(key: string): void;
@@ -70,7 +88,7 @@ export function createEncryptedStorage(
   cipher: Cipher,
   events: EncryptedStorageEvents = {},
   { plainFallback = true }: { plainFallback?: boolean } = {},
-): KeyValueStorage {
+): EncryptedStorage {
   return {
     async getItem(key) {
       const raw = await base.getItem(key);
@@ -97,5 +115,17 @@ export function createEncryptedStorage(
       await base.setItem(key, stored);
     },
     removeItem: (key) => base.removeItem(key),
+    async recover(key) {
+      const raw = await base.getItem(key + UNREADABLE_SUFFIX);
+      if (raw === null || !raw.startsWith(SEALED_PREFIX)) return null;
+      try {
+        const value = await cipher.decrypt(raw.slice(SEALED_PREFIX.length));
+        await base.removeItem(key + UNREADABLE_SUFFIX);
+        return value;
+      } catch (error) {
+        if (error instanceof KeyUnavailableError) throw error;
+        return null;
+      }
+    },
   };
 }

@@ -7,7 +7,7 @@ import { currentToken } from "./http";
 import { notify } from "./notify";
 import { type NewExpense, withNewExpense } from "./optimistic-spend";
 import { describeFailure } from "./outbox-failure";
-import type { OutboxRequest } from "./outbox-policy";
+import { type OutboxRequest, parsePersistedOutbox } from "./outbox-policy";
 import { OutboxQueue } from "./outbox-queue";
 import { phoneWrites } from "./phone-writes";
 import { keys, type TodayData } from "./queries";
@@ -67,10 +67,33 @@ export const outbox = new OutboxQueue({
 
 let started: Promise<void> | null = null;
 
-/** Loads the saved queue (and any writes an older build left in the query cache), then sends. */
+/**
+ * Queued writes an earlier build moved aside as unreadable (it couldn't decrypt its
+ * own data); they open now, so they are sent after all. Ids in the bodies keep a
+ * write that did land from landing twice.
+ */
+async function takeRecoveredOutbox(): Promise<OutboxRequest[]> {
+  const requests: OutboxRequest[] = [];
+  for (const key of [STORAGE_KEY, EARLY_KEY]) {
+    const raw = await secureStorage.recover(key).catch(() => null);
+    if (!raw) continue;
+    try {
+      const entries = parsePersistedOutbox(JSON.parse(raw))?.entries ?? [];
+      requests.push(...entries.map((entry) => entry.request));
+    } catch {
+      // Damaged beyond reading: nothing to send.
+    }
+  }
+  return requests;
+}
+
+/**
+ * Loads the saved queue (with any writes an older build left in the query cache or
+ * moved aside), then sends.
+ */
 export function startOutbox(): Promise<void> {
   started ??= (async () => {
-    await outbox.load(await takeLegacyOutbox());
+    await outbox.load([...(await takeRecoveredOutbox()), ...(await takeLegacyOutbox())]);
   })();
   return started;
 }

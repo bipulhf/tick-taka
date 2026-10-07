@@ -6,6 +6,7 @@ import { SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
 import { formatMinutes, formatWhen } from "@/lib/format";
 import type { TaskRow as Task } from "@/lib/queries";
+import { useUserTime } from "@/lib/use-today";
 import { useTaskActions } from "./use-task-actions";
 
 export interface TaskRowProps {
@@ -21,13 +22,16 @@ const DEADLINE_WARN_MS = 3 * 86_400_000;
 export const TASK_ROW_INSET = 46;
 
 export function TaskRow({ task, size = "md", showWhen = false, areaEmoji }: TaskRowProps) {
+  const { timeZone } = useUserTime();
   const router = useRouter();
   const actions = useTaskActions();
   const done = task.status === "done";
   const deadlineSoon =
     task.deadlineAt !== null && !done && task.deadlineAt - Date.now() < DEADLINE_WARN_MS;
   const meta = [
-    showWhen && task.doAt !== null ? formatWhen(task.doAt, task.hasTime) : null,
+    showWhen && task.doAt !== null
+      ? formatWhen(task.doAt, task.hasTime, Date.now(), timeZone)
+      : null,
     task.estimateMin ? formatMinutes(task.estimateMin) : null,
     task.rrule ? "↻" : null,
   ].filter(Boolean);
@@ -76,7 +80,7 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji }: Task
               {[
                 ...meta,
                 deadlineSoon && task.deadlineAt
-                  ? `Due ${formatWhen(task.deadlineAt, false)}`
+                  ? `Due ${formatWhen(task.deadlineAt, false, Date.now(), timeZone)}`
                   : null,
               ]
                 .filter(Boolean)

@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native";
 import { type A11yAction, a11yActionProps } from "@/components/ui/a11y-actions";
 import { Text } from "@/components/ui/text";
 import { formatClock, formatMinutes } from "@/lib/format";
+import { useUserTime } from "@/lib/use-today";
 import type { PlanTask } from "./queries";
 
 /** What dragging does, offered to screen readers in the actions menu instead. */
@@ -19,6 +20,7 @@ export function CompactTask({
   tone?: "sky" | "grape" | "coral" | "neutral";
   actions?: PlanAction[];
 }) {
+  const { timeZone } = useUserTime();
   const router = useRouter();
   const bar = { sky: "bg-sky", grape: "bg-grape", coral: "bg-coral", neutral: "bg-line-strong" }[
     tone
@@ -42,7 +44,7 @@ export function CompactTask({
       </Text>
       <Text variant="caption" tone="muted" numeric>
         {[
-          task.hasTime && task.doAt ? formatClock(task.doAt) : null,
+          task.hasTime && task.doAt ? formatClock(task.doAt, timeZone) : null,
           task.estimateMin ? formatMinutes(task.estimateMin) : null,
         ]
           .filter(Boolean)

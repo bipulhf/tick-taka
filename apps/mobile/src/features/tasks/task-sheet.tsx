@@ -185,7 +185,7 @@ export function TaskSheet({ id }: { id: string | null }) {
             : "pick";
   // What's set behind "More", so a closed disclosure still says so.
   const moreSummary = [
-    form.deadlineAt ? `Deadline ${formatWhen(form.deadlineAt, false)}` : null,
+    form.deadlineAt ? `Deadline ${formatWhen(form.deadlineAt, false, Date.now(), timeZone)}` : null,
     form.top3Date === today ? "Top three" : null,
     form.rrule || parsedRepeat ? "Repeats" : null,
     form.priority !== "normal" ? `${form.priority === "high" ? "High" : "Low"} priority` : null,
@@ -251,7 +251,7 @@ export function TaskSheet({ id }: { id: string | null }) {
               id: "pick",
               label:
                 whenValue === "pick" && form.doAt
-                  ? `${formatWhen(form.doAt, false)}${form.whenSlot === "evening" ? " · evening" : ""}`
+                  ? `${formatWhen(form.doAt, false, Date.now(), timeZone)}${form.whenSlot === "evening" ? " · evening" : ""}`
                   : "Pick a date…",
             },
             { id: "someday", label: "Someday" },
@@ -274,7 +274,7 @@ export function TaskSheet({ id }: { id: string | null }) {
         <Button
           label={
             form.hasTime
-              ? `At ${formatWhen(form.doAt, true).split(", ")[1] ?? "a set time"}`
+              ? `At ${formatWhen(form.doAt, true, Date.now(), timeZone).split(", ")[1] ?? "a set time"}`
               : "Add a time"
           }
           icon="clock-outline"

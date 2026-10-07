@@ -1,8 +1,9 @@
-import { toLocalDate } from "@tick-taka/shared/dates";
 import { useLocalSearchParams } from "expo-router";
 import { DayTimeline } from "@/features/plan/day-timeline";
+import { useToday } from "@/lib/use-today";
 
 export default function DayRoute() {
   const { date } = useLocalSearchParams<{ date?: string }>();
-  return <DayTimeline date={date ?? toLocalDate(Date.now())} />;
+  const today = useToday();
+  return <DayTimeline date={date ?? today} />;
 }

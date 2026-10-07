@@ -1,4 +1,4 @@
-import { toLocalDate, weekdayOf } from "@tick-taka/shared/dates";
+import { weekdayOf } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
 import { Group } from "@/components/ui/group";
 import type { IconName } from "@/components/ui/icon";
@@ -10,6 +10,7 @@ import { SkeletonCard } from "@/components/ui/skeleton";
 import { plural } from "@/lib/format";
 import { bestText, streakText } from "@/lib/gentle-progress";
 import { useAiStatus } from "@/lib/queries";
+import { useToday } from "@/lib/use-today";
 import type { ColorName } from "@/theme/colors";
 import { useGamification } from "./queries";
 
@@ -74,7 +75,7 @@ export function ReviewHome() {
   const router = useRouter();
   const game = useGamification();
   const ai = useAiStatus();
-  const sunday = weekdayOf(toLocalDate(Date.now())) === 0;
+  const sunday = weekdayOf(useToday()) === 0;
   const progress = game.data;
   const entries = ENTRIES.filter((e) => !e.ai || ai.data?.configured);
   const settings = entries.filter((e) => e.href === "/settings");

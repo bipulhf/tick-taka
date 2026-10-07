@@ -1,4 +1,4 @@
-import { endOfLocalDay } from "@tick-taka/shared/dates";
+import { startOfLocalDay } from "@tick-taka/shared/dates";
 import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -15,6 +15,7 @@ import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { useUserTime } from "@/lib/use-today";
 import { useEvents } from "./queries";
 
 const EMOJIS = ["✈️", "🎉", "🕌", "🎂", "💍", "🏖️", "🏕️", "🎓", "🛍️"];
@@ -39,6 +40,7 @@ function EventForm({ event }: { event: Event }) {
   const router = useRouter();
   const send = useOutbox();
   const remove = useRemove();
+  const { timeZone } = useUserTime();
   const [name, setName] = useState(event.name);
   const [emoji, setEmoji] = useState(event.emoji);
   const [budget, setBudget] = useState(event.budgetMinor ? String(toMajor(event.budgetMinor)) : "");
@@ -101,14 +103,16 @@ function EventForm({ event }: { event: Event }) {
           span="half"
           value={formatLocalDate(startsOn)}
           onPress={async () =>
-            setStartsOn((await pickDate(endOfLocalDay(startsOn) - 1)) ?? startsOn)
+            setStartsOn((await pickDate(startOfLocalDay(startsOn, timeZone), timeZone)) ?? startsOn)
           }
         />
         <DateField
           label="To"
           span="half"
           value={formatLocalDate(endsOn)}
-          onPress={async () => setEndsOn((await pickDate(endOfLocalDay(endsOn) - 1)) ?? endsOn)}
+          onPress={async () =>
+            setEndsOn((await pickDate(startOfLocalDay(endsOn, timeZone), timeZone)) ?? endsOn)
+          }
         />
       </View>
     </Sheet>

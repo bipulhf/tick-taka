@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { addMonths, toLocalMonth } from "@tick-taka/shared/dates";
+import { addMonths } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
 import { View } from "react-native";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { usePrivacy } from "@/lib/privacy";
 import { useAiStatus, useAreas, useCategories } from "@/lib/queries";
+import { useThisMonth } from "@/lib/use-today";
 import { useMonthlyReview } from "./queries";
 
 /** Budgets vs actual, net worth change, hourly rates, Someday, then next month's budgets. */
@@ -23,7 +24,7 @@ export function MonthlyReview() {
   const router = useRouter();
   const send = useOutbox();
   const hidden = usePrivacy();
-  const month = toLocalMonth(Date.now());
+  const month = useThisMonth();
   const review = useMonthlyReview(month);
   const ai = useAiStatus();
   const { data: areas = [] } = useAreas();

@@ -8,6 +8,7 @@ import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { ToggleRow } from "@/components/ui/toggle-row";
 import { formatWhen } from "@/lib/format";
+import { useUserTime } from "@/lib/use-today";
 import type { Form, Priority } from "./task-form";
 
 /** What sits behind the task sheet's "More options": everything past When and Estimate. */
@@ -36,6 +37,7 @@ export function TaskMoreFields({
   projects: { data?: { id: string; name: string }[] };
   setDeadline: () => Promise<void>;
 }) {
+  const { timeZone } = useUserTime();
   return (
     <>
       <PickerField
@@ -45,7 +47,9 @@ export function TaskMoreFields({
         options={[
           {
             id: "pick",
-            label: form.deadlineAt ? formatWhen(form.deadlineAt, false) : "Pick a date…",
+            label: form.deadlineAt
+              ? formatWhen(form.deadlineAt, false, Date.now(), timeZone)
+              : "Pick a date…",
           },
         ]}
         onChange={(choice) => (choice === null ? set("deadlineAt", null) : void setDeadline())}

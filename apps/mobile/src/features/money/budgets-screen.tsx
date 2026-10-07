@@ -1,4 +1,3 @@
-import { toLocalMonth } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -18,6 +17,7 @@ import { formatMonth } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
+import { useThisMonth } from "@/lib/use-today";
 import { useBudgets } from "./queries";
 
 const BUCKETS = [
@@ -29,7 +29,8 @@ const BUCKETS = [
 /** Monthly limits in three buckets, with rollover and a calm pace heads-up. */
 export function BudgetsScreen() {
   const router = useRouter();
-  const [month, setMonth] = useState(() => toLocalMonth(Date.now()));
+  const thisMonth = useThisMonth();
+  const [month, setMonth] = useState(thisMonth);
   const send = useOutbox();
   const budgets = useBudgets(month);
   const data = budgets.data;

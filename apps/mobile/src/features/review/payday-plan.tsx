@@ -1,4 +1,3 @@
-import { toLocalMonth } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
@@ -18,12 +17,13 @@ import { formatAmount } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useSettings } from "@/lib/queries";
+import { useThisMonth } from "@/lib/use-today";
 
 /** Payday plan: split the salary across rent, bills, family, jars and flexible spending until ৳0 is left. */
 export function PaydayPlan() {
   const router = useRouter();
   const send = useOutbox();
-  const month = toLocalMonth(Date.now());
+  const month = useThisMonth();
   const budgets = useBudgets(month);
   const goals = useGoals();
   const { data: settings } = useSettings();

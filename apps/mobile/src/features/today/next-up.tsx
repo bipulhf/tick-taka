@@ -14,6 +14,7 @@ import { formatClock, formatMinutes } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { type TodayData, useAccounts, useSettings } from "@/lib/queries";
+import { useUserTime } from "@/lib/use-today";
 import { payNeedsRate } from "./pay-needs-rate";
 
 type Item = TodayData["timeline"][number];
@@ -73,6 +74,7 @@ export function NextUp({
   data: TodayData;
   areaEmoji: (areaId: string | null) => string | undefined;
 }) {
+  const { timeZone } = useUserTime();
   const router = useRouter();
   const topIds = new Set(data.topThree.map((t) => t.id));
   const now = Date.now();
@@ -123,7 +125,7 @@ export function NextUp({
                       ? `${item.person} owes you`
                       : `You owe ${item.person}`
                   }
-                  subtitle={formatClock(item.at)}
+                  subtitle={formatClock(item.at, timeZone)}
                   right={<Amount minor={item.principalMinor} variant="strong" animate={false} />}
                   onPress={() => router.push("/money/debts")}
                 />

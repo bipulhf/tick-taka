@@ -1,4 +1,4 @@
-import { addDays, toLocalDate } from "@tick-taka/shared/dates";
+import { addDays, startOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
@@ -20,6 +20,7 @@ import { formatLocalDate } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { useRemove } from "@/lib/use-remove";
+import { useUserTime } from "@/lib/use-today";
 import { useEvents } from "./queries";
 
 /** A trip or celebration with its own budget, collecting spending from every account. */
@@ -28,7 +29,8 @@ export function EventsScreen() {
   const send = useOutbox();
   const remove = useRemove();
   const events = useEvents();
-  const today = toLocalDate(Date.now());
+  const { timeZone } = useUserTime();
+  const today = toLocalDate(Date.now(), timeZone);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [budget, setBudget] = useState("");
@@ -78,13 +80,19 @@ export function EventsScreen() {
               label="From"
               span="half"
               value={formatLocalDate(startsOn)}
-              onPress={async () => setStartsOn((await pickDate()) ?? startsOn)}
+              onPress={async () =>
+                setStartsOn(
+                  (await pickDate(startOfLocalDay(startsOn, timeZone), timeZone)) ?? startsOn,
+                )
+              }
             />
             <DateField
               label="To"
               span="half"
               value={formatLocalDate(endsOn)}
-              onPress={async () => setEndsOn((await pickDate()) ?? endsOn)}
+              onPress={async () =>
+                setEndsOn((await pickDate(startOfLocalDay(endsOn, timeZone), timeZone)) ?? endsOn)
+              }
             />
           </View>
           <Button label="Create event" onPress={save} disabled={!name.trim()} />

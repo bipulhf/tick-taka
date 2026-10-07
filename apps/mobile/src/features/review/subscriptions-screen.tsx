@@ -16,6 +16,7 @@ import { Text } from "@/components/ui/text";
 import { formatWhen, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
+import { useUserTime } from "@/lib/use-today";
 import { useSubscriptions } from "./queries";
 import { loadDismissed, setDismissed, useDismissed } from "./spotter-dismissed";
 
@@ -24,6 +25,7 @@ import { loadDismissed, setDismissed, useDismissed } from "./spotter-dismissed";
  * (with a reminder before it's due); a swipe hides one that isn't a subscription.
  */
 export function SubscriptionsScreen() {
+  const { timeZone } = useUserTime();
   const send = useOutbox();
   const spotted = useSubscriptions();
   const dismissed = useDismissed();
@@ -125,7 +127,7 @@ export function SubscriptionsScreen() {
                       <View className="flex-row items-center gap-1">
                         <Amount minor={item.amountMinor} variant="caption" animate={false} />
                         <Text variant="caption" tone="muted">
-                          a month · last {formatWhen(item.lastAt, false)}
+                          a month · last {formatWhen(item.lastAt, false, Date.now(), timeZone)}
                         </Text>
                       </View>
                     </View>

@@ -19,6 +19,7 @@ import { pickDate } from "@/lib/pick-date";
 import { useAccounts } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { useUserTime } from "@/lib/use-today";
 import { useColors } from "@/theme/colors";
 import { useDebts } from "./queries";
 
@@ -46,6 +47,7 @@ function DebtForm({ id }: { id: string | null }) {
   const send = useOutbox();
   const remove = useRemove();
   const colors = useColors();
+  const { timeZone } = useUserTime();
   const { data: debts } = useDebts();
   const { data: accounts = [] } = useAccounts();
   const debt = id ? debts?.find((d) => d.id === id) : undefined;
@@ -56,12 +58,14 @@ function DebtForm({ id }: { id: string | null }) {
   const [accountId, setAccountId] = useState<string | null>(null);
   const reminder = debt?.remindAt ?? debt?.dueAt ?? null;
   const [remind, setRemind] = useState<string | null>(
-    reminder === null ? null : toLocalDate(reminder),
+    reminder === null ? null : toLocalDate(reminder, timeZone),
   );
   const [closed, setClosed] = useState(Boolean(debt?.closedAt));
   const save = () => {
     if (!person.trim()) return;
-    const remindAt = remind ? zonedTimeToUtc({ ...parseLocalDate(remind), hour: 10 }) : null;
+    const remindAt = remind
+      ? zonedTimeToUtc({ ...parseLocalDate(remind), hour: 10 }, timeZone)
+      : null;
     if (debt) {
       send({
         method: "PATCH",
@@ -166,7 +170,7 @@ function DebtForm({ id }: { id: string | null }) {
         value={remind ? formatLocalDate(remind) : null}
         placeholder="No reminder"
         onPress={async () => {
-          const picked = await pickDate();
+          const picked = await pickDate(Date.now(), timeZone);
           if (picked) setRemind(picked);
         }}
         onClear={() => setRemind(null)}

@@ -6,6 +6,7 @@ import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-r
 import { Text } from "@/components/ui/text";
 import { formatWhen } from "@/lib/format";
 import { useRemove } from "@/lib/use-remove";
+import { useUserTime } from "@/lib/use-today";
 import type { Transaction } from "./queries";
 import { transactionAmount } from "./transaction-amount";
 
@@ -37,6 +38,7 @@ export function TransactionRow({
   /** "group" is a full-width row of a Group, which provides the rounding and inset. */
   placement?: keyof typeof PLACEMENT;
 }) {
+  const { timeZone } = useUserTime();
   const router = useRouter();
   const remove = useRemove();
   const category = lookup.category(tx.categoryId);
@@ -76,7 +78,7 @@ export function TransactionRow({
             {[
               category && tx.note ? category.name : null,
               tx.type !== "transfer" ? account?.name : null,
-              formatWhen(tx.occurredAt, true),
+              formatWhen(tx.occurredAt, true, Date.now(), timeZone),
             ]
               .filter(Boolean)
               .join(" · ")}

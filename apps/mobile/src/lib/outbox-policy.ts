@@ -83,7 +83,6 @@ export function classifyFailure(entry: OutboxEntry, failure: FailureInfo): Failu
   return "reject";
 }
 
-/** Whether a failed attempt could have changed data on the server before it failed. */
 /**
  * After this many server errors in a row, a write is set aside as stuck so the ones
  * queued behind it can go. With the backoff that is about two minutes of trying.
@@ -184,6 +183,7 @@ export function tiedTo(request: OutboxRequest, ties: GroupTies): boolean {
   return false;
 }
 
+/** Whether a failed attempt could have changed data on the server before it failed. */
 export function mayHaveReachedServer(failure: FailureInfo): boolean {
   return Boolean(failure.unreachable) || (failure.status !== undefined && failure.status >= 500);
 }

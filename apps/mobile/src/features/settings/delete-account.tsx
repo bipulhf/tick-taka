@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
@@ -8,8 +10,15 @@ import { TextField } from "@/components/ui/text-field";
 import { deleteAccount } from "@/lib/auth";
 import { usePendingWrites } from "@/lib/connection";
 import { friendlyError } from "@/lib/error-copy";
-import { DELETE_WORD, deleteAccountSummary, isDeleteConfirmed } from "./delete-account-rules";
+import {
+  canDeleteAccount,
+  DELETE_WORD,
+  deleteAccountSummary,
+  exportStepNote,
+} from "./delete-account-rules";
 import { useExportData } from "./use-export-data";
+
+const COPY_CONFIRM_LABEL = "I've checked my copy is saved, or I don't need one";
 
 /**
  * The one action that can't be undone, so it gets its own page: what goes, a copy
@@ -17,11 +26,12 @@ import { useExportData } from "./use-export-data";
  */
 export function DeleteAccountScreen() {
   const pending = usePendingWrites();
-  const { busy: exporting, exportData } = useExportData();
+  const { busy: exporting, shared, exportData } = useExportData();
   const [typed, setTyped] = useState("");
+  const [copyConfirmed, setCopyConfirmed] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const confirmed = isDeleteConfirmed(typed);
+  const confirmed = canDeleteAccount(typed, copyConfirmed);
 
   const remove = async () => {
     if (!confirmed) return;
@@ -41,9 +51,7 @@ export function DeleteAccountScreen() {
       <Text tone="muted">{deleteAccountSummary(pending)}</Text>
       <Section title="1. Keep a copy">
         <Card className="gap-3">
-          <Text tone="muted">
-            The export is one file with everything in it. Save it before you go on.
-          </Text>
+          <Text tone="muted">{exportStepNote(shared)}</Text>
           <Button
             label="Export all data"
             icon="download"
@@ -51,6 +59,16 @@ export function DeleteAccountScreen() {
             loading={exporting}
             onPress={exportData}
           />
+          <View className="flex-row items-center gap-2">
+            <Checkbox
+              checked={copyConfirmed}
+              onChange={setCopyConfirmed}
+              label={COPY_CONFIRM_LABEL}
+            />
+            <Text className="flex-1" onPress={() => setCopyConfirmed(!copyConfirmed)}>
+              {COPY_CONFIRM_LABEL}
+            </Text>
+          </View>
         </Card>
       </Section>
       <Section title="2. Confirm">

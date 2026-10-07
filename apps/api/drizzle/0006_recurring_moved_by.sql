@@ -1,0 +1,1 @@
+ALTER TABLE `recurring` ADD `moved_by` text;

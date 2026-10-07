@@ -191,6 +191,38 @@ describe("taking back a pay in one write (unpay)", () => {
     expect(undone.body.recurring.nextDueAt).toBe(due(10));
   });
 
+  // QA-403: a skip from a stale screen changed nothing, so its Undo mustn't either.
+  test("undoing a skip that changed nothing keeps the paid month's date", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, {
+      transactionId: newId(),
+      dueAt: due(10),
+    });
+    const skip = { transactionId: newId(), dueAt: due(10), skip: true };
+    const skipped = await ctx.request<PayResult>("POST", `/recurring/${bill.id}/pay`, skip);
+    expect(skipped.body.previousDueAt).toBeNull();
+    const undone = await ctx.request<UnpayResult>("POST", `/recurring/${bill.id}/unpay`, skip);
+    expect(undone.body.movedBack).toBe(false);
+    expect(undone.body.recurring.nextDueAt).toBe(due(11));
+    const expenses = await ctx.request<{ items: Row[] }>("GET", "/transactions?type=expense");
+    expect(expenses.body.items).toHaveLength(1);
+  });
+
+  test("a pay's undo after the due date was edited keeps the edited date", async () => {
+    const ctx = await createTestContext();
+    const bill = await internetBill(ctx);
+    const pay = { transactionId: newId(), dueAt: due(10) };
+    await ctx.request("POST", `/recurring/${bill.id}/pay`, pay);
+    // Edited to where the pay had put it anyway: the edit, not the pay, set it now.
+    await ctx.request("PATCH", `/recurring/${bill.id}`, { nextDueAt: due(11) });
+    const undone = await ctx.request<UnpayResult>("POST", `/recurring/${bill.id}/unpay`, pay);
+    expect(undone.body.movedBack).toBe(false);
+    expect(undone.body.recurring.nextDueAt).toBe(due(11));
+    const expenses = await ctx.request<{ items: Row[] }>("GET", "/transactions?type=expense");
+    expect(expenses.body.items).toHaveLength(0);
+  });
+
   test("October's undo after November was paid keeps November's date", async () => {
     const ctx = await createTestContext();
     const bill = await internetBill(ctx);

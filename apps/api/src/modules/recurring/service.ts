@@ -65,10 +65,18 @@ export function recurringService(deps: Deps) {
   }
 
   /**
-   * Whether a pay or skip for `dueAt` is what put the bill where it is now: one step on
-   * from `dueAt`, with nothing (a later pay, an edit) having moved it since.
+   * Whether the pay or skip sent as `transactionId` for `dueAt` is what put the bill
+   * where it is now: it is the one recorded as moving it (moved_by), so nothing since
+   * (a later pay, an edit) has, and the bill is one step on from `dueAt`. A pay or skip
+   * that changed nothing (a stale screen, a late tap) never matches.
    */
-  function movedOnceFrom(item: Recurring, dueAt: number | undefined, timeZone: string): boolean {
+  function movedOnceFrom(
+    item: Recurring,
+    transactionId: string | undefined,
+    dueAt: number | undefined,
+    timeZone: string,
+  ): boolean {
+    if (!transactionId || item.movedBy !== transactionId) return false;
     if (dueAt === undefined || dueAt >= item.nextDueAt) return false;
     try {
       return advance({ ...item, nextDueAt: dueAt }, timeZone) === item.nextDueAt;
@@ -103,11 +111,15 @@ export function recurringService(deps: Deps) {
         areaId: input.areaId ?? null,
         active: true,
         overdueAt: null,
+        movedBy: null,
       });
     },
 
     update(id: string, input: z.output<typeof recurringUpdateSchema>): Recurring {
-      return base.update(id, input.nextDueAt === undefined ? input : { ...input, overdueAt: null });
+      return base.update(
+        id,
+        input.nextDueAt === undefined ? input : { ...input, overdueAt: null, movedBy: null },
+      );
     },
 
     /**
@@ -125,7 +137,8 @@ export function recurringService(deps: Deps) {
         const logged = loggedPay(item, input.transactionId);
         if (logged) {
           const previousDueAt =
-            input.dueAt !== undefined && movedOnceFrom(item, input.dueAt, timeZone)
+            input.dueAt !== undefined &&
+            movedOnceFrom(item, input.transactionId, input.dueAt, timeZone)
               ? input.dueAt
               : null;
           return { transaction: logged, recurring: item, previousDueAt };
@@ -133,6 +146,7 @@ export function recurringService(deps: Deps) {
         if (input.dueAt !== undefined && input.dueAt < item.nextDueAt)
           return { transaction: null, recurring: item, previousDueAt: null };
         let transaction: typeof transactions.$inferSelect | null = null;
+        let movedBy = input.transactionId ?? null;
         if (!input.skip) {
           const accountId = input.accountId ?? item.accountId ?? settings.defaultAccountId;
           if (!accountId) throw badRequest("Pick the account this was paid from");
@@ -157,6 +171,7 @@ export function recurringService(deps: Deps) {
           if (amountMinor <= 0) throw badRequest("Enter the amount received");
           const now = deps.now();
           const transactionId = input.transactionId ?? newId(now);
+          movedBy = transactionId;
           db.insert(transactions)
             .values({
               id: transactionId,
@@ -176,7 +191,11 @@ export function recurringService(deps: Deps) {
           transaction =
             db.select().from(transactions).where(eq(transactions.id, transactionId)).get() ?? null;
         }
-        const updated = base.update(id, { nextDueAt: advance(item, timeZone), overdueAt: null });
+        const updated = base.update(id, {
+          nextDueAt: advance(item, timeZone),
+          overdueAt: null,
+          movedBy,
+        });
         // previousDueAt lets the app undo: delete the transaction, then move the due date back.
         return { transaction, recurring: updated, previousDueAt: item.nextDueAt };
       });
@@ -186,9 +205,9 @@ export function recurringService(deps: Deps) {
      * Takes back a pay or skip, sent with the pay's own transactionId and dueAt. It needs
      * nothing from the pay's reply, so the phone can queue it at once, even offline and
      * across a restart. Deletes the transaction the pay logged (if it logged one), then
-     * moves the due date back to dueAt if that pay is what moved it: a pay that logged
-     * nothing (refused, or a late tap) moved nothing, and a bill paid again since keeps
-     * its date. Safe to repeat.
+     * moves the due date back to dueAt if that pay or skip is what moved it (moved_by): one
+     * that changed nothing (refused, a late tap, a skip from a stale screen) moved
+     * nothing, and a bill paid again or edited since keeps its date. Safe to repeat.
      */
     unpay(id: string, input: z.output<typeof recurringUnpaySchema>) {
       const item = base.get(id);
@@ -198,11 +217,9 @@ export function recurringService(deps: Deps) {
         let transaction = logged ?? null;
         if (logged && logged.deletedAt === null)
           transaction = crud(db, transactions, "Transaction", deps.now).remove(logged.id);
-        // A skip logs nothing, so only the date says whether it went through.
-        const movedBack =
-          (logged !== undefined || input.skip) && movedOnceFrom(item, input.dueAt, timeZone);
+        const movedBack = movedOnceFrom(item, input.transactionId, input.dueAt, timeZone);
         const recurring = movedBack
-          ? base.update(id, { nextDueAt: input.dueAt, overdueAt: null })
+          ? base.update(id, { nextDueAt: input.dueAt, overdueAt: null, movedBy: null })
           : item;
         return { transaction, recurring, movedBack };
       });

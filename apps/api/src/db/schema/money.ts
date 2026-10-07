@@ -127,6 +127,11 @@ export const recurring = sqliteTable(
     active: bool("active").notNull().default(true),
     /** Set by the midnight job when next_due_at passes unpaid */
     overdueAt: integer("overdue_at"),
+    /**
+     * The transactionId of the pay or skip that last moved next_due_at; null once an
+     * edit sets it. Undo moves the date back only for that pay or skip.
+     */
+    movedBy: text("moved_by"),
   },
   (t) => [
     index("recurring_updated_at_idx").on(t.updatedAt),

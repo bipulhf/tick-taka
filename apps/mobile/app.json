@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "platforms": ["android"],
     "android": {
-      "package": "com.mehedismathacademy.ticktaka",
+      "package": "com.mehedismathacademy.tick",
       "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#FFF8EE",
@@ -17,8 +17,16 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "permissions": ["POST_NOTIFICATIONS", "USE_BIOMETRIC", "VIBRATE", "RECORD_AUDIO"],
-      "blockedPermissions": ["android.permission.READ_SMS", "android.permission.RECEIVE_SMS"],
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "USE_BIOMETRIC",
+        "VIBRATE",
+        "RECORD_AUDIO"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_SMS",
+        "android.permission.RECEIVE_SMS"
+      ],
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false
     },

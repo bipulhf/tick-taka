@@ -39,26 +39,26 @@ Today leads with shortcuts for the four things logged most, the safe-to-spend nu
 your top three and what's next. Quick-add reads plain text such as "biryani with friends
 850" and shows what it understood before saving.
 
-| Today | Further down | Quick-add | Task |
-|:-:|:-:|:-:|:-:|
+|                              Today                               |                                           Further down                                            |                                         Quick-add                                          |                                 Task                                 |
+| :--------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------: | :------------------------------------------------------------------: |
 | <img src="docs/screenshots/today.png" width="200" alt="Today" /> | <img src="docs/screenshots/today2.png" width="200" alt="Today, scrolled to next up and habits" /> | <img src="docs/screenshots/quickadd.png" width="200" alt="Quick-add parsing an expense" /> | <img src="docs/screenshots/task.png" width="200" alt="Task sheet" /> |
 
 ### Plan, habits and focus
 
-| Plan | Day | Week | Habits | Focus |
-|:-:|:-:|:-:|:-:|:-:|
+|                                   Plan                                    |                                  Day                                  |                                  Week                                  |                                     Habits                                      |                                 Focus                                  |
+| :-----------------------------------------------------------------------: | :-------------------------------------------------------------------: | :--------------------------------------------------------------------: | :-----------------------------------------------------------------------------: | :--------------------------------------------------------------------: |
 | <img src="docs/screenshots/plan.png" width="160" alt="Plan with inbox" /> | <img src="docs/screenshots/day.png" width="160" alt="Day timeline" /> | <img src="docs/screenshots/week.png" width="160" alt="Week planner" /> | <img src="docs/screenshots/habits.png" width="160" alt="Habits with streaks" /> | <img src="docs/screenshots/focus.png" width="160" alt="Focus timer" /> |
 
 ### Money
 
-| Money | Transactions | Budgets | Goals |
-|:-:|:-:|:-:|:-:|
+|                                 Money                                 |                                  Transactions                                  |                               Budgets                                |                                  Goals                                   |
+| :-------------------------------------------------------------------: | :----------------------------------------------------------------------------: | :------------------------------------------------------------------: | :----------------------------------------------------------------------: |
 | <img src="docs/screenshots/money.png" width="200" alt="Money home" /> | <img src="docs/screenshots/transactions.png" width="200" alt="Transactions" /> | <img src="docs/screenshots/budgets.png" width="200" alt="Budgets" /> | <img src="docs/screenshots/goals.png" width="200" alt="Savings goals" /> |
 
 ### Review and Tiki
 
-| Review | Weekly review | Reports | Chat with Tiki |
-|:-:|:-:|:-:|:-:|
+|                                 Review                                  |                               Weekly review                               |                               Reports                                |                              Chat with Tiki                              |
+| :---------------------------------------------------------------------: | :-----------------------------------------------------------------------: | :------------------------------------------------------------------: | :----------------------------------------------------------------------: |
 | <img src="docs/screenshots/review.png" width="200" alt="Review home" /> | <img src="docs/screenshots/weekly.png" width="200" alt="Weekly review" /> | <img src="docs/screenshots/reports.png" width="200" alt="Reports" /> | <img src="docs/screenshots/chat.png" width="200" alt="Chat with Tiki" /> |
 
 ### Home-screen widget
@@ -67,19 +67,20 @@ Today at a glance without opening the app: safe to spend with a bar for how much
 day's share is gone, the next task, top-three and habit progress, one-tap logging for
 things you buy often, and buttons to add a task, log an expense or start focusing.
 
-| Light | Dark |
-|:-:|:-:|
+|                                         Light                                         |                                           Dark                                            |
+| :-----------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------: |
 | <img src="docs/screenshots/widget.png" width="380" alt="Home-screen widget, light" /> | <img src="docs/screenshots/widget-dark.png" width="380" alt="Home-screen widget, dark" /> |
 
 ### Sign-in, settings and dark mode
 
-| Sign in | Settings | Dark mode |
-|:-:|:-:|:-:|
+|                                    Sign in                                     |                                Settings                                |                                     Dark mode                                      |
+| :----------------------------------------------------------------------------: | :--------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
 | <img src="docs/screenshots/login.png" width="200" alt="Sign in with Google" /> | <img src="docs/screenshots/settings.png" width="200" alt="Settings" /> | <img src="docs/screenshots/money-dark.png" width="200" alt="Money in dark mode" /> |
 
 ## Features
 
 **Today**
+
 - Greeting, date and progress toward your daily task goal, with Tiki's mood for the day.
 - One-tap shortcuts: new task, expense, income, focus session.
 - Safe to spend today: what your flexible budgets allow, after today's spending.
@@ -88,6 +89,7 @@ things you buy often, and buttons to add a task, log an expense or start focusin
   weekly recap on Fridays.
 
 **Capture**
+
 - Quick-add parses plain text into a task, expense, income or time entry ("cha 20",
   "+45000 salary", "2h thesis", "call bank tomorrow 5pm"). AI fills in when the text is
   unclear.
@@ -96,6 +98,7 @@ things you buy often, and buttons to add a task, log an expense or start focusin
   one-tap logging.
 
 **Plan and time**
+
 - Inbox, upcoming, projects by area of life, someday and a logbook of finished work.
 - Day timeline and week planner with drag to schedule; "Plan my day" with AI.
 - Repeating tasks in plain words ("every other Tuesday"), subtasks, deadlines, priority,
@@ -104,6 +107,7 @@ things you buy often, and buttons to add a task, log an expense or start focusin
 - Habits with daily or weekly targets, streaks and freeze days.
 
 **Money**
+
 - Accounts (cash, bank, mobile wallet, card, savings) with transfers and fees.
 - Budgets split into flexible, fixed and non-monthly, with rollover.
 - Bills and income on a schedule, savings goals, debts (who owes whom), trips and events,
@@ -111,6 +115,7 @@ things you buy often, and buttons to add a task, log an expense or start focusin
 - Foreign-currency income converted at the rate you received it.
 
 **Review**
+
 - Daily shutdown, weekly and monthly reviews, reports, a dashboard per area of life, a
   payday plan and a subscription spotter.
 - Streaks for your daily task goal and for logging spending the same day, with freeze
@@ -121,6 +126,7 @@ things you buy often, and buttons to add a task, log an expense or start focusin
   on silent, and each can be switched off in Settings.
 
 **Tiki, the assistant** (needs an OpenAI key on the server)
+
 - Chat or talk, in Bangla or English, to add, change, delete or ask about anything. Adds,
   edits, deletions, budgets, habit logs, settings and paying or skipping a bill come with
   Undo in the chat; the timer and the other money actions (adding to a goal, repaying a
@@ -134,6 +140,7 @@ things you buy often, and buttons to add a task, log an expense or start focusin
   `502 ai_error`, so the app falls back to its plain forms.
 
 **Privacy and accounts**
+
 - Google sign-in; one database per user, so nobody can reach anyone else's data.
 - Fingerprint or face lock, a one-tap "hide amounts" switch, and a full JSON export.
 - Signing out wipes that user's data from the phone.
@@ -195,7 +202,7 @@ In Google Cloud Console › APIs & Services, in one project:
 2. Create an OAuth client of type **Web application**. Its client ID goes in the API's
    `GOOGLE_CLIENT_IDS` and the app's `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (and in the `env`
    of each profile in `apps/mobile/eas.json`).
-3. Create an OAuth client of type **Android** for package `com.mehedismathacademy.ticktaka`, once
+3. Create an OAuth client of type **Android** for package `com.mehedismathacademy.tick`, once
    for each signing key: the SHA-1 of `apps/mobile/android/app/debug.keystore` for local
    builds and the one from `bunx eas-cli credentials` for EAS builds. Nothing from this
    client goes into the code; Google matches the app by package name and signature.
@@ -240,26 +247,26 @@ Android emulator the API on your computer is `http://10.0.2.2:3000`, which is th
 
 API (`apps/api/.env`):
 
-| Variable | What it does |
-|---|---|
-| `GOOGLE_CLIENT_IDS` | Web client ID(s) whose Google ID tokens are accepted, comma-separated. Required. |
-| `JWT_SECRET` | Signs the app's own sessions, 32+ characters. Required. |
-| `DB_PATH` | The single-user database from before Google sign-in; user databases go in `users/` beside it. |
-| `OWNER_EMAIL` | The Google email that inherits `DB_PATH` on first sign-in. |
-| `USERS_DB_PATH`, `USER_DATA_DIR`, `UPLOADS_DIR`, `BACKUPS_DIR` | Override where the user list, user databases, receipts and backups live. |
-| `OPENAI_API_KEY` | Turns AI features on. |
-| `OPENAI_MODEL_FAST`, `OPENAI_MODEL_SMART`, `OPENAI_MODEL_TRANSCRIBE` | Model names, so models change without a code change. |
-| `OPENAI_*_MICROS_PER_MTOK` | Prices per million tokens for models missing from the built-in price list (`src/ai/pricing.ts`, which has gpt-6-luna and gpt-4o-mini-transcribe). |
-| `AI_USER_MONTHLY_CAP_MICROS` | Most AI may cost each user other than `OWNER_EMAIL` per month (default 2000000 = $2, 0 = no limit). The owner is never limited. |
-| `HOST`, `PORT`, `JOBS_ENABLED` | Where to listen (default `127.0.0.1:3000`, so only Nginx can reach it; use `0.0.0.0` only to test from a phone on your Wi-Fi); whether to run the nightly jobs. |
-| `TRUST_PROXY` | `true` behind Nginx: the sign-in limit (5 tries per 15 minutes) reads Nginx's `X-Real-IP`, and only from a loopback peer. Default `false`, which uses the socket address. |
-| `SITE_OPERATOR`, `CONTACT_EMAIL` | Who runs the service and how to reach them, shown on the public home (`/`), privacy (`/privacy`) and terms (`/terms`) pages used by Google's consent screen. |
+| Variable                                                             | What it does                                                                                                                                                              |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GOOGLE_CLIENT_IDS`                                                  | Web client ID(s) whose Google ID tokens are accepted, comma-separated. Required.                                                                                          |
+| `JWT_SECRET`                                                         | Signs the app's own sessions, 32+ characters. Required.                                                                                                                   |
+| `DB_PATH`                                                            | The single-user database from before Google sign-in; user databases go in `users/` beside it.                                                                             |
+| `OWNER_EMAIL`                                                        | The Google email that inherits `DB_PATH` on first sign-in.                                                                                                                |
+| `USERS_DB_PATH`, `USER_DATA_DIR`, `UPLOADS_DIR`, `BACKUPS_DIR`       | Override where the user list, user databases, receipts and backups live.                                                                                                  |
+| `OPENAI_API_KEY`                                                     | Turns AI features on.                                                                                                                                                     |
+| `OPENAI_MODEL_FAST`, `OPENAI_MODEL_SMART`, `OPENAI_MODEL_TRANSCRIBE` | Model names, so models change without a code change.                                                                                                                      |
+| `OPENAI_*_MICROS_PER_MTOK`                                           | Prices per million tokens for models missing from the built-in price list (`src/ai/pricing.ts`, which has gpt-6-luna and gpt-4o-mini-transcribe).                         |
+| `AI_USER_MONTHLY_CAP_MICROS`                                         | Most AI may cost each user other than `OWNER_EMAIL` per month (default 2000000 = $2, 0 = no limit). The owner is never limited.                                           |
+| `HOST`, `PORT`, `JOBS_ENABLED`                                       | Where to listen (default `127.0.0.1:3000`, so only Nginx can reach it; use `0.0.0.0` only to test from a phone on your Wi-Fi); whether to run the nightly jobs.           |
+| `TRUST_PROXY`                                                        | `true` behind Nginx: the sign-in limit (5 tries per 15 minutes) reads Nginx's `X-Real-IP`, and only from a loopback peer. Default `false`, which uses the socket address. |
+| `SITE_OPERATOR`, `CONTACT_EMAIL`                                     | Who runs the service and how to reach them, shown on the public home (`/`), privacy (`/privacy`) and terms (`/terms`) pages used by Google's consent screen.              |
 
 App (`apps/mobile/.env`, and `env` in `eas.json` for EAS builds):
 
-| Variable | What it does |
-|---|---|
-| `EXPO_PUBLIC_API_URL` | The API's address. |
+| Variable                           | What it does                                   |
+| ---------------------------------- | ---------------------------------------------- |
+| `EXPO_PUBLIC_API_URL`              | The API's address.                             |
 | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | The same Web client ID as `GOOGLE_CLIENT_IDS`. |
 
 ## Deploy the API (VPS, pm2, Nginx)

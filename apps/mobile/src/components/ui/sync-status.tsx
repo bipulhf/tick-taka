@@ -2,6 +2,7 @@ import { View } from "react-native";
 import {
   useIsOnline,
   usePendingWrites,
+  useQueueNotSaved,
   useSavedQueueUnreadable,
   useStuckWrites,
   useSyncStalled,
@@ -105,9 +106,12 @@ export function SyncStatus() {
   const stuck = useStuckWrites();
   const stalled = useSyncStalled();
   const unreadable = useSavedQueueUnreadable();
+  const notSaved = useQueueNotSaved();
   const waiting = pending - stuck.length;
   let line: string | null = null;
-  if (unreadable) line = "Changes saved on this phone can't be read right now · trying again";
+  if (notSaved && waiting > 0)
+    line = `${plural(waiting, "change")} not saved on this phone yet · keep the app open until they sync`;
+  else if (unreadable) line = "Changes saved on this phone can't be read right now · trying again";
   else if (!online)
     line =
       waiting > 0

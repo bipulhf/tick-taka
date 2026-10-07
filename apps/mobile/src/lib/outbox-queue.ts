@@ -23,6 +23,15 @@ export interface OutboxDeps {
   canSend(): boolean;
   load(): Promise<unknown>;
   save(state: PersistedOutbox): Promise<void>;
+  /**
+   * A side key for writes queued before the saved queue has been read: saving them
+   * there can't overwrite it. load() merges them in. Without these, such writes are
+   * held in memory only.
+   */
+  loadEarly?(): Promise<unknown>;
+  saveEarly?(state: PersistedOutbox): Promise<void>;
+  /** Saving the queue failed (after working, or for the first time). */
+  onSaveFailed?(error: unknown): void;
   /** The write landed (or was already there). */
   onSent?(request: OutboxRequest, response: unknown): void;
   /** The server refused the write for good; it has left the queue. */
@@ -81,6 +90,9 @@ export class OutboxQueue {
   private inFlight: OutboxEntry | null = null;
   private wake: (() => void) | null = null;
   private saving: Promise<void> = Promise.resolve();
+  private saveFailed = false;
+  /** Read once from the side key (deps.loadEarly); emptied when load() merges it. */
+  private earlier: Promise<OutboxEntry[] | null> | null = null;
   private readonly waiters = new Map<string, Waiter>();
   private readonly listeners = new Set<() => void>();
 
@@ -189,12 +201,15 @@ export class OutboxQueue {
     if (this.loaded || this.reading) return;
     this.reading = true;
     let saved: PersistedOutbox | null;
+    let earlier: OutboxEntry[] | null;
     try {
       saved = parsePersistedOutbox(await this.deps.load());
+      earlier = await this.readEarlier();
+      if (earlier === null) throw new Error("writes saved before loading can't be read");
     } catch {
       // The saved queue is there but can't be read right now (the storage key, say).
       // Keep it untouched: nothing is saved over it and nothing is sent ahead of it.
-      // New writes wait in memory, and the next kick reads again.
+      // New writes wait on the side key, and the next kick reads again.
       this.reading = false;
       this.unreadable = true;
       this.changed();
@@ -207,14 +222,39 @@ export class OutboxQueue {
     const restored = [...legacy.map((request) => this.entry(request)), ...(saved?.entries ?? [])];
     // Only the first write can have been on its way when the app stopped.
     if (restored[0]) restored[0].maybeDelivered = true;
-    const queuedEarly = this.entries.length > 0;
-    this.entries = [...(this.discardSaved ? [] : restored), ...this.entries];
+    // Writes an earlier run queued before its load finished, then was killed. The same
+    // write can be in both places if that run was killed between the two saves.
+    const known = new Set([...restored, ...this.entries].map((e) => e.id));
+    const leftOver = earlier.filter((e) => !known.has(e.id));
+    const queuedEarly = this.entries.length > 0 || leftOver.length > 0;
+    this.entries = [...(this.discardSaved ? [] : [...restored, ...leftOver]), ...this.entries];
     if (!this.discardSaved) this.parked = [...(saved?.stuck ?? []), ...this.parked];
     if (saved && !this.discardSaved && this.userId === null) this.userId = saved.userId;
     this.loaded = true;
+    this.earlier = Promise.resolve([]);
     if (legacy.length || queuedEarly || this.discardSaved) this.persist();
+    // The side key is emptied only once the queue holding its writes is safely saved.
+    const saveEarly = this.deps.saveEarly;
+    if (saveEarly && (queuedEarly || this.discardSaved))
+      this.queueSave(async () => {
+        if (!this.saveFailed) await saveEarly(this.state([]));
+      });
     this.changed();
     this.kick();
+  }
+
+  /** Writes left on the side key by an earlier run; null while they can't be read. */
+  private readEarlier(): Promise<OutboxEntry[] | null> {
+    const loadEarly = this.deps.loadEarly;
+    if (!loadEarly) return Promise.resolve([]);
+    this.earlier ??= loadEarly().then(
+      (raw) => parsePersistedOutbox(raw)?.entries ?? [],
+      () => {
+        this.earlier = null; // read again next time
+        return null;
+      },
+    );
+    return this.earlier;
   }
 
   /** Queues a write. The promise settles when the server accepts or refuses it. */
@@ -288,6 +328,24 @@ export class OutboxQueue {
   /** Resolves once everything queued so far has been written to storage. */
   flushed(): Promise<void> {
     return this.saving;
+  }
+
+  /** The last save didn't work: what's queued lives only in memory until one does. */
+  get notSaved(): boolean {
+    return this.saveFailed;
+  }
+
+  /**
+   * Waits for every save queued so far, then says whether the queue is safely in its
+   * own storage: read, and saved without error. A copy kept elsewhere (the widget's
+   * offline list) may be deleted only then.
+   */
+  async durable(): Promise<boolean> {
+    for (let current = this.saving; ; current = this.saving) {
+      await current;
+      if (current === this.saving) break;
+    }
+    return this.loaded && !this.saveFailed;
   }
 
   private entry(request: OutboxRequest): OutboxEntry {
@@ -423,16 +481,51 @@ export class OutboxQueue {
     });
   }
 
-  private persist(): void {
-    // Until the saved queue has been read, writing would overwrite it.
-    if (!this.loaded) return;
-    const state: PersistedOutbox = {
+  private state(entries: OutboxEntry[], stuck?: OutboxEntry[]): PersistedOutbox {
+    return {
       version: 1,
       userId: this.userId,
-      entries: this.entries.map((entry) => ({ ...entry })),
-      stuck: this.parked.map((entry) => ({ ...entry })),
+      entries: entries.map((entry) => ({ ...entry })),
+      ...(stuck ? { stuck: stuck.map((entry) => ({ ...entry })) } : {}),
     };
-    this.saving = this.saving.then(() => this.deps.save(state)).catch(() => {});
+  }
+
+  private persist(): void {
+    if (this.loaded) {
+      const state = this.state(this.entries, this.parked);
+      this.queueSave(() => this.deps.save(state));
+      return;
+    }
+    // Until the saved queue has been read, writing it would overwrite it: these writes
+    // go to the side key instead, after any an earlier run left there.
+    const saveEarly = this.deps.saveEarly;
+    if (!saveEarly) return;
+    const entries = [...this.entries];
+    const cleared = this.discardSaved;
+    this.queueSave(async () => {
+      const earlier = cleared ? [] : await this.readEarlier();
+      if (earlier === null)
+        throw new Error("Writes saved earlier can't be read, so not saved over");
+      const ids = new Set(entries.map((e) => e.id));
+      await saveEarly(this.state([...earlier.filter((e) => !ids.has(e.id)), ...entries]));
+    });
+  }
+
+  /** Saves in order; a failure is reported once, and shows until a save works again. */
+  private queueSave(write: () => Promise<void>): void {
+    this.saving = this.saving.then(write).then(
+      () => {
+        if (!this.saveFailed) return;
+        this.saveFailed = false;
+        this.changed();
+      },
+      (error: unknown) => {
+        if (this.saveFailed) return;
+        this.saveFailed = true;
+        this.deps.onSaveFailed?.(error);
+        this.changed();
+      },
+    );
   }
 
   private changed(): void {

@@ -40,3 +40,8 @@ export function useSyncStalled(): boolean {
 export function useSavedQueueUnreadable(): boolean {
   return useOutbox(() => outbox.savedUnreadable, false);
 }
+
+/** The last save of the queued changes failed: they are only in memory for now. */
+export function useQueueNotSaved(): boolean {
+  return useOutbox(() => outbox.notSaved, false);
+}

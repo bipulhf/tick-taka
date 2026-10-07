@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { requestWidgetUpdate } from "react-native-android-widget";
 import { useTransactions } from "@/features/money/queries";
-import { useOutbox } from "@/lib/outbox";
+import { outbox, startOutbox, useOutbox } from "@/lib/outbox";
 import { useSettings, useToday } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { resetOnSignOut } from "@/lib/user-data";
@@ -18,6 +18,7 @@ import {
   type WidgetCache,
   writeWidgetCache,
 } from "./widget-cache";
+import { handOverWidgetWrites } from "./widget-pending";
 import { widgetSnapshot } from "./widget-snapshot";
 import { WIDGET_NAME } from "./widget-task-handler";
 
@@ -55,16 +56,15 @@ export function useWidgetSync() {
   const recent = useTransactions({ type: "expense", limit: "200" });
 
   useEffect(() => {
-    void (async () => {
-      const pending = await readPendingLogs();
-      for (const log of pending)
-        send({ method: "POST", path: "/transactions", body: { ...log, type: "expense" } });
-      if (pending.length) await removePendingLogs(pending);
-      // Quick-logs undone on the widget while it couldn't reach the server.
-      const deletes = await readPendingDeletes();
-      for (const id of deletes) send({ method: "DELETE", path: `/transactions/${id}` });
-      if (deletes.length) await removePendingDeletes(deletes);
-    })();
+    void handOverWidgetWrites({
+      ready: startOutbox,
+      readLogs: readPendingLogs,
+      removeLogs: removePendingLogs,
+      readDeletes: readPendingDeletes,
+      removeDeletes: removePendingDeletes,
+      send,
+      durable: () => outbox.durable(),
+    }).catch((error: unknown) => console.warn("widget: couldn't hand over offline logs", error));
   }, [send]);
 
   useEffect(() => {

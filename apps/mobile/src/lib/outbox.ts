@@ -18,6 +18,19 @@ import { userTime } from "./user-time";
 export type { OutboxRequest } from "./outbox-policy";
 
 const STORAGE_KEY = "tt.outbox";
+/** Writes queued before the saved queue was read (see OutboxDeps.saveEarly). */
+const EARLY_KEY = "tt.outbox.early";
+
+/** Throws while the storage key can't be read; the queue then holds off and reads again. */
+async function readJson(key: string): Promise<unknown> {
+  const raw = await secureStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null; // damaged beyond reading, now or later
+  }
+}
 
 function describe(error: unknown): FailureInfo {
   if (error instanceof ServerUnreachableError) return { unreachable: true };
@@ -36,17 +49,16 @@ export const outbox = new OutboxQueue({
   send: (request) => send(request.method, request.path, request.body),
   describe,
   canSend: () => onlineManager.isOnline() && Boolean(currentToken()),
-  // Throws while the storage key can't be read; the queue then holds off and reads again.
-  load: async () => {
-    const raw = await secureStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return null; // damaged beyond reading, now or later
-    }
-  },
+  load: () => readJson(STORAGE_KEY),
   save: (state) => secureStorage.setItem(STORAGE_KEY, JSON.stringify(state)),
+  loadEarly: () => readJson(EARLY_KEY),
+  saveEarly: (state) => secureStorage.setItem(EARLY_KEY, JSON.stringify(state)),
+  onSaveFailed: (error) => {
+    console.warn("outbox: couldn't save queued changes", error);
+    notify(
+      "Your latest changes couldn't be saved on this phone. Keep the app open until they sync.",
+    );
+  },
   onSent: (request, response) => {
     phoneWrites.record(request.path, request.body, response);
     scheduleRefresh(request.path);

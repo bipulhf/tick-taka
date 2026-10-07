@@ -52,6 +52,14 @@ describe("how the outbox reads a failed send (QA-309)", () => {
     expect(classifyFailure(entry, failure)).toBe("reject");
   });
 
+  test("a body too large for the proxy is final, not retried forever", async () => {
+    const failure = await failureFor(
+      () => new Response("<html>413 Request Entity Too Large</html>", { status: 413 }),
+    );
+    expect(failure).toEqual({ status: 413 });
+    expect(classifyFailure(entry, failure)).toBe("reject");
+  });
+
   test("a 401 is a session problem even from something in front of the server", () => {
     expect(describeFailure(new ApiError(401, "http_error", "Request failed (401)"))).toEqual({
       status: 401,

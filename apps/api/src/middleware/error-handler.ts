@@ -11,11 +11,33 @@ function sqliteCode(error: unknown): string | undefined {
   return undefined;
 }
 
+/** Codes for Hono's own HTTPExceptions (malformed JSON, a body limit), by status. */
+const HTTP_EXCEPTION_CODES: Record<number, string> = {
+  400: "invalid_request",
+  401: "unauthorized",
+  404: "not_found",
+  405: "method_not_allowed",
+  413: "payload_too_large",
+  415: "unsupported_media_type",
+  429: "rate_limited",
+};
+
+/**
+ * Never `http_error`: the phone gives that code to replies that aren't our envelope
+ * (a proxy or captive portal answered), and keeps retrying them as "not reached".
+ */
+function httpExceptionCode(status: number): string {
+  return HTTP_EXCEPTION_CODES[status] ?? (status >= 500 ? "internal_error" : "request_refused");
+}
+
 export const onError: ErrorHandler = (error, c) => {
   if (error instanceof AppError)
     return c.json(errorBody(error.code, error.message, error.details), error.status);
   if (error instanceof HTTPException) {
-    return c.json(errorBody("http_error", error.message || "Request failed"), error.status);
+    return c.json(
+      errorBody(httpExceptionCode(error.status), error.message || "Request failed"),
+      error.status,
+    );
   }
   const code = sqliteCode(error);
   if (code === "SQLITE_CONSTRAINT_FOREIGNKEY") {

@@ -96,6 +96,39 @@ describe("error mapping", () => {
   test("an HTTPException keeps its status", async () => {
     const res = await appThrowing(new HTTPException(413, { message: "Too big" })).request("/");
     expect(res.status).toBe(413);
-    expect(await res.json()).toEqual({ error: { code: "http_error", message: "Too big" } });
+    expect(await res.json()).toEqual({ error: { code: "payload_too_large", message: "Too big" } });
+  });
+
+  // CQ-045: the phone reads http_error as "a proxy answered, not the API".
+  test("an HTTPException's code comes from its status and is never http_error", async () => {
+    const codes: [number, string][] = [
+      [400, "invalid_request"],
+      [401, "unauthorized"],
+      [404, "not_found"],
+      [405, "method_not_allowed"],
+      [415, "unsupported_media_type"],
+      [418, "request_refused"],
+      [429, "rate_limited"],
+      [500, "internal_error"],
+      [502, "internal_error"],
+    ];
+    for (const [status, code] of codes) {
+      const res = await appThrowing(new HTTPException(status as 400, { message: "Nope" })).request(
+        "/",
+      );
+      expect(res.status).toBe(status);
+      expect(await res.json()).toMatchObject({ error: { code } });
+    }
+  });
+
+  test("malformed JSON on a real route is an API refusal, not http_error", async () => {
+    const ctx = await createTestContext();
+    const res = await ctx.app.request("/tasks", {
+      method: "POST",
+      headers: { authorization: `Bearer ${ctx.token}`, "content-type": "application/json" },
+      body: "{not json",
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: { code: "invalid_request" } });
   });
 });

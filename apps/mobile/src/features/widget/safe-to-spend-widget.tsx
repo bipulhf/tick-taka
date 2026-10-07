@@ -5,7 +5,14 @@ import { formatAmount as formatAmountIn } from "@tick-taka/shared/money";
 import { FlexWidget, SvgWidget, TextWidget } from "react-native-android-widget";
 import type { WidgetCache } from "./widget-cache";
 import { type WidgetColors, widgetColors } from "./widget-colors";
-import { ACTIONS, TARGET, type WidgetAction, type WidgetSlot, widgetLayout } from "./widget-layout";
+import {
+  ACTIONS,
+  PILL_PADDING,
+  TARGET,
+  type WidgetAction,
+  type WidgetSlot,
+  widgetLayout,
+} from "./widget-layout";
 import { canUndo, lastLogText } from "./widget-quick-log";
 
 /** The widget library only takes hex colours. */
@@ -69,7 +76,8 @@ function Pill({
       clickActionData={clickActionData}
       accessibilityLabel={accessibilityLabel}
       style={{
-        ...(flex ? { flex } : { paddingHorizontal: 12 }),
+        // A row pill's share of the row includes this padding (widgetLayout's pillWidth).
+        ...(flex ? { flex, paddingHorizontal: PILL_PADDING } : { paddingHorizontal: 12 }),
         height: TARGET,
         borderRadius: TARGET / 2,
         backgroundColor: tint,

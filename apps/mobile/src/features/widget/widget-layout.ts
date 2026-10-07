@@ -5,11 +5,13 @@
  * - The one-tap quick-logs are the widget's fastest path, so at the default 4×2
  *   size they replace Focus and Tiki in the single row of pills (beside Task and
  *   Expense) instead of waiting for a tall widget.
- * - Every pill is at least 48 dp, and a label is only shown when it fits. When it
- *   doesn't, an action falls back to its glyph ("－") and keeps its full name for
- *   screen readers, and a quick-log that doesn't fit is left out.
+ * - Every pill is at least 48 dp, and a label is only shown when it fits. Names
+ *   come first: a second quick-log gives way before Task and Expense lose theirs.
+ *   Only then does an action fall back to its glyph ("－"), keeping its full name
+ *   for screen readers, and a quick-log that doesn't fit is left out.
  * - The row shares out its width in proportion to the widths worked out here, so
- *   each pill gets at least the width its label needs.
+ *   each pill gets at least the width its label needs. A wider widget never shows
+ *   fewer names.
  */
 
 /** Every tappable part of the widget is at least this wide and tall (dp). */
@@ -23,15 +25,15 @@ export const PADDING = 12;
 export const GAP = 6;
 /** The launcher's minimum width (app.json minWidth), assumed when it isn't known. */
 export const MIN_WIDTH = 250;
-/** Space a pill keeps on each side of its label (dp). */
-const PILL_PADDING = 12;
+/** Space a row pill keeps on each side of its label (dp), applied as its padding. */
+export const PILL_PADDING = 8;
 /** At most this many quick-logs share the row with Task and Expense. */
 const INLINE_QUICK = 2;
 
 export type WidgetAction = "task" | "expense" | "focus" | "tiki";
 
 export const ACTIONS: Record<WidgetAction, { label: string; glyph: string; name: string }> = {
-  task: { label: "＋ Task", glyph: "＋", name: "Add a task" },
+  task: { label: "✓ Task", glyph: "✓", name: "Add a task" },
   expense: { label: "－ Expense", glyph: "－", name: "Log an expense" },
   focus: { label: "▶ Focus", glyph: "▶", name: "Start focus" },
   tiki: { label: "🎙 Tiki", glyph: "🎙", name: "Talk to Tiki" },
@@ -146,21 +148,18 @@ export function widgetLayout({
   }
 
   if (quick.length > 0) {
-    // Full labels if they leave room for as many quick-logs as glyphs would.
-    const want = Math.min(INLINE_QUICK, quick.length);
-    let best: { row: WidgetSlot[]; logs: number } | null = null;
+    // Full labels with as many quick-logs as fit beside them; glyphs only when not even one does.
     for (const glyph of [false, true]) {
       const actions = actionSlots(base, glyph);
       const logs = fitQuick(
         quick,
         room,
         actions.map((s) => s.width),
-        want,
+        INLINE_QUICK,
       );
-      if (logs.length > (best?.logs ?? 0)) best = { row: [...actions, ...logs], logs: logs.length };
-      if (logs.length === want) break;
+      if (logs.length > 0)
+        return { size, row: [...actions, ...logs], quickRow: [], undoRow: false };
     }
-    if (best) return { size, row: best.row, quickRow: [], undoRow: false };
   }
 
   return { size, row: fitActions(all, room), quickRow: [], undoRow: false };

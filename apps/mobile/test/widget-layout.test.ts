@@ -4,6 +4,7 @@ import {
   GAP,
   labelWidth,
   PADDING,
+  PILL_PADDING,
   pillWidth,
   TARGET,
   type WidgetLayout,
@@ -34,8 +35,38 @@ describe("widget layout", () => {
   test("at the default 4×2 size the quick-logs share the row with Task and Expense", () => {
     const layout = widgetLayout({ ...DEFAULT, quick: QUICK, undo: false });
     expect(layout.size).toBe("normal");
-    expect(kinds(layout)).toEqual(["task:glyph", "expense:glyph", "quick:0", "quick:1"]);
+    // The second quick-log gives way before Task and Expense lose their names.
+    expect(kinds(layout)).toEqual(["task", "expense", "quick:0"]);
     expect(fits(layout, DEFAULT.width)).toBe(true);
+    const short = widgetLayout({ ...DEFAULT, quick: ["Cha ৳20", "Bus ৳30"], undo: false });
+    expect(kinds(short)).toEqual(["task", "expense", "quick:0", "quick:1"]);
+  });
+
+  test("with no quick-logs at the default size every action shows its name", () => {
+    const layout = widgetLayout({ ...DEFAULT, quick: [], undo: false });
+    expect(kinds(layout)).toEqual(["task", "expense", "focus", "tiki"]);
+    expect(fits(layout, DEFAULT.width)).toBe(true);
+  });
+
+  test("names never disappear as the widget gets wider", () => {
+    const named = (layout: WidgetLayout) =>
+      layout.row.filter((slot) => slot.kind === "action" && !slot.glyph).length;
+    for (const quick of [[], ["Cha ৳20"], QUICK])
+      for (const undo of [false, true])
+        for (const height of [140, 200, 260]) {
+          let before = 0;
+          for (let width = 250; width <= 480; width += 10) {
+            const layout = widgetLayout({ width, height, quick, undo });
+            expect(fits(layout, width)).toBe(true);
+            expect(named(layout)).toBeGreaterThanOrEqual(before);
+            before = named(layout);
+          }
+        }
+  });
+
+  test("Task's glyph doesn't read as the opposite of Expense's", () => {
+    expect(ACTIONS.task.glyph).not.toBe("＋");
+    expect(ACTIONS.task.glyph).not.toBe("+");
   });
 
   test("at the minimum width a quick-log still shows, and nothing is cut off", () => {
@@ -98,5 +129,10 @@ describe("widget layout", () => {
       expect(pillWidth(label)).toBeGreaterThan(labelWidth(label));
     }
     expect(pillWidth("－ Expense")).toBeGreaterThan(65);
+  });
+
+  test("a pill is measured with the padding it is drawn with, not more", () => {
+    const label = ACTIONS.expense.label;
+    expect(pillWidth(label)).toBe(labelWidth(label) + 2 * PILL_PADDING);
   });
 });

@@ -339,4 +339,70 @@ describe("an assistant pay draft", () => {
     expect(expenses.body.items).toHaveLength(1);
     expect((await ctx.request<Row>("GET", `/recurring/${bill.id}`)).body.nextDueAt).toBe(due(11));
   });
+
+  // QA-404: a bill paid from Tiki can be undone like one paid from Today.
+  test("carries an Undo through /unpay that takes the expense and the date back", async () => {
+    const { ai, ctx } = await setup();
+    const { cash } = await setupMoney(ctx);
+    const bill = (
+      await ctx.request<Row>("POST", "/recurring", {
+        kind: "bill",
+        name: "Internet",
+        amountMinor: 120_000,
+        accountId: cash.id,
+        rrule: "FREQ=MONTHLY;BYMONTHDAY=5",
+        nextDueAt: due(10),
+      })
+    ).body;
+    ai.queueChat(
+      { toolCalls: [call("act", { action: "pay_bill", id: bill.id, fields: fields({}) })] },
+      { content: "Tap Save to log it." },
+    );
+    const draft = (await ask(ctx, "pay my internet bill")).drafts[0]!;
+    expect(draft.undo).toEqual({
+      method: "POST",
+      path: `/recurring/${bill.id}/unpay`,
+      body: { transactionId: draft.body.transactionId, dueAt: due(10), skip: false },
+    });
+    expect((await send(ctx, draft)).status).toBe(200);
+    expect((await send(ctx, draft.undo!)).status).toBe(200);
+    const expenses = await ctx.request<{ items: unknown[] }>("GET", "/transactions");
+    expect(expenses.body.items).toHaveLength(0);
+    expect((await ctx.request<Row>("GET", `/recurring/${bill.id}`)).body.nextDueAt).toBe(due(10));
+  });
+});
+
+describe("a bill paid by the assistant directly", () => {
+  test("has an Undo through /unpay", async () => {
+    const { ai, ctx, say, undo } = await setup();
+    const { cash } = await setupMoney(ctx);
+    const bill = (
+      await ctx.request<Row>("POST", "/recurring", {
+        kind: "bill",
+        name: "Internet",
+        amountMinor: 120_000,
+        accountId: cash.id,
+        rrule: "FREQ=MONTHLY;BYMONTHDAY=5",
+        nextDueAt: due(10),
+      })
+    ).body;
+    ai.queueChat(
+      {
+        toolCalls: [
+          call("act", { action: "pay_bill", id: bill.id, fields: fields({ skip: true }) }),
+        ],
+      },
+      { content: "Skipped." },
+    );
+    const { body } = await say("skip the internet bill this month");
+    const action = body.actions[0]!;
+    expect(action.undo).toMatchObject({
+      method: "POST",
+      path: `/recurring/${bill.id}/unpay`,
+      body: { dueAt: due(10), skip: true },
+    });
+    expect((await ctx.request<Row>("GET", `/recurring/${bill.id}`)).body.nextDueAt).toBe(due(11));
+    expect((await undo(action)).status).toBe(200);
+    expect((await ctx.request<Row>("GET", `/recurring/${bill.id}`)).body.nextDueAt).toBe(due(10));
+  });
 });

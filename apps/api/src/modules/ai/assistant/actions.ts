@@ -102,12 +102,26 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
       ...(typeof bill.nextDueAt === "number" ? { dueAt: bill.nextDueAt } : {}),
     };
     const path = `${billPath}/pay`;
+    // Like Today's "Paid": one write that needs nothing from the pay's reply.
+    const undo: Undo | undefined =
+      body.dueAt === undefined
+        ? undefined
+        : {
+            method: "POST",
+            path: `${billPath}/unpay`,
+            body: {
+              transactionId: body.transactionId,
+              dueAt: body.dueAt,
+              skip: (body as { skip?: unknown }).skip === true,
+            },
+          };
     if (drafting)
       return propose({
         summary: `${raw.skip ? "Skip" : "Pay"} ${label(bill, "a bill")}`,
         method: "POST",
         path,
         body,
+        ...(undo ? { undo } : {}),
       });
     const result = await caller.call("POST", path, body);
     if (!result.ok) return fail(result.error);
@@ -115,6 +129,7 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
       summary: raw.skip
         ? "Skipped this bill"
         : `Paid ${label(result.data as Record<string, unknown>, "bill")}`,
+      ...(undo ? { undo } : {}),
     });
     return { ok: true };
   },

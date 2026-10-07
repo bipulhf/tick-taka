@@ -1,16 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
-
-const SRC = join(import.meta.dir, "../src");
-
-function files(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) return files(path);
-    return /\.tsx?$/.test(path) ? [path] : [];
-  });
-}
+import { sourceFiles } from "./helpers/source-files";
 
 /**
  * Helpers whose last parameter is a time zone that falls back to the app's default
@@ -89,10 +78,9 @@ describe("time zone", () => {
   });
 
   test("no screen works out a day or month in the default zone", () => {
-    const offenders = files(SRC)
-      .map((path) => ({ name: relative(SRC, path), text: readFileSync(path, "utf8") }))
-      .filter(({ name }) => !ALLOWED.includes(name))
-      .flatMap(({ name, text }) => zoneless(text).map((call) => `${name}: ${call}`));
+    const offenders = sourceFiles()
+      .filter(({ path }) => !ALLOWED.includes(path))
+      .flatMap(({ path, text }) => zoneless(text).map((call) => `${path}: ${call}`));
     expect(offenders).toEqual([]);
   });
 

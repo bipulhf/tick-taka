@@ -1,20 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { sourceFiles } from "./helpers/source-files";
 
-const SRC = join(import.meta.dir, "../src");
-
-function files(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name);
-    return statSync(path).isDirectory() ? files(path) : path.endsWith(".tsx") ? [path] : [];
-  });
-}
-
-const sources = files(SRC).map((path) => ({
-  path: relative(SRC, path),
-  text: readFileSync(path, "utf8"),
-}));
+const sources = sourceFiles(/\.tsx$/);
 
 /**
  * Components that define a tone vocabulary (a map from tone name to classes, or a

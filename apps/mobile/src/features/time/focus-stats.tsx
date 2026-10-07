@@ -1,4 +1,4 @@
-import { addDays, startOfLocalDay, startOfWeek, toLocalDate } from "@tick-taka/shared/dates";
+import { addDays, startOfLocalDay, startOfWeek } from "@tick-taka/shared/dates";
 import { useState } from "react";
 import { View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
@@ -12,6 +12,7 @@ import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useAreas, useSettings } from "@/lib/queries";
+import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useColors } from "@/theme/colors";
 import { useFocusStats } from "./queries";
@@ -23,11 +24,9 @@ export function FocusStats() {
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
   const timeZone = userTime(settings).timeZone;
+  const today = useTodayDate();
   const [weeksBack, setWeeksBack] = useState(0);
-  const weekStart = addDays(
-    startOfWeek(toLocalDate(Date.now(), timeZone), userTime(settings).weekStartsOn),
-    -7 * weeksBack,
-  );
+  const weekStart = addDays(startOfWeek(today, userTime(settings).weekStartsOn), -7 * weeksBack);
   const stats = useFocusStats(
     startOfLocalDay(weekStart, timeZone),
     startOfLocalDay(addDays(weekStart, 7), timeZone),

@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { api, unwrap } from "@/lib/api";
 import { ensureNotificationPermission, reminderSyncError } from "@/lib/notifications";
-import { useSettings, useToday } from "@/lib/queries";
+import { useSettings } from "@/lib/queries";
+import { useToday } from "@/lib/use-today";
 import { planNotifications } from "./plan-notifications";
 import { reminderQuery, rescheduleDue } from "./reminder-window";
 

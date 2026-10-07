@@ -6,7 +6,6 @@ import {
   localMonthRange,
   startOfLocalDay,
   startOfWeek,
-  toLocalDate,
   weekdayOf,
 } from "@tick-taka/shared/dates";
 import { useState } from "react";
@@ -23,6 +22,7 @@ import { Text } from "@/components/ui/text";
 import { formatAmount, formatLocalDate, formatMonth } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
+import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useInsights, useTransactions } from "./queries";
 import { TransactionRow, useLookup } from "./transaction-row";
@@ -38,7 +38,7 @@ export function MoneyCalendar() {
   const hidden = usePrivacy();
   const timeZone = userTime(settings).timeZone;
   const weekStartsOn = userTime(settings).weekStartsOn;
-  const today = toLocalDate(Date.now(), timeZone);
+  const today = useTodayDate();
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selected, setSelected] = useState(today);
   const range = localMonthRange(month, timeZone);

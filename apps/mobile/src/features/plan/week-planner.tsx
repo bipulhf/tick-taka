@@ -17,6 +17,7 @@ import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMinutes } from "@/lib/format";
 import { pickDate } from "@/lib/pick-date";
 import { useSettings } from "@/lib/queries";
+import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { CompactTask, type PlanAction } from "./compact-task";
 import { type PlanTask, useTasks } from "./queries";
@@ -27,7 +28,7 @@ export function WeekPlanner() {
   const router = useRouter();
   const { data: settings } = useSettings();
   const timeZone = userTime(settings).timeZone;
-  const today = toLocalDate(Date.now(), timeZone);
+  const today = useTodayDate();
   const [weekStart, setWeekStart] = useState(() =>
     startOfWeek(today, userTime(settings).weekStartsOn),
   );

@@ -13,13 +13,14 @@ import { TodayHeader } from "@/features/today/today-header";
 import { TodaySkeleton } from "@/features/today/today-skeleton";
 import { TopThree } from "@/features/today/top-three";
 import { formatLocalDate } from "@/lib/format";
-import { useAreas, useLocalToday, useSettings, useToday } from "@/lib/queries";
+import { useAreas, useSettings } from "@/lib/queries";
+import { useToday, useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 
 /** Today answers two questions first: what now, and can I afford it; logging is one tap away. */
 export default function TodayScreen() {
   const today = useToday();
-  const localToday = useLocalToday();
+  const localToday = useTodayDate();
   const { data: areas } = useAreas();
   const { data: settings } = useSettings();
   const data = today.data;

@@ -1,4 +1,4 @@
-import { addDays, startOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
+import { addDays, startOfLocalDay } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
@@ -20,7 +20,7 @@ import { formatLocalDate } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { useRemove } from "@/lib/use-remove";
-import { useUserTime } from "@/lib/use-today";
+import { useTodayDate, useUserTime } from "@/lib/use-today";
 import { useEvents } from "./queries";
 
 /** A trip or celebration with its own budget, collecting spending from every account. */
@@ -30,7 +30,7 @@ export function EventsScreen() {
   const remove = useRemove();
   const events = useEvents();
   const { timeZone } = useUserTime();
-  const today = toLocalDate(Date.now(), timeZone);
+  const today = useTodayDate();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [budget, setBudget] = useState("");

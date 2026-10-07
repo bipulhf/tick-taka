@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { endOfLocalDay, MINUTE_MS, startOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
+import {
+  addDays,
+  endOfLocalDay,
+  MINUTE_MS,
+  startOfLocalDay,
+  toLocalDate,
+} from "@tick-taka/shared/dates";
 import { defined } from "@tick-taka/shared/defined";
 import { newId } from "@tick-taka/shared/ids";
 import { parseRecurrence } from "@tick-taka/shared/recurrence";
@@ -21,6 +27,7 @@ import { useOutbox } from "@/lib/outbox";
 import { pickDate, pickTime } from "@/lib/pick-date";
 import { useAiStatus, useAreas, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
+import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { EMPTY, ESTIMATES, type Form, type WhenChoice } from "./task-form";
 import { TaskMoreFields } from "./task-more-fields";
@@ -39,7 +46,7 @@ export function TaskSheet({ id }: { id: string | null }) {
   const { data: areas = [] } = useAreas();
   const _ai = useAiStatus();
   const timeZone = userTime(settings).timeZone;
-  const today = toLocalDate(Date.now(), timeZone);
+  const today = useTodayDate();
   const query = useQuery({
     queryKey: ["task", id],
     queryFn: () => unwrap(api.tasks[":id"].$get({ param: { id: defined(id, "the task id") } })),
@@ -104,7 +111,7 @@ export function TaskSheet({ id }: { id: string | null }) {
     if (choice === "someday")
       return setForm((f) => ({ ...f, status: "someday", doAt: null, hasTime: false }));
     let date = today;
-    if (choice === "tomorrow") date = toLocalDate(Date.now() + 86_400_000, timeZone);
+    if (choice === "tomorrow") date = addDays(today, 1);
     if (choice === "pick") {
       const picked = await pickDate(form.doAt ?? Date.now(), timeZone);
       if (!picked) return;
@@ -180,7 +187,7 @@ export function TaskSheet({ id }: { id: string | null }) {
           ? form.whenSlot === "evening"
             ? "evening"
             : "today"
-          : doDate === toLocalDate(Date.now() + 86_400_000, timeZone)
+          : doDate === addDays(today, 1)
             ? "tomorrow"
             : "pick";
   // What's set behind "More", so a closed disclosure still says so.

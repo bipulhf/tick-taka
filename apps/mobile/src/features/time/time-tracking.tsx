@@ -21,6 +21,7 @@ import { useOutbox } from "@/lib/outbox";
 import { useAreas, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useRunningTimer, useTimeEntries } from "./queries";
 
@@ -32,7 +33,7 @@ export function TimeTracking() {
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
   const timeZone = userTime(settings).timeZone;
-  const today = toLocalDate(Date.now(), timeZone);
+  const today = useTodayDate();
   const weekStart = startOfWeek(today, userTime(settings).weekStartsOn);
   const from = startOfLocalDay(weekStart, timeZone);
   const to = startOfLocalDay(addDays(weekStart, 7), timeZone);

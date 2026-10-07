@@ -13,6 +13,7 @@ import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatClock, formatLocalDate } from "@/lib/format";
 import { useAreas, useSettings } from "@/lib/queries";
+import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useTasks } from "./queries";
 
@@ -21,7 +22,7 @@ export function LogbookList() {
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
   const timeZone = userTime(settings).timeZone;
-  const today = toLocalDate(Date.now(), timeZone);
+  const today = useTodayDate();
   const [q, setQ] = useState("");
   const [areaId, setAreaId] = useState<string | null>(null);
   const [weeksBack, setWeeksBack] = useState(0);

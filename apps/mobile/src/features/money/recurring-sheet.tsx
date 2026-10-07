@@ -1,9 +1,4 @@
-import {
-  parseLocalDate,
-  startOfLocalDay,
-  toLocalDate,
-  zonedTimeToUtc,
-} from "@tick-taka/shared/dates";
+import { parseLocalDate, startOfLocalDay, zonedTimeToUtc } from "@tick-taka/shared/dates";
 import { toAsciiDigits } from "@tick-taka/shared/digits";
 import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
@@ -30,6 +25,7 @@ import { pickDate } from "@/lib/pick-date";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 
 type Kind = "bill" | "income";
@@ -60,6 +56,7 @@ function RecurringForm({ id }: { id: string | null }) {
   const { data: categories = [] } = useCategories();
   const { data: settings } = useSettings();
   const timeZone = userTime(settings).timeZone;
+  const today = useTodayDate();
   const item = id ? list?.find((r) => r.id === id) : undefined;
   const [kind, setKind] = useState<Kind>(item?.kind ?? "bill");
   const [name, setName] = useState(item?.name ?? "");
@@ -72,7 +69,7 @@ function RecurringForm({ id }: { id: string | null }) {
   );
   const [categoryId, setCategoryId] = useState<string | null>(item?.categoryId ?? null);
   const [repeat, setRepeat] = useState("");
-  const [dueDate, setDueDate] = useState(item?.dueDate ?? toLocalDate(Date.now(), timeZone));
+  const [dueDate, setDueDate] = useState(item?.dueDate ?? today);
   const [remindDays, setRemindDays] = useState(item?.remindDays ?? 2);
   const [rate, setRate] = useState("");
   const parsed = useMemo(() => (repeat.trim() ? parseRecurrence(`x ${repeat}`) : null), [repeat]);

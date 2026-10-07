@@ -1,4 +1,4 @@
-import { endOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
+import { endOfLocalDay } from "@tick-taka/shared/dates";
 import { newId } from "@tick-taka/shared/ids";
 import { parseAmountToMinor, toMajor } from "@tick-taka/shared/money";
 import { useRouter } from "expo-router";
@@ -18,6 +18,7 @@ import { pickDate } from "@/lib/pick-date";
 import { useAccounts, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useColors } from "@/theme/colors";
 import { useGoals } from "./queries";
@@ -45,6 +46,7 @@ function GoalForm({ id }: { id: string | null }) {
   const { data: accounts = [] } = useAccounts();
   const { data: settings } = useSettings();
   const timeZone = userTime(settings).timeZone;
+  const today = useTodayDate();
   const goal = id ? goals?.find((g) => g.id === id) : undefined;
   const [name, setName] = useState(goal?.name ?? "");
   const [emoji, setEmoji] = useState(goal?.emoji ?? "🫙");
@@ -118,7 +120,7 @@ function GoalForm({ id }: { id: string | null }) {
             deadline ? endOfLocalDay(deadline, timeZone) - 1 : Date.now(),
             timeZone,
           );
-          if (picked) setDeadline(picked > toLocalDate(Date.now(), timeZone) ? picked : deadline);
+          if (picked) setDeadline(picked > today ? picked : deadline);
         }}
         onClear={() => setDeadline(null)}
         clearLabel="No deadline"

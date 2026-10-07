@@ -1,4 +1,4 @@
-import { addMonths, isLocalMonth, toLocalMonth } from "@tick-taka/shared/dates";
+import { addMonths, isLocalMonth } from "@tick-taka/shared/dates";
 import { useState } from "react";
 import { View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
@@ -12,8 +12,7 @@ import { Screen } from "@/components/ui/screen";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatMonth, plural } from "@/lib/format";
-import { useSettings } from "@/lib/queries";
-import { userTime } from "@/lib/user-time";
+import { useThisMonth } from "@/lib/use-today";
 import { useColors } from "@/theme/colors";
 import { useAiUsage } from "./queries";
 
@@ -58,8 +57,7 @@ function Row({ title, detail, value }: { title: string; detail: string; value: s
 export function AiUsageScreen() {
   const colors = useColors();
   const axis = useChartAxis();
-  const { data: settings } = useSettings();
-  const current = toLocalMonth(Date.now(), userTime(settings).timeZone);
+  const current = useThisMonth();
   const [monthsBack, setMonthsBack] = useState(0);
   const month = addMonths(current, -monthsBack);
   const usage = useAiUsage(isLocalMonth(month) ? month : undefined);

@@ -26,6 +26,7 @@ import { Text } from "@/components/ui/text";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
 import { formatLocalDate, formatMonth, plural } from "@/lib/format";
 import { useSettings } from "@/lib/queries";
+import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useRecurring, useTasks } from "./queries";
 
@@ -36,7 +37,7 @@ export function CalendarView() {
   const { data: settings } = useSettings();
   const timeZone = userTime(settings).timeZone;
   const weekStartsOn = userTime(settings).weekStartsOn;
-  const today = toLocalDate(Date.now(), timeZone);
+  const today = useTodayDate();
   const [mode, setMode] = useState<"month" | "week">("month");
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selected, setSelected] = useState(today);

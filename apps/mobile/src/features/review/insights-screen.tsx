@@ -1,4 +1,4 @@
-import { addMonths, localMonthRange, toLocalMonth } from "@tick-taka/shared/dates";
+import { addMonths, localMonthRange } from "@tick-taka/shared/dates";
 import { useState } from "react";
 import { View } from "react-native";
 import { BarChart, LineChart } from "react-native-gifted-charts";
@@ -16,6 +16,7 @@ import { useInsights } from "@/features/money/queries";
 import { formatAmount, formatMinutes, formatMonth } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import { useAreas, useCategories, useSettings } from "@/lib/queries";
+import { useThisMonth } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useChartColors } from "@/theme/colors";
 import { useMonthlySeries, useNetWorth } from "./queries";
@@ -50,7 +51,7 @@ export function InsightsScreen() {
   const { data: areas = [] } = useAreas();
   const timeZone = userTime(settings).timeZone;
   const [range, setRange] = useState<Range>("this");
-  const month = toLocalMonth(Date.now(), timeZone);
+  const month = useThisMonth();
   const span =
     range === "this"
       ? localMonthRange(month, timeZone)

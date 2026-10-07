@@ -1,28 +1,20 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AESEncryptionKey, AESSealedData, aesDecryptAsync, aesEncryptAsync } from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
-import { type Cipher, createEncryptedStorage, KeyUnavailableError } from "./encrypted-storage";
+import { type Cipher, createEncryptedStorage, retryingKey } from "./encrypted-storage";
 import { notify } from "./notify";
 
 /** A random AES-256 key, created on first use and kept in the Android Keystore-backed store. */
 const KEY_NAME = "tt.storage-key";
 
-let key: Promise<AESEncryptionKey> | null = null;
-
 /** The storage key; rejects with KeyUnavailableError when the Keystore can't be read now. */
-function storageKey(): Promise<AESEncryptionKey> {
-  key ??= (async () => {
-    const saved = await SecureStore.getItemAsync(KEY_NAME);
-    if (saved) return AESEncryptionKey.import(saved, "hex");
-    const created = await AESEncryptionKey.generate();
-    await SecureStore.setItemAsync(KEY_NAME, await created.encoded("hex"));
-    return created;
-  })().catch((error: unknown) => {
-    key = null; // try again next time
-    throw new KeyUnavailableError(error);
-  });
-  return key;
-}
+const storageKey = retryingKey(async (): Promise<AESEncryptionKey> => {
+  const saved = await SecureStore.getItemAsync(KEY_NAME);
+  if (saved) return AESEncryptionKey.import(saved, "hex");
+  const created = await AESEncryptionKey.generate();
+  await SecureStore.setItemAsync(KEY_NAME, await created.encoded("hex"));
+  return created;
+});
 
 /** AES-GCM with a fresh nonce per value; the stored text is base64 of nonce + ciphertext + tag. */
 const aesGcm: Cipher = {

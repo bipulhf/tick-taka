@@ -26,6 +26,21 @@ export class KeyUnavailableError extends Error {
   }
 }
 
+/**
+ * Loads a key once and shares it between callers. A failed load isn't kept: it
+ * rejects with KeyUnavailableError and the next call loads again.
+ */
+export function retryingKey<K>(load: () => Promise<K>): () => Promise<K> {
+  let key: Promise<K> | null = null;
+  return () => {
+    key ??= load().catch((error: unknown) => {
+      key = null; // try again next time
+      throw new KeyUnavailableError(error);
+    });
+    return key;
+  };
+}
+
 /** Marks an encrypted value; anything else is plain text from before encryption. */
 export const SEALED_PREFIX = "enc1:";
 /** Where a value that no key can open is kept, instead of being deleted. */

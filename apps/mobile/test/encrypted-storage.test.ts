@@ -4,6 +4,7 @@ import {
   createEncryptedStorage,
   KeyUnavailableError,
   type KeyValueStorage,
+  retryingKey,
   SEALED_PREFIX,
   UNREADABLE_SUFFIX,
 } from "../src/lib/encrypted-storage";
@@ -102,5 +103,33 @@ describe("encrypted storage", () => {
     }).setItem("tt.outbox", "queued");
     expect(base.data.get("tt.outbox")).toBe("queued");
     expect(plain).toEqual(["tt.outbox"]);
+  });
+});
+
+// QA-406: the storage key after a Keystore hiccup.
+describe("loading the storage key", () => {
+  test("a failed load says the key is unavailable, and the next call loads again", async () => {
+    let loads = 0;
+    let keystoreUp = false;
+    const storageKey = retryingKey(async () => {
+      loads++;
+      if (!keystoreUp) throw new Error("Keystore locked");
+      return "key";
+    });
+    await expect(storageKey()).rejects.toBeInstanceOf(KeyUnavailableError);
+    keystoreUp = true;
+    expect(await storageKey()).toBe("key");
+    expect(loads).toBe(2);
+  });
+
+  test("once loaded, the key is shared and not loaded again", async () => {
+    let loads = 0;
+    const storageKey = retryingKey(async () => {
+      loads++;
+      return "key";
+    });
+    expect(await Promise.all([storageKey(), storageKey()])).toEqual(["key", "key"]);
+    expect(await storageKey()).toBe("key");
+    expect(loads).toBe(1);
   });
 });

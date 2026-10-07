@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Directory, File, Paths } from "expo-file-system";
 import * as Notifications from "expo-notifications";
-import { isExportFile } from "./export-file";
+import { sweepExports } from "./export-sweep";
 import { outbox } from "./outbox";
 import { persister, queryClient } from "./query-client";
 
@@ -13,16 +12,6 @@ const resets = new Set<() => void>();
 /** Modules holding a user's data in memory register how to empty it on sign-out. */
 export function resetOnSignOut(reset: () => void): void {
   resets.add(reset);
-}
-
-/** A JSON export a share sheet was opened for, should one still be in the cache folder. */
-function deleteExportFiles(): void {
-  try {
-    for (const item of new Directory(Paths.cache).list())
-      if (item instanceof File && isExportFile(item.name)) item.delete();
-  } catch (error) {
-    console.warn("sign-out: couldn't clear export files", error);
-  }
 }
 
 /**
@@ -37,7 +26,8 @@ export async function clearUserData(): Promise<void> {
   queryClient.clear();
   for (const reset of resets) reset();
   const keys = await AsyncStorage.getAllKeys();
-  deleteExportFiles();
+  // Every JSON export still kept for the app it was shared to.
+  sweepExports(0);
   await Promise.all([
     persister.removeClient(),
     AsyncStorage.multiRemove(keys.filter((key) => !DEVICE_KEYS.has(key))),

@@ -26,6 +26,8 @@ import { AppLock } from "@/features/security/app-lock";
 import { loadAppLockPref } from "@/features/security/app-lock-pref";
 import { loadThemeChoice, ThemedRoot } from "@/features/settings/themed-root";
 import { loadToken, tokenStore } from "@/lib/auth";
+import { EXPORT_KEEP_MS } from "@/lib/export-file";
+import { sweepExports } from "@/lib/export-sweep";
 import { loadFeedbackPrefs } from "@/lib/feedback-prefs";
 import { startOutbox } from "@/lib/outbox";
 import { loadPrivacy } from "@/lib/privacy";
@@ -82,6 +84,7 @@ export default function RootLayout() {
     loadToken().catch(() => tokenStore.set(null));
     void restoreServerClock(AsyncStorage);
     void startOutbox();
+    sweepExports(EXPORT_KEEP_MS);
     void loadAppLockPref();
     void loadPrivacy();
     void loadFeedbackPrefs();

@@ -18,7 +18,7 @@ Strategy: **Restrained.** Tinted neutrals plus one accent used for the primary a
 | muted | #6B655F | #A09AA6 | Secondary text |
 | line | #EEE5D8 | #34313F | Hairline separators |
 | line-strong | #8F8475 | #7A748C | Input, outlined-button and switch-track boundaries |
-| mango | #FFB547 | #FFC266 | Primary action, FAB, selected state |
+| mango | #FFB547 | #FFC266 | Primary action, FAB, Tiki; never a selected state |
 | on-mango | #23202B | #23202B | Text and icons on mango and every other semantic fill, always dark |
 | sky | #5B8CFF | #7AA2FF | Time: tasks, focus, calendar |
 | mint | #2EC4A0 | #4FD8B5 | Money in, under budget |
@@ -44,7 +44,7 @@ Contrast (WCAG 2.x, checked by `apps/mobile/test/contrast.test.ts` against both 
 
 ## Typography
 
-Nunito everywhere (rounded, friendly). Tabular digits for every amount and timer.
+Nunito everywhere (rounded, friendly). Tabular digits for every amount and timer. Amounts follow Settings › Numbers (Western or Bangla digits) on screen, on the keypad and on the widget; dates and times stay 0-9, and the setting's caption says so.
 
 | Role | Size / line | Weight |
 |---|---|---|
@@ -71,9 +71,10 @@ Caption (13) is the smallest text; nothing goes below it except tab labels (12).
 ## Components
 
 - **Tab bar:** a floating capsule (64 dp tall) of 4 equal tabs, each an icon over its name, with the mango quick-add FAB (56 dp, dark plus icon) in the middle of the capsule. The open tab is marked by ink colour and a soft pill, never by growing. When Tiki's chat is available, its 64 dp round button sits beside the capsule on the left, so it never covers content; the FAB is then centred in the capsule rather than on the screen (about 36 dp right of centre on a 360 dp phone). This is a deliberate trade (6c724f6): one thumb-tap to Tiki from every tab is worth more than a FAB fixed at the exact centre, and the FAB still sits in the lower middle, inside the thumb's reach. The FAB keeps its place within the capsule, so it moves only if the server's AI is switched on or off. Icons 26, labels 12 (the one size below Caption, allowed for tab labels only, capped at 1.3x font scale).
-- **Buttons:** 52 dp tall, radius 16. Primary = mango with on-mango text; secondary = surface with hairline border; ghost = text only.
-- **Chips:** 40 dp, radius full, neutral by default; selected = ink fill.
-- **Pickers in sheets:** a compact "Cash ▾" style field that expands into a list, instead of rows of chips.
+- **Buttons:** 52 dp tall, radius 16. Primary = mango with on-mango text; secondary = surface with a line-strong border (the hairline `line` is only 1.25:1, too faint for a control's edge); time = the secondary outline with a sky icon; ghost = text only.
+- **Chips:** 40 dp, radius full, neutral by default; selected = ink fill. A chip is an action, one choice of a row (radio) or one of several (checkbox), never an on/off setting.
+- **Switches:** every on/off setting is a labelled switch row. On = ink track with a background-coloured thumb (like a selected chip); off = line-strong track.
+- **Pickers in sheets:** a compact "Cash ▾" style field that expands into a list (or an emoji grid), instead of rows of chips. A value set elsewhere that isn't a preset is listed as itself. Dates and times use a field of the same shape that opens the system dialog ("Next due / Mon 5 Oct").
 - **Sheets:** creating and editing always happen in bottom sheets with the action pinned at the bottom.
 - **Home-screen widget:** every pill is a 48 dp target with 13 dp labels, so the widget trades breadth for reach (`features/widget/widget-layout.ts`, tested). At the default 4×2 size one row of pills holds Task, Expense and up to two one-tap quick-logs; Focus and Tiki give way, because a quick-log is the fastest path the app has. A tall widget (240 dp or more) gives the quick-logs a row of their own and shows all four actions. After a quick-log, Undo and Keep take the row's first places for ten minutes at every size. A label is only shown when it fits: on a narrow widget the actions become glyphs (＋ －) with their full names for screen readers, and a quick-log that doesn't fit is left out rather than cut off.
 

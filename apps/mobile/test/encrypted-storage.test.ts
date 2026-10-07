@@ -8,6 +8,7 @@ import {
   retryingKey,
   SEALED_PREFIX,
   UNREADABLE_SUFFIX,
+  utf8Decode,
 } from "../src/lib/encrypted-storage";
 
 function memory(): KeyValueStorage & { data: Map<string, string> } {
@@ -152,5 +153,22 @@ describe("loading the storage key", () => {
 
   test("base64 text turns back into the bytes it encodes", () => {
     expect([...base64ToBytes(btoa("\u0000\u00ffhi"))]).toEqual([0, 255, 104, 105]);
+  });
+
+  test("UTF-8 decodes like TextDecoder, Bangla, emoji and bad bytes included", () => {
+    const decoder = new TextDecoder();
+    for (const text of ["", "cha 20", "চা ২০ ৳", "biryani 🍛 with friends", "a\u00e9z\u20ac"]) {
+      const bytes = new TextEncoder().encode(text);
+      expect(utf8Decode(bytes)).toBe(decoder.decode(bytes));
+    }
+    for (const bad of [
+      [0xff],
+      [0xc3],
+      [0xe0, 0x80],
+      [0x61, 0xf0, 0x9f],
+      [0xed, 0xa0, 0x80],
+      [0xf4, 0x90],
+    ])
+      expect(utf8Decode(new Uint8Array(bad))).toBe(decoder.decode(new Uint8Array(bad)));
   });
 });

@@ -6,6 +6,7 @@ import {
   type Cipher,
   createEncryptedStorage,
   retryingKey,
+  utf8Decode,
 } from "./encrypted-storage";
 import { notify } from "./notify";
 
@@ -32,7 +33,8 @@ const aesGcm: Cipher = {
     // throws, and every value read as "sealed with a lost key".
     const combined = AESSealedData.fromCombined(base64ToBytes(sealed));
     const bytes = await aesDecryptAsync(combined, await storageKey());
-    return new TextDecoder().decode(bytes);
+    // Hermes has no TextDecoder: calling it threw here, after a good decrypt.
+    return utf8Decode(bytes);
   },
 };
 
@@ -50,8 +52,8 @@ const aesGcm: Cipher = {
  * shown on the home screen anyway, so it stays in plain AsyncStorage.
  */
 export const secureStorage = createEncryptedStorage(AsyncStorage, aesGcm, {
-  onUnreadable(name) {
-    console.warn(`Stored ${name} was sealed with a lost key; kept aside as unreadable`);
+  onUnreadable(name, error) {
+    console.warn(`Stored ${name} couldn't be opened; kept aside as unreadable`, error);
     if (name === "tt.outbox")
       notify("Some changes saved on this phone can't be read anymore and weren't synced.");
   },
@@ -68,8 +70,8 @@ export const secureCacheStorage = createEncryptedStorage(
   AsyncStorage,
   aesGcm,
   {
-    onUnreadable(name) {
-      console.warn(`Stored ${name} was sealed with a lost key; kept aside as unreadable`);
+    onUnreadable(name, error) {
+      console.warn(`Stored ${name} couldn't be opened; kept aside as unreadable`, error);
     },
   },
   { plainFallback: false },

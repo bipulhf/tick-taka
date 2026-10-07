@@ -54,6 +54,61 @@ export function base64ToBytes(base64: string): Uint8Array {
   return bytes;
 }
 
+/**
+ * Text from UTF-8 bytes. Hermes has TextEncoder but no TextDecoder, so decrypted
+ * bytes are decoded here; bad sequences become U+FFFD like TextDecoder's.
+ */
+export function utf8Decode(bytes: Uint8Array): string {
+  let out = "";
+  let i = 0;
+  while (i < bytes.length) {
+    const b0 = bytes[i] ?? 0;
+    if (b0 < 0x80) {
+      out += String.fromCharCode(b0);
+      i += 1;
+      continue;
+    }
+    // WHATWG UTF-8: how many bytes follow, and the allowed range of the first one.
+    let need = 0;
+    let lower = 0x80;
+    let upper = 0xbf;
+    if (b0 >= 0xc2 && b0 <= 0xdf) need = 1;
+    else if (b0 >= 0xe0 && b0 <= 0xef) {
+      need = 2;
+      if (b0 === 0xe0) lower = 0xa0;
+      if (b0 === 0xed) upper = 0x9f;
+    } else if (b0 >= 0xf0 && b0 <= 0xf4) {
+      need = 3;
+      if (b0 === 0xf0) lower = 0x90;
+      if (b0 === 0xf4) upper = 0x8f;
+    }
+    if (need === 0) {
+      out += "\uFFFD";
+      i += 1;
+      continue;
+    }
+    let code = b0 & (0x3f >> need);
+    let seen = 0;
+    for (let k = 1; k <= need; k++) {
+      const b = bytes[i + k];
+      if (b === undefined || b < lower || b > upper) break;
+      code = (code << 6) | (b & 0x3f);
+      lower = 0x80;
+      upper = 0xbf;
+      seen += 1;
+    }
+    if (seen < need) {
+      // One replacement for the bytes that did fit, then carry on after them.
+      out += "\uFFFD";
+      i += 1 + seen;
+      continue;
+    }
+    out += String.fromCodePoint(code);
+    i += need + 1;
+  }
+  return out;
+}
+
 /** An encrypted storage, plus a way back for values that were moved aside. */
 export interface EncryptedStorage extends KeyValueStorage {
   /**
@@ -66,7 +121,7 @@ export interface EncryptedStorage extends KeyValueStorage {
 
 export interface EncryptedStorageEvents {
   /** A value was sealed with a key that is gone; it was moved to `${key}.unreadable`. */
-  onUnreadable?(key: string): void;
+  onUnreadable?(key: string, error: unknown): void;
   /** The cipher failed, so this value was stored as plain text rather than lost. */
   onPlainFallback?(key: string, error: unknown): void;
 }
@@ -99,7 +154,7 @@ export function createEncryptedStorage(
         if (error instanceof KeyUnavailableError) throw error;
         await base.setItem(key + UNREADABLE_SUFFIX, raw);
         await base.removeItem(key);
-        events.onUnreadable?.(key);
+        events.onUnreadable?.(key, error);
         return null;
       }
     },

@@ -1,8 +1,24 @@
-import { Switch, View } from "react-native";
+import { Pressable, Switch, View } from "react-native";
 import { useColors } from "@/theme/colors";
 import { Text } from "./text";
 
-/** An on/off setting: its name (and an optional hint) beside a switch. */
+/**
+ * The app's one switch style. On reads like a selected chip (ink, with a
+ * background-coloured thumb, well over 3:1 on a card); mango is kept for the one
+ * primary action on the screen, and mint for money coming in.
+ */
+function useSwitchColors(value: boolean) {
+  const colors = useColors();
+  return {
+    trackColor: { true: colors.ink, false: colors.lineStrong },
+    thumbColor: value ? colors.background : undefined,
+  };
+}
+
+/**
+ * An on/off setting: its name (and an optional hint) beside a switch. The whole row
+ * is the target and is one switch to a screen reader, read once with its state.
+ */
 export function ToggleRow({
   label,
   hint,
@@ -14,9 +30,16 @@ export function ToggleRow({
   value: boolean;
   onChange: (value: boolean) => void;
 }) {
-  const colors = useColors();
+  const switchColors = useSwitchColors(value);
   return (
-    <View className="min-h-12 flex-row items-center gap-3">
+    <Pressable
+      onPress={() => onChange(!value)}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      accessibilityLabel={label}
+      accessibilityHint={hint}
+      className="min-h-14 flex-row items-center gap-3 active:opacity-70"
+    >
       <View className="flex-1">
         <Text>{label}</Text>
         {hint ? (
@@ -25,15 +48,10 @@ export function ToggleRow({
           </Text>
         ) : null}
       </View>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        // On reads like a selected chip (ink, with a background-coloured thumb); mango is
-        // kept for the one primary action on the screen.
-        trackColor={{ true: colors.ink, false: colors.lineStrong }}
-        thumbColor={value ? colors.background : undefined}
-        accessibilityLabel={label}
-      />
-    </View>
+      {/* Drawn for its state only: the row takes the tap and speaks for it. */}
+      <View pointerEvents="none" importantForAccessibility="no-hide-descendants">
+        <Switch value={value} {...switchColors} />
+      </View>
+    </Pressable>
   );
 }

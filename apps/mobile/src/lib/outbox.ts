@@ -1,12 +1,13 @@
 import { onlineManager } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { AppState } from "react-native";
-import { ApiError, send } from "./api";
+import { send } from "./api";
 import { friendlyError } from "./error-copy";
-import { currentToken, ServerUnreachableError } from "./http";
+import { currentToken } from "./http";
 import { notify } from "./notify";
 import { type NewExpense, withNewExpense } from "./optimistic-spend";
-import type { FailureInfo, OutboxRequest } from "./outbox-policy";
+import { describeFailure } from "./outbox-failure";
+import type { OutboxRequest } from "./outbox-policy";
 import { OutboxQueue } from "./outbox-queue";
 import { phoneWrites } from "./phone-writes";
 import { keys, type TodayData } from "./queries";
@@ -32,22 +33,10 @@ async function readJson(key: string): Promise<unknown> {
   }
 }
 
-function describe(error: unknown): FailureInfo {
-  if (error instanceof ServerUnreachableError) return { unreachable: true };
-  if (error instanceof ApiError) {
-    // Not our API's error shape: a captive portal or proxy answered, not the server.
-    if (error.code === "http_error" && error.status !== 401) return { unreachable: true };
-    return { status: error.status };
-  }
-  // A 200 that isn't JSON is a login page in front of the server, not a reply.
-  if (error instanceof SyntaxError) return { unreachable: true };
-  return {};
-}
-
 /** The one queue every write goes through; see OutboxQueue for the rules. */
 export const outbox = new OutboxQueue({
   send: (request) => send(request.method, request.path, request.body),
-  describe,
+  describe: describeFailure,
   canSend: () => onlineManager.isOnline() && Boolean(currentToken()),
   load: () => readJson(STORAGE_KEY),
   save: (state) => secureStorage.setItem(STORAGE_KEY, JSON.stringify(state)),

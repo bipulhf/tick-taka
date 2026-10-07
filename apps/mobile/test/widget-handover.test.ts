@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { handOverWidgetWrites } from "../src/features/widget/widget-pending";
+import { handOverWidgetWrites, withdrawLog } from "../src/features/widget/widget-pending";
 import type { OutboxRequest, PersistedOutbox } from "../src/lib/outbox-policy";
 import { type OutboxDeps, OutboxQueue } from "../src/lib/outbox-queue";
 
@@ -7,6 +7,9 @@ type Log = { id: string; amountMinor: number };
 
 /** The widget's own offline lists, and a real outbox whose saved queue reads slowly. */
 function setup(options: { keyReadable?: boolean } = {}) {
+  const key = { readable: options.keyReadable ?? true };
+  const server: string[] = [];
+  let online = false;
   const widget = {
     logs: [
       { id: "w1", amountMinor: 2000 },
@@ -20,12 +23,16 @@ function setup(options: { keyReadable?: boolean } = {}) {
     release = resolve;
   });
   const deps: OutboxDeps = {
-    send: async () => ({ ok: true }),
+    send: async (request) => {
+      const id = (request.body as { id?: string } | undefined)?.id;
+      server.push(`${request.method} ${request.path}${id ? ` ${id}` : ""}`);
+      return { ok: true };
+    },
     describe: () => ({ unreachable: true }),
-    canSend: () => false,
+    canSend: () => online,
     load: async () => {
       await slow;
-      if (options.keyReadable === false) throw new Error("storage key can't be read");
+      if (!key.readable) throw new Error("storage key can't be read");
       return disk.main;
     },
     save: async (state: PersistedOutbox) => {
@@ -38,9 +45,16 @@ function setup(options: { keyReadable?: boolean } = {}) {
   };
   const queue = new OutboxQueue(deps);
   const loaded = queue.load();
+  const goOnline = () => {
+    online = true;
+  };
   const handOver = () =>
     handOverWidgetWrites({
-      ready: () => loaded,
+      // After a failed read, the next start reads the saved queue again.
+      ready: async () => {
+        await loaded;
+        await queue.load();
+      },
       readLogs: async () => [...widget.logs],
       removeLogs: async (sent) => {
         widget.logs = widget.logs.filter((log) => !sent.includes(log));
@@ -54,7 +68,7 @@ function setup(options: { keyReadable?: boolean } = {}) {
       },
       durable: () => queue.durable(),
     });
-  return { widget, disk, queue, release, handOver };
+  return { widget, disk, queue, release, handOver, key, server, goOnline };
 }
 
 const paths = (state: unknown) =>
@@ -90,5 +104,47 @@ describe("handing the widget's offline taps to the outbox (QA-304, CQ-039)", () 
     expect(paths(disk.early)).toHaveLength(3);
     expect(widget.logs).toHaveLength(2);
     expect(widget.deletes).toEqual(["d1"]);
+  });
+
+  // QA-405: the outbox already holds the log (on its side key) when the widget's Undo runs.
+  test("an Undo on the widget after a hand-over that couldn't finish still deletes the log", async () => {
+    const { widget, queue, release, handOver, key, server, goOnline } = setup({
+      keyReadable: false,
+    });
+    release();
+    expect(await handOver()).toBe(false);
+
+    // Undo of w1 on the widget, while it is still in the widget's waiting list.
+    const withdrawn = withdrawLog(widget.logs, widget.deletes, "w1");
+    expect(withdrawn).not.toBeNull();
+    widget.logs = withdrawn?.logs ?? widget.logs;
+    widget.deletes = withdrawn?.deletes ?? widget.deletes;
+
+    // The key reads again; the app hands over and sends.
+    key.readable = true;
+    goOnline();
+    expect(await handOver()).toBe(true);
+    for (let i = 0; i < 50 && queue.size > 0; i++) await new Promise((r) => setTimeout(r, 2));
+    // The POST went out from the side key, so a DELETE must follow it.
+    expect(server.filter((line) => line === "POST /transactions w1")).toHaveLength(1);
+    expect(server.filter((line) => line === "DELETE /transactions/w1")).toHaveLength(1);
+    expect(server.indexOf("DELETE /transactions/w1")).toBeGreaterThan(
+      server.indexOf("POST /transactions w1"),
+    );
+    expect(widget.logs).toEqual([]);
+    expect(widget.deletes).toEqual([]);
+  });
+});
+
+describe("withdrawing a widget log on Undo", () => {
+  test("drops it from the waiting list and always queues its delete", () => {
+    const logs = [{ id: "a" }, { id: "b" }];
+    expect(withdrawLog(logs, ["x"], "a")).toEqual({ logs: [{ id: "b" }], deletes: ["x", "a"] });
+    // Already queued for deletion: not twice.
+    expect(withdrawLog(logs, ["a"], "a")?.deletes).toEqual(["a"]);
+  });
+
+  test("a log no longer waiting (sent by the widget or the app) isn't withdrawn here", () => {
+    expect(withdrawLog([{ id: "b" }], [], "a")).toBeNull();
   });
 });

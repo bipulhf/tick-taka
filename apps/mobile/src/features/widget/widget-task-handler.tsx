@@ -13,6 +13,7 @@ import {
   writePendingLogs,
   writeWidgetCache,
 } from "./widget-cache";
+import { withdrawLog } from "./widget-pending";
 import { afterLog, afterUndo, canUndo } from "./widget-quick-log";
 
 export const WIDGET_NAME = "SafeToSpend";
@@ -61,9 +62,11 @@ async function undoQuickLog(): Promise<WidgetCache> {
     await writeWidgetCache(next);
     return next;
   }
-  const pending = await readPendingLogs();
-  if (pending.some((p) => p.id === log.id)) {
-    await writePendingLogs(pending.filter((p) => p.id !== log.id));
+  const withdrawn = withdrawLog(await readPendingLogs(), await readPendingDeletes(), log.id);
+  if (withdrawn) {
+    // Delete first: if the app holds the log already, losing the delete would keep it.
+    await writePendingDeletes(withdrawn.deletes);
+    await writePendingLogs(withdrawn.logs);
   } else {
     try {
       const response = await request(apiUrl(`/transactions/${log.id}`), {

@@ -1,5 +1,6 @@
 import type { TikiMood } from "@tick-taka/shared/tiki";
-import { useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tiki } from "@/components/tiki/tiki";
@@ -9,7 +10,14 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { confirmSignOut } from "@/features/settings/confirm-sign-out";
 import { ApiError } from "@/lib/api";
-import { profileStore, SignInCancelled, signedOutNoticeStore, signInWithGoogle } from "@/lib/auth";
+import {
+  profileStore,
+  SCREENSHOT_BUILD,
+  SignInCancelled,
+  signedOutNoticeStore,
+  signInForScreenshots,
+  signInWithGoogle,
+} from "@/lib/auth";
 import { API_URL } from "@/lib/config";
 import { usePendingWrites } from "@/lib/connection";
 import { friendlyError } from "@/lib/error-copy";
@@ -39,6 +47,12 @@ export default function LoginScreen() {
   const colors = useColors();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Screenshot builds sign in from a link (ticktaka://login?demoToken=…); see lib/auth.ts.
+  const { demoToken } = useLocalSearchParams<{ demoToken?: string }>();
+  useEffect(() => {
+    if (SCREENSHOT_BUILD && demoToken)
+      signInForScreenshots(demoToken).catch((e: Error) => setError(e.message));
+  }, [demoToken]);
   // A profile without a token: the session expired and this phone still holds their data.
   const expired = useStore(profileStore);
   // Set after the account was deleted, so the person knows it worked.

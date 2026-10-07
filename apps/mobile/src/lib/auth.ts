@@ -106,6 +106,27 @@ export async function signInWithGoogle(): Promise<void> {
   signedOutNoticeStore.set(null);
 }
 
+/** Only in a build made for README screenshots; never set for real builds. */
+export const SCREENSHOT_BUILD = process.env.EXPO_PUBLIC_DEMO_SIGN_IN === "1";
+
+/**
+ * Screenshot builds only: trades a token minted by the API's demo script
+ * (apps/api/scripts/demo.ts) for a session, so the README screenshots can be taken on
+ * an emulator without Google Play services. Real builds refuse it.
+ */
+export async function signInForScreenshots(token: string): Promise<void> {
+  if (!SCREENSHOT_BUILD) throw new Error("Not available in this build");
+  const response = await request(apiUrl("/auth/refresh"), {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+    timeout: 15_000,
+  });
+  const session = sessionResponseSchema.safeParse(await response.json().catch(() => null));
+  if (!response.ok || !session.success) throw new Error("The demo token was refused");
+  await sessionManager.save(session.data);
+  signedOutNoticeStore.set(null);
+}
+
 /** Swaps a token older than a day for a fresh one, so an active phone never hits the expiry. */
 export const refreshSessionIfStale = sessionManager.refreshIfStale;
 

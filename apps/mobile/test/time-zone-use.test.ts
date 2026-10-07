@@ -74,17 +74,16 @@ describe("time zone", () => {
   });
 
   test("screens take today from useTodayDate(), which turns over at midnight", () => {
-    const offenders = files(SRC)
-      .filter((path) => path.endsWith(".tsx"))
-      .filter((path) => /to(LocalDate|LocalMonth)\(Date\.now\(\)/.test(readFileSync(path, "utf8")))
-      .map((path) => relative(SRC, path));
+    const offenders = sourceFiles(/\.tsx$/)
+      .filter(({ text }) => /to(LocalDate|LocalMonth)\(Date\.now\(\)/.test(text))
+      .map(({ path }) => path);
     expect(offenders).toEqual([]);
   });
 
   test("only one hook is called useToday", () => {
-    const exporters = files(SRC)
-      .filter((path) => /export function useToday\b/.test(readFileSync(path, "utf8")))
-      .map((path) => relative(SRC, path));
+    const exporters = sourceFiles()
+      .filter(({ text }) => /export function useToday\b/.test(text))
+      .map(({ path }) => path);
     expect(exporters).toEqual(["lib/use-today.ts"]);
   });
 });

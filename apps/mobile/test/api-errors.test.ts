@@ -5,6 +5,7 @@ describe("reading an error reply (CQ-022)", () => {
   test("our API's envelope gives its code and message", () => {
     const error = apiErrorFrom(404, { error: { code: "not_found", message: "Task not found" } });
     expect([error.status, error.code, error.message]).toEqual([404, "not_found", "Task not found"]);
+    expect(error.fromProxy).toBe(false);
   });
 
   test("anything else is a reply from something in front of the server", () => {
@@ -19,6 +20,7 @@ describe("reading an error reply (CQ-022)", () => {
     ]) {
       const error = apiErrorFrom(502, body);
       expect([error.code, error.message]).toEqual(["http_error", "Request failed (502)"]);
+      expect(error.fromProxy).toBe(true);
     }
   });
 });

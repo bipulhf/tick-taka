@@ -52,6 +52,17 @@ describe("how the outbox reads a failed send (QA-309)", () => {
     expect(classifyFailure(entry, failure)).toBe("reject");
   });
 
+  // CQ-045: the code an API sends doesn't make it a proxy; only a reply that isn't our envelope does.
+  test("our API's envelope is a refusal whatever its code, even http_error", async () => {
+    for (const code of ["http_error", "invalid_request"]) {
+      const failure = await failureFor(() =>
+        json(400, { error: { code, message: "Malformed JSON in request body" } }),
+      );
+      expect(failure).toEqual({ status: 400 });
+      expect(classifyFailure(entry, failure)).toBe("reject");
+    }
+  });
+
   test("a body too large for the proxy is final, not retried forever", async () => {
     const failure = await failureFor(
       () => new Response("<html>413 Request Entity Too Large</html>", { status: 413 }),
@@ -61,7 +72,7 @@ describe("how the outbox reads a failed send (QA-309)", () => {
   });
 
   test("a 401 is a session problem even from something in front of the server", () => {
-    expect(describeFailure(new ApiError(401, "http_error", "Request failed (401)"))).toEqual({
+    expect(describeFailure(new ApiError(401, "http_error", "Request failed (401)", true))).toEqual({
       status: 401,
     });
     expect(classifyFailure(entry, { status: 401 })).toBe("session");

@@ -10,6 +10,11 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     message: string,
+    /**
+     * The reply wasn't our API's envelope: a proxy or captive portal answered, not the
+     * server. Decided by the body's shape, never by its code, which the API also sets.
+     */
+    readonly fromProxy = false,
   ) {
     super(message);
     this.name = "ApiError";
@@ -28,12 +33,13 @@ interface JsonResponse {
 /**
  * An ApiError from a status and an already-read error body. Only our API's envelope
  * (`{ error: { code, message } }`, checked) gives a code; anything else came from
- * something in front of the server (a proxy, a captive portal) and is `http_error`,
+ * something in front of the server (a proxy, a captive portal) and is `fromProxy`,
  * which the outbox treats as "not reached" rather than as a refusal.
  */
 export function apiErrorFrom(status: number, body: unknown): ApiError {
   const parsed = errorBodySchema.safeParse(body);
-  if (!parsed.success) return new ApiError(status, "http_error", `Request failed (${status})`);
+  if (!parsed.success)
+    return new ApiError(status, "http_error", `Request failed (${status})`, true);
   return new ApiError(status, parsed.data.error.code, parsed.data.error.message);
 }
 

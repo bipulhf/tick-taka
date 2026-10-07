@@ -12,7 +12,7 @@ export function describeFailure(error: unknown): FailureInfo {
     // Too large for the proxy or the server: sending it again can never work.
     if (TOO_LARGE.has(error.status)) return { status: error.status };
     // Not our API's error shape: a captive portal or proxy answered, not the server.
-    if (error.code === "http_error" && error.status !== 401) return { unreachable: true };
+    if (error.fromProxy && error.status !== 401) return { unreachable: true };
     return { status: error.status };
   }
   // A 200 that isn't JSON is a login page in front of the server, not a reply.

@@ -35,6 +35,7 @@ const BY_CODE: Record<string, string> = {
   conflict: "That clashes with a change made elsewhere. Pull down to refresh.",
   invalid_reference: "Something this links to was deleted. Pick it again.",
   validation_error: "Some details weren't accepted. Check them and try again.",
+  invalid_request: "Some details weren't accepted. Check them and try again.",
   ai_disabled: "That AI feature is switched off in Settings › AI.",
   ai_unavailable: "AI isn't set up yet. Use the form instead.",
   ai_cap_reached: "This month's AI limit is used up. It resets on the 1st.",
@@ -58,8 +59,9 @@ export function friendlyError(error: unknown, context: ErrorContext = "action"):
   const code = field(error, "code");
   const status = field(error, "status");
   const message = field(error, "message");
+  const fromProxy = field(error, "fromProxy") === true;
   // No answer, or an answer from something that isn't our API (a captive portal).
-  if (name === "ServerUnreachableError" || code === "http_error") return OFFLINE[context];
+  if (name === "ServerUnreachableError" || fromProxy) return OFFLINE[context];
   if (typeof code === "string" && typeof status === "number") {
     // At sign-in there is no session to expire: a refusal is Google's check, already in words.
     if (context === "signIn" && code === "unauthorized")

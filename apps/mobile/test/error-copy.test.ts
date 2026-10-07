@@ -2,9 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { friendlyError } from "../src/lib/error-copy";
 
 /** Same shape as lib/api.ts's ApiError, without pulling in the RPC client. */
-function apiError(status: number, code: string, message: string) {
-  return Object.assign(new Error(message), { name: "ApiError", status, code });
+function apiError(status: number, code: string, message: string, fromProxy = false) {
+  return Object.assign(new Error(message), { name: "ApiError", status, code, fromProxy });
 }
+/** A reply that wasn't our API's envelope, as apiErrorFrom makes it. */
+const proxyError = (status: number) =>
+  apiError(status, "http_error", `Request failed (${status})`, true);
 
 const unreachable = Object.assign(new Error("Can't reach http://10.0.2.2:3000"), {
   name: "ServerUnreachableError",
@@ -22,9 +25,20 @@ describe("friendlyError", () => {
   });
 
   test("a page that isn't our API (captive portal) reads as offline", () => {
-    expect(friendlyError(apiError(200, "http_error", "Request failed (200)"), "load")).toContain(
-      "Can't connect",
+    expect(friendlyError(proxyError(200), "load")).toContain("Can't connect");
+    expect(friendlyError(proxyError(502), "save")).toBe(
+      "Saved on this phone. It'll sync when you're back online.",
     );
+  });
+
+  // CQ-045: our API's own envelope is never read as "offline", whatever its code.
+  test("an API refusal with an http_error code doesn't claim the change is kept", () => {
+    const text = friendlyError(
+      apiError(400, "http_error", "Malformed JSON in request body"),
+      "save",
+    );
+    expect(text).not.toContain("Saved on this phone");
+    expect(text).not.toContain("Malformed");
   });
 
   test("a 500 never shows 'Request failed (500)'", () => {

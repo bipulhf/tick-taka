@@ -149,7 +149,7 @@ function RecurringForm({ id }: { id: string | null }) {
               />
               <Button
                 label={item.kind === "bill" ? "Paid" : "Received"}
-                variant="money"
+                variant="primary"
                 onPress={() => pay()}
                 className="flex-1"
               />

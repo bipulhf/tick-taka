@@ -174,11 +174,7 @@ export function DebtsScreen() {
                               />
                             ))}
                           </View>
-                          <Button
-                            label="Log repayment"
-                            variant="money"
-                            onPress={() => repay(debt)}
-                          />
+                          <Button label="Log repayment" onPress={() => repay(debt)} />
                         </View>
                       ) : (
                         <Button

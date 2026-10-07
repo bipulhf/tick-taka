@@ -158,11 +158,7 @@ export function GoalsScreen() {
                             />
                           ))}
                       </View>
-                      <Button
-                        label="Move to jar"
-                        variant="money"
-                        onPress={() => contribute(goal.id)}
-                      />
+                      <Button label="Move to jar" onPress={() => contribute(goal.id)} />
                     </View>
                   ) : (
                     !goal.reached && (

@@ -220,7 +220,7 @@ export function ShoppingScreen() {
               />
             ))}
           </View>
-          <Button label="Log as one expense" variant="money" onPress={checkout} />
+          <Button label="Log as one expense" onPress={checkout} />
         </Card>
       ) : null}
     </Screen>

@@ -176,6 +176,42 @@ describe("component boundaries reach 3:1", () => {
   });
 });
 
+describe("buttons", () => {
+  // components/ui/button.tsx's VARIANTS, read from the source (it imports React Native).
+  const source = readFileSync(join(import.meta.dir, "../src/components/ui/button.tsx"), "utf8");
+  const buttons = [...source.matchAll(/^ {2}(\w+): \{ box: "([^"]+)", text: "(\w+)"/gm)].map(
+    ([, name, box, text]) => ({ name: name ?? "", box: box ?? "", text: text ?? "" }),
+  );
+  const fillOf = (box: string) => /\bbg-([a-z-]+)/.exec(box)?.[1] ?? "";
+  const camel = (kebab: string) => kebab.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+
+  test("only the variants DESIGN.md lists, and none is a mint (money-in) fill", () => {
+    expect(buttons.map((b) => b.name).sort()).toEqual(["ghost", "primary", "secondary", "time"]);
+    expect(buttons.filter((b) => /\bbg-(mint|coral|grape|sky)\b/.test(b.box))).toEqual([]);
+  });
+
+  for (const { name, colors } of variants) {
+    test(`${name}: every button's label on its fill, and outlines at 3:1`, () => {
+      for (const button of buttons) {
+        const fill = fillOf(button.box);
+        const surfaces =
+          fill === "transparent"
+            ? [colors.background, colors.card]
+            : [colors[camel(fill) as keyof Palette]];
+        const label = button.text === "onAccent" ? ON_ACCENT : colors[button.text as keyof Palette];
+        for (const surface of surfaces) {
+          const pair = `${button.name}: ${button.text} on ${fill}`;
+          expect({ pair, ok: contrast(label, surface) >= TEXT_AA }).toEqual({ pair, ok: true });
+        }
+        if (/\bborder-line-strong\b/.test(button.box))
+          expect(
+            contrast(colors.lineStrong, colors[camel(fill) as keyof Palette]),
+          ).toBeGreaterThanOrEqual(UI_AA);
+      }
+    });
+  }
+});
+
 describe("home-screen widget reaches WCAG AA", () => {
   for (const scheme of SCHEMES) {
     const c = widgetColors(scheme);

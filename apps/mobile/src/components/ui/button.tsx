@@ -5,7 +5,12 @@ import { ON_ACCENT } from "@/theme/palette";
 import { Icon, type IconName } from "./icon";
 import { Text, type TextTone } from "./text";
 
-export type ButtonVariant = "primary" | "time" | "money" | "secondary" | "ghost";
+/**
+ * The variants DESIGN.md lists. A money action (pay a bill, log an expense) is primary
+ * or secondary like any other: mint means money in, so a mint fill on "Paid" would
+ * say the opposite of what happens.
+ */
+export type ButtonVariant = "primary" | "time" | "secondary" | "ghost";
 
 const VARIANTS: Record<
   ButtonVariant,
@@ -14,7 +19,6 @@ const VARIANTS: Record<
   primary: { box: "bg-mango", text: "onAccent", icon: "onAccent" },
   /** Time actions: outlined like secondary, marked by a sky icon instead of a large sky fill. */
   time: { box: "bg-card border border-line-strong", text: "ink", icon: "sky" },
-  money: { box: "bg-mint", text: "onAccent", icon: "onAccent" },
   secondary: { box: "bg-card border border-line-strong", text: "ink", icon: "ink" },
   ghost: { box: "bg-transparent", text: "ink", icon: "ink" },
 };

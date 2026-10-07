@@ -35,6 +35,8 @@ export interface WidgetCache {
   lastLog: LastWidgetLog | null;
   /** Digits amounts are shown in (Settings › Appearance › Numbers). */
   numerals: Numerals;
+  /** Tiki can answer: the server's AI is set up and the chat is switched on. */
+  assistant: boolean;
   updatedAt: number;
 }
 
@@ -64,6 +66,8 @@ export const EMPTY_CACHE: WidgetCache = {
   status: null,
   lastLog: null,
   numerals: "latn",
+  // Until the app has said the AI is on, the widget doesn't offer a chat that can't answer.
+  assistant: false,
   updatedAt: 0,
 };
 

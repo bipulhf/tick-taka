@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { requestWidgetUpdate } from "react-native-android-widget";
 import { useTransactions } from "@/features/money/queries";
 import { outbox, startOutbox, useOutbox } from "@/lib/outbox";
-import { useSettings } from "@/lib/queries";
+import { useAiStatus, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useToday } from "@/lib/use-today";
 import { resetOnSignOut } from "@/lib/user-data";
@@ -20,7 +20,7 @@ import {
   writeWidgetCache,
 } from "./widget-cache";
 import { handOverWidgetWrites } from "./widget-pending";
-import { widgetSnapshot } from "./widget-snapshot";
+import { widgetAssistant, widgetSnapshot } from "./widget-snapshot";
 import { WIDGET_NAME } from "./widget-task-handler";
 
 // The widget shows nothing of a signed-out user.
@@ -55,6 +55,7 @@ export function useWidgetSync() {
   const { data: settings } = useSettings();
   const { timeZone } = userTime(settings);
   const recent = useTransactions({ type: "expense", limit: "200" });
+  const { data: ai } = useAiStatus();
 
   useEffect(() => {
     void handOverWidgetWrites({
@@ -83,6 +84,7 @@ export function useWidgetSync() {
         // The widget keeps offering Undo for its last quick-log while the app refreshes.
         lastLog: previous.lastLog,
         numerals: settings?.numerals ?? "latn",
+        assistant: widgetAssistant(ai, previous.assistant),
         updatedAt: editTime(),
       };
       await writeWidgetCache(cache);
@@ -108,5 +110,5 @@ export function useWidgetSync() {
         }),
       }).catch(() => {});
     })();
-  }, [today.data, recent.data, settings?.defaultAccountId, settings?.numerals, timeZone]);
+  }, [today.data, recent.data, settings?.defaultAccountId, settings?.numerals, timeZone, ai]);
 }

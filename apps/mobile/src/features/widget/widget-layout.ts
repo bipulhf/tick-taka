@@ -113,6 +113,7 @@ export function widgetLayout({
   height,
   quick,
   undo,
+  assistant = true,
 }: {
   /** The widget's size on the launcher (dp); 0 when the launcher hasn't said. */
   width: number;
@@ -121,10 +122,14 @@ export function widgetLayout({
   quick: string[];
   /** A quick-log can still be undone. */
   undo: boolean;
+  /** Tiki can answer (the server's AI is set up and the chat is on); else its pill is left out. */
+  assistant?: boolean;
 }): WidgetLayout {
   const room = (width > 0 ? width : MIN_WIDTH) - 2 * PADDING;
   const size = height >= TALL ? "tall" : height > 0 && height < COMPACT ? "compact" : "normal";
-  const all: WidgetAction[] = ["task", "expense", "focus", "tiki"];
+  const all: WidgetAction[] = assistant
+    ? ["task", "expense", "focus", "tiki"]
+    : ["task", "expense", "focus"];
 
   if (size === "tall") {
     return {

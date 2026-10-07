@@ -27,6 +27,17 @@ function nextUp(data: TodayData, now: number, timeZone: string): Snapshot["nextU
   return any ? { title: any.task.title, when: "Today" } : null;
 }
 
+/**
+ * Whether the widget offers Tiki: only when the server's AI is set up and the chat
+ * is on, as in the app's tab bar. While the status hasn't loaded, the last answer stands.
+ */
+export function widgetAssistant(
+  ai: { configured: boolean; features: { assistant: boolean } } | undefined,
+  previous: boolean,
+): boolean {
+  return ai ? ai.configured && ai.features.assistant : previous;
+}
+
 /** Today's numbers for the widget, so it answers "what now?" and "can I afford it?". */
 export function widgetSnapshot(data: TodayData, now: number, timeZone: string): Snapshot {
   const money = data.safeToSpend;

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
-import { widgetSnapshot } from "../src/features/widget/widget-snapshot";
+import { widgetAssistant, widgetSnapshot } from "../src/features/widget/widget-snapshot";
 import type { TodayData } from "../src/lib/queries";
 
 const TZ = "Asia/Dhaka";
@@ -61,5 +61,18 @@ describe("widget snapshot", () => {
       TZ,
     );
     expect(snap.leftTodayMinor).toBeNull();
+  });
+
+  test("Tiki is offered only when the server's AI and the chat are both on", () => {
+    const status = (configured: boolean, assistant: boolean) => ({
+      configured,
+      features: { assistant },
+    });
+    expect(widgetAssistant(status(true, true), false)).toBe(true);
+    expect(widgetAssistant(status(false, true), true)).toBe(false);
+    expect(widgetAssistant(status(true, false), true)).toBe(false);
+    // Not loaded yet: the last answer stands.
+    expect(widgetAssistant(undefined, true)).toBe(true);
+    expect(widgetAssistant(undefined, false)).toBe(false);
   });
 });

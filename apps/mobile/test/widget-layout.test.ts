@@ -135,4 +135,13 @@ describe("widget layout", () => {
     const label = ACTIONS.expense.label;
     expect(pillWidth(label)).toBe(labelWidth(label) + 2 * PILL_PADDING);
   });
+
+  test("with the AI off, Tiki is left out and its room goes to the other actions", () => {
+    for (const height of [200, 260]) {
+      const off = widgetLayout({ ...DEFAULT, height, quick: [], undo: false, assistant: false });
+      expect(kinds(off)).toEqual(["task", "expense", "focus"]);
+    }
+    const on = widgetLayout({ ...DEFAULT, quick: [], undo: false, assistant: true });
+    expect(kinds(on)).toContain("tiki");
+  });
 });

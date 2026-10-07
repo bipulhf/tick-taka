@@ -199,6 +199,7 @@ export function SafeToSpendWidget({
     height,
     quick: cache.quick.map(quickLabel),
     undo: undo !== null,
+    assistant: cache.assistant,
   });
   const compact = layout.size === "compact";
   const tall = layout.size === "tall";

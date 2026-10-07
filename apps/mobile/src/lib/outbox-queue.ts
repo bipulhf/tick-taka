@@ -1,5 +1,4 @@
 import {
-  addTies,
   classifyFailure,
   type FailureInfo,
   followCreatedRecords,
@@ -8,31 +7,19 @@ import {
   type OutboxEntry,
   type OutboxRequest,
   type PersistedOutbox,
-  parsePersistedOutbox,
   retryDelay,
   STUCK_AFTER,
-  tiedTo,
-  tiesOf,
 } from "./outbox-policy";
+import { type OutboxStorage, OutboxStore } from "./outbox-store";
+import { SetAsideError, StuckWrites } from "./outbox-stuck";
 
-export interface OutboxDeps {
+export interface OutboxDeps extends OutboxStorage {
   /** Sends one write; resolves with the parsed reply or throws. */
   send(request: OutboxRequest): Promise<unknown>;
   /** Turns a thrown error into status / unreachable for the policy. */
   describe(error: unknown): FailureInfo;
   /** Whether writes may go out now: online, signed in, session not expired. */
   canSend(): boolean;
-  load(): Promise<unknown>;
-  save(state: PersistedOutbox): Promise<void>;
-  /**
-   * A side key for writes queued before the saved queue has been read: saving them
-   * there can't overwrite it. load() merges them in. Without these, such writes are
-   * held in memory only.
-   */
-  loadEarly?(): Promise<unknown>;
-  saveEarly?(state: PersistedOutbox): Promise<void>;
-  /** Saving the queue failed (after working, or for the first time). */
-  onSaveFailed?(error: unknown): void;
   /** The write landed (or was already there). */
   onSent?(request: OutboxRequest, response: unknown): void;
   /** The server refused the write for good; it has left the queue. */
@@ -54,17 +41,6 @@ interface Waiter {
 let counter = 0;
 const defaultId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`;
 
-/** Which stuck group an entry belongs to: the write that got stuck (older builds: its own). */
-const groupKey = (entry: OutboxEntry): string => entry.stuckWith ?? entry.id;
-
-/** A write that joined a stuck group as it was queued; it waits there for Retry. */
-export class SetAsideError extends Error {
-  constructor() {
-    super("Set aside with a change the server keeps failing on");
-    this.name = "SetAsideError";
-  }
-}
-
 /**
  * Every write goes through one queue, sent one at a time in the order made. An entry
  * stays saved until the server has it, so a write that is sending when the app is
@@ -73,10 +49,14 @@ export class SetAsideError extends Error {
  * only a final 4xx takes a write out. A write our API keeps answering with another
  * 5xx is set aside as stuck after STUCK_AFTER tries, kept until the user retries or
  * discards it, so one bad write can't hold back every write behind it.
+ *
+ * The queue sends; OutboxStore (outbox-store.ts) saves it, and StuckWrites
+ * (outbox-stuck.ts) keeps the stuck groups.
  */
 export class OutboxQueue {
   private entries: OutboxEntry[] = [];
-  private parked: OutboxEntry[] = [];
+  private readonly parked = new StuckWrites();
+  private readonly store: OutboxStore;
   private userId: string | null = null;
   private loaded = false;
   private reading = false;
@@ -90,18 +70,16 @@ export class OutboxQueue {
   /** The write being sent right now; it can't be taken back. */
   private inFlight: OutboxEntry | null = null;
   private wake: (() => void) | null = null;
-  private saving: Promise<void> = Promise.resolve();
-  private saveFailed = false;
-  /** Read once from the side key (deps.loadEarly); emptied when load() merges it. */
-  private earlier: Promise<OutboxEntry[] | null> | null = null;
   private readonly waiters = new Map<string, Waiter>();
   private readonly listeners = new Set<() => void>();
 
-  constructor(private readonly deps: OutboxDeps) {}
+  constructor(private readonly deps: OutboxDeps) {
+    this.store = new OutboxStore(deps, () => this.changed());
+  }
 
   /** Number of writes not yet on the server, stuck ones included. */
   get size(): number {
-    return this.entries.length + this.parked.length;
+    return this.entries.length + this.parked.size;
   }
 
   /** Writes still being sent (or waiting to be), not counting stuck ones. */
@@ -111,15 +89,12 @@ export class OutboxQueue {
 
   /** Writes the server kept failing on, oldest first. */
   stuck(): readonly OutboxEntry[] {
-    return this.parked;
+    return this.parked.all();
   }
 
   /** The stuck write and the writes set aside with it, oldest first. */
   stuckGroup(id: string): OutboxEntry[] {
-    const entry = this.parked.find((e) => e.id === id);
-    if (!entry) return [];
-    const key = groupKey(entry);
-    return this.parked.filter((e) => groupKey(e) === key);
+    return this.parked.group(id);
   }
 
   /** Sends a stuck write and the writes set aside with it again, in order, after the writes queued now. */
@@ -129,7 +104,7 @@ export class OutboxQueue {
 
   /** Sends every stuck write again, in the order they were made. */
   retryAllStuck(): void {
-    this.requeue(this.parked);
+    this.requeue(this.parked.all());
   }
 
   /**
@@ -139,7 +114,7 @@ export class OutboxQueue {
   discardStuck(id: string): OutboxEntry[] {
     const group = this.stuckGroup(id);
     if (group.length === 0) return group;
-    this.parked = this.parked.filter((e) => !group.includes(e));
+    this.parked.take(group);
     this.persist();
     this.changed();
     for (const entry of group) this.deps.onDiscarded?.(entry.request);
@@ -148,17 +123,14 @@ export class OutboxQueue {
 
   /** Undo of a discard: the group is stuck again, as it was. */
   restoreStuck(group: readonly OutboxEntry[]): void {
-    const known = new Set([...this.entries, ...this.parked].map((e) => e.id));
-    const back = group.filter((e) => !known.has(e.id));
-    if (back.length === 0) return;
-    this.parked = [...this.parked, ...back];
+    if (!this.parked.restore(group, this.entries)) return;
     this.persist();
     this.changed();
   }
 
   private requeue(group: readonly OutboxEntry[]): void {
     if (group.length === 0) return;
-    this.parked = this.parked.filter((e) => !group.includes(e));
+    this.parked.take(group);
     for (const { stuckWith: _, ...entry } of group)
       this.entries.push({
         ...entry,
@@ -202,11 +174,9 @@ export class OutboxQueue {
     if (this.loaded || this.reading) return;
     this.reading = true;
     let saved: PersistedOutbox | null;
-    let earlier: OutboxEntry[] | null;
+    let earlier: OutboxEntry[];
     try {
-      saved = parsePersistedOutbox(await this.deps.load());
-      earlier = await this.readEarlier();
-      if (earlier === null) throw new Error("writes saved before loading can't be read");
+      ({ saved, earlier } = await this.store.read());
     } catch {
       // The saved queue is there but can't be read right now (the storage key, say).
       // Keep it untouched: nothing is saved over it and nothing is sent ahead of it.
@@ -229,33 +199,14 @@ export class OutboxQueue {
     const leftOver = earlier.filter((e) => !known.has(e.id));
     const queuedEarly = this.entries.length > 0 || leftOver.length > 0;
     this.entries = [...(this.discardSaved ? [] : [...restored, ...leftOver]), ...this.entries];
-    if (!this.discardSaved) this.parked = [...(saved?.stuck ?? []), ...this.parked];
+    if (!this.discardSaved) this.parked.addSaved(saved?.stuck ?? []);
     if (saved && !this.discardSaved && this.userId === null) this.userId = saved.userId;
     this.loaded = true;
-    this.earlier = Promise.resolve([]);
+    this.store.merged();
     if (legacy.length || queuedEarly || this.discardSaved) this.persist();
-    // The side key is emptied only once the queue holding its writes is safely saved.
-    const saveEarly = this.deps.saveEarly;
-    if (saveEarly && (queuedEarly || this.discardSaved))
-      this.queueSave(async () => {
-        if (!this.saveFailed) await saveEarly(this.state([]));
-      });
+    if (queuedEarly || this.discardSaved) this.store.emptyEarly(() => this.state([]));
     this.changed();
     this.kick();
-  }
-
-  /** Writes left on the side key by an earlier run; null while they can't be read. */
-  private readEarlier(): Promise<OutboxEntry[] | null> {
-    const loadEarly = this.deps.loadEarly;
-    if (!loadEarly) return Promise.resolve([]);
-    this.earlier ??= loadEarly().then(
-      (raw) => parsePersistedOutbox(raw)?.entries ?? [],
-      () => {
-        this.earlier = null; // read again next time
-        return null;
-      },
-    );
-    return this.earlier;
   }
 
   /** Queues a write. The promise settles when the server accepts or refuses it. */
@@ -264,12 +215,9 @@ export class OutboxQueue {
     const done = new Promise<unknown>((resolve, reject) => {
       this.waiters.set(entry.id, { resolve, reject });
     });
-    const head = this.parkedHeadFor(request);
-    if (head) {
-      // It needs a record a stuck write creates, or acts on the same record: see tiedTo.
-      this.parked.push({ ...entry, stuckWith: head });
-      this.settle(entry.id, undefined, new SetAsideError());
-    } else this.entries.push(entry);
+    // It needs a record a stuck write creates, or acts on the same record: see tiedTo.
+    if (this.parked.joinGroup(entry)) this.settle(entry.id, undefined, new SetAsideError());
+    else this.entries.push(entry);
     this.persist();
     this.changed();
     this.kick();
@@ -286,7 +234,7 @@ export class OutboxQueue {
     const entry = this.entries.find(unsent) ?? this.parked.find(unsent);
     if (!entry) return false;
     this.entries = this.entries.filter((e) => e !== entry);
-    this.parked = this.parked.filter((e) => e !== entry);
+    this.parked.remove(entry);
     this.persist();
     this.changed();
     this.settle(entry.id, null);
@@ -317,23 +265,23 @@ export class OutboxQueue {
   async clear(): Promise<void> {
     const dropped = this.entries;
     this.entries = [];
-    this.parked = [];
+    this.parked.clear();
     this.userId = null;
     if (!this.loaded) this.discardSaved = true;
     for (const entry of dropped) this.settle(entry.id, null);
     this.persist();
     this.changed();
-    await this.saving;
+    await this.store.flushed();
   }
 
   /** Resolves once everything queued so far has been written to storage. */
   flushed(): Promise<void> {
-    return this.saving;
+    return this.store.flushed();
   }
 
   /** The last save didn't work: what's queued lives only in memory until one does. */
   get notSaved(): boolean {
-    return this.saveFailed;
+    return this.store.notSaved;
   }
 
   /**
@@ -342,11 +290,8 @@ export class OutboxQueue {
    * offline list) may be deleted only then.
    */
   async durable(): Promise<boolean> {
-    for (let current = this.saving; ; current = this.saving) {
-      await current;
-      if (current === this.saving) break;
-    }
-    return this.loaded && !this.saveFailed;
+    const saved = await this.store.drained();
+    return this.loaded && saved;
   }
 
   private entry(request: OutboxRequest): OutboxEntry {
@@ -416,41 +361,15 @@ export class OutboxQueue {
     this.settle(entry.id, response);
   }
 
-  /**
-   * Sets a write the server keeps failing on aside, so the ones behind it can go.
-   * Every later write tied to it (see tiedTo), or to one of those, goes aside with it,
-   * in order: sent first, it would get 404 and be lost, or land out of order.
-   */
+  /** Sets a write the server keeps failing on aside, with the writes tied to it (see StuckWrites.park). */
   private park(entry: OutboxEntry, error: unknown): void {
-    const ties = tiesOf([entry.request]);
-    const group: OutboxEntry[] = [entry];
-    const rest: OutboxEntry[] = [];
-    for (const later of this.entries) {
-      if (later === entry) continue;
-      if (tiedTo(later.request, ties)) {
-        group.push(later);
-        addTies(ties, later.request);
-      } else rest.push(later);
-    }
+    const { group, rest } = this.parked.park(entry, this.entries);
     this.entries = rest;
-    const key = groupKey(entry);
-    this.parked = [...this.parked, ...group.map((e) => ({ ...e, stuckWith: key }))];
     this.persist();
     this.changed();
     this.deps.onStuck?.(entry.request, error);
     // Whoever waits on them hears now; a later retry from the list lands without them.
     for (const e of group) this.settle(e.id, undefined, error);
-  }
-
-  /** The stuck group a new write must join, because it is tied to it (see tiedTo). */
-  private parkedHeadFor(request: OutboxRequest): string | null {
-    const groups = new Map<string, OutboxRequest[]>();
-    for (const entry of this.parked) {
-      const key = groupKey(entry);
-      groups.set(key, [...(groups.get(key) ?? []), entry.request]);
-    }
-    for (const [key, requests] of groups) if (tiedTo(request, tiesOf(requests))) return key;
-    return null;
   }
 
   private remove(entry: OutboxEntry): void {
@@ -479,7 +398,7 @@ export class OutboxQueue {
     });
   }
 
-  private state(entries: OutboxEntry[], stuck?: OutboxEntry[]): PersistedOutbox {
+  private state(entries: OutboxEntry[], stuck?: readonly OutboxEntry[]): PersistedOutbox {
     return {
       version: 1,
       userId: this.userId,
@@ -489,41 +408,9 @@ export class OutboxQueue {
   }
 
   private persist(): void {
-    if (this.loaded) {
-      const state = this.state(this.entries, this.parked);
-      this.queueSave(() => this.deps.save(state));
-      return;
-    }
-    // Until the saved queue has been read, writing it would overwrite it: these writes
-    // go to the side key instead, after any an earlier run left there.
-    const saveEarly = this.deps.saveEarly;
-    if (!saveEarly) return;
-    const entries = [...this.entries];
-    const cleared = this.discardSaved;
-    this.queueSave(async () => {
-      const earlier = cleared ? [] : await this.readEarlier();
-      if (earlier === null)
-        throw new Error("Writes saved earlier can't be read, so not saved over");
-      const ids = new Set(entries.map((e) => e.id));
-      await saveEarly(this.state([...earlier.filter((e) => !ids.has(e.id)), ...entries]));
-    });
-  }
-
-  /** Saves in order; a failure is reported once, and shows until a save works again. */
-  private queueSave(write: () => Promise<void>): void {
-    this.saving = this.saving.then(write).then(
-      () => {
-        if (!this.saveFailed) return;
-        this.saveFailed = false;
-        this.changed();
-      },
-      (error: unknown) => {
-        if (this.saveFailed) return;
-        this.saveFailed = true;
-        this.deps.onSaveFailed?.(error);
-        this.changed();
-      },
-    );
+    if (this.loaded) this.store.save(this.state(this.entries, this.parked.all()));
+    else
+      this.store.saveEarly([...this.entries], this.discardSaved, (entries) => this.state(entries));
   }
 
   private changed(): void {

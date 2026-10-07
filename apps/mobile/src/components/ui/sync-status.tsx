@@ -11,23 +11,14 @@ import { plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { outbox } from "@/lib/outbox";
 import type { OutboxEntry } from "@/lib/outbox-policy";
+import { describeDiscard, describeGroup } from "@/lib/stuck-copy";
 import { Button } from "./button";
 import { Icon } from "./icon";
 import { Text } from "./text";
 
-/** What a stuck write was, in words: its label, or the kind of change. */
-function describeWrite(entry: OutboxEntry): string {
-  if (entry.request.label) return entry.request.label;
-  const verb = { POST: "Add", PATCH: "Edit", PUT: "Update", DELETE: "Delete" }[
-    entry.request.method
-  ];
-  const what = entry.request.path.split("/")[1]?.replaceAll("-", " ") ?? "item";
-  return `${verb} in ${what}`;
-}
-
 /**
- * Stuck writes by group: the write the server kept failing on, then the later changes
- * to the same record that were set aside with it.
+ * Stuck writes by group: the write the server kept failing on, then the later writes
+ * that can't go ahead of it, set aside with it.
  */
 function groupStuck(entries: readonly OutboxEntry[]): OutboxEntry[][] {
   const groups = new Map<string, OutboxEntry[]>();
@@ -46,16 +37,15 @@ function StuckWrites({ entries }: { entries: readonly OutboxEntry[] }) {
       <View className="flex-row items-center gap-2">
         <Icon name="alert-circle-outline" size={18} color="coral" />
         <Text variant="callout" className="flex-1">
-          {`${plural(entries.length, "change")} couldn't be saved on the server`}
+          {`${plural(groups.length, "change")} couldn't be saved on the server`}
         </Text>
       </View>
-      {groups.map(([head, ...rest]) =>
-        head ? (
+      {groups.map((group) => {
+        const head = group[0];
+        return head ? (
           <View key={head.id} className="gap-2">
             <Text variant="caption" tone="muted">
-              {rest.length
-                ? `${describeWrite(head)}, and ${plural(rest.length, "later change")} to it`
-                : describeWrite(head)}
+              {describeGroup(group)}
             </Text>
             {/* Apart, so a tap meant for Retry doesn't land on Discard. */}
             <View className="flex-row gap-6">
@@ -71,17 +61,17 @@ function StuckWrites({ entries }: { entries: readonly OutboxEntry[] }) {
                 variant="ghost"
                 onPress={() => {
                   // Undo instead of "Are you sure?", as everywhere else in the app.
-                  const group = outbox.discardStuck(head.id);
-                  notify(`Discarded “${describeWrite(head)}”`, {
+                  const dropped = outbox.discardStuck(head.id);
+                  notify(describeDiscard(dropped), {
                     label: "Undo",
-                    onPress: () => outbox.restoreStuck(group),
+                    onPress: () => outbox.restoreStuck(dropped),
                   });
                 }}
               />
             </View>
           </View>
-        ) : null,
-      )}
+        ) : null;
+      })}
       {groups.length > 1 ? (
         <Button
           label="Retry all"

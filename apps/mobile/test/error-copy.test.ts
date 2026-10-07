@@ -41,6 +41,20 @@ describe("friendlyError", () => {
     expect(text).not.toContain("Malformed");
   });
 
+  // UX-054: a write refused as too large has been dropped; it must not read as kept.
+  test("a write too large to send says it wasn't saved", () => {
+    const tooBig = "That change is too big to send, so it wasn't saved.";
+    for (const status of [413, 414, 431])
+      expect(friendlyError(proxyError(status), "save")).toBe(tooBig);
+    expect(friendlyError(apiError(413, "payload_too_large", "Payload Too Large"), "save")).toBe(
+      tooBig,
+    );
+    // An upload or other one-off action keeps its own words.
+    expect(friendlyError(proxyError(413), "action")).toBe(
+      "That file is too big. Try a smaller photo.",
+    );
+  });
+
   test("a 500 never shows 'Request failed (500)'", () => {
     const text = friendlyError(apiError(500, "internal_error", "Request failed (500)"), "save");
     expect(text).toBe("Something went wrong on our side. Your change is kept and will retry.");

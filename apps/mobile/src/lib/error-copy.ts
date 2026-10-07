@@ -27,6 +27,16 @@ const SERVER: Record<ErrorContext, string> = {
   signIn: "Something went wrong on our side. Try signing in again in a moment.",
 };
 
+/** Payload, URL or headers too large: final, so a queued write has been dropped. */
+const TOO_LARGE_STATUS = new Set([413, 414, 431]);
+
+const TOO_LARGE: Record<ErrorContext, string> = {
+  save: "That change is too big to send, so it wasn't saved.",
+  load: "That's too much to load at once. Try again.",
+  action: "That file is too big. Try a smaller photo.",
+  signIn: "Something went wrong. Try again.",
+};
+
 /** API error codes (`error.code` in the body) and what to say for each. */
 const BY_CODE: Record<string, string> = {
   session_expired: "You're signed out. Sign in again to sync your changes.",
@@ -60,6 +70,9 @@ export function friendlyError(error: unknown, context: ErrorContext = "action"):
   const status = field(error, "status");
   const message = field(error, "message");
   const fromProxy = field(error, "fromProxy") === true;
+  // Refused as too large, by the API or the proxy in front of it: never sent again.
+  if (typeof status === "number" && TOO_LARGE_STATUS.has(status) && (fromProxy || code))
+    return TOO_LARGE[context];
   // No answer, or an answer from something that isn't our API (a captive portal).
   if (name === "ServerUnreachableError" || fromProxy) return OFFLINE[context];
   if (typeof code === "string" && typeof status === "number") {
@@ -70,7 +83,6 @@ export function friendlyError(error: unknown, context: ErrorContext = "action"):
     if (HUMAN_MESSAGE.has(code) && typeof message === "string" && message) return message;
     if (status >= 500) return SERVER[context];
     if (status === 429) return "Too many tries at once. Wait a moment and try again.";
-    if (status === 413) return "That file is too big. Try a smaller photo.";
   }
   return UNKNOWN;
 }

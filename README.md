@@ -33,11 +33,14 @@ cheers small wins and never scolds a missed day.
 
 ## Screenshots
 
+Taken from a release build on the Android emulator with a demo account
+(`apps/api/scripts/demo.ts`), October 2026.
+
 ### Today and capture
 
-Today leads with shortcuts for the four things logged most, the safe-to-spend number,
-your top three and what's next. Quick-add reads plain text such as "biryani with friends
-850" and shows what it understood before saving.
+Today leads with what's next and the safe-to-spend number, then your top three, the rest
+of the day, habits and shortcuts for the four things logged most. Quick-add reads plain
+text such as "biryani with friends 850" and shows what it understood before saving.
 
 |                              Today                               |                                           Further down                                            |                                         Quick-add                                          |                                 Task                                 |
 | :--------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------: | :------------------------------------------------------------------: |
@@ -64,8 +67,9 @@ your top three and what's next. Quick-add reads plain text such as "biryani with
 ### Home-screen widget
 
 Today at a glance without opening the app: safe to spend with a bar for how much of the
-day's share is gone, the next task, top-three and habit progress, one-tap logging for
-things you buy often, and buttons to add a task, log an expense or start focusing.
+day's share is gone, the next task, top-three and habit progress, buttons to add a task or
+log an expense, and one-tap logging for things you buy often (with Undo). Larger widgets
+also get Focus and Tiki.
 
 |                                         Light                                         |                                           Dark                                            |
 | :-----------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------: |

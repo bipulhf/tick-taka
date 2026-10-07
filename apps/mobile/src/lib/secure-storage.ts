@@ -59,3 +59,18 @@ export const secureStorage = createEncryptedStorage(AsyncStorage, aesGcm, {
     console.warn(`Couldn't encrypt ${name}; stored without encryption`, error);
   },
 });
+
+/**
+ * The same, for the screen cache: it can always be fetched again, so when the key
+ * can't seal it, it isn't saved at all rather than saved in plain text.
+ */
+export const secureCacheStorage = createEncryptedStorage(
+  AsyncStorage,
+  aesGcm,
+  {
+    onUnreadable(name) {
+      console.warn(`Stored ${name} was sealed with a lost key; kept aside as unreadable`);
+    },
+  },
+  { plainFallback: false },
+);

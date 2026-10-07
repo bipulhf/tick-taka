@@ -1,13 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { focusManager, onlineManager, QueryClient } from "@tanstack/react-query";
+import { focusManager, hydrate, onlineManager, QueryClient } from "@tanstack/react-query";
 import type { Persister } from "@tanstack/react-query-persist-client";
 import { AppState } from "react-native";
 import { ApiError } from "./api";
+import { keepCacheOnKeyFailure } from "./cache-persister";
 import { keysToRefresh } from "./invalidation";
 import { legacyOutboxRequests, type OutboxRequest } from "./outbox-policy";
-import { secureStorage } from "./secure-storage";
+import { secureCacheStorage } from "./secure-storage";
 
 const DAY_MS = 86_400_000;
 const CACHE_KEY = "tt.query-cache";
@@ -73,20 +74,28 @@ export function takeLegacyOutbox(): Promise<OutboxRequest[]> {
 }
 
 const cachePersister = createAsyncStoragePersister({
-  // Balances, transactions and notes: encrypted at rest.
-  storage: secureStorage,
+  // Balances, transactions and notes: encrypted at rest, and never saved in plain text.
+  storage: secureCacheStorage,
   key: CACHE_KEY,
   throttleTime: 1000,
 });
 
-export const persister: Persister = {
-  persistClient: cachePersister.persistClient,
-  removeClient: cachePersister.removeClient,
-  restoreClient: async () => {
-    await takeLegacyOutbox();
-    return cachePersister.restoreClient();
+export const persister: Persister = keepCacheOnKeyFailure(
+  {
+    persistClient: cachePersister.persistClient,
+    removeClient: cachePersister.removeClient,
+    restoreClient: async () => {
+      await takeLegacyOutbox();
+      return cachePersister.restoreClient();
+    },
   },
-};
+  // The storage key read again after a start that couldn't read the cache: merge it in
+  // under the same rules as a normal restore (fresher data already fetched wins).
+  (client) => {
+    if (client.buster !== CACHE_BUSTER || Date.now() - client.timestamp > PERSIST_MAX_AGE) return;
+    hydrate(queryClient, client.clientState);
+  },
+);
 export const PERSIST_MAX_AGE = 14 * DAY_MS;
 /**
  * Version of the cached server replies. Bump it in the same commit as any change to the

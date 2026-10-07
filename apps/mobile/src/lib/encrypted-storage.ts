@@ -47,11 +47,14 @@ export interface EncryptedStorageEvents {
  *   reset) reads as missing and is moved aside, never deleted;
  * - if the cipher can't work at all (no key could be stored), values are written
  *   plain and reported, so queued writes are never lost to an encryption failure.
+ *   With `plainFallback: false` (data that can be fetched again, like the screen
+ *   cache) the write is refused instead and the stored value is left as it was.
  */
 export function createEncryptedStorage(
   base: KeyValueStorage,
   cipher: Cipher,
   events: EncryptedStorageEvents = {},
+  { plainFallback = true }: { plainFallback?: boolean } = {},
 ): KeyValueStorage {
   return {
     async getItem(key) {
@@ -72,6 +75,7 @@ export function createEncryptedStorage(
       try {
         stored = SEALED_PREFIX + (await cipher.encrypt(value));
       } catch (error) {
+        if (!plainFallback) throw error;
         events.onPlainFallback?.(key, error);
         stored = value;
       }

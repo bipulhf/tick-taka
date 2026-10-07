@@ -23,6 +23,8 @@ export interface SessionDeps {
   postRefresh(): Promise<Response>;
   outbox: { setOwner(userId: string): void; kick(): void };
   now(): number;
+  /** Writing a new session to storage failed, even on a retry; it stays in memory. */
+  onSaveFailed?(error: unknown): void;
 }
 
 /**
@@ -39,6 +41,8 @@ export function createSessionManager(deps: SessionDeps) {
   let issuedAt: number | null = null;
   /** The refresh in flight, and the token it is replacing. */
   let refreshing: { token: string; done: Promise<void> } | null = null;
+  /** A session in use whose keys couldn't be written yet; written again on the next try. */
+  let unsaved: { session: SessionResponse; at: number } | null = null;
 
   const removeKeys = (keys: string[]) =>
     Promise.all(keys.map((key) => deps.storage.deleteItem(key).catch(() => {})));
@@ -70,9 +74,33 @@ export function createSessionManager(deps: SessionDeps) {
     profileStore.set(session.user);
     tokenStore.set(session.token);
     deps.outbox.kick();
-    await deps.storage.setItem(TOKEN_KEY, session.token);
-    await deps.storage.setItem(PROFILE_KEY, JSON.stringify(session.user));
-    await deps.storage.setItem(ISSUED_KEY, String(at));
+    unsaved = { session, at };
+    await writeUnsaved();
+  }
+
+  /**
+   * Writes the session in use to storage, retrying once at once. If that fails too it
+   * stays in memory, is reported, and is written again on the next refreshIfStale
+   * (start or foreground): once the new token is used the server retires the old one,
+   * so a cold start with the old one on disk would have to sign in again. Throws only
+   * when the write failed.
+   */
+  async function writeUnsaved(): Promise<void> {
+    const pending = unsaved;
+    if (!pending) return;
+    const { session, at } = pending;
+    const write = async () => {
+      await deps.storage.setItem(TOKEN_KEY, session.token);
+      await deps.storage.setItem(PROFILE_KEY, JSON.stringify(session.user));
+      await deps.storage.setItem(ISSUED_KEY, String(at));
+    };
+    try {
+      await write().catch(write);
+    } catch (error) {
+      deps.onSaveFailed?.(error);
+      throw error;
+    }
+    if (unsaved === pending) unsaved = null;
   }
 
   /**
@@ -84,6 +112,7 @@ export function createSessionManager(deps: SessionDeps) {
     if (!tokenStore.get()) return;
     tokenStore.set(null);
     issuedAt = null;
+    unsaved = null;
     await removeKeys([TOKEN_KEY, ISSUED_KEY]);
   }
 
@@ -107,6 +136,8 @@ export function createSessionManager(deps: SessionDeps) {
   /** Swaps a token older than a day for a fresh one, so an active phone never hits the expiry. */
   function refreshIfStale(): Promise<void> {
     const token = tokenStore.get();
+    // The token in use never reached the disk: write it, rather than fetch another.
+    if (token && unsaved?.session.token === token) return writeUnsaved().catch(() => {});
     if (!token || !needsRefresh(issuedAt, deps.now())) return Promise.resolve();
     if (refreshing) return refreshing.done;
     const done = (async () => {
@@ -131,6 +162,7 @@ export function createSessionManager(deps: SessionDeps) {
 
   /** Forgets the session on this phone: keys, token and profile. */
   async function forget(): Promise<void> {
+    unsaved = null;
     await removeKeys([TOKEN_KEY, PROFILE_KEY, ISSUED_KEY]);
     issuedAt = null;
     tokenStore.set(null);

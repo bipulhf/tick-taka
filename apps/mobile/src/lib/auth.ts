@@ -26,6 +26,8 @@ const sessionManager = createSessionManager({
   postRefresh: () => request(apiUrl("/auth/refresh"), { method: "POST", timeout: 15_000 }),
   outbox,
   now: Date.now,
+  // Kept in memory and written again on the next foreground (see session-manager.ts).
+  onSaveFailed: (error) => console.warn("session: couldn't save the sign-in on this phone", error),
 });
 
 /** `undefined` while loading from secure storage, `null` when signed out or expired. */

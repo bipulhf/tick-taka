@@ -20,7 +20,9 @@ const refreshReply = (token: string) =>
   });
 
 /** A session that was saved a day and a bit ago, so loading it starts a refresh. */
-function setup(options: { issuedAt?: number; slowWrites?: boolean } = {}) {
+function setup(options: { issuedAt?: number; slowWrites?: boolean; failingWrites?: number } = {}) {
+  let failingWrites = options.failingWrites ?? 0;
+  const saveFailures: unknown[] = [];
   const saved = new Map<string, string>([
     [TOKEN_KEY, "old"],
     [PROFILE_KEY, JSON.stringify(profile)],
@@ -34,6 +36,10 @@ function setup(options: { issuedAt?: number; slowWrites?: boolean } = {}) {
       getItem: async (key) => saved.get(key) ?? null,
       setItem: async (key, value) => {
         if (options.slowWrites) await writes.promise;
+        if (failingWrites > 0) {
+          failingWrites--;
+          throw new Error("Keystore busy");
+        }
         saved.set(key, value);
       },
       deleteItem: async (key) => {
@@ -50,8 +56,12 @@ function setup(options: { issuedAt?: number; slowWrites?: boolean } = {}) {
       },
     },
     now: () => NOW,
+    onSaveFailed: (error) => saveFailures.push(error),
   });
-  return { manager, saved, refresh, writes, outbox };
+  const failWrites = (count: number) => {
+    failingWrites = count;
+  };
+  return { manager, saved, refresh, writes, outbox, saveFailures, failWrites };
 }
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -122,6 +132,37 @@ describe("a 401 that races the daily refresh", () => {
     await flush();
     await flush();
     expect(manager.tokenStore.get()).toBeNull();
+  });
+
+  // CQ-037: the old token is retired soon after the new one is used, so the new one
+  // must reach the disk or the next cold start asks to sign in again.
+  test("a refreshed token whose save fails stays in use and is saved again", async () => {
+    const { manager, refresh, saved, saveFailures, failWrites } = setup();
+    await manager.load();
+    failWrites(2); // the first write and its immediate retry
+    refresh.resolve(refreshReply("new"));
+    await manager.refreshIfStale();
+    await flush();
+    expect(manager.tokenStore.get()).toBe("new");
+    expect(saved.get(TOKEN_KEY)).toBe("old");
+    expect(saveFailures).toHaveLength(1);
+
+    // The next foreground writes it again, with no new refresh needed.
+    await manager.refreshIfStale();
+    expect(saved.get(TOKEN_KEY)).toBe("new");
+    expect(saved.get(ISSUED_KEY)).toBe(String(NOW));
+    expect(manager.tokenStore.get()).toBe("new");
+  });
+
+  test("one failed write is retried at once", async () => {
+    const { manager, refresh, saved, saveFailures, failWrites } = setup();
+    await manager.load();
+    failWrites(1);
+    refresh.resolve(refreshReply("new"));
+    await manager.refreshIfStale();
+    await flush();
+    expect(saved.get(TOKEN_KEY)).toBe("new");
+    expect(saveFailures).toHaveLength(0);
   });
 
   test("an unreachable server keeps the old token for the next try", async () => {

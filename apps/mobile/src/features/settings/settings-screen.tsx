@@ -13,6 +13,7 @@ import { dollars } from "./ai-settings";
 import { ACCENTS } from "./appearance-settings";
 import { DAYS } from "./planning-settings";
 import { ReminderStatusBanner } from "./reminder-status-banner";
+import { timeZoneCity } from "./time-zones";
 
 interface Entry {
   href: string;
@@ -56,9 +57,10 @@ export function SettingsScreen() {
           ? join(
               s.dailyTaskGoal ? `${plural(s.dailyTaskGoal, "task")} a day` : "No daily goal",
               `week starts ${DAYS[s.weekStartsOn]}`,
+              `${timeZoneCity(s.timeZone)} time`,
               s.vacationMode && "on vacation",
             )
-          : "Daily goal, days off, focus",
+          : "Daily goal, days off, time zone, focus",
         icon: "calendar-check-outline",
         color: "sky",
       },

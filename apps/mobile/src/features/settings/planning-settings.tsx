@@ -1,11 +1,15 @@
+import { View } from "react-native";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { PickerField } from "@/components/ui/picker-field";
 import { Section } from "@/components/ui/section";
+import { Text } from "@/components/ui/text";
 import { ToggleRow } from "@/components/ui/toggle-row";
 import { formatMinutes, plural } from "@/lib/format";
 import { ChoiceRow } from "./setting-row";
 import { SettingsPage } from "./settings-page";
+import { phoneTimeZone, timeZoneLabel, timeZoneOptions } from "./time-zones";
 import { useUpdateSettings } from "./use-update-settings";
 
 export const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -15,9 +19,11 @@ const LONG_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 const goalLabel = (n: number) => (n === 0 ? "Off" : plural(n, "task"));
 const minutesLabel = (m: string) => plural(Number(m), "minute");
 
-/** The daily goal, days off, focus timer lengths and the optional planning views. */
+/** The daily goal, days off, time zone, focus timer lengths and the optional planning views. */
 export function PlanningSettings() {
   const update = useUpdateSettings();
+  const phone = phoneTimeZone();
+  const now = Date.now();
   return (
     <SettingsPage title="Today and planning">
       {(s) => (
@@ -72,6 +78,26 @@ export function PlanningSettings() {
                 describe={(d) => LONG_DAYS[Number(d)] ?? d}
                 onChange={(d) => update({ weekStartsOn: Number(d) })}
               />
+              <PickerField
+                label="Time zone"
+                value={s.timeZone}
+                options={timeZoneOptions(phone, now)}
+                describe={(zone) => timeZoneLabel(zone, now)}
+                onChange={(zone) => (zone ? update({ timeZone: zone }) : undefined)}
+              />
+              {phone && phone !== s.timeZone ? (
+                <View className="gap-2">
+                  <Text variant="caption" tone="muted">
+                    {`Your phone is on ${timeZoneLabel(phone, now)}. Today, reminders and budget days follow the time zone above.`}
+                  </Text>
+                  <Button
+                    label="Use this phone's zone"
+                    size="sm"
+                    variant="secondary"
+                    onPress={() => update({ timeZone: phone })}
+                  />
+                </View>
+              ) : null}
             </Card>
           </Section>
           <Section title="Focus">

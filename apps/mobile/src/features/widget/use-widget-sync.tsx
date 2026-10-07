@@ -26,8 +26,22 @@ resetOnSignOut(() => {
   void requestWidgetUpdate({
     widgetName: WIDGET_NAME,
     renderWidget: (info) => ({
-      light: <SafeToSpendWidget cache={EMPTY_CACHE} scheme="light" height={info.height} />,
-      dark: <SafeToSpendWidget cache={EMPTY_CACHE} scheme="dark" height={info.height} />,
+      light: (
+        <SafeToSpendWidget
+          cache={EMPTY_CACHE}
+          scheme="light"
+          width={info.width}
+          height={info.height}
+        />
+      ),
+      dark: (
+        <SafeToSpendWidget
+          cache={EMPTY_CACHE}
+          scheme="dark"
+          width={info.width}
+          height={info.height}
+        />
+      ),
     }),
   }).catch(() => {});
 });
@@ -74,8 +88,22 @@ export function useWidgetSync() {
       await requestWidgetUpdate({
         widgetName: WIDGET_NAME,
         renderWidget: (info) => ({
-          light: <SafeToSpendWidget cache={cache} scheme="light" height={info.height} />,
-          dark: <SafeToSpendWidget cache={cache} scheme="dark" height={info.height} />,
+          light: (
+            <SafeToSpendWidget
+              cache={cache}
+              scheme="light"
+              width={info.width}
+              height={info.height}
+            />
+          ),
+          dark: (
+            <SafeToSpendWidget
+              cache={cache}
+              scheme="dark"
+              width={info.width}
+              height={info.height}
+            />
+          ),
         }),
       }).catch(() => {});
     })();

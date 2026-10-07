@@ -75,6 +75,7 @@ Caption (13) is the smallest text; nothing goes below it except tab labels (12).
 - **Chips:** 40 dp, radius full, neutral by default; selected = ink fill.
 - **Pickers in sheets:** a compact "Cash ▾" style field that expands into a list, instead of rows of chips.
 - **Sheets:** creating and editing always happen in bottom sheets with the action pinned at the bottom.
+- **Home-screen widget:** every pill is a 48 dp target with 13 dp labels, so the widget trades breadth for reach (`features/widget/widget-layout.ts`, tested). At the default 4×2 size one row of pills holds Task, Expense and up to two one-tap quick-logs; Focus and Tiki give way, because a quick-log is the fastest path the app has. A tall widget (240 dp or more) gives the quick-logs a row of their own and shows all four actions. After a quick-log, Undo and Keep take the row's first places for ten minutes at every size. A label is only shown when it fits: on a narrow widget the actions become glyphs (＋ －) with their full names for screen readers, and a quick-log that doesn't fit is left out rather than cut off.
 
 ## Motion
 

@@ -5,6 +5,7 @@ import { formatAmount as formatAmountIn } from "@tick-taka/shared/money";
 import { FlexWidget, SvgWidget, TextWidget } from "react-native-android-widget";
 import type { WidgetCache } from "./widget-cache";
 import { type WidgetColors, widgetColors } from "./widget-colors";
+import { ACTIONS, TARGET, type WidgetAction, type WidgetSlot, widgetLayout } from "./widget-layout";
 import { canUndo, lastLogText } from "./widget-quick-log";
 
 /** The widget library only takes hex colours. */
@@ -19,14 +20,8 @@ const TIKI = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
 <path d="M45 71 Q60 84 75 71" stroke="#3A2A1A" stroke-width="5" fill="none" stroke-linecap="round"/>
 </svg>`;
 
-/** Every tappable part of the widget is at least this tall (dp). */
-const TARGET = 48;
 /** Caption size: the smallest text, as in the app. */
 const CAPTION = 13;
-/** Below this height (dp) only the numbers and the buttons fit. */
-const COMPACT = 160;
-/** At or above this height (dp) there's room for the quick-log row. */
-const TALL = 240;
 
 function Bar({ value, tone, c }: { value: number; tone: Hex; c: WidgetColors }) {
   const filled = Math.round(Math.min(1, Math.max(0, value)) * 100);
@@ -74,7 +69,7 @@ function Pill({
       clickActionData={clickActionData}
       accessibilityLabel={accessibilityLabel}
       style={{
-        ...(flex ? { flex } : { paddingHorizontal: 14 }),
+        ...(flex ? { flex } : { paddingHorizontal: 12 }),
         height: TARGET,
         borderRadius: TARGET / 2,
         backgroundColor: tint,
@@ -85,9 +80,45 @@ function Pill({
       <TextWidget
         text={label}
         maxLines={1}
+        truncate="END"
         style={{ fontSize: CAPTION, fontWeight: "bold", color: tone }}
       />
     </FlexWidget>
+  );
+}
+
+const ACTION_LINKS: Record<WidgetAction, string> = {
+  task: "ticktaka://add?kind=task",
+  expense: "ticktaka://add?kind=expense",
+  focus: "ticktaka://focus",
+  tiki: "ticktaka://assistant?start=talk",
+};
+
+/** Task, Expense, Focus or Tiki: its label, or its glyph when the widget is narrow. */
+function ActionPill({
+  slot,
+  c,
+}: {
+  slot: Extract<WidgetSlot, { kind: "action" }>;
+  c: WidgetColors;
+}) {
+  const action = ACTIONS[slot.action];
+  const [tint, tone] =
+    slot.action === "expense"
+      ? [c.coralTint, c.coralText]
+      : slot.action === "tiki"
+        ? [c.card, c.ink]
+        : [c.skyTint, c.skyText];
+  return (
+    <Pill
+      flex={slot.width}
+      label={slot.glyph ? action.glyph : action.label}
+      tint={tint}
+      tone={tone}
+      clickAction="OPEN_URI"
+      clickActionData={{ uri: ACTION_LINKS[slot.action] }}
+      accessibilityLabel={action.name}
+    />
   );
 }
 
@@ -128,11 +159,14 @@ function SignedOut({ c }: { c: WidgetColors }) {
 export function SafeToSpendWidget({
   cache,
   scheme,
+  width = 0,
   height = 0,
   now = Date.now(),
 }: {
   cache: WidgetCache;
   scheme: "light" | "dark";
+  /** The widget's size on the launcher (dp); 0 when it isn't known. */
+  width?: number;
   height?: number;
   now?: number;
 }) {
@@ -149,10 +183,17 @@ export function SafeToSpendWidget({
   ]
     .filter(Boolean)
     .join("  ·  ");
-  const compact = height > 0 && height < COMPACT;
-  const tall = height >= TALL;
   const undo = canUndo(cache, now) && cache.lastLog ? cache.lastLog : null;
-  const showQuick = tall && !undo && cache.quick.length > 0;
+  const quickLabel = (entry: WidgetCache["quick"][number]) =>
+    `${entry.label} ${money(entry.amountMinor)}`;
+  const layout = widgetLayout({
+    width,
+    height,
+    quick: cache.quick.map(quickLabel),
+    undo: undo !== null,
+  });
+  const compact = layout.size === "compact";
+  const tall = layout.size === "tall";
   const statusLine =
     cache.status ??
     (undo && !tall
@@ -250,7 +291,7 @@ export function SafeToSpendWidget({
           ) : null}
         </FlexWidget>
       </FlexWidget>
-      {tall && undo ? (
+      {layout.undoRow && undo ? (
         <FlexWidget
           style={{ flexDirection: "row", width: "match_parent", alignItems: "center", flexGap: 6 }}
         >
@@ -278,58 +319,66 @@ export function SafeToSpendWidget({
           />
         </FlexWidget>
       ) : null}
-      {showQuick ? (
+      {layout.quickRow.length > 0 ? (
         <FlexWidget style={{ flexDirection: "row", width: "match_parent", flexGap: 6 }}>
-          {cache.quick.map((entry, index) => (
-            <Pill
-              key={`${entry.note}-${entry.amountMinor}`}
-              label={`${entry.label} ${money(entry.amountMinor)}`}
-              tint={c.card}
-              tone={c.ink}
-              clickAction="LOG"
-              clickActionData={{ index }}
-              accessibilityLabel={`Log ${entry.label}, ${money(entry.amountMinor)}, as an expense`}
-            />
-          ))}
+          {layout.quickRow.map((index) => {
+            const entry = cache.quick[index];
+            return entry ? (
+              <Pill
+                key={`${entry.note}-${entry.amountMinor}`}
+                label={quickLabel(entry)}
+                tint={c.card}
+                tone={c.ink}
+                clickAction="LOG"
+                clickActionData={{ index }}
+                accessibilityLabel={`Log ${entry.label}, ${money(entry.amountMinor)}, as an expense`}
+              />
+            ) : null;
+          })}
         </FlexWidget>
       ) : null}
       <FlexWidget style={{ flexDirection: "row", width: "match_parent", flexGap: 6 }}>
-        <Pill
-          flex={1}
-          label="＋ Task"
-          tint={c.skyTint}
-          tone={c.skyText}
-          clickAction="OPEN_URI"
-          clickActionData={{ uri: "ticktaka://add?kind=task" }}
-          accessibilityLabel="Add a task"
-        />
-        <Pill
-          flex={1}
-          label="－ Expense"
-          tint={c.coralTint}
-          tone={c.coralText}
-          clickAction="OPEN_URI"
-          clickActionData={{ uri: "ticktaka://add?kind=expense" }}
-          accessibilityLabel="Log an expense"
-        />
-        <Pill
-          flex={1}
-          label="▶ Focus"
-          tint={c.skyTint}
-          tone={c.skyText}
-          clickAction="OPEN_URI"
-          clickActionData={{ uri: "ticktaka://focus" }}
-          accessibilityLabel="Start focus"
-        />
-        <Pill
-          flex={1}
-          label="🎙 Tiki"
-          tint={c.card}
-          tone={c.ink}
-          clickAction="OPEN_URI"
-          clickActionData={{ uri: "ticktaka://assistant?start=talk" }}
-          accessibilityLabel="Talk to Tiki"
-        />
+        {layout.row.map((slot) => {
+          if (slot.kind === "action") return <ActionPill key={slot.action} slot={slot} c={c} />;
+          if (slot.kind === "undo" && undo)
+            return (
+              <Pill
+                key="undo"
+                flex={slot.width}
+                label="Undo"
+                tint={c.card}
+                tone={c.ink}
+                clickAction="UNDO_LOG"
+                accessibilityLabel={`Undo: remove ${undo.label} ${money(undo.amountMinor)}`}
+              />
+            );
+          if (slot.kind === "keep")
+            return (
+              <Pill
+                key="keep"
+                flex={slot.width}
+                label="Keep"
+                tint={c.card}
+                tone={c.muted}
+                clickAction="KEEP_LOG"
+                accessibilityLabel="Keep it and show the quick-log buttons"
+              />
+            );
+          const entry = slot.kind === "quick" ? cache.quick[slot.index] : undefined;
+          return slot.kind === "quick" && entry ? (
+            // Weighted by the width each label needs: widgetLayout checked they all fit.
+            <Pill
+              key={`quick-${slot.index}`}
+              flex={slot.width}
+              label={quickLabel(entry)}
+              tint={c.card}
+              tone={c.ink}
+              clickAction="LOG"
+              clickActionData={{ index: slot.index }}
+              accessibilityLabel={`Log ${entry.label}, ${money(entry.amountMinor)}, as an expense`}
+            />
+          ) : null;
+        })}
       </FlexWidget>
     </FlexWidget>
   );

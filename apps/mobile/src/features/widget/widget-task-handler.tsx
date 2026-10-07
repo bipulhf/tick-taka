@@ -98,10 +98,12 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
     else if (props.clickAction === "UNDO_LOG") cache = await undoQuickLog();
     else if (props.clickAction === "KEEP_LOG") cache = await keepLastLog();
   }
-  const height = props.widgetInfo.height;
+  const { width, height } = props.widgetInfo;
   const now = Date.now();
   props.renderWidget({
-    light: <SafeToSpendWidget cache={cache} scheme="light" height={height} now={now} />,
-    dark: <SafeToSpendWidget cache={cache} scheme="dark" height={height} now={now} />,
+    light: (
+      <SafeToSpendWidget cache={cache} scheme="light" width={width} height={height} now={now} />
+    ),
+    dark: <SafeToSpendWidget cache={cache} scheme="dark" width={width} height={height} now={now} />,
   });
 }

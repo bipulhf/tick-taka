@@ -128,20 +128,24 @@ export function CalendarView() {
                   {Number(date.slice(8))}
                 </Text>
                 <View className="mt-0.5 h-1.5 flex-row gap-0.5">
-                  {/* Tasks are a sky dot, timed tasks a sky ring, bills a coral dot. */}
+                  {/*
+                   * The marks are the only visual cue, so they use the -text tier (3:1 on a
+                   * card and on today's tint) and differ by shape too: tasks are a sky dot,
+                   * timed tasks a sky ring, bills a coral square.
+                   */}
                   {count > 0 ? (
                     <View
-                      className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-background" : "bg-sky"}`}
+                      className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-background" : "bg-sky-text"}`}
                     />
                   ) : null}
                   {timed ? (
                     <View
-                      className={`h-1.5 w-1.5 rounded-full border ${isSelected ? "border-background" : "border-sky"}`}
+                      className={`h-1.5 w-1.5 rounded-full border ${isSelected ? "border-background" : "border-sky-text"}`}
                     />
                   ) : null}
                   {hasBills ? (
                     <View
-                      className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-background" : "bg-coral"}`}
+                      className={`h-1.5 w-1.5 rounded-[1px] ${isSelected ? "bg-background" : "bg-coral-text"}`}
                     />
                   ) : null}
                 </View>

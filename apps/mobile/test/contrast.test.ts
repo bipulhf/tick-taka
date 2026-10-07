@@ -169,6 +169,33 @@ describe("component boundaries reach 3:1", () => {
     });
   }
 
+  for (const { name, colors } of variants) {
+    test(`${name}: calendar day marks on a card and on today's sky tint`, () => {
+      const today = over(colors.sky, colors.card, 0.15);
+      for (const token of ["skyText", "coralText"] as const) {
+        for (const [where, surface] of [
+          ["card", colors.card],
+          ["today", today],
+        ] as const) {
+          const pair = `${token} on ${where}`;
+          expect({ pair, ok: contrast(colors[token], surface) >= UI_AA }).toEqual({
+            pair,
+            ok: true,
+          });
+        }
+      }
+    });
+  }
+
+  test("calendar cells mark tasks and bills with the -text tier, not the bright tokens", () => {
+    for (const file of ["features/plan/calendar-view.tsx", "features/money/money-calendar.tsx"]) {
+      const text = readFileSync(join(import.meta.dir, "../src", file), "utf8");
+      // A bright mark class (bg-sky, border-coral); tints like bg-sky/15 aren't marks.
+      const bright = text.match(/\b(?:bg|border)-(?:sky|coral|mint|grape)(?![-/\w])/g) ?? [];
+      expect({ file, bright }).toEqual({ file, bright: [] });
+    }
+  });
+
   test("the bright light-mode marks are why sole cues use the -text tier", () => {
     // Fine as fills under dark text, too faint alone: an unchecked mint ring was 2.21:1.
     expect(contrast(palette.light.mint, palette.light.card)).toBeLessThan(UI_AA);

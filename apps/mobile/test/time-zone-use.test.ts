@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import ts from "typescript";
 import { sourceFiles } from "./helpers/source-files";
 
 /**
@@ -22,59 +23,47 @@ const ZONED: Record<string, number> = {
 /** Where the default zone may live: the helpers that define the fallback. */
 const ALLOWED = ["lib/user-time.ts", "lib/format.ts", "lib/pick-date.ts"];
 
-/** Counts a call's top-level arguments, starting just after its opening bracket. */
-export function countArgs(text: string, open: number): number {
-  let depth = 0;
-  let args = 0;
-  let seen = false;
-  let quote: string | null = null;
-  for (let i = open; i < text.length; i++) {
-    const c = text.charAt(i);
-    if (quote) {
-      if (c === "\\") i++;
-      else if (c === quote) quote = null;
-      continue;
-    }
-    if (c === '"' || c === "'" || c === "`") {
-      quote = c;
-      seen = true;
-    } else if ("([{".includes(c)) {
-      depth++;
-      seen = true;
-    } else if (")]}".includes(c)) {
-      if (depth === 0) return seen ? args + 1 : 0;
-      depth--;
-    } else if (c === "," && depth === 0) {
-      // A trailing comma before ")" doesn't start another argument.
-      if (/^\s*\)/.test(text.slice(i + 1))) return args + 1;
-      args++;
-    } else if (!/\s/.test(c)) seen = true;
-  }
-  return args;
-}
-
+/**
+ * Calls of the zoned helpers with too few arguments to pass the zone, found by the
+ * TypeScript parser: comments, strings and regex literals can't be mistaken for code.
+ */
 function zoneless(text: string): string[] {
+  const source = ts.createSourceFile(
+    "file.tsx",
+    text,
+    ts.ScriptTarget.Latest,
+    false,
+    ts.ScriptKind.TSX,
+  );
   const found: string[] = [];
-  for (const [name, needed] of Object.entries(ZONED)) {
-    for (const match of text.matchAll(new RegExp(`(?<![\\w.])${name}\\(`, "g"))) {
-      const before = text.slice(Math.max(0, match.index - 9), match.index);
-      if (/function\s*$/.test(before)) continue; // the definition itself
-      if (countArgs(text, match.index + match[0].length) < needed)
-        found.push(`${name} (line ${text.slice(0, match.index).split("\n").length})`);
+  const visit = (node: ts.Node) => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+      const name = node.expression.text;
+      const needed = ZONED[name];
+      if (needed !== undefined && node.arguments.length < needed) {
+        const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+        found.push(`${name} (line ${line})`);
+      }
     }
-  }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
   return found;
 }
 
 describe("time zone", () => {
-  test("the argument counter handles nesting, objects and strings", () => {
-    const at = (s: string) => countArgs(s, s.indexOf("(") + 1);
-    expect(at("toLocalDate(Date.now())")).toBe(1);
-    expect(at("toLocalDate(Date.now(), timeZone)")).toBe(2);
-    expect(at("zonedTimeToUtc({ ...parseLocalDate(d), hour: 10 })")).toBe(1);
-    expect(at('formatWhen(ms, true, Date.now(), "a,b")')).toBe(4);
-    expect(at("pickDate()")).toBe(0);
-    expect(at("pickDate(\n  start,\n  timeZone,\n)")).toBe(2);
+  test("the check counts real arguments, not commas in strings or comments", () => {
+    expect(zoneless("toLocalDate(Date.now())")).toEqual(["toLocalDate (line 1)"]);
+    expect(zoneless("toLocalDate(Date.now(), timeZone)")).toEqual([]);
+    expect(zoneless("zonedTimeToUtc({ ...parseLocalDate(d), hour: 10 })")).toHaveLength(1);
+    expect(zoneless('formatWhen(ms, true, Date.now(), "a,b")')).toEqual([]);
+    expect(zoneless('formatWhen(ms, true, "a,b,c")')).toEqual(["formatWhen (line 1)"]);
+    expect(zoneless("pickDate(\n  start,\n  timeZone,\n)")).toEqual([]);
+    expect(zoneless("x;\ntoLocalMonth(now /* , zone */)")).toEqual(["toLocalMonth (line 2)"]);
+    expect(zoneless("toLocalMonth(now, /,/.source)")).toEqual([]);
+    // A method of the same name, and the helper's own definition, aren't calls of it.
+    expect(zoneless("intl.toLocalDate(now)")).toEqual([]);
+    expect(zoneless("export function toLocalDate(ms: number, timeZone = TZ) {}")).toEqual([]);
   });
 
   test("no screen works out a day or month in the default zone", () => {

@@ -9,8 +9,8 @@
   "scripts": {
     "lint": "biome check .",
     "format": "biome format --write .",
-    "typecheck": "bun run --filter '*' typecheck",
-    "test": "bun run --filter '*' test",
+    "typecheck": "bun run --filter '*' typecheck && tsc -p scripts",
+    "test": "bun run --filter '*' test && bun test ./scripts",
     "check": "biome check . && bun run typecheck && bun run test",
     "audit": "bun scripts/audit.ts"
   },

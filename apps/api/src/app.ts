@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import type { Deps } from "./lib/deps";
 import { requireAuth } from "./middleware/auth";
 import { onError, onNotFound } from "./middleware/error-handler";
@@ -66,8 +67,20 @@ export function createApp(deps: Deps) {
     .route("/export", exportRoutes(deps))
     .route("/ai", aiRoutes(deps, dispatch));
 
+  // The web app on its own host (WEB_ORIGINS) calls the API with a bearer token; no
+  // cookies, so no credentials. With no origins listed, browsers get no CORS headers.
+  const webOrigins = deps.env.WEB_ORIGINS;
   const app = new Hono()
     .use(requestLog(deps))
+    .use(
+      cors({
+        origin: (origin) => (webOrigins.includes(origin) ? origin : null),
+        allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+        allowHeaders: ["authorization", "content-type", "x-request-id"],
+        exposeHeaders: ["x-server-time", "x-request-id", "retry-after"],
+        maxAge: 600,
+      }),
+    )
     // The phone reads this to send edit times in server time, so last-write-wins
     // isn't fooled by a phone clock that runs fast or slow.
     .use(async (c, next) => {

@@ -58,6 +58,19 @@ const envSchema = z.object({
   OPENAI_SMART_OUTPUT_MICROS_PER_MTOK: z.coerce.number().nonnegative().default(10_000_000),
   /** Most any one user's AI calls may cost per month, in micro-dollars, whatever their setting. */
   AI_USER_MONTHLY_CAP_MICROS: z.coerce.number().int().nonnegative().default(2_000_000),
+  /**
+   * Origins of the web app when it runs on another host than the API, allowed by
+   * CORS (comma-separated, e.g. https://tick.example.com). Empty: same host only.
+   */
+  WEB_ORIGINS: z
+    .string()
+    .default("")
+    .transform((v) =>
+      v
+        .split(",")
+        .map((origin) => origin.trim().replace(/\/$/, ""))
+        .filter(Boolean),
+    ),
   /** Who runs the service, named on the public home, privacy and terms pages. */
   SITE_OPERATOR: z.string().default("Tick & Taka"),
   /** Where people write about their data or to delete their account; shown on those pages. */

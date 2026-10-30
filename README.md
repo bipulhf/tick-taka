@@ -397,6 +397,16 @@ a column next to the content, and the keyboard (`N` to add anything, `Ctrl K` to
 anywhere or search, `G` then a letter to jump, `J`/`K`/`X` in lists, `?` for the rest).
 It also works in a phone browser, with the bottom tab bar.
 
+|                                    Today                                    |                                   Week                                    |
+| :-------------------------------------------------------------------------: | :-----------------------------------------------------------------------: |
+|  <img src="docs/screenshots/web-today.png" width="420" alt="Today on the web" />  |  <img src="docs/screenshots/web-week.png" width="420" alt="Week planner on the web" />  |
+|                                  **Money**                                  |                                **Reports**                                |
+|  <img src="docs/screenshots/web-money.png" width="420" alt="Money on the web" />  | <img src="docs/screenshots/web-reports.png" width="420" alt="Reports on the web" /> |
+
+<p align="center">
+  <img src="docs/screenshots/web-today-dark.png" width="640" alt="Today on the web in dark mode" />
+</p>
+
 What differs from the phone:
 
 - **Online only.** Nothing is cached or queued: when the connection drops, a banner says

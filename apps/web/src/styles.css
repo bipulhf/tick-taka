@@ -1,0 +1,275 @@
+@import "tailwindcss";
+
+/*
+ * DESIGN.md's tokens, the same values as apps/mobile/src/theme/palette.ts. The theme
+ * follows the system unless Settings pins it (data-theme on <html>); accent themes
+ * (data-accent) only tint the surfaces. test/tokens.test.ts keeps both apps in step.
+ */
+:root {
+  --tt-mango: #ffb547;
+  --tt-sky: #5b8cff;
+  --tt-mint: #2ec4a0;
+  --tt-coral: #ff7a6b;
+  --tt-grape: #a57bff;
+  --tt-mango-text: #8a5a00;
+  --tt-sky-text: #2c5bcb;
+  --tt-mint-text: #11725d;
+  --tt-coral-text: #b23a2a;
+  --tt-grape-text: #6e44d6;
+  --tt-mango-inverse: #ffb547;
+  --tt-background: #fff8ee;
+  --tt-card: #ffffff;
+  --tt-ink: #23202b;
+  --tt-muted: #6b655f;
+  --tt-line: #eee5d8;
+  --tt-line-strong: #8f8475;
+  /* The sidebar and other chrome: one step from the page, toward the line colour. */
+  --tt-chrome: #f8efe2;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --tt-mango: #ffc266;
+    --tt-sky: #7aa2ff;
+    --tt-mint: #4fd8b5;
+    --tt-coral: #ff9385;
+    --tt-grape: #b996ff;
+    --tt-mango-text: #ffc266;
+    --tt-sky-text: #7aa2ff;
+    --tt-mint-text: #4fd8b5;
+    --tt-coral-text: #ff9385;
+    --tt-grape-text: #b996ff;
+    --tt-mango-inverse: #8a5a00;
+    --tt-background: #16151c;
+    --tt-card: #22202b;
+    --tt-ink: #f4f1ea;
+    --tt-muted: #a09aa6;
+    --tt-line: #34313f;
+    --tt-line-strong: #7a748c;
+    --tt-chrome: #1c1b23;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --tt-mango: #ffc266;
+  --tt-sky: #7aa2ff;
+  --tt-mint: #4fd8b5;
+  --tt-coral: #ff9385;
+  --tt-grape: #b996ff;
+  --tt-mango-text: #ffc266;
+  --tt-sky-text: #7aa2ff;
+  --tt-mint-text: #4fd8b5;
+  --tt-coral-text: #ff9385;
+  --tt-grape-text: #b996ff;
+  --tt-mango-inverse: #8a5a00;
+  --tt-background: #16151c;
+  --tt-card: #22202b;
+  --tt-ink: #f4f1ea;
+  --tt-muted: #a09aa6;
+  --tt-line: #34313f;
+  --tt-line-strong: #7a748c;
+  --tt-chrome: #1c1b23;
+  color-scheme: dark;
+}
+
+/* Accent themes from Settings › Appearance (apps/mobile/src/theme/palette.ts rewardThemes). */
+:root[data-accent="mint-breeze"] {
+  --tt-background: #ecfaf5;
+  --tt-line: #d6eee5;
+  --tt-chrome: #e2f4ed;
+}
+:root[data-accent="grape-dusk"] {
+  --tt-background: #f6f1ff;
+  --tt-line: #e6def6;
+  --tt-chrome: #ede6fa;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-accent="mint-breeze"]:not([data-theme="light"]) {
+    --tt-background: #101c1a;
+    --tt-card: #1a2825;
+    --tt-line: #34313f;
+    --tt-chrome: #142220;
+  }
+  :root[data-accent="grape-dusk"]:not([data-theme="light"]) {
+    --tt-background: #181424;
+    --tt-card: #241e34;
+    --tt-line: #34313f;
+    --tt-chrome: #1c172b;
+  }
+}
+:root[data-theme="dark"][data-accent="mint-breeze"] {
+  --tt-background: #101c1a;
+  --tt-card: #1a2825;
+  --tt-line: #34313f;
+  --tt-chrome: #142220;
+}
+:root[data-theme="dark"][data-accent="grape-dusk"] {
+  --tt-background: #181424;
+  --tt-card: #241e34;
+  --tt-line: #34313f;
+  --tt-chrome: #1c172b;
+}
+
+@theme inline {
+  --color-mango: var(--tt-mango);
+  --color-sky: var(--tt-sky);
+  --color-mint: var(--tt-mint);
+  --color-coral: var(--tt-coral);
+  --color-grape: var(--tt-grape);
+  --color-mango-text: var(--tt-mango-text);
+  --color-sky-text: var(--tt-sky-text);
+  --color-mint-text: var(--tt-mint-text);
+  --color-coral-text: var(--tt-coral-text);
+  --color-grape-text: var(--tt-grape-text);
+  --color-mango-inverse: var(--tt-mango-inverse);
+  --color-background: var(--tt-background);
+  --color-card: var(--tt-card);
+  --color-ink: var(--tt-ink);
+  --color-muted: var(--tt-muted);
+  --color-line: var(--tt-line);
+  --color-line-strong: var(--tt-line-strong);
+  --color-chrome: var(--tt-chrome);
+  /* Text and icons on mango and every other semantic fill: always dark. */
+  --color-on-mango: #23202b;
+}
+
+@theme {
+  --font-sans: "Nunito Variable", ui-rounded, system-ui, sans-serif;
+
+  /* Desk density: DESIGN.md's roles, one step smaller for a mouse and keyboard. */
+  --text-large-title: 1.875rem;
+  --text-large-title--line-height: 2.25rem;
+  --text-large-title--font-weight: 800;
+  --text-hero: 2.75rem;
+  --text-hero--line-height: 3.125rem;
+  --text-hero--font-weight: 800;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.75rem;
+  --text-title--font-weight: 800;
+  --text-heading: 1.0625rem;
+  --text-heading--line-height: 1.5rem;
+  --text-heading--font-weight: 700;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.375rem;
+  --text-callout: 0.875rem;
+  --text-callout--line-height: 1.25rem;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.125rem;
+  --text-caption--font-weight: 600;
+  --text-tab: 0.75rem;
+  --text-tab--line-height: 1rem;
+
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-panel-in: panel-in 220ms var(--ease-out-quart);
+  --animate-sheet-in: sheet-in 240ms var(--ease-out-quart);
+  --animate-fade-in: fade-in 160ms var(--ease-out-quart);
+  --animate-toast-in: toast-in 200ms var(--ease-out-quart);
+  --animate-check: check-pop 280ms var(--ease-out-expo);
+
+  @keyframes panel-in {
+    from {
+      transform: translateX(24px);
+      opacity: 0;
+    }
+  }
+  @keyframes sheet-in {
+    from {
+      transform: translateY(32px);
+      opacity: 0;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes toast-in {
+    from {
+      transform: translateY(12px);
+      opacity: 0;
+    }
+  }
+  @keyframes check-pop {
+    40% {
+      transform: scale(1.18);
+    }
+  }
+}
+
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"] *) {
+    @slot;
+  }
+}
+
+@layer base {
+  html {
+    background: var(--tt-background);
+    color: var(--tt-ink);
+    font-family: var(--font-sans);
+    font-size: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    min-height: 100dvh;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--tt-mango) 45%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--tt-sky-text);
+    outline-offset: 2px;
+  }
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* biome-ignore-start lint/complexity/noImportantStyles: reduce-motion must beat every utility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* biome-ignore-end lint/complexity/noImportantStyles: reduce-motion must beat every utility */
+
+@keyframes tiki-bob {
+  50% {
+    transform: translateY(-3px);
+  }
+}

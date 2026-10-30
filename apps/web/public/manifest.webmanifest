@@ -1,0 +1,19 @@
+{
+  "name": "Tick & Taka",
+  "short_name": "Tick & Taka",
+  "description": "Your days and your money, on one screen.",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#FFF8EE",
+  "theme_color": "#FFB547",
+  "icons": [
+    { "src": "/app/icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "/app/tiki.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "New task", "url": "/app/?new=task" },
+    { "name": "New expense", "url": "/app/?new=expense" },
+    { "name": "Focus", "url": "/app/focus" }
+  ]
+}

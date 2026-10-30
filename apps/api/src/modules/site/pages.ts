@@ -1,44 +1,21 @@
-import { APP_NAME, contact, escapeHtml, page, type SiteInfo } from "./layout";
+import { APP_NAME, contact, docPage, escapeHtml, type SiteInfo } from "./layout";
 
 const UPDATED = "7 October 2026";
 
-export const landingPage = (site: SiteInfo) =>
-  page(
-    `${APP_NAME}: a personal planner and money tracker`,
-    `<h1>${APP_NAME}</h1>
-<p><strong>${APP_NAME} is a personal planner and money tracker for Android.</strong> It helps one person plan their day and keep track of their own money in one app, in Bangla or English. This page explains what the app does; you don't need an account to read it.</p>
-
-<h2>What ${APP_NAME} is for</h2>
-<p>Most people keep their to-do list in one app and their spending in another. ${APP_NAME} puts both in one place, so you can see each day what you have to do and how much you can safely spend.</p>
-<div class="card">
-<ul>
-  <li><strong>Plan your day:</strong> tasks with dates and reminders, a "top three" for each day, projects, habits with streaks, morning and evening routines, and a focus timer.</li>
-  <li><strong>Track your money:</strong> record expenses and income across cash, bank accounts and mobile wallets such as bKash; set monthly budgets and see a daily "safe to spend" amount; track bills, savings goals and money you lent or borrowed.</li>
-  <li><strong>Review:</strong> weekly and monthly reviews and simple reports on where your time and money went.</li>
-  <li><strong>Tiki, the assistant (optional):</strong> type or speak, for example "spent 120 on rickshaw", and Tiki adds or changes records for you. It always asks before deleting anything, and AI can be switched off.</li>
-  <li><strong>Home-screen widget:</strong> today's safe-to-spend amount and next task, with one-tap buttons.</li>
-</ul>
-</div>
-
-<h2>Why it asks you to sign in with Google</h2>
-<p>${APP_NAME} uses Google Sign-In only to know who you are, so your planner and money records are kept in your own private space on our server and you can use them on a new phone. It asks Google for your name, email address and profile picture, and nothing else: it cannot read your Gmail, Drive, contacts or any other Google data.</p>
-
-<h2>Your privacy</h2>
-<p>Your records belong to you. They are never sold, never used for advertising, and never shown to other users. You can export everything or ask us to delete your account at any time. Read the full <a href="/privacy">privacy policy</a> and the <a href="/terms">terms of service</a>.</p>
-
-<h2>Contact</h2>
-<p>${APP_NAME} is run by ${escapeHtml(site.operator)}. Questions or requests: ${contact(site)}.</p>`,
-  );
-
 export const privacyPage = (site: SiteInfo) =>
-  page(
-    `Privacy policy · ${APP_NAME}`,
-    `<h1>Privacy policy</h1>
-<p class="muted">Last updated ${UPDATED}</p>
-<p>This policy explains what personal data the ${APP_NAME} Android app and its server ("${APP_NAME}", "we", "us") collect, why we collect it, how we use, store and share it, how long we keep it, and the choices you have. ${APP_NAME} is run by ${escapeHtml(site.operator)}, who is responsible for your data. Contact: ${contact(site)}.</p>
+  docPage(
+    site,
+    {
+      title: `Privacy policy · ${APP_NAME}`,
+      description: `What ${APP_NAME} collects, why, who it is shared with, and how to export or delete it.`,
+      path: "/privacy",
+      heading: "Privacy policy",
+      updated: UPDATED,
+    },
+    `<p>This policy explains what personal data the ${APP_NAME} Android app and its server ("${APP_NAME}", "we", "us") collect, why we collect it, how we use, store and share it, how long we keep it, and the choices you have. ${APP_NAME} is run by ${escapeHtml(site.operator)}, who is responsible for your data. Contact: ${contact(site)}.</p>
 
 <h2>1. Data we collect</h2>
-<table>
+<div class="table"><table>
 <thead><tr><th>Data</th><th>Where it comes from</th><th>Why we use it</th></tr></thead>
 <tbody>
 <tr><td>Name, email address and profile picture from your Google account, and Google's account ID</td><td>Google Sign-In, when you sign in</td><td>To create your account, sign you in, keep your data separate from other users' and show who is signed in</td></tr>
@@ -51,7 +28,7 @@ export const privacyPage = (site: SiteInfo) =>
 <tr><td>AI usage records: which AI feature was used, the model, token counts and cost (not the content)</td><td>Created by our server</td><td>To show you what AI cost and to limit spending</td></tr>
 <tr><td>Technical data: IP address and request times</td><td>Your phone's connection to our server</td><td>To keep the service secure and limit repeated sign-in attempts; kept only in short-lived server logs</td></tr>
 </tbody>
-</table>
+</table></div>
 <p>We do <strong>not</strong> collect your location, contacts, SMS messages, call logs or files, and the app contains no advertising, analytics or third-party tracking code.</p>
 
 <h2>2. Google user data</h2>
@@ -123,11 +100,16 @@ export const privacyPage = (site: SiteInfo) =>
   );
 
 export const termsPage = (site: SiteInfo) =>
-  page(
-    `Terms of service · ${APP_NAME}`,
-    `<h1>Terms of service</h1>
-<p class="muted">Last updated ${UPDATED}</p>
-<p>These terms apply when you use ${APP_NAME}, an app run by ${escapeHtml(site.operator)}. By signing in you agree to them. If you don't agree, please don't use the app.</p>
+  docPage(
+    site,
+    {
+      title: `Terms of service · ${APP_NAME}`,
+      description: `The terms for using ${APP_NAME}, a personal planner and money tracker.`,
+      path: "/terms",
+      heading: "Terms of service",
+      updated: UPDATED,
+    },
+    `<p>These terms apply when you use ${APP_NAME}, an app run by ${escapeHtml(site.operator)}. By signing in you agree to them. If you don't agree, please don't use the app.</p>
 
 <h2>Your account</h2>
 <p>You sign in with a Google account and are responsible for what happens under it. Keep your phone and Google account secure.</p>

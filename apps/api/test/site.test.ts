@@ -23,6 +23,15 @@ describe("public pages", () => {
     expect(privacy).toContain("mailto:help@example.com");
     // DELETE /auth/account removes everything at once; the page must say so.
     expect(privacy).toContain("removed from our server at once");
+    // The pages' font comes from this host, never from another one.
+    const font = await ctx.app.request("/site/nunito.woff2");
+    expect(font.status).toBe(200);
+    expect(font.headers.get("content-type")).toBe("font/woff2");
+    expect((await font.arrayBuffer()).byteLength).toBeGreaterThan(10_000);
+    for (const path of ["/", "/privacy", "/terms"]) {
+      const html = await (await ctx.app.request(path)).text();
+      expect(html).not.toMatch(/<script|https:\/\/fonts\./);
+    }
     // The signed-in API still asks for a token.
     expect((await ctx.app.request("/tasks")).status).toBe(401);
   });

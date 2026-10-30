@@ -12,16 +12,18 @@ import { usePath } from "./sidebar";
 export function BottomTabs() {
   const path = usePath();
   const current = sectionOf(path);
+  // Settings and Focus belong to no tab; Today is only "/" itself.
+  const isOpen = (to: string) => current.to === to && (to !== "/" || path === "/");
   const [today, plan, money, review] = NAV;
   const tab = (section: typeof today) =>
     section ? (
       <Link
         key={section.to}
         to={section.to}
-        aria-current={current.to === section.to ? "page" : undefined}
+        aria-current={isOpen(section.to) ? "page" : undefined}
         className={cx(
           "flex h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl text-tab font-bold",
-          current.to === section.to ? "bg-line/70 text-ink" : "text-muted",
+          isOpen(section.to) ? "bg-line/70 text-ink" : "text-muted",
         )}
       >
         <section.icon aria-hidden className="size-5" />

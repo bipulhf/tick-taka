@@ -12,8 +12,8 @@
     { "src": "/app/tiki.svg", "sizes": "any", "type": "image/svg+xml" }
   ],
   "shortcuts": [
-    { "name": "New task", "url": "/app/?new=task" },
-    { "name": "New expense", "url": "/app/?new=expense" },
+    { "name": "New task", "url": "/app/?panel=task:new" },
+    { "name": "New expense", "url": "/app/?panel=transaction:new&preset=type%3Dexpense" },
     { "name": "Focus", "url": "/app/focus" }
   ]
 }

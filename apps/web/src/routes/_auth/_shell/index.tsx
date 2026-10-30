@@ -1,16 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/ui/page-header";
+import { TodayView } from "@/features/today/today-view";
 
 export const Route = createFileRoute("/_auth/_shell/")({
-  component: TodayPage,
+  component: TodayView,
 });
-
-function TodayPage() {
-  return (
-    <div className="flex flex-col gap-7">
-      <PageHeader title="Today" />
-      <EmptyState message="This view is on its way." mood="focused" />
-    </div>
-  );
-}

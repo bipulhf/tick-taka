@@ -59,6 +59,12 @@ export function Panel({
         {!wide ? <Dialog.Overlay className="fixed inset-0 z-40 animate-fade-in bg-ink/30" /> : null}
         <Dialog.Content
           aria-describedby={description ? undefined : undefined}
+          onOpenAutoFocus={(event) => {
+            // Runs only when no field took focus itself: focus the panel, not its Close
+            // button, whose tooltip would otherwise pop up on every open.
+            event.preventDefault();
+            (event.currentTarget as HTMLElement | null)?.focus();
+          }}
           onInteractOutside={(event) => {
             // Clicking the list behind opens another item; it never closes this one.
             if (wide) event.preventDefault();

@@ -108,7 +108,8 @@ export function Sidebar({ forceRail }: { forceRail: boolean }) {
       </div>
 
       {NAV.map((top) => {
-        const open = top.to === section.to;
+        // Settings and Focus belong to no section; Today is only "/" itself.
+        const open = top.to === section.to && (top.to !== "/" || path === "/");
         const children = top.children.filter(
           (child) => !child.advanced || advanced?.[child.advanced],
         );

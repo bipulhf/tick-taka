@@ -46,7 +46,7 @@ export function RunningTimer() {
 
   return (
     // A raised pill with a sky mark, not a sky fill: colour stays a small mark.
-    <div className="flex h-10 shrink-0 items-center gap-1 rounded-2xl border border-line bg-card pr-1 pl-1">
+    <div className="flex h-10 shrink-0 items-center gap-1 rounded-2xl border border-line bg-card px-1">
       <Link
         to={focus ? "/focus" : "/plan/time"}
         aria-label={`${label} running, ${elapsed}. Opens the timer`}
@@ -56,9 +56,16 @@ export function RunningTimer() {
         <span className="hidden max-w-40 truncate text-callout font-semibold md:inline">
           {label}
         </span>
-        <span className="text-body font-bold tabular">{elapsed}</span>
+        <span className="text-callout font-bold tabular sm:text-body">{elapsed}</span>
       </Link>
-      <IconButton icon={Square} label="Stop timer" size="sm" onClick={stop} />
+      {/* On a phone the pill only opens the timer, which has Stop, so quick-add keeps its room. */}
+      <IconButton
+        icon={Square}
+        label="Stop timer"
+        size="sm"
+        onClick={stop}
+        className="hidden sm:inline-flex"
+      />
     </div>
   );
 }

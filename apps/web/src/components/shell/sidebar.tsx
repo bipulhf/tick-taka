@@ -87,7 +87,7 @@ export function Sidebar({ forceRail }: { forceRail: boolean }) {
     <nav
       aria-label="Main"
       className={cx(
-        "hidden shrink-0 flex-col gap-1 overflow-y-auto border-r border-line bg-chrome py-4 sm:flex",
+        "hidden shrink-0 flex-col border-r border-line bg-chrome py-4 sm:flex",
         rail ? "w-[68px] items-center px-2" : "w-[248px] px-3",
       )}
     >
@@ -107,64 +107,77 @@ export function Sidebar({ forceRail }: { forceRail: boolean }) {
         )}
       </div>
 
-      {NAV.map((top) => {
-        // Settings and Focus belong to no section; Today is only "/" itself.
-        const open = top.to === section.to && (top.to !== "/" || path === "/");
-        const children = top.children.filter(
-          (child) => !child.advanced || advanced?.[child.advanced],
-        );
-        return (
-          <div key={top.to} className={cx("flex flex-col gap-0.5", rail && "items-center")}>
-            <Item
-              link={top}
-              active={open && (rail || children.length === 0 || path === top.to)}
-              rail={rail}
-            />
-            {open && !rail && children.length > 0 ? (
-              <div className="mt-0.5 mb-2 ml-3 flex flex-col gap-0.5 border-l border-line pl-2">
-                {children.map((child) => (
-                  <Item
-                    key={child.to}
-                    link={child}
-                    depth={1}
-                    rail={false}
-                    active={isActive(path, child.to, child.to === top.to)}
-                  />
-                ))}
-                {top.to === "/plan" && areas && areas.length > 0 ? (
-                  <>
-                    <p className="mt-3 mb-1 px-2.5 text-caption text-muted">Areas</p>
-                    {areas.map((area) => {
-                      const to = `/plan/area/${area.id}`;
-                      return (
-                        <Link
-                          key={area.id}
-                          to="/plan/area/$id"
-                          params={{ id: area.id }}
-                          aria-current={path === to ? "page" : undefined}
-                          className={cx(
-                            "flex h-8 items-center gap-2.5 rounded-xl px-2.5 text-callout font-semibold transition-colors",
-                            path === to
-                              ? "bg-card text-ink shadow-sm shadow-ink/5"
-                              : "text-muted hover:bg-line/50 hover:text-ink",
-                          )}
-                        >
-                          <span aria-hidden className="w-4 text-center">
-                            {area.emoji}
-                          </span>
-                          <span className="truncate">{area.name}</span>
-                        </Link>
-                      );
-                    })}
-                  </>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
+      {/* Only the places scroll; Settings and the account stay at the foot. */}
+      <div
+        className={cx(
+          "-mx-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1",
+          rail && "items-center",
+        )}
+      >
+        {NAV.map((top) => {
+          // Settings and Focus belong to no section; Today is only "/" itself.
+          const open = top.to === section.to && (top.to !== "/" || path === "/");
+          const children = top.children.filter(
+            (child) => !child.advanced || advanced?.[child.advanced],
+          );
+          return (
+            <div key={top.to} className={cx("flex flex-col gap-0.5", rail && "items-center")}>
+              <Item
+                link={top}
+                active={open && (rail || children.length === 0 || path === top.to)}
+                rail={rail}
+              />
+              {open && !rail && children.length > 0 ? (
+                <div className="mt-0.5 mb-2 ml-3 flex flex-col gap-0.5 border-l border-line pl-2">
+                  {children.map((child) => (
+                    <Item
+                      key={child.to}
+                      link={child}
+                      depth={1}
+                      rail={false}
+                      active={isActive(path, child.to, child.to === top.to)}
+                    />
+                  ))}
+                  {top.to === "/plan" && areas && areas.length > 0 ? (
+                    <>
+                      <p className="mt-3 mb-1 px-2.5 text-caption text-muted">Areas</p>
+                      {areas.map((area) => {
+                        const to = `/plan/area/${area.id}`;
+                        return (
+                          <Link
+                            key={area.id}
+                            to="/plan/area/$id"
+                            params={{ id: area.id }}
+                            aria-current={path === to ? "page" : undefined}
+                            className={cx(
+                              "flex h-8 items-center gap-2.5 rounded-xl px-2.5 text-callout font-semibold transition-colors",
+                              path === to
+                                ? "bg-card text-ink shadow-sm shadow-ink/5"
+                                : "text-muted hover:bg-line/50 hover:text-ink",
+                            )}
+                          >
+                            <span aria-hidden className="w-4 text-center">
+                              {area.emoji}
+                            </span>
+                            <span className="truncate">{area.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
 
-      <div className={cx("mt-auto flex flex-col gap-1 pt-4", rail && "items-center")}>
+      <div
+        className={cx(
+          "flex shrink-0 flex-col gap-1 border-t border-line pt-3",
+          rail && "items-center",
+        )}
+      >
         <Item
           link={{ to: "/settings", label: "Settings", icon: Settings }}
           active={path.startsWith("/settings")}

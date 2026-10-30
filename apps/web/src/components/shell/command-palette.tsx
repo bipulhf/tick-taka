@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
 import { Eye, Keyboard, Moon, Settings, Sun } from "lucide-react";
 import { Dialog } from "radix-ui";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { togglePrivacy } from "@/lib/prefs";
 import { useSettings } from "@/lib/queries";
 import { useStore } from "@/lib/store";
@@ -44,6 +44,24 @@ export function CommandPalette() {
   const open = useStore(paletteOpenStore);
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState("");
+  const list = useRef<HTMLDivElement>(null);
+  // Search hits arrive after typing; cmdk only picks the first item when it filters, so
+  // without this Enter would do nothing until ↓. Keep the selection on a real item.
+  useEffect(() => {
+    const element = list.current;
+    if (!open || !element) return;
+    const pickFirst = () => {
+      const items = [...element.querySelectorAll<HTMLElement>("[cmdk-item]")];
+      if (items.some((item) => item.dataset.value === selected)) return;
+      const first = items[0]?.dataset.value;
+      if (first) setSelected(first);
+    };
+    pickFirst();
+    const observer = new MutationObserver(pickFirst);
+    observer.observe(element, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [open, selected]);
   const { data: settings } = useSettings();
   const close = () => {
     paletteOpenStore.set(false);
@@ -99,14 +117,20 @@ export function CommandPalette() {
           <Dialog.Description className="sr-only">
             Type to find a view, an action, a task or a transaction.
           </Dialog.Description>
-          <Command label="Go to or search" loop shouldFilter>
+          <Command
+            label="Go to or search"
+            loop
+            shouldFilter
+            value={selected}
+            onValueChange={setSelected}
+          >
             <Command.Input
               value={query}
               onValueChange={setQuery}
               placeholder="Go to, do, or search…"
               className="h-14 w-full border-b border-line bg-transparent px-5 text-heading font-semibold outline-none placeholder:font-normal placeholder:text-muted"
             />
-            <Command.List className="max-h-[min(460px,60vh)] overflow-y-auto p-2">
+            <Command.List ref={list} className="max-h-[min(460px,60vh)] overflow-y-auto p-2">
               <Command.Empty className="px-3 py-6 text-center text-callout text-muted">
                 Nothing matches. Try another word.
               </Command.Empty>

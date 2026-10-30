@@ -1,16 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/ui/page-header";
+import { ProjectView } from "@/features/plan/project-view";
 
 export const Route = createFileRoute("/_auth/_shell/plan/project/$id")({
   component: ProjectPage,
 });
 
 function ProjectPage() {
-  return (
-    <div className="flex flex-col gap-7">
-      <PageHeader title="Project" back={{ to: "/plan", label: "Plan" }} />
-      <EmptyState message="This view is on its way." mood="focused" />
-    </div>
-  );
+  const { id } = Route.useParams();
+  return <ProjectView key={id} projectId={id} />;
 }

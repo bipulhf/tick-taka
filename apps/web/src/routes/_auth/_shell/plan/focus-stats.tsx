@@ -1,16 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/ui/page-header";
+import { FocusStats } from "@/features/time/focus-stats";
 
 export const Route = createFileRoute("/_auth/_shell/plan/focus-stats")({
-  component: FocusStatisticsPage,
+  component: FocusStats,
 });
-
-function FocusStatisticsPage() {
-  return (
-    <div className="flex flex-col gap-7">
-      <PageHeader title="Focus statistics" back={{ to: "/plan", label: "Plan" }} />
-      <EmptyState message="This view is on its way." mood="focused" />
-    </div>
-  );
-}

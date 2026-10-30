@@ -21,7 +21,7 @@ interface WithSubtasks {
  * Applies a change to every cached copy of a task: Today, task lists (["tasks", …])
  * and open task panels (["task", id], including a parent's subtask list).
  */
-function patchCaches(client: QueryClient, id: string, changes: Patch) {
+export function patchTaskCaches(client: QueryClient, id: string, changes: Patch) {
   updateToday(client, (data) => patchTaskEverywhere(data, id, changes));
   client.setQueriesData<{ id: string }[]>({ queryKey: ["tasks"] }, (old) =>
     Array.isArray(old) ? old.map((task) => (task.id === id ? { ...task, ...changes } : task)) : old,
@@ -48,7 +48,7 @@ export function useTaskActions() {
   const client = useQueryClient();
   return useMemo(() => {
     const patch = (task: TaskLike, changes: Patch, label: string) => {
-      patchCaches(client, task.id, changes);
+      patchTaskCaches(client, task.id, changes);
       fire({ method: "PATCH", path: `/tasks/${task.id}`, body: changes, label });
     };
     const setTopThree = (task: TaskLike, date: string | null) =>

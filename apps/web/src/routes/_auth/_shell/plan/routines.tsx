@@ -1,16 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/ui/page-header";
+import { RoutineList } from "@/features/routines/routine-list";
 
 export const Route = createFileRoute("/_auth/_shell/plan/routines")({
-  component: RoutinesPage,
+  component: RoutineList,
 });
-
-function RoutinesPage() {
-  return (
-    <div className="flex flex-col gap-7">
-      <PageHeader title="Routines" back={{ to: "/plan", label: "Plan" }} />
-      <EmptyState message="This view is on its way." mood="focused" />
-    </div>
-  );
-}

@@ -1,16 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/ui/page-header";
+import { AreaDetail } from "@/features/plan/area-detail";
 
 export const Route = createFileRoute("/_auth/_shell/plan/area/$id")({
   component: AreaPage,
 });
 
 function AreaPage() {
-  return (
-    <div className="flex flex-col gap-7">
-      <PageHeader title="Area" back={{ to: "/plan", label: "Plan" }} />
-      <EmptyState message="This view is on its way." mood="focused" />
-    </div>
-  );
+  const { id } = Route.useParams();
+  return <AreaDetail key={id} areaId={id} />;
 }

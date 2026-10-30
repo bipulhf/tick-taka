@@ -103,7 +103,11 @@ export function browserNotificationsOn(): boolean {
 export function showReminder(tag: string, title: string, body: string, onClick?: () => void) {
   if (!browserNotificationsOn()) return;
   try {
-    const notification = new Notification(title, { body, tag, icon: `${import.meta.env.BASE_URL}icon.png` });
+    const notification = new Notification(title, {
+      body,
+      tag,
+      icon: `${import.meta.env.BASE_URL}icon.png`,
+    });
     notification.onclick = () => {
       window.focus();
       notification.close();

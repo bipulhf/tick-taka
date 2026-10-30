@@ -17,7 +17,7 @@ export function PageHeader({
 }) {
   return (
     <header className="flex flex-wrap items-end gap-x-4 gap-y-3">
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 grow">
         {back ? (
           <Link
             to={back.to}

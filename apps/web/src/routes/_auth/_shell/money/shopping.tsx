@@ -1,16 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/ui/page-header";
+import { ShoppingView } from "@/features/money/shopping-view";
 
 export const Route = createFileRoute("/_auth/_shell/money/shopping")({
-  component: ShoppingPage,
+  component: ShoppingView,
 });
-
-function ShoppingPage() {
-  return (
-    <div className="flex flex-col gap-7">
-      <PageHeader title="Shopping" back={{ to: "/money", label: "Money" }} />
-      <EmptyState message="This view is on its way." mood="focused" />
-    </div>
-  );
-}

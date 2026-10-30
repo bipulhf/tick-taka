@@ -91,17 +91,19 @@ export async function setBrowserNotifications(on: boolean): Promise<Permission> 
   return permission;
 }
 
-/** Shows one notification if this kind is switched on and the browser allows it. */
-export function showBrowserNotification(
-  kind: ReminderKind,
-  title: string,
-  body: string,
-  onClick?: () => void,
-): void {
-  const prefs = browserNotificationStore.get();
-  if (!prefs.enabled || !prefs.kinds[kind] || notificationPermission() !== "granted") return;
+/** Whether a reminder can show now: switched on in this browser and allowed by it. */
+export function browserNotificationsOn(): boolean {
+  return browserNotificationStore.get().enabled && notificationPermission() === "granted";
+}
+
+/**
+ * Shows one notification if they're on. `tag` names the reminder, so a second one
+ * with the same tag replaces it rather than stacking. A click brings the tab forward.
+ */
+export function showReminder(tag: string, title: string, body: string, onClick?: () => void) {
+  if (!browserNotificationsOn()) return;
   try {
-    const notification = new Notification(title, { body, tag: `tt-${kind}`, icon: "/icon.png" });
+    const notification = new Notification(title, { body, tag, icon: `${import.meta.env.BASE_URL}icon.png` });
     notification.onclick = () => {
       window.focus();
       notification.close();
@@ -110,6 +112,17 @@ export function showBrowserNotification(
   } catch {
     // Some browsers only allow notifications from a service worker; nothing to do then.
   }
+}
+
+/** Shows one notification if this kind is switched on and the browser allows it. */
+export function showBrowserNotification(
+  kind: ReminderKind,
+  title: string,
+  body: string,
+  onClick?: () => void,
+): void {
+  if (!browserNotificationStore.get().kinds[kind]) return;
+  showReminder(`tt-${kind}`, title, body, onClick);
 }
 
 function joinInstant(date: string, time: string, timeZone: string): number {

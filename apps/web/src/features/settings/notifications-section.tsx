@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Group } from "@/components/ui/group";
 import { Section } from "@/components/ui/section";
 import { ToggleRow } from "@/components/ui/toggle";
+import { useStore } from "@/lib/store";
 import { notify } from "@/lib/toast";
 import {
   notificationPermission,
@@ -12,6 +13,7 @@ import {
 } from "./browser-notifications";
 import { clockOptions, GroupLabel, LONG_DAYS, SelectRow } from "./setting-row";
 import type { SectionProps } from "./settings-types";
+import { reminderSyncError } from "./use-planned-reminders";
 
 const REFUSED =
   "Notifications are blocked for this site. Allow them in the browser's site settings, then try again.";
@@ -19,6 +21,7 @@ const REFUSED =
 /** Browser notifications while a tab is open, the daily shutdown, the weekly review, quiet hours. */
 export function NotificationsSection({ s, update }: SectionProps) {
   const prefs = useBrowserNotifications();
+  const syncError = useStore(reminderSyncError);
   const [permission, setPermission] = useState(notificationPermission);
   // Coming back from the browser's site settings should show the change at once.
   useEffect(() => {
@@ -63,8 +66,14 @@ export function NotificationsSection({ s, update }: SectionProps) {
         ))}
       </Group>
       <p className="px-1 text-callout text-muted">
+        Task reminders, bills, habit nudges and loan reminders ring here too, after quiet hours.
         Nothing rings with every Tick & Taka tab closed. The Android app keeps its own reminders.
       </p>
+      {on && syncError ? (
+        <p className="px-1 text-caption text-muted" aria-live="polite">
+          Reminders couldn't be refreshed last time. They try again when you come back to this tab.
+        </p>
+      ) : null}
 
       <GroupLabel>When</GroupLabel>
       <Group>

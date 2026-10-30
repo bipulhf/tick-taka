@@ -1,16 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/ui/page-header";
+import { ShutdownFlow } from "@/features/review/shutdown-flow";
 
 export const Route = createFileRoute("/_auth/_shell/review/shutdown")({
-  component: ShutdownPage,
+  component: ShutdownFlow,
 });
-
-function ShutdownPage() {
-  return (
-    <div className="flex flex-col gap-7">
-      <PageHeader title="Shutdown" back={{ to: "/review", label: "Review" }} />
-      <EmptyState message="This view is on its way." mood="focused" />
-    </div>
-  );
-}

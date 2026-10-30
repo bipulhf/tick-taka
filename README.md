@@ -18,6 +18,9 @@ cheers small wins and never scolds a missed day.
 - **Works offline.** Screens load from a cache and changes queue up, then sync in order
   when the connection returns.
 - **Bangla and English**, typed or spoken, in quick-add and in the chat with Tiki.
+- **On the web too**, at `/app/`: the same account and every feature, laid out for a
+  laptop with a sidebar, edit panels, keyboard shortcuts and a command palette
+  ([how it differs](#use-it-on-the-web)).
 
 ## Contents
 
@@ -28,6 +31,7 @@ cheers small wins and never scolds a missed day.
 - [Configuration](#configuration)
 - [Deploy the API](#deploy-the-api-vps-pm2-nginx)
 - [Install the app](#install-the-app)
+- [Use it on the web](#use-it-on-the-web)
 - [Project layout](#project-layout)
 - [Notes on decisions](#notes-on-decisions)
 
@@ -205,7 +209,9 @@ In Google Cloud Console › APIs & Services, in one project:
 1. Configure the **OAuth consent screen** (External), and publish it so anyone can sign in.
 2. Create an OAuth client of type **Web application**. Its client ID goes in the API's
    `GOOGLE_CLIENT_IDS` and the app's `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (and in the `env`
-   of each profile in `apps/mobile/eas.json`).
+   of each profile in `apps/mobile/eas.json`), and the web app's `VITE_GOOGLE_CLIENT_ID`.
+   For the web app, list `https://tick.mehedismathacademy.com` and
+   `http://localhost:5173` under its **Authorised JavaScript origins**.
 3. Create an OAuth client of type **Android** for package `com.mehedismathacademy.tick`, once
    for each signing key: the SHA-1 of `apps/mobile/android/app/debug.keystore` for local
    builds and the one from `bunx eas-cli credentials` for EAS builds. Nothing from this
@@ -246,6 +252,20 @@ bun run start                     # expo start --dev-client
 
 Or build and install locally with `bunx expo run:android` (needs the Android SDK). On the
 Android emulator the API on your computer is `http://10.0.2.2:3000`, which is the default.
+
+### 4. Web
+
+```bash
+cd apps/web
+cp .env.example .env              # VITE_GOOGLE_CLIENT_ID; VITE_API_URL=/api is the dev proxy
+bun run dev                       # http://localhost:5173/app/, API proxied from :3000
+```
+
+Without Google set up locally, sign in with the demo account: run
+`apps/api/scripts/demo.ts` (see its header), set `VITE_DEMO_SIGN_IN=1` in `apps/web/.env`
+and open `/app/login?demoToken=<token>`. `bun scripts/screenshots.ts --token <token>
+--path /money` screenshots any view that way. How the web code is organised, and how to
+port a phone screen to it, is in [`apps/web/CONVENTIONS.md`](apps/web/CONVENTIONS.md).
 
 ## Configuration
 
@@ -307,6 +327,23 @@ request (`pm2 logs tick-taka-api`), each with the `x-request-id` the response ca
 
 Updating: `git pull && bun install --frozen-lockfile && pm2 restart tick-taka-api`.
 
+### Web app
+
+Built once on the server and served by Nginx from `/app/` on the same host, so the
+browser talks to the API with no CORS:
+
+```bash
+cd ~/tick-taka/apps/web
+echo 'VITE_GOOGLE_CLIENT_ID=<web client id>' > .env.production   # VITE_API_URL stays empty
+bun run build
+sudo mkdir -p /var/www/tick-taka/app && sudo rsync -a --delete dist/ /var/www/tick-taka/app/
+```
+
+`deploy/nginx-tick-taka.conf` serves it with a Content-Security-Policy that allows scripts
+only from the site and Google's sign-in (the session token lives in the browser), sends
+every unknown path under `/app/` to `index.html`, and caches the hashed files for good.
+Update with `git pull`, the build and the `rsync` again.
+
 ### Backups
 
 Every night at 3 am in each user's time zone, the API writes a `VACUUM INTO` copy of that
@@ -351,6 +388,26 @@ just for local development and the `development` profile) and refuse to build un
 The app is installed as an APK. It never asks to read your messages: SMS permissions are
 blocked in the build, so the phone can't grant them even by accident.
 
+## Use it on the web
+
+`https://tick.mehedismathacademy.com/app/` signs in with the same Google account and
+shows the same data. Everything the phone does is there, arranged for a laptop: a
+sidebar, Today in two columns, edit panels that slide in beside the list, Tiki's chat as
+a column next to the content, and the keyboard (`N` to add anything, `Ctrl K` to go
+anywhere or search, `G` then a letter to jump, `J`/`K`/`X` in lists, `?` for the rest).
+It also works in a phone browser, with the bottom tab bar.
+
+What differs from the phone:
+
+- **Online only.** Nothing is cached or queued: when the connection drops, a banner says
+  so and saving waits for it.
+- **Reminders** come as browser notifications, only while a tab is open and after you
+  turn them on in Settings › Notifications.
+- **No fingerprint lock** and no home-screen widget; the app can be installed from the
+  browser, with shortcuts for a new task, a new expense and Focus. Hide amounts works
+  the same.
+- **Receipts** are picked, dropped or pasted onto quick-add or a transaction.
+
 ## Project layout
 
 ```
@@ -363,13 +420,18 @@ tick-taka/
     src/app/             screens (file-based routes)
     src/features/        feature components and hooks
     src/components/ui/   the shared UI kit
+  apps/web/              Vite + React web app at /app/ (TanStack Router and Query)
+    src/routes/          views (file-based routes)
+    src/features/        feature components, panels and hooks
+    src/components/      the web UI kit and the app shell
   packages/shared/       Zod schemas and pure domain logic used by both
   deploy/                Nginx site config
   docs/                  implementation plan and these screenshots
 ```
 
 The full product and technical spec is in `tick_taka_spec.pdf`; the build order is in
-[`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md). Design and product briefs:
+[`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md), the web app's in
+[`docs/WEB_PLAN.md`](docs/WEB_PLAN.md). Design and product briefs:
 [`DESIGN.md`](DESIGN.md), [`PRODUCT.md`](PRODUCT.md).
 
 ## Notes on decisions

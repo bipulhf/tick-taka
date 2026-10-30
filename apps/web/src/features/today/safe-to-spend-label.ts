@@ -1,0 +1,29 @@
+import { formatAmount, plural } from "@/lib/format";
+
+export interface SafeToSpendNumbers {
+  leftTodayMinor: number;
+  spentTodayMinor: number;
+  dailyMinor: number;
+  daysLeft: number;
+}
+
+/**
+ * What a screen reader says for the safe-to-spend card, which is one link to Budgets:
+ * the link's name has to carry the numbers itself.
+ */
+export function safeToSpendLabel(
+  money: SafeToSpendNumbers,
+  options: { hidden: boolean; paceAlert?: string | null },
+): string {
+  const over = money.leftTodayMinor < 0;
+  const amount = (minor: number) => (options.hidden ? "amount hidden" : formatAmount(minor));
+  const parts = [
+    over
+      ? `Over today's amount by ${amount(Math.abs(money.leftTodayMinor))}`
+      : `Safe to spend today, ${amount(money.leftTodayMinor)}`,
+    `${amount(money.spentTodayMinor)} spent of ${amount(money.dailyMinor)}`,
+    `${plural(money.daysLeft, "day")} left`,
+  ];
+  if (options.paceAlert) parts.push(options.paceAlert);
+  return `${parts.join(". ")}.`;
+}

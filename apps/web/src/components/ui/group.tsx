@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
+import { type RowKeyActions, useRowKeyActions } from "@/lib/row-keys";
 import { cx } from "./cx";
 
 /** One rounded surface; rows inside are separated by hairlines. */
@@ -41,8 +42,10 @@ export interface RowProps {
   selected?: boolean;
   className?: string;
   as?: "div" | "li";
-  /** For keyboard list navigation (lib/use-list-keys.ts). */
+  /** Makes the row a stop for J / K (lib/row-keys.ts), e.g. "task:<id>". */
   dataKey?: string;
+  /** What X, T and Delete do while the row has focus. */
+  keyActions?: RowKeyActions;
   muted?: boolean;
 }
 
@@ -62,8 +65,10 @@ export function Row({
   className,
   as: Tag = "div",
   dataKey,
+  keyActions,
   muted,
 }: RowProps) {
+  useRowKeyActions(dataKey, keyActions);
   return (
     <Tag
       data-row={dataKey}
@@ -81,6 +86,7 @@ export function Row({
           <button
             type="button"
             onClick={onClick}
+            data-row-primary
             className="block w-full truncate text-left text-body font-semibold after:absolute after:inset-0 after:content-[''] focus-visible:outline-none after:focus-visible:rounded-2xl after:focus-visible:ring-2 after:focus-visible:ring-sky-text after:focus-visible:ring-inset"
           >
             <span className={cx(muted && "text-muted line-through decoration-line-strong")}>

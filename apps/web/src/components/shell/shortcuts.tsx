@@ -3,6 +3,7 @@ import { Dialog } from "radix-ui";
 import { useEffect } from "react";
 import { Kbd } from "@/components/ui/kbd";
 import { togglePrivacy } from "@/lib/prefs";
+import { handleRowKey } from "@/lib/row-keys";
 import { useStore } from "@/lib/store";
 import {
   assistantOpenStore,
@@ -54,6 +55,10 @@ export function useGlobalShortcuts() {
       }
       if (key === "g" || key === "G") {
         awaitingJump = Date.now() + 1200;
+        return;
+      }
+      if (handleRowKey(event)) {
+        event.preventDefault();
         return;
       }
       if (key === "n" || key === "/") {

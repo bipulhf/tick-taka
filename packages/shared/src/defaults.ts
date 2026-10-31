@@ -280,6 +280,10 @@ export interface DefaultRoutine {
   steps: { title: string; minutes: number | null }[];
 }
 
+/**
+ * One routine to start from. Today already asks for the top three, and Review's
+ * daily shutdown covers the evening, so neither is repeated here.
+ */
 export const DEFAULT_ROUTINES: DefaultRoutine[] = [
   {
     name: "Morning",
@@ -287,17 +291,7 @@ export const DEFAULT_ROUTINES: DefaultRoutine[] = [
     steps: [
       { title: "Drink a glass of water", minutes: null },
       { title: "Stretch", minutes: 5 },
-      { title: "Pick today's top three", minutes: 2 },
       { title: "Check bills due today", minutes: null },
-    ],
-  },
-  {
-    name: "Shutdown",
-    emoji: "🌙",
-    steps: [
-      { title: "Log missed spending", minutes: 1 },
-      { title: "Check off habits", minutes: null },
-      { title: "Pick tomorrow's top three", minutes: 1 },
     ],
   },
 ];

@@ -180,7 +180,7 @@ export function PlanHome() {
             icon="format-list-checks"
             iconColor="sky"
             title="Routines"
-            subtitle="Morning and shutdown"
+            subtitle="Step-by-step checklists"
             chevron
             onPress={() => router.push("/plan/routines")}
           />

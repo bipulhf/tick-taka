@@ -37,6 +37,18 @@ describe("a new user's database", () => {
     expect(after[0]?.balanceMinor).toBe(-25_000);
   });
 
+  test("starts with one routine, Morning, without picking the top three", async () => {
+    const { request } = await createTestContext();
+    const routines = (await request<(Row & { steps: { title: string }[] })[]>("GET", "/routines"))
+      .body;
+    expect(routines.map((r) => r.name)).toEqual(["Morning"]);
+    expect(routines[0]?.steps.map((s) => s.title)).toEqual([
+      "Drink a glass of water",
+      "Stretch",
+      "Check bills due today",
+    ]);
+  });
+
   test("a database that already has an account gets no second one", () => {
     const { db, sqlite } = openDatabase(":memory:");
     sqlite.exec(

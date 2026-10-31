@@ -37,7 +37,7 @@ function seedCashAccount(db: Db, now: number): void {
   );
 }
 
-/** First start only: areas, categories with buckets, the routines and a Cash account. */
+/** First start only: areas, categories with buckets, the Morning routine and a Cash account. */
 export function seedDefaults(db: Db, now: number): boolean {
   if (readFlag(db, "_seededAt")) return false;
   const stamp = { createdAt: now, updatedAt: now, deletedAt: null };

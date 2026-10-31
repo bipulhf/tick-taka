@@ -142,7 +142,7 @@ export function PlanLinks() {
     {
       to: "/plan/routines",
       label: "Routines",
-      subtitle: "Morning and shutdown",
+      subtitle: "Step-by-step checklists",
       icon: ListChecks,
       tone: "sky",
     },

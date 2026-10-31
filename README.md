@@ -111,7 +111,7 @@ also get Focus and Tiki.
 - Day timeline and week planner with drag to schedule; "Plan my day" with AI.
 - Repeating tasks in plain words ("every other Tuesday"), subtasks, deadlines and
   priority.
-- Morning and shutdown routines, time tracking, and a focus timer that grows a plant.
+- Routines (a Morning one to start), time tracking, and a focus timer that grows a plant.
 - Habits with daily or weekly targets, streaks and freeze days.
 
 **Money**
@@ -231,10 +231,9 @@ bun run dev                       # http://localhost:3000/health
 ```
 
 A new account gets `users/<id>.db` next to `DB_PATH`, seeded with a Cash account (the
-default for new expenses), areas of life, categories (with budget types) and the Morning
-and Shutdown routines. Migrations run when a user's database is first opened. After
-changing `src/db/schema/*`, run `bun run db:generate` and commit the new file in
-`drizzle/`.
+default for new expenses), areas of life, categories (with budget types) and a Morning
+routine. Migrations run when a user's database is first opened. After changing
+`src/db/schema/*`, run `bun run db:generate` and commit the new file in `drizzle/`.
 
 Upgrading from the single-user version: set `OWNER_EMAIL` to your Google email. Your
 first sign-in takes over the database at `DB_PATH`, with its receipts and backups.

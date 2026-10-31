@@ -245,8 +245,9 @@ describe("routines", () => {
   test("seeded with steps, steps can be replaced", async () => {
     const { request } = await createTestContext();
     const list = await request<(Row & { steps: Row[] })[]>("GET", "/routines");
-    expect(list.body.map((r) => r.name)).toEqual(["Morning", "Shutdown"]);
+    expect(list.body.map((r) => r.name)).toEqual(["Morning"]);
     const morning = list.body[0]!;
+    expect(morning.steps.map((s) => s.title)).not.toContain("Pick today's top three");
     const keep = morning.steps[0]!;
     const updated = await request<Row & { steps: Row[] }>("PATCH", `/routines/${morning.id}`, {
       steps: [

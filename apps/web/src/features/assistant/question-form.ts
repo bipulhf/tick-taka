@@ -96,6 +96,12 @@ export function formMessage(
   return answerText(question, formAnswers(question, state, lookups.currency), lookups);
 }
 
+/** What a quick reply sends when one of its options is clicked: the option's label. */
+export function quickReplyMessage(question: AssistantQuestion, value: string): string {
+  const key = question.fields[0]?.key;
+  return key ? answerText(question, { [key]: value }) : "";
+}
+
 /**
  * The one message whose question can still be answered: the newest message, when it
  * is Tiki's and asks one. Any later message (an answer, or the user typing instead)

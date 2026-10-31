@@ -7,6 +7,7 @@ import {
   initialFormState,
   openQuestionId,
   parseQuestion,
+  quickReplyMessage,
   unreadableAmounts,
 } from "../src/features/assistant/question-form";
 import { fromStored } from "../src/features/assistant/stored-chat";
@@ -90,6 +91,25 @@ test("record picks are sent with their name and id", () => {
   expect(formMessage(pick, { account: ACCOUNT }, { currency: "BDT", nameOf })).toBe(
     `Account: City Bank [id ${ACCOUNT}]`,
   );
+});
+
+test("a quick reply sends the clicked option's label", () => {
+  const goAhead: AssistantQuestion = {
+    question: "That changes 7 tasks. Go ahead?",
+    fields: [
+      {
+        key: "go",
+        label: "Go ahead",
+        type: "choice",
+        required: true,
+        options: [
+          { value: "yes", label: "Yes, go ahead" },
+          { value: "no", label: "No, leave them" },
+        ],
+      },
+    ],
+  };
+  expect(quickReplyMessage(goAhead, "no")).toBe("No, leave them");
 });
 
 const message = (id: string, role: "user" | "assistant", extra: Partial<ChatMessage> = {}) =>

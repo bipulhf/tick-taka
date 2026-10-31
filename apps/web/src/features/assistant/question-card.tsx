@@ -1,6 +1,6 @@
 import { toBanglaDigits } from "@tick-taka/shared/digits";
 import type { AssistantQuestion, AssistantQuestionField } from "@tick-taka/shared/schemas/ai";
-import type { AssistantPickerType } from "@tick-taka/shared/tiki-answers";
+import { type AssistantPickerType, isQuickReply } from "@tick-taka/shared/tiki-answers";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
@@ -17,6 +17,7 @@ import {
   formMessage,
   initialFormState,
   type QuestionFormState,
+  quickReplyMessage,
   unreadableAmounts,
 } from "./question-form";
 
@@ -152,6 +153,36 @@ function QuestionField({
   }
 }
 
+/** A yes or no (or this or that): clicking an option sends it at once. */
+function QuickReply({
+  question,
+  field,
+  busy,
+  onAnswer,
+}: {
+  question: AssistantQuestion;
+  field: ChoiceField;
+  busy: boolean;
+  onAnswer: (text: string) => void;
+}) {
+  return (
+    <fieldset
+      aria-label={question.question}
+      disabled={busy}
+      className="flex min-w-0 flex-wrap gap-2"
+    >
+      {field.options.map((option) => (
+        <Chip
+          key={option.value}
+          onClick={() => onAnswer(quickReplyMessage(question, option.value))}
+        >
+          {option.label}
+        </Chip>
+      ))}
+    </fieldset>
+  );
+}
+
 /** The small form itself: fields prefilled with Tiki's defaults, Send once the required ones are in. */
 function QuestionForm({
   question,
@@ -221,8 +252,9 @@ function QuestionForm({
 }
 
 /**
- * Tiki's question as a small form under its message. Shown only while it can still
- * be answered; the answer itself shows as the user's message.
+ * Tiki's question under its message: a small form, or chips that answer at once when
+ * it is a single choice. Shown only while it can still be answered; the answer itself
+ * shows as the user's message.
  */
 export function QuestionCard({
   question,
@@ -233,5 +265,8 @@ export function QuestionCard({
   busy: boolean;
   onAnswer: (text: string) => void;
 }) {
+  const [first] = question.fields;
+  if (isQuickReply(question) && first?.type === "choice")
+    return <QuickReply question={question} field={first} busy={busy} onAnswer={onAnswer} />;
   return <QuestionForm question={question} busy={busy} onAnswer={onAnswer} />;
 }

@@ -1,6 +1,7 @@
 import { APP_NAME, contact, docPage, escapeHtml, type SiteInfo } from "./layout";
 
 const UPDATED = "7 October 2026";
+const PRIVACY_UPDATED = "31 October 2026";
 
 export const privacyPage = (site: SiteInfo) =>
   docPage(
@@ -10,7 +11,7 @@ export const privacyPage = (site: SiteInfo) =>
       description: `What ${APP_NAME} collects, why, who it is shared with, and how to export or delete it.`,
       path: "/privacy",
       heading: "Privacy policy",
-      updated: UPDATED,
+      updated: PRIVACY_UPDATED,
     },
     `<p>This policy explains what personal data the ${APP_NAME} Android app and its server ("${APP_NAME}", "we", "us") collect, why we collect it, how we use, store and share it, how long we keep it, and the choices you have. ${APP_NAME} is run by ${escapeHtml(site.operator)}, who is responsible for your data. Contact: ${contact(site)}.</p>
 
@@ -23,8 +24,9 @@ export const privacyPage = (site: SiteInfo) =>
 <tr><td>Money records: transactions, accounts and balances, categories, budgets, bills, savings goals, debts (including the name you give the other person), events and shopping lists</td><td>You, when you enter them</td><td>To provide the money features, budgets and reports</td></tr>
 <tr><td>Receipt photos</td><td>You, if you choose to attach one</td><td>To keep the receipt with the expense and, if you use receipt scan, to read the amount</td></tr>
 <tr><td>Voice recordings</td><td>Your phone's microphone, only while you hold a conversation with Tiki</td><td>To turn your speech into text; the recording is not stored</td></tr>
-<tr><td>Messages to the assistant (Tiki)</td><td>You</td><td>To answer and carry out what you ask; the chat history is kept on your phone only</td></tr>
-<tr><td>Settings and preferences</td><td>You</td><td>To make the app work the way you chose</td></tr>
+<tr><td>Messages to the assistant (Tiki)</td><td>You</td><td>To answer and carry out what you ask, and to show your chats on each device you sign in on. Chats are kept in your own space on our server until you delete them, which you can do at any time</td></tr>
+<tr><td>Settings and preferences, including notes you ask Tiki to remember</td><td>You</td><td>To make the app work the way you chose</td></tr>
+<tr><td>Thumbs up or down on Tiki's answers, and any comment you add</td><td>You, if you choose to rate an answer</td><td>To improve the assistant; we see the rating and your comment, not the chat</td></tr>
 <tr><td>AI usage records: which AI feature was used, the model, token counts and cost (not the content)</td><td>Created by our server</td><td>To show you what AI cost and to limit spending</td></tr>
 <tr><td>Technical data: IP address and request times</td><td>Your phone's connection to our server</td><td>To keep the service secure and limit repeated sign-in attempts; kept only in short-lived server logs</td></tr>
 </tbody>
@@ -54,7 +56,7 @@ export const privacyPage = (site: SiteInfo) =>
 <p>We may also disclose data if required by law. We do not share data with any other third party.</p>
 
 <h2>5. AI features</h2>
-<p>AI features are optional. You can switch them all off, or one by one, in Settings › AI. When you use one, the data needed for that request is sent to OpenAI's API: the text you typed or the words you spoke, a receipt photo you chose to scan, the names of your accounts, categories and areas, and, for the assistant, the records it looks up to answer you. Voice recordings are converted to text and not stored by us. OpenAI processes this data to return a result; under its API terms it does not use API data to train its models by default. The assistant can add and change records only through the same checks as the app itself, and deletes nothing without your confirmation.</p>
+<p>AI features are optional. You can switch them all off, or one by one, in Settings › AI. When you use one, the data needed for that request is sent to OpenAI's API: the text you typed or the words you spoke, a receipt photo you chose to scan, the names of your accounts, categories and areas, and, for the assistant, your recent messages in the chat, the notes you asked it to remember, the record you have open and the records it looks up to answer you. Voice recordings are converted to text and not stored by us. OpenAI processes this data to return a result; under its API terms it does not use API data to train its models by default. The assistant can add and change records only through the same checks as the app itself, and deletes nothing without your confirmation.</p>
 
 <h2>6. Where data is stored and how it is protected</h2>
 <ul>

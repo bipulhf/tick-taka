@@ -23,6 +23,10 @@ describe("public pages", () => {
     expect(privacy).toContain("mailto:help@example.com");
     // DELETE /auth/account removes everything at once; the page must say so.
     expect(privacy).toContain("removed from our server at once");
+    // Chats are kept on the server now (GET /ai/threads), and can be deleted.
+    expect(privacy).toContain("Chats are kept in your own space on our server");
+    expect(privacy).not.toContain("kept on your phone only");
+    expect(privacy).toContain("31 October 2026");
     // The pages' font comes from this host, never from another one.
     const font = await ctx.app.request("/site/nunito.woff2");
     expect(font.status).toBe(200);

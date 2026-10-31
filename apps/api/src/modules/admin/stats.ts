@@ -298,3 +298,21 @@ export function adminHealth(deps: Deps) {
     })),
   };
 }
+
+/** One month's thumbs up and down on Tiki's replies, with the latest comments and who left them. */
+export function adminFeedback(deps: Deps, month?: LocalMonth) {
+  const { timeZone, now } = userTime(deps);
+  const selected = month ?? toLocalMonth(now, timeZone);
+  const range = localMonthRange(selected, timeZone);
+  const { up, down, comments } = deps.users.feedback.between(range.from, range.to);
+  const emails = new Map(deps.users.list().map((user) => [user.id, user.email]));
+  return {
+    month: selected,
+    up,
+    down,
+    comments: comments.map(({ userId, ...comment }) => ({
+      ...comment,
+      email: emails.get(userId) ?? null,
+    })),
+  };
+}

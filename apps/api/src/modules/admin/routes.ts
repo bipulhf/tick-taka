@@ -9,7 +9,14 @@ import { isOwner } from "../../lib/owner";
 import { idParam } from "../../lib/params";
 import { currentScope } from "../../lib/user-scope";
 import { validate } from "../../lib/validate";
-import { adminAi, adminHealth, adminOverview, adminUsage, adminUsers } from "./stats";
+import {
+  adminAi,
+  adminFeedback,
+  adminHealth,
+  adminOverview,
+  adminUsage,
+  adminUsers,
+} from "./stats";
 
 const controlsPatch = z
   .object({
@@ -53,6 +60,9 @@ export const adminRoutes = (deps: Deps) => {
     .get("/usage", (c) => c.json(adminUsage(deps)))
     .get("/ai", validate("query", monthQuery), (c) =>
       c.json(adminAi(deps, c.req.valid("query").month)),
+    )
+    .get("/feedback", validate("query", monthQuery), (c) =>
+      c.json(adminFeedback(deps, c.req.valid("query").month)),
     )
     .get("/health", (c) => c.json(adminHealth(deps)))
     .patch("/users/:id", validate("param", idParam), validate("json", controlsPatch), (c) => {

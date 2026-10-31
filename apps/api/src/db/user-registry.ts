@@ -7,6 +7,7 @@ import type { Env } from "../env";
 import { errorFields, log, userTag } from "../lib/log";
 import { createAdminStore } from "./admin-store";
 import { type DbHandle, openDatabase } from "./client";
+import { createFeedbackStore } from "./feedback-store";
 import { createHandleCache } from "./handle-cache";
 import { createJobRunStore } from "./job-runs";
 import { seedDefaults } from "./seed";
@@ -105,6 +106,7 @@ export function createUserRegistry(
   const jobRuns = createJobRunStore(registry);
   const usageTotals = createUsageTotalStore(registry);
   const admin = createAdminStore(registry, now);
+  const feedback = createFeedbackStore(registry, now);
 
   /** The owner inherits the single-user data once, on their first sign-in. */
   const claimsLegacy = (email: string) =>
@@ -131,6 +133,8 @@ export function createUserRegistry(
     usageTotals,
     /** The owner's per-account controls, sign-up mode and invited emails. */
     admin,
+    /** Thumbs up or down on Tiki's replies, for the owner's view. */
+    feedback,
 
     /** Where this user's database, receipt photos and backups live. */
     paths(user: User): { db: string; uploads: string; backups: string } {
@@ -242,6 +246,7 @@ export function createUserRegistry(
       jobRuns.removeForUser(user.id);
       usageTotals.removeForUser(user.id);
       admin.removeForUser(user.id);
+      feedback.removeForUser(user.id);
       open.close(user.id);
       deleteUserFiles(dataPaths(user), user.legacy);
       removeUser.run(user.id);

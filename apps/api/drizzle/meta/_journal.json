@@ -50,6 +50,13 @@
       "when": 1791360404899,
       "tag": "0006_recurring_moved_by",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793445623248,
+      "tag": "0007_assistant_threads",
+      "breakpoints": true
     }
   ]
 }

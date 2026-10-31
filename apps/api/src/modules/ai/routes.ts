@@ -8,6 +8,7 @@ import {
   aiReceiptRequestSchema,
   aiTranscribeRequestSchema,
   aiWeeklyReviewRequestSchema,
+  assistantFeedbackSchema,
   assistantRequestSchema,
 } from "@tick-taka/shared/schemas/ai";
 import { localMonthSchema } from "@tick-taka/shared/schemas/common";
@@ -18,7 +19,7 @@ import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 import { monthlyCapMicros, monthSpendMicros, requireAi } from "../../ai/usage";
 import type { Deps } from "../../lib/deps";
-import { AppError } from "../../lib/errors";
+import { AppError, notFound } from "../../lib/errors";
 import { errorFields, log, requestIdOf } from "../../lib/log";
 import { currentScope } from "../../lib/user-scope";
 import { userTime } from "../../lib/user-time";
@@ -27,6 +28,7 @@ import { SlidingWindowLimiter } from "../../middleware/rate-limit";
 import { aiAsk } from "./ask";
 import { type AssistantEvent, aiAssistant } from "./assistant/agent";
 import type { Dispatch } from "./assistant/dispatch";
+import { threadRoutes, threadService } from "./assistant/threads";
 import { aiBudgetSuggestions, aiWeeklyCoach } from "./coach";
 import { aiCategorize, aiParse, aiReceipt } from "./parse";
 import { aiBreakdown, aiPlanDay } from "./planning";
@@ -117,7 +119,9 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
       // Off switch, missing key and cap answer as plain JSON errors, before streaming.
       const ai = requireAi(deps, "assistant");
       const authorization = c.req.header("authorization") ?? "";
-      const { messages, draftMoney, screen } = c.req.valid("json");
+      const { messages, draftMoney, screen, threadId } = c.req.valid("json");
+      // With a chat id, the chat is kept: this message now, Tiki's reply when it ends.
+      const saveReply = threadId ? threadService(deps).begin(threadId, messages) : null;
       // When the phone goes away, stop: no more model calls (or cost) and no more writes.
       const controller = new AbortController();
       const stop = () => controller.abort();
@@ -138,8 +142,18 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
               () => stop(),
             );
         };
-        const emit = (event: AssistantEvent | { type: "error"; code: string; message: string }) =>
+        const write = (event: AssistantEvent | { type: "error"; code: string; message: string }) =>
           send(() => stream.writeSSE({ event: event.type, data: JSON.stringify(event) }));
+        const emit = (event: AssistantEvent | { type: "error"; code: string; message: string }) => {
+          if (event.type !== "done" || !saveReply || !threadId) return write(event);
+          const messageId = saveReply({
+            reply: event.reply,
+            memo: event.memo,
+            cards: event.cards,
+            actions: event.actions.map((action) => ({ summary: action.summary })),
+          });
+          write({ ...event, threadId, messageId });
+        };
         const keepalive = setInterval(
           () => send(() => stream.write(": keepalive\n\n")),
           KEEPALIVE_MS,
@@ -171,6 +185,15 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
           lease?.release();
         }
       });
+    })
+    .route("/threads", threadRoutes(deps))
+    /** A thumbs up or down on a stored reply: kept on the message and, for the owner, in users.db. */
+    .post("/feedback", validate("json", assistantFeedbackSchema), (c) => {
+      const { messageId, rating, comment } = c.req.valid("json");
+      if (!threadService(deps).rate(messageId, rating)) throw notFound("Message");
+      const user = currentScope()?.user;
+      if (user) deps.users.feedback.add(user.id, messageId, rating, comment || null);
+      return c.json({ messageId, rating });
     })
     .post("/transcribe", validate("json", aiTranscribeRequestSchema), async (c) =>
       c.json(await aiTranscribe(deps, c.req.valid("json"))),

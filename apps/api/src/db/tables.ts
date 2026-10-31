@@ -1,3 +1,4 @@
+import { assistantMessages, assistantThreads } from "./schema/assistant";
 import {
   accounts,
   budgets,
@@ -48,6 +49,11 @@ export const SYNC_TABLES = {
 } as const;
 
 /** Every table, for the full JSON export. */
-export const ALL_TABLES = { ...SYNC_TABLES, ai_usage: aiUsage } as const;
+export const ALL_TABLES = {
+  ...SYNC_TABLES,
+  ai_usage: aiUsage,
+  assistant_threads: assistantThreads,
+  assistant_messages: assistantMessages,
+} as const;
 
 export type SyncTableName = keyof typeof SYNC_TABLES;

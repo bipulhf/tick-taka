@@ -395,7 +395,7 @@ describe("sync and export", () => {
       tables: Record<string, unknown[]>;
     };
     expect(body).toMatchObject({ app: "tick-taka", version: 1, exportedAt: DEFAULT_NOW });
-    expect(Object.keys(body.tables)).toHaveLength(21);
+    expect(Object.keys(body.tables)).toHaveLength(23);
     expect(body.tables.categories!.length).toBeGreaterThan(10);
     expect(body.tables.tasks).toEqual([]);
   });

@@ -12,6 +12,8 @@ import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { TextField } from "@/components/ui/text-field";
+import { whyHabit } from "@/features/notifications/reminder-why";
+import { askForNotifications } from "@/lib/notifications";
 import { useOutbox } from "@/lib/outbox";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
@@ -63,6 +65,7 @@ function HabitForm({ habit }: { habit: HabitWithProgress | null }) {
         label: "Couldn't save the habit",
       });
     router.back();
+    if (remindAt) void askForNotifications(whyHabit(remindAt));
   };
 
   return (

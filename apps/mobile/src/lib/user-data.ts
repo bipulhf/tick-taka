@@ -4,8 +4,11 @@ import { sweepExports } from "./export-sweep";
 import { outbox } from "./outbox";
 import { persister, queryClient } from "./query-client";
 
-/** Phone preferences, not anyone's data: they stay when someone signs out. */
-const DEVICE_KEYS = new Set(["tt.theme", "tt.privacy", "tt.feedback"]);
+/**
+ * Phone preferences, not anyone's data: they stay when someone signs out. So does
+ * whether this install already asked for notifications (lib/notifications.ts).
+ */
+const DEVICE_KEYS = new Set(["tt.theme", "tt.privacy", "tt.feedback", "tt.notify-asked"]);
 
 const resets = new Set<() => void>();
 

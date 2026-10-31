@@ -4,7 +4,9 @@ import { PickerField } from "@/components/ui/picker-field";
 import { clockLabel, clockOptions } from "@/components/ui/picker-options";
 import { Section } from "@/components/ui/section";
 import { ToggleRow } from "@/components/ui/toggle-row";
+import { whyShutdown, whyWeeklyReview } from "@/features/notifications/reminder-why";
 import { setFeedbackPrefs, useFeedbackPrefs } from "@/lib/feedback-prefs";
+import { askForNotifications } from "@/lib/notifications";
 import { LONG_DAYS } from "./planning-settings";
 import { ReminderStatusBanner } from "./reminder-status-banner";
 import { SettingsPage } from "./settings-page";
@@ -44,7 +46,11 @@ export function NotificationSettings() {
                 value={s.shutdownTime}
                 options={clockOptions(["20:30", "21:30", "22:30"])}
                 describe={clockLabel}
-                onChange={(t) => update({ shutdownTime: t ?? s.shutdownTime })}
+                onChange={(t) => {
+                  const time = t ?? s.shutdownTime;
+                  update({ shutdownTime: time });
+                  void askForNotifications(whyShutdown(time));
+                }}
               />
               <View className="flex-row gap-3">
                 <PickerField
@@ -53,9 +59,13 @@ export function NotificationSettings() {
                   value={String(s.weeklyReviewDay)}
                   options={LONG_DAYS.map((day, i) => ({ id: String(i), label: day }))}
                   describe={(d) => LONG_DAYS[Number(d)] ?? d}
-                  onChange={(d) =>
-                    update({ weeklyReviewDay: d === null ? s.weeklyReviewDay : Number(d) })
-                  }
+                  onChange={(d) => {
+                    const day = d === null ? s.weeklyReviewDay : Number(d);
+                    update({ weeklyReviewDay: day });
+                    void askForNotifications(
+                      whyWeeklyReview(LONG_DAYS[day] ?? "week", s.weeklyReviewTime),
+                    );
+                  }}
                 />
                 <PickerField
                   label="Review time"
@@ -63,7 +73,13 @@ export function NotificationSettings() {
                   value={s.weeklyReviewTime}
                   options={clockOptions(["09:00", "17:00", "19:00", "21:00"])}
                   describe={clockLabel}
-                  onChange={(t) => update({ weeklyReviewTime: t ?? s.weeklyReviewTime })}
+                  onChange={(t) => {
+                    const time = t ?? s.weeklyReviewTime;
+                    update({ weeklyReviewTime: time });
+                    void askForNotifications(
+                      whyWeeklyReview(LONG_DAYS[s.weeklyReviewDay] ?? "week", time),
+                    );
+                  }}
                 />
               </View>
             </Card>

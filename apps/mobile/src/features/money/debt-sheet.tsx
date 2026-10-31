@@ -14,7 +14,9 @@ import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { ToggleRow } from "@/components/ui/toggle-row";
+import { WHY_DEBT } from "@/features/notifications/reminder-why";
 import { formatAmount, formatLocalDate } from "@/lib/format";
+import { askForNotifications } from "@/lib/notifications";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
 import { useAccounts } from "@/lib/queries";
@@ -65,6 +67,9 @@ function DebtForm({ id }: { id: string | null }) {
     const remindAt = remind
       ? zonedTimeToUtc({ ...parseLocalDate(remind), hour: 10 }, timeZone)
       : null;
+    const askToRemind = () => {
+      if (remindAt !== null && remindAt > Date.now() && !closed) void askForNotifications(WHY_DEBT);
+    };
     if (debt) {
       send({
         method: "PATCH",
@@ -81,6 +86,7 @@ function DebtForm({ id }: { id: string | null }) {
         label: "Couldn't save",
       });
       router.back();
+      askToRemind();
       return;
     }
     const principalMinor = parseAmountToMinor(amount);
@@ -101,6 +107,7 @@ function DebtForm({ id }: { id: string | null }) {
       label: "Couldn't save",
     });
     router.back();
+    askToRemind();
   };
   return (
     <Sheet

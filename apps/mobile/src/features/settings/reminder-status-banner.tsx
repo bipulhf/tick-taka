@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { AppState, Linking } from "react-native";
+import { AppState } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
@@ -7,13 +7,14 @@ import {
   notificationAccess,
   refreshNotificationAccess,
   reminderSyncError,
+  turnOnNotifications,
 } from "@/lib/notifications";
 import { useStore } from "@/lib/store";
 
 /**
- * One line when reminders can't ring: notifications switched off for the app
- * (with a way to the phone's Settings), or the last refresh of the schedule
- * failed. Hidden when all is well.
+ * One line when reminders can't ring: notifications refused or not allowed yet (with
+ * a way to turn them on: Android's prompt while it still shows one, else the phone's
+ * Settings), or the last refresh of the schedule failed. Hidden when all is well.
  */
 export function ReminderStatusBanner() {
   const access = useStore(notificationAccess);
@@ -27,16 +28,20 @@ export function ReminderStatusBanner() {
     return () => subscription.remove();
   }, []);
 
-  if (access === "denied")
+  if (access === "denied" || access === "unasked")
     return (
       <Card className="gap-3">
-        <Text>Notifications are off, so reminders and bill alerts can't ring.</Text>
+        <Text>
+          {access === "denied"
+            ? "Notifications are off, so reminders and bill alerts can't ring."
+            : "Allow notifications so reminders and bill alerts can ring."}
+        </Text>
         <Button
-          label="Open settings"
-          icon="cog-outline"
+          label="Turn on notifications"
+          icon="bell-outline"
           variant="secondary"
           size="sm"
-          onPress={() => void Linking.openSettings()}
+          onPress={() => void turnOnNotifications().catch(() => {})}
           className="self-start"
         />
       </Card>

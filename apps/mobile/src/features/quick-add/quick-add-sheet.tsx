@@ -9,8 +9,10 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { PickerField } from "@/components/ui/picker-field";
 import { Sheet } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
+import { whyTask } from "@/features/notifications/reminder-why";
 import { formatAmount, formatWhen, plural } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
+import { askForNotifications } from "@/lib/notifications";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { usePrivacy } from "@/lib/privacy";
@@ -104,6 +106,9 @@ export function QuickAddSheet({
       undo ? { label: "Undo", onPress: () => send(undo) } : undefined,
     );
     router.back();
+    const now = Date.now();
+    if (draft?.kind === "task" && draft.reminderAt !== null && draft.reminderAt > now)
+      void askForNotifications(whyTask(draft.reminderAt, now, qa.timeZone));
   };
 
   const moneyKind = draft?.kind === "expense" || draft?.kind === "income" ? draft.kind : null;

@@ -21,8 +21,10 @@ import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { AskTikiButton } from "@/features/assistant/ask-tiki";
+import { whyTask } from "@/features/notifications/reminder-why";
 import { api, unwrap } from "@/lib/api";
 import { formatMinutes, formatWhen } from "@/lib/format";
+import { askForNotifications } from "@/lib/notifications";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate, pickTime } from "@/lib/pick-date";
 import { useAreas, useSettings } from "@/lib/queries";
@@ -166,6 +168,9 @@ export function TaskSheet({ id }: { id: string }) {
     if (!form.title.trim()) return;
     sendEdits();
     router.back();
+    const now = Date.now();
+    if (form.hasTime && form.doAt !== null && form.doAt > now && form.status !== "done")
+      void askForNotifications(whyTask(form.doAt, now, timeZone));
   };
 
   // Complete and Reopen are ticking the row: the same write, sound and Undo, and a

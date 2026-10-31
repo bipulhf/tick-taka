@@ -18,8 +18,10 @@ import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { type PayBody, payRecurring } from "@/features/money/recurring-pay";
 import { notifyLogged, useSplitOffer } from "@/features/money/split-offer";
+import { whyRecurring } from "@/features/notifications/reminder-why";
 import { useRecurring } from "@/features/plan/queries";
 import { formatAmount, formatLocalDate, plural } from "@/lib/format";
+import { askForNotifications } from "@/lib/notifications";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate } from "@/lib/pick-date";
@@ -109,6 +111,8 @@ function RecurringForm({ id }: { id: string | null }) {
         label: "Couldn't save",
       });
     router.back();
+    // Every bill and income rings on its day, so this is a reminder that matters.
+    void askForNotifications(whyRecurring(kind, remindDays));
   };
 
   const pay = (skip = false) => {

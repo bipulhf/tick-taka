@@ -6,6 +6,7 @@ import { Text } from "@/components/ui/text";
 import { ToggleRow } from "@/components/ui/toggle-row";
 import { useAiStatus } from "@/lib/queries";
 import { SettingsPage } from "./settings-page";
+import { TikiNotes } from "./tiki-notes";
 import { useUpdateSettings } from "./use-update-settings";
 
 const AI_LABELS = {
@@ -21,7 +22,7 @@ const AI_LABELS = {
 
 export const dollars = (micros: number) => `$${(micros / 1_000_000).toFixed(2)}`;
 
-/** One switch for all AI, one per feature, and what it cost this month. */
+/** One switch for all AI, one per feature, what Tiki remembers and what it cost this month. */
 export function AiSettings() {
   const router = useRouter();
   const ai = useAiStatus();
@@ -53,6 +54,7 @@ export function AiSettings() {
                 ))
               : null}
           </Card>
+          <TikiNotes notes={s.tikiNotes} />
           {ai.data ? (
             <Group inset={60}>
               <ListRow

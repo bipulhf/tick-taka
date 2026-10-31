@@ -294,6 +294,26 @@ describe("outbox queue", () => {
     expect(received.map((r) => (r.body as { id: string }).id)).toEqual(["saved", "new"]);
   });
 
+  test("an expense in a deleted account is set aside at once, not dropped or retried", async () => {
+    const { queue, received, answers, rejected } = harness();
+    await queue.load();
+    answers.push(() => new HttpFailure({ status: 400, code: "account_deleted" }));
+    const held = queue.enqueue(post("held"));
+    held.catch(() => {});
+    const good = queue.enqueue(post("good"));
+    await expect(good).resolves.toEqual({ ok: true });
+    await expect(held).rejects.toThrow("HTTP 400");
+    expect(received.map(bodyId)).toEqual(["held", "good"]);
+    expect(rejected).toHaveLength(0);
+    expect(queue.stuck().map((e) => bodyId(e.request))).toEqual(["held"]);
+
+    // Once the account is back, Retry sends it again and it lands.
+    queue.retryStuck(queue.stuck()[0]!.id);
+    await idle(queue);
+    expect(received.map(bodyId)).toEqual(["held", "good", "held"]);
+    expect(queue.size).toBe(0);
+  });
+
   test("a write the server keeps failing on is set aside, and the ones behind it go", async () => {
     const { queue, received, answers, state } = harness();
     await queue.load();

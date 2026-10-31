@@ -2,7 +2,7 @@ import { onlineManager } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { AppState } from "react-native";
 import { send } from "./api";
-import { friendlyError } from "./error-copy";
+import { friendlyError, stuckReason } from "./error-copy";
 import { currentToken } from "./http";
 import { notify } from "./notify";
 import { type NewExpense, withNewExpense } from "./optimistic-spend";
@@ -57,10 +57,8 @@ export const outbox = new OutboxQueue({
     // Undo the optimistic change on screen.
     scheduleRefresh(request.path);
   },
-  onStuck: (request) => {
-    notify(
-      `${request.label ? `${request.label}. ` : ""}The server keeps failing on this change. It's kept at the top of the screen to retry or discard.`,
-    );
+  onStuck: (request, error) => {
+    notify(`${request.label ? `${request.label}. ` : ""}${stuckReason(error)}`);
   },
   onDiscarded: (request) => scheduleRefresh(request.path),
 });

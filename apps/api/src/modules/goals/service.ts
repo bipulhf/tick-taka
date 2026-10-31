@@ -15,6 +15,7 @@ import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
 import { badRequest } from "../../lib/errors";
 import { userTime } from "../../lib/user-time";
+import { assertAccountsLive } from "../accounts/live-accounts";
 
 export type Goal = typeof goals.$inferSelect;
 export interface GoalWithProgress extends Goal {
@@ -77,6 +78,7 @@ export function goalService(deps: Deps) {
     },
 
     create(input: z.output<typeof goalCreateSchema>): GoalWithProgress {
+      if (!(input.id && base.find(input.id, true))) assertAccountsLive(db, input.accountId);
       const goal = base.create({
         ...input,
         deadline: input.deadline ?? null,
@@ -89,6 +91,8 @@ export function goalService(deps: Deps) {
 
     update(id: string, input: z.output<typeof goalUpdateSchema>): GoalWithProgress {
       const { done, ...fields } = input;
+      if (fields.accountId && fields.accountId !== base.get(id).accountId)
+        assertAccountsLive(db, fields.accountId);
       base.update(id, {
         ...fields,
         ...(done === undefined ? {} : { doneAt: done ? deps.now() : null }),
@@ -108,6 +112,14 @@ export function goalService(deps: Deps) {
         throw badRequest("Pick an account other than the jar's");
       const now = deps.now();
       const transactionId = input.id ?? newId(now);
+      const replay =
+        input.id &&
+        db
+          .select({ id: transactions.id })
+          .from(transactions)
+          .where(eq(transactions.id, input.id))
+          .get();
+      if (!replay) assertAccountsLive(db, input.fromAccountId, goal.accountId);
       db.insert(transactions)
         .values({
           id: transactionId,

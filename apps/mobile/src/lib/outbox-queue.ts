@@ -48,7 +48,8 @@ const defaultId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`
  * forever with a capped backoff; a 401 pauses the queue without dropping anything;
  * only a final 4xx takes a write out. A write our API keeps answering with another
  * 5xx is set aside as stuck after STUCK_AFTER tries, kept until the user retries or
- * discards it, so one bad write can't hold back every write behind it.
+ * discards it, so one bad write can't hold back every write behind it. A refusal
+ * that can be undone (an account deleted elsewhere) is set aside at once.
  *
  * The queue sends; OutboxStore (outbox-store.ts) saves it, and StuckWrites
  * (outbox-stuck.ts) keeps the stuck groups.
@@ -320,6 +321,9 @@ export class OutboxQueue {
           const kind = classifyFailure(entry, failure);
           if (kind === "applied") {
             this.finish(entry, null);
+          } else if (kind === "hold") {
+            entry.attempts += 1;
+            this.park(entry, error);
           } else if (kind === "reject") {
             this.remove(entry);
             this.deps.onRejected?.(entry.request, error);

@@ -12,6 +12,7 @@ import { debts, transactions } from "../../db/schema/money";
 import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
 import { userTime } from "../../lib/user-time";
+import { assertAccountsLive } from "../accounts/live-accounts";
 
 export type Debt = typeof debts.$inferSelect;
 export interface DebtWithBalance extends Debt {
@@ -75,6 +76,7 @@ export function debtService(deps: Deps) {
         const { accountId, occurredAt, ...fields } = input;
         const existed = fields.id ? base.find(fields.id, true) : undefined;
         if (existed) return withBalance(existed);
+        assertAccountsLive(db, accountId);
         const debt = base.create({
           ...fields,
           dueAt: fields.dueAt ?? null,
@@ -113,6 +115,14 @@ export function debtService(deps: Deps) {
     repay(id: string, input: z.output<typeof debtRepaySchema>): DebtWithBalance {
       const debt = base.get(id);
       return db.transaction(() => {
+        const replay =
+          input.id &&
+          db
+            .select({ id: transactions.id })
+            .from(transactions)
+            .where(eq(transactions.id, input.id))
+            .get();
+        if (!replay) assertAccountsLive(db, input.accountId);
         insertTransaction({
           id: input.id,
           type: repaymentType(debt.direction),

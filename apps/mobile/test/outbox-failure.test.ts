@@ -48,8 +48,16 @@ describe("how the outbox reads a failed send (QA-309)", () => {
     const failure = await failureFor(() =>
       json(400, { error: { code: "validation_error", message: "title: Required" } }),
     );
-    expect(failure).toEqual({ status: 400 });
+    expect(failure).toEqual({ status: 400, code: "validation_error" });
     expect(classifyFailure(entry, failure)).toBe("reject");
+  });
+
+  test("an expense in an account deleted elsewhere is kept on the stuck card, not dropped", async () => {
+    const failure = await failureFor(() =>
+      json(400, { error: { code: "account_deleted", message: "That account was deleted." } }),
+    );
+    expect(failure).toEqual({ status: 400, code: "account_deleted" });
+    expect(classifyFailure(entry, failure)).toBe("hold");
   });
 
   // CQ-045: the code an API sends doesn't make it a proxy; only a reply that isn't our envelope does.
@@ -58,7 +66,7 @@ describe("how the outbox reads a failed send (QA-309)", () => {
       const failure = await failureFor(() =>
         json(400, { error: { code, message: "Malformed JSON in request body" } }),
       );
-      expect(failure).toEqual({ status: 400 });
+      expect(failure).toEqual({ status: 400, code });
       expect(classifyFailure(entry, failure)).toBe("reject");
     }
   });

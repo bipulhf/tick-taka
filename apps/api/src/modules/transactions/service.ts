@@ -9,6 +9,7 @@ import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
 import { badRequest } from "../../lib/errors";
 import { likeContains } from "../../lib/sql-like";
+import { assertAccountsLive } from "../accounts/live-accounts";
 import { categoryRuleService } from "../category-rules/service";
 
 export type Transaction = typeof transactions.$inferSelect;
@@ -110,13 +111,24 @@ export function transactionService(deps: Deps) {
         note: input.note ?? null,
         receiptPath: input.receiptPath ?? null,
       };
-      if (!(input.id && base.find(input.id, true))) checkTransfer(values);
+      // A replay of a write that already landed returns the record, whatever changed since.
+      if (!(input.id && base.find(input.id, true))) {
+        assertAccountsLive(db, values.accountId, values.toAccountId);
+        checkTransfer(values);
+      }
       return base.create(values);
     },
 
     /** Changing the category of a noted transaction teaches a rule for next time. */
     update(id: string, input: TransactionUpdate): Transaction {
       const current = base.get(id);
+      // Only a newly picked account is checked: an edit of an old expense in a deleted
+      // account (its note, say) still saves.
+      assertAccountsLive(
+        db,
+        input.accountId !== current.accountId ? input.accountId : null,
+        input.toAccountId !== current.toAccountId ? input.toAccountId : null,
+      );
       const type = input.type ?? current.type;
       if (type !== "adjustment" && (input.amountMinor ?? current.amountMinor) <= 0)
         throw badRequest("Amount must be more than zero");

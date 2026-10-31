@@ -20,8 +20,9 @@ import type { z } from "zod";
 import { accounts, recurring, transactions } from "../../db/schema/money";
 import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
-import { badRequest, conflict } from "../../lib/errors";
+import { accountDeleted, badRequest, conflict } from "../../lib/errors";
 import { userTime } from "../../lib/user-time";
+import { assertAccountsLive } from "../accounts/live-accounts";
 
 export type Recurring = typeof recurring.$inferSelect;
 export type RecurringStatus = "overdue" | "due_today" | "due_soon" | "upcoming";
@@ -104,6 +105,7 @@ export function recurringService(deps: Deps) {
     },
 
     create(input: z.output<typeof recurringCreateSchema>): Recurring {
+      if (!(input.id && base.find(input.id, true))) assertAccountsLive(db, input.accountId);
       return base.create({
         ...input,
         accountId: input.accountId ?? null,
@@ -116,6 +118,8 @@ export function recurringService(deps: Deps) {
     },
 
     update(id: string, input: z.output<typeof recurringUpdateSchema>): Recurring {
+      if (input.accountId && input.accountId !== base.get(id).accountId)
+        assertAccountsLive(db, input.accountId);
       return base.update(
         id,
         input.nextDueAt === undefined ? input : { ...input, overdueAt: null, movedBy: null },
@@ -152,6 +156,7 @@ export function recurringService(deps: Deps) {
           if (!accountId) throw badRequest("Pick the account this was paid from");
           const account = db.select().from(accounts).where(eq(accounts.id, accountId)).get();
           if (!account) throw badRequest("That account doesn't exist");
+          if (account.deletedAt !== null) throw accountDeleted();
           const planned = input.amountMinor ?? item.amountMinor;
           let amountMinor = planned;
           let note = item.name;

@@ -13,7 +13,8 @@ export function describeFailure(error: unknown): FailureInfo {
     if (TOO_LARGE.has(error.status)) return { status: error.status };
     // Not our API's error shape: a captive portal or proxy answered, not the server.
     if (error.fromProxy && error.status !== 401) return { unreachable: true };
-    return { status: error.status };
+    // A code only counts when our API sent it.
+    return error.fromProxy ? { status: error.status } : { status: error.status, code: error.code };
   }
   // A 200 that isn't JSON is a login page in front of the server, not a reply.
   if (error instanceof SyntaxError) return { unreachable: true };

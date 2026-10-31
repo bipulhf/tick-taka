@@ -53,6 +53,7 @@ const BY_CODE: Record<string, string> = {
   invite_only: "Sign-ups are invite-only right now. Ask for an invite to join.",
   account_blocked: "This account can't be used right now. Contact the owner.",
   forbidden: "That's only for the owner.",
+  account_deleted: "That account was deleted. Pick another one.",
 };
 
 /** Codes whose server message is already written for people ("Pick two different accounts"). */
@@ -88,4 +89,11 @@ export function friendlyError(error: unknown, context: ErrorContext = "action"):
     if (status === 429) return "Too many tries at once. Wait a moment and try again.";
   }
   return UNKNOWN;
+}
+
+/** Why a queued write was set aside on the stuck card, said once when it happens. */
+export function stuckReason(error: unknown): string {
+  const kept = "It's kept at the top of the screen to retry or discard.";
+  if (field(error, "code") === "account_deleted") return `That account was deleted. ${kept}`;
+  return `The server keeps failing on this change. ${kept}`;
 }

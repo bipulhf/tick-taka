@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { friendlyError } from "../src/lib/error-copy";
+import { friendlyError, stuckReason } from "../src/lib/error-copy";
 
 /** Same shape as lib/api.ts's ApiError, without pulling in the RPC client. */
 function apiError(status: number, code: string, message: string, fromProxy = false) {
@@ -95,5 +95,19 @@ describe("friendlyError", () => {
       "Something went wrong. Try again.",
     );
     expect(friendlyError("boom")).toBe("Something went wrong. Try again.");
+  });
+});
+
+describe("a deleted account", () => {
+  test("a write to it asks for another account", () => {
+    const error = apiError(400, "account_deleted", "That account was deleted. Pick another one.");
+    expect(friendlyError(error)).toBe("That account was deleted. Pick another one.");
+  });
+
+  test("a queued write to it says why it's on the stuck card", () => {
+    expect(stuckReason(apiError(400, "account_deleted", "x"))).toBe(
+      "That account was deleted. It's kept at the top of the screen to retry or discard.",
+    );
+    expect(stuckReason(apiError(500, "internal_error", "x"))).toContain("keeps failing");
   });
 });

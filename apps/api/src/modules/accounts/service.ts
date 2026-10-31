@@ -6,6 +6,7 @@ import { accounts, transactions } from "../../db/schema/money";
 import { crud } from "../../lib/crud";
 import type { Deps } from "../../lib/deps";
 import { accountMovements } from "../../lib/money-queries";
+import { assertAccountsLive } from "./live-accounts";
 
 export type Account = typeof accounts.$inferSelect;
 export type AccountWithBalance = Account & { balanceMinor: number };
@@ -54,6 +55,7 @@ export function accountService(deps: Deps) {
      * difference. Returns null when the numbers already match.
      */
     balanceCheck(accountId: string, actualMinor: number, occurredAt?: number, id?: string) {
+      assertAccountsLive(deps.db, accountId);
       const current = service.balanceOf(accountId);
       const difference = actualMinor - current;
       if (difference === 0) return { adjustment: null, balanceMinor: current };

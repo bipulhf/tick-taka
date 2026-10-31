@@ -40,14 +40,25 @@ export interface FailureInfo {
   status?: number;
   /** No answer at all: offline, timed out, or the server is down. */
   unreachable?: boolean;
+  /** Our API's error code, when it answered with one. */
+  code?: string;
 }
 
 /**
  * retry: keep it and try again later. session: the sign-in expired; keep it and wait.
  * applied: the server already has this change (a retry of a request that got through).
- * reject: the server refused it for good (validation, not found).
+ * hold: refused, but for a reason that can be undone (see HOLD_CODES); set aside as
+ * stuck for the user to retry or discard. reject: the server refused it for good
+ * (validation, not found).
  */
-export type FailureKind = "retry" | "session" | "applied" | "reject";
+export type FailureKind = "retry" | "session" | "applied" | "hold" | "reject";
+
+/**
+ * Refusals kept rather than dropped: an expense in an account deleted elsewhere is
+ * still what was typed, and the account can be brought back. Sending it again on its
+ * own would fail the same way, so it waits on the stuck card instead of retrying.
+ */
+const HOLD_CODES = new Set(["account_deleted"]);
 
 /** Waits between retries: 1 s, 2 s, 4 s … capped at a minute. Retries never stop on their own. */
 export function retryDelay(attempts: number): number {
@@ -79,6 +90,7 @@ export function classifyFailure(entry: OutboxEntry, failure: FailureInfo): Failu
   if (status >= 500 || status === 408 || status === 429) return "retry";
   if (alreadyInWantedState(entry.request, status)) return "applied";
   if (entry.maybeDelivered && repeatOfDelivered(entry.request, status)) return "applied";
+  if (failure.code && HOLD_CODES.has(failure.code)) return "hold";
   return "reject";
 }
 

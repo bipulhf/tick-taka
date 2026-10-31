@@ -116,7 +116,6 @@ export function taskService(deps: Deps) {
       reminderAt: task.reminderAt === null ? null : task.reminderAt + shift,
       rrule: task.rrule,
       top3Date: null,
-      urgent: task.urgent,
       sort: task.sort,
       doneAt: null,
     });
@@ -139,7 +138,6 @@ export function taskService(deps: Deps) {
         reminderAt: null,
         rrule: null,
         top3Date: null,
-        urgent: false,
         sort: subtask.sort,
         doneAt: null,
       });
@@ -225,7 +223,6 @@ export function taskService(deps: Deps) {
             reminderAt: null,
             rrule: null,
             top3Date: null,
-            urgent: false,
             sort,
             doneAt: null,
           });

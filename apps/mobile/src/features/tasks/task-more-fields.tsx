@@ -32,7 +32,7 @@ export function TaskMoreFields({
   repeatText: string;
   setRepeatText: (text: string) => void;
   parsedRepeat: { rrule: string } | null;
-  advanced: { eisenhower: boolean; energy: boolean } | undefined;
+  advanced: { energy: boolean } | undefined;
   areas: { id: string; name: string; emoji: string }[];
   projects: { data?: { id: string; name: string }[] };
   setDeadline: () => Promise<void>;
@@ -89,9 +89,6 @@ export function TaskMoreFields({
           { value: "high", label: "High" },
         ]}
       />
-      {advanced?.eisenhower ? (
-        <ToggleRow label="Urgent" value={form.urgent} onChange={(on) => set("urgent", on)} />
-      ) : null}
       {advanced?.energy ? (
         <PickerField
           label="Energy"

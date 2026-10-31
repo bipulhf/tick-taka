@@ -106,12 +106,6 @@ export function DaySection({ s, update }: SectionProps) {
         <GroupLabel>Extra views</GroupLabel>
         <Group>
           <ToggleRow
-            label="Eisenhower matrix"
-            description="Sort tasks by urgent and important, under Plan"
-            checked={s.advancedViews.eisenhower}
-            onChange={(on) => update({ advancedViews: { ...s.advancedViews, eisenhower: on } })}
-          />
-          <ToggleRow
             label="Energy tags"
             description="Mark tasks as high or low energy"
             checked={s.advancedViews.energy}

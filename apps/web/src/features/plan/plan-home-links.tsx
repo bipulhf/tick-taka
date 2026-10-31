@@ -5,7 +5,6 @@ import {
   CalendarDays,
   CalendarRange,
   Clock,
-  Grid2x2,
   ListChecks,
   type LucideIcon,
   Moon,
@@ -24,7 +23,7 @@ import { Section } from "@/components/ui/section";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { plural } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
-import { useAreas, useSettings } from "@/lib/queries";
+import { useAreas } from "@/lib/queries";
 import { remove } from "@/lib/write";
 import { useAllProjects } from "./queries";
 
@@ -117,7 +116,6 @@ interface PlanLink {
 /** The other planning views, as on the phone's Plan tab. */
 export function PlanLinks() {
   const navigate = useNavigate();
-  const { data: settings } = useSettings();
   const links: PlanLink[] = [
     { to: "/plan/day", label: "Day", subtitle: "Today as time blocks", icon: Clock, tone: "sky" },
     {
@@ -164,16 +162,6 @@ export function PlanLinks() {
       icon: BookCheck,
       tone: "sky",
     },
-    ...(settings?.advancedViews.eisenhower
-      ? [
-          {
-            to: "/plan/eisenhower",
-            label: "Eisenhower matrix",
-            icon: Grid2x2,
-            tone: "neutral" as const,
-          },
-        ]
-      : []),
   ];
   return (
     <Section id="plan-more" title="More">

@@ -57,11 +57,10 @@ export const settingsSchema = z.object({
     .default([]),
   advancedViews: z
     .object({
-      eisenhower: z.boolean().default(false),
       energy: z.boolean().default(false),
       shoppingList: z.boolean().default(false),
     })
-    .default({ eisenhower: false, energy: false, shoppingList: false }),
+    .default({ energy: false, shoppingList: false }),
   focus: z
     .object({
       workMinutes: z.number().int().min(5).max(120).default(25),

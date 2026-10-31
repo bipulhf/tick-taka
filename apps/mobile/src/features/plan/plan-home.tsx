@@ -215,15 +215,6 @@ export function PlanHome() {
             chevron
             onPress={() => router.push("/plan/logbook")}
           />
-          {settings?.advancedViews.eisenhower ? (
-            <ListRow
-              icon="view-grid-outline"
-              iconColor="muted"
-              title="Eisenhower matrix"
-              chevron
-              onPress={() => router.push("/plan/eisenhower")}
-            />
-          ) : null}
         </Group>
       </Section>
     </Screen>

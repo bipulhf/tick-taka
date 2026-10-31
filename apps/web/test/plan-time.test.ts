@@ -13,7 +13,6 @@ import {
 import { doneByDay, groupByDay, timesheetText } from "../src/features/plan/day-groups";
 import { dayMove, minuteOf, timeMove, UNSCHEDULE } from "../src/features/plan/move-task";
 import { previousFields } from "../src/features/plan/move-undo";
-import { QUADRANTS, quadrantChange } from "../src/features/plan/quadrants";
 import {
   layoutBlocks,
   minuteFromOffset,
@@ -163,16 +162,6 @@ describe("lists", () => {
     expect(timesheetText(days, "2026-10-24", "Job 1")).toBe(
       "What I did for Job 1, week of Sat 24 Oct\n\nMonday, 26 Oct\n  • Slides\n\nTuesday, 27 Oct\n  • Invoice",
     );
-  });
-
-  test("a quadrant sets urgent and importance through priority", () => {
-    const [doNow, , squeeze] = QUADRANTS;
-    expect(quadrantChange({ priority: "low" }, doNow)).toEqual({ urgent: true, priority: "high" });
-    expect(quadrantChange({ priority: "high" }, squeeze)).toEqual({
-      urgent: true,
-      priority: "normal",
-    });
-    expect(quadrantChange({ priority: "low" }, squeeze)).toEqual({ urgent: true, priority: "low" });
   });
 });
 

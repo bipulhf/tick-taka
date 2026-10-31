@@ -29,7 +29,6 @@ import { Route as AuthShellMoneyTransactionsRouteImport } from './routes/_auth/_
 import { Route as AuthShellPlanIndexRouteImport } from './routes/_auth/_shell/plan/index'
 import { Route as AuthShellPlanCalendarRouteImport } from './routes/_auth/_shell/plan/calendar'
 import { Route as AuthShellPlanDayRouteImport } from './routes/_auth/_shell/plan/day'
-import { Route as AuthShellPlanEisenhowerRouteImport } from './routes/_auth/_shell/plan/eisenhower'
 import { Route as AuthShellPlanFocusStatsRouteImport } from './routes/_auth/_shell/plan/focus-stats'
 import { Route as AuthShellPlanHabitsRouteImport } from './routes/_auth/_shell/plan/habits'
 import { Route as AuthShellPlanLogbookRouteImport } from './routes/_auth/_shell/plan/logbook'
@@ -149,11 +148,6 @@ const AuthShellPlanDayRoute = AuthShellPlanDayRouteImport.update({
   path: '/plan/day',
   getParentRoute: () => AuthShellRoute,
 } as any)
-const AuthShellPlanEisenhowerRoute = AuthShellPlanEisenhowerRouteImport.update({
-  id: '/plan/eisenhower',
-  path: '/plan/eisenhower',
-  getParentRoute: () => AuthShellRoute,
-} as any)
 const AuthShellPlanFocusStatsRoute = AuthShellPlanFocusStatsRouteImport.update({
   id: '/plan/focus-stats',
   path: '/plan/focus-stats',
@@ -268,7 +262,6 @@ export interface FileRoutesByFullPath {
   '/money/transactions': typeof AuthShellMoneyTransactionsRoute
   '/plan/calendar': typeof AuthShellPlanCalendarRoute
   '/plan/day': typeof AuthShellPlanDayRoute
-  '/plan/eisenhower': typeof AuthShellPlanEisenhowerRoute
   '/plan/focus-stats': typeof AuthShellPlanFocusStatsRoute
   '/plan/habits': typeof AuthShellPlanHabitsRoute
   '/plan/logbook': typeof AuthShellPlanLogbookRoute
@@ -308,7 +301,6 @@ export interface FileRoutesByTo {
   '/money/transactions': typeof AuthShellMoneyTransactionsRoute
   '/plan/calendar': typeof AuthShellPlanCalendarRoute
   '/plan/day': typeof AuthShellPlanDayRoute
-  '/plan/eisenhower': typeof AuthShellPlanEisenhowerRoute
   '/plan/focus-stats': typeof AuthShellPlanFocusStatsRoute
   '/plan/habits': typeof AuthShellPlanHabitsRoute
   '/plan/logbook': typeof AuthShellPlanLogbookRoute
@@ -351,7 +343,6 @@ export interface FileRoutesById {
   '/_auth/_shell/money/transactions': typeof AuthShellMoneyTransactionsRoute
   '/_auth/_shell/plan/calendar': typeof AuthShellPlanCalendarRoute
   '/_auth/_shell/plan/day': typeof AuthShellPlanDayRoute
-  '/_auth/_shell/plan/eisenhower': typeof AuthShellPlanEisenhowerRoute
   '/_auth/_shell/plan/focus-stats': typeof AuthShellPlanFocusStatsRoute
   '/_auth/_shell/plan/habits': typeof AuthShellPlanHabitsRoute
   '/_auth/_shell/plan/logbook': typeof AuthShellPlanLogbookRoute
@@ -393,7 +384,6 @@ export interface FileRouteTypes {
     | '/money/transactions'
     | '/plan/calendar'
     | '/plan/day'
-    | '/plan/eisenhower'
     | '/plan/focus-stats'
     | '/plan/habits'
     | '/plan/logbook'
@@ -433,7 +423,6 @@ export interface FileRouteTypes {
     | '/money/transactions'
     | '/plan/calendar'
     | '/plan/day'
-    | '/plan/eisenhower'
     | '/plan/focus-stats'
     | '/plan/habits'
     | '/plan/logbook'
@@ -475,7 +464,6 @@ export interface FileRouteTypes {
     | '/_auth/_shell/money/transactions'
     | '/_auth/_shell/plan/calendar'
     | '/_auth/_shell/plan/day'
-    | '/_auth/_shell/plan/eisenhower'
     | '/_auth/_shell/plan/focus-stats'
     | '/_auth/_shell/plan/habits'
     | '/_auth/_shell/plan/logbook'
@@ -646,13 +634,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthShellPlanDayRouteImport
       parentRoute: typeof AuthShellRoute
     }
-    '/_auth/_shell/plan/eisenhower': {
-      id: '/_auth/_shell/plan/eisenhower'
-      path: '/plan/eisenhower'
-      fullPath: '/plan/eisenhower'
-      preLoaderRoute: typeof AuthShellPlanEisenhowerRouteImport
-      parentRoute: typeof AuthShellRoute
-    }
     '/_auth/_shell/plan/focus-stats': {
       id: '/_auth/_shell/plan/focus-stats'
       path: '/plan/focus-stats'
@@ -804,7 +785,6 @@ interface AuthShellRouteChildren {
   AuthShellMoneyTransactionsRoute: typeof AuthShellMoneyTransactionsRoute
   AuthShellPlanCalendarRoute: typeof AuthShellPlanCalendarRoute
   AuthShellPlanDayRoute: typeof AuthShellPlanDayRoute
-  AuthShellPlanEisenhowerRoute: typeof AuthShellPlanEisenhowerRoute
   AuthShellPlanFocusStatsRoute: typeof AuthShellPlanFocusStatsRoute
   AuthShellPlanHabitsRoute: typeof AuthShellPlanHabitsRoute
   AuthShellPlanLogbookRoute: typeof AuthShellPlanLogbookRoute
@@ -843,7 +823,6 @@ const AuthShellRouteChildren: AuthShellRouteChildren = {
   AuthShellMoneyTransactionsRoute: AuthShellMoneyTransactionsRoute,
   AuthShellPlanCalendarRoute: AuthShellPlanCalendarRoute,
   AuthShellPlanDayRoute: AuthShellPlanDayRoute,
-  AuthShellPlanEisenhowerRoute: AuthShellPlanEisenhowerRoute,
   AuthShellPlanFocusStatsRoute: AuthShellPlanFocusStatsRoute,
   AuthShellPlanHabitsRoute: AuthShellPlanHabitsRoute,
   AuthShellPlanLogbookRoute: AuthShellPlanLogbookRoute,

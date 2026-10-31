@@ -75,7 +75,6 @@ export function TaskSheet({ id }: { id: string | null }) {
       priority: task.priority,
       energy: task.energy,
       estimateMin: task.estimateMin,
-      urgent: task.urgent,
       rrule: task.rrule,
       top3Date: task.top3Date,
     });

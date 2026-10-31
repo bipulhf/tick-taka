@@ -19,7 +19,6 @@ export interface Form {
   priority: Priority;
   energy: "high" | "low" | null;
   estimateMin: number | null;
-  urgent: boolean;
   rrule: string | null;
   top3Date: string | null;
 }
@@ -37,7 +36,6 @@ export const EMPTY: Form = {
   priority: "normal",
   energy: null,
   estimateMin: null,
-  urgent: false,
   rrule: null,
   top3Date: null,
 };

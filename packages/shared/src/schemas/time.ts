@@ -78,8 +78,6 @@ const taskFields = {
   reminderAt: epochMsSchema.nullable(),
   rrule: rruleSchema.nullable(),
   top3Date: localDateSchema.nullable(),
-  /** Urgent flag for the Eisenhower grid; importance comes from priority. */
-  urgent: z.boolean(),
   sort: z.number().int(),
 };
 
@@ -101,7 +99,6 @@ export const taskCreateSchema = z.object({
   reminderAt: taskFields.reminderAt.optional(),
   rrule: taskFields.rrule.optional(),
   top3Date: taskFields.top3Date.optional(),
-  urgent: taskFields.urgent.default(false),
   sort: taskFields.sort.optional(),
   subtasks: z.array(z.string().trim().min(1).max(300)).max(20).optional(),
 });

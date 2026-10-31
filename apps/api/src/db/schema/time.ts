@@ -66,7 +66,6 @@ export const tasks = sqliteTable(
     reminderAt: integer("reminder_at"),
     rrule: text("rrule"),
     top3Date: text("top3_date"),
-    urgent: bool("urgent").notNull().default(false),
     sort: integer("sort").notNull().default(0),
     doneAt: integer("done_at"),
     /** Set on "move ৳X to the jar" tasks that a savings goal creates each month */

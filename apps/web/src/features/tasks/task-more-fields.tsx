@@ -30,7 +30,7 @@ export function TaskMoreFields({
   repeatText: string;
   setRepeatText: (text: string) => void;
   parsedRepeat: { rrule: string } | null;
-  advanced: { eisenhower: boolean; energy: boolean } | undefined;
+  advanced: { energy: boolean } | undefined;
   areas: { id: string; name: string; emoji: string }[];
   projects: { id: string; name: string }[] | undefined;
 }) {
@@ -97,9 +97,6 @@ export function TaskMoreFields({
           checked={form.top3Date === today}
           onChange={(on) => set("top3Date", on ? today : null)}
         />
-        {advanced?.eisenhower ? (
-          <ToggleRow label="Urgent" checked={form.urgent} onChange={(on) => set("urgent", on)} />
-        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-3">

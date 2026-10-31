@@ -11,7 +11,6 @@ import {
   CalendarRange,
   CircleDashed,
   Clock,
-  Grid2x2,
   HandCoins,
   Inbox,
   Landmark,
@@ -37,7 +36,7 @@ export interface NavLink {
   label: string;
   icon: LucideIcon;
   /** Only shown when Settings › Today and planning turns the view on. */
-  advanced?: "eisenhower" | "shoppingList";
+  advanced?: "shoppingList";
   /** Keyboard shortcut after G (G T for Today). */
   key?: string;
 }
@@ -61,7 +60,6 @@ export const NAV: NavSection[] = [
       { to: "/plan/calendar", label: "Calendar", icon: CalendarDays, key: "c" },
       { to: "/plan/someday", label: "Someday", icon: Archive },
       { to: "/plan/logbook", label: "Logbook", icon: BookCheck, key: "l" },
-      { to: "/plan/eisenhower", label: "Eisenhower", icon: Grid2x2, advanced: "eisenhower" },
       { to: "/plan/habits", label: "Habits", icon: Repeat2, key: "h" },
       { to: "/plan/routines", label: "Routines", icon: ListChecks },
       { to: "/plan/time", label: "Time", icon: Timer },

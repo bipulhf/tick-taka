@@ -38,13 +38,19 @@ export function tiki(className = ""): string {
 
 export type SitePath = "/" | "/privacy" | "/terms";
 
+const icon = (cls: string, body: string) =>
+  `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+
+/** Light or dark, worked by /site/theme.js; hidden until that script runs. */
+const THEME_BUTTON = `<button type="button" class="theme-toggle" data-theme-toggle aria-label="Dark theme" aria-pressed="false">${icon("moon", '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>')}${icon("sun", '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>')}</button>`;
+
 /** The wordmark, the three pages and the way into the web app. */
 export function siteBar(current: SitePath): string {
   const link = (href: SitePath, label: string) =>
     `<a href="${href}"${href === current ? ' aria-current="page"' : ""}>${label}</a>`;
   return `<div class="bar">
 <a class="brand" href="/">${tiki()}${APP_NAME}</a>
-<nav aria-label="Site">${link("/privacy", "Privacy")}${link("/terms", "Terms")}<a class="button primary" href="/app/">Open the app</a></nav>
+<nav aria-label="Site">${link("/privacy", "Privacy")}${link("/terms", "Terms")}${THEME_BUTTON}<a class="button primary" href="/app/">Open the app</a></nav>
 </div>`;
 }
 
@@ -55,7 +61,7 @@ function siteFooter(site: SiteInfo): string {
 </div></footer>`;
 }
 
-/** The whole document: no scripts, no trackers, no files from other hosts. */
+/** The whole document: no trackers and no files from other hosts; one tiny script, the theme switch. */
 export function page(
   site: SiteInfo,
   meta: { title: string; description: string; css?: string; bodyClass?: string },
@@ -73,6 +79,7 @@ export function page(
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="/site/theme.js"></script>
 <style>${SITE_CSS}${meta.css ?? ""}</style>
 </head>
 <body${meta.bodyClass ? ` class="${meta.bodyClass}"` : ""}>

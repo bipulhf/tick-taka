@@ -33,6 +33,7 @@ describe("public pages", () => {
       ["/favicon.ico", "image/x-icon"],
       ["/favicon.svg", "image/svg+xml"],
       ["/apple-touch-icon.png", "image/png"],
+      ["/site/theme.js", "text/javascript; charset=utf-8"],
     ]) {
       const icon = await ctx.app.request(path as string);
       expect(icon.status).toBe(200);
@@ -41,7 +42,9 @@ describe("public pages", () => {
     for (const path of ["/", "/privacy", "/terms"]) {
       const html = await (await ctx.app.request(path)).text();
       expect(html).toContain('href="/favicon.ico"');
-      expect(html).not.toMatch(/<script|https:\/\/fonts\./);
+      // One same-host script, the theme switch; nothing from other hosts.
+      expect(html.match(/<script[^>]*>/g)).toEqual(['<script src="/site/theme.js">']);
+      expect(html).not.toMatch(/https:\/\/fonts\./);
     }
     // The signed-in API still asks for a token.
     expect((await ctx.app.request("/tasks")).status).toBe(401);

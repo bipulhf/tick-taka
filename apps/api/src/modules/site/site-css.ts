@@ -1,7 +1,8 @@
 /**
  * The public pages' one stylesheet, inlined into each page: DESIGN.md's tokens and
  * Nunito (served from /site/nunito.woff2 on this host), so there are no scripts and no
- * files from anywhere else. Always light, like the app by default.
+ * files from anywhere else. Light by default, like the app; the top bar's button
+ * (/site/theme.js) switches to dark and remembers it, shared with the app.
  */
 export const SITE_CSS = `
 @font-face { font-family: "Nunito"; src: url("/site/nunito.woff2") format("woff2"); font-weight: 200 1000; font-display: swap; }
@@ -14,6 +15,14 @@ export const SITE_CSS = `
   --hero: #FFB547; --hero-ink: #23202B; --hero-soft: rgba(35, 32, 43, 0.72);
   --shadow: 0 24px 60px -24px rgba(58, 42, 26, 0.35);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #16151C; --card: #22202B; --chrome: #1C1B23; --ink: #F4F1EA; --muted: #A09AA6;
+  --line: #34313F; --line-strong: #7A748C;
+  --mango: #FFC266; --sky: #7AA2FF; --mint: #4FD8B5; --coral: #FF9385; --grape: #B996FF;
+  --mango-text: #FFC266; --sky-text: #7AA2FF; --mint-text: #4FD8B5; --coral-text: #FF9385; --grape-text: #B996FF;
+  --hero: #FFC266; --shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -34,6 +43,13 @@ a:hover { text-decoration-thickness: 2px; }
 .bar nav a { color: inherit; text-decoration: none; font-weight: 700; font-size: 15px; padding: 8px 12px; border-radius: 12px; }
 .bar nav a:hover { background: rgba(35, 32, 43, 0.08); }
 .bar nav a[aria-current="page"] { background: rgba(35, 32, 43, 0.1); }
+/* Only once /site/theme.js runs (it adds .js), since it is what makes the button work. */
+.theme-toggle { display: none; width: 40px; height: 40px; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: transparent; color: inherit; cursor: pointer; }
+.js .theme-toggle { display: inline-flex; }
+.theme-toggle:hover { background: var(--line); }
+.theme-toggle svg { width: 20px; height: 20px; }
+.theme-toggle .sun, :root[data-theme="dark"] .theme-toggle .moon { display: none; }
+:root[data-theme="dark"] .theme-toggle .sun { display: block; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 16px; font: inherit; font-weight: 800; text-decoration: none; transition: transform 150ms var(--ease), background-color 150ms; }
 .button:hover { transform: translateY(-1px); text-decoration: none; }
 .button.primary { background: var(--ink); color: var(--bg); }

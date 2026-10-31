@@ -3,11 +3,12 @@ import type { Deps } from "../../lib/deps";
 import { landingPage } from "./landing";
 import { privacyPage, termsPage } from "./pages";
 
-/** Tiki as the site's icon, for browsers, tabs and home screens. */
+/** Tiki as the site's icon, for browsers, tabs and home screens, and the theme switch. */
 const ICONS = {
   "/favicon.ico": { file: "favicon.ico", type: "image/x-icon" },
   "/favicon.svg": { file: "favicon.svg", type: "image/svg+xml" },
   "/apple-touch-icon.png": { file: "apple-touch-icon.png", type: "image/png" },
+  "/site/theme.js": { file: "theme.js", type: "text/javascript; charset=utf-8" },
 } as const;
 
 /** Nunito, the app's font, so the public pages need nothing from another host. */

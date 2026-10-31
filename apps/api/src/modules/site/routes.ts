@@ -3,6 +3,13 @@ import type { Deps } from "../../lib/deps";
 import { landingPage } from "./landing";
 import { privacyPage, termsPage } from "./pages";
 
+/** Tiki as the site's icon, for browsers, tabs and home screens. */
+const ICONS = {
+  "/favicon.ico": { file: "favicon.ico", type: "image/x-icon" },
+  "/favicon.svg": { file: "favicon.svg", type: "image/svg+xml" },
+  "/apple-touch-icon.png": { file: "apple-touch-icon.png", type: "image/png" },
+} as const;
+
 /** Nunito, the app's font, so the public pages need nothing from another host. */
 const FONT = Bun.file(
   new URL(import.meta.resolve("@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2")),
@@ -27,5 +34,13 @@ export const siteRoutes = (deps: Deps) => {
     c.header("cache-control", "public, max-age=2592000");
     return c.body(await FONT.arrayBuffer());
   });
+  for (const [path, icon] of Object.entries(ICONS))
+    routes.get(path, async (c) => {
+      c.header("content-type", icon.type);
+      c.header("cache-control", "public, max-age=604800");
+      return c.body(
+        await Bun.file(new URL(`./assets/${icon.file}`, import.meta.url)).arrayBuffer(),
+      );
+    });
   return routes;
 };

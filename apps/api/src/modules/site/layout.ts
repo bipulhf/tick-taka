@@ -58,7 +58,7 @@ function siteFooter(site: SiteInfo): string {
 /** The whole document: no scripts, no trackers, no files from other hosts. */
 export function page(
   site: SiteInfo,
-  meta: { title: string; description: string },
+  meta: { title: string; description: string; css?: string; bodyClass?: string },
   content: string,
 ): string {
   return `<!doctype html>
@@ -71,10 +71,12 @@ export function page(
 <meta name="theme-color" content="#FFB547" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#16151C" media="(prefers-color-scheme: dark)">
 <link rel="preload" href="/site/nunito.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(tiki())}" type="image/svg+xml">
-<style>${SITE_CSS}</style>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>${SITE_CSS}${meta.css ?? ""}</style>
 </head>
-<body>
+<body${meta.bodyClass ? ` class="${meta.bodyClass}"` : ""}>
 <a class="skip" href="#main">Skip to content</a>
 ${content}
 ${siteFooter(site)}

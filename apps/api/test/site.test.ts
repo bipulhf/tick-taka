@@ -28,8 +28,19 @@ describe("public pages", () => {
     expect(font.status).toBe(200);
     expect(font.headers.get("content-type")).toBe("font/woff2");
     expect((await font.arrayBuffer()).byteLength).toBeGreaterThan(10_000);
+    // Tiki is the site's icon, from this host too.
+    for (const [path, type] of [
+      ["/favicon.ico", "image/x-icon"],
+      ["/favicon.svg", "image/svg+xml"],
+      ["/apple-touch-icon.png", "image/png"],
+    ]) {
+      const icon = await ctx.app.request(path as string);
+      expect(icon.status).toBe(200);
+      expect(icon.headers.get("content-type")).toBe(type as string);
+    }
     for (const path of ["/", "/privacy", "/terms"]) {
       const html = await (await ctx.app.request(path)).text();
+      expect(html).toContain('href="/favicon.ico"');
       expect(html).not.toMatch(/<script|https:\/\/fonts\./);
     }
     // The signed-in API still asks for a token.

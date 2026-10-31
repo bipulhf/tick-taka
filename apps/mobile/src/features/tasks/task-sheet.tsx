@@ -145,8 +145,7 @@ export function TaskSheet({ id }: { id: string }) {
     if (picked) set("deadlineAt", endOfLocalDay(picked, timeZone) - MINUTE_MS);
   };
 
-  const save = () => {
-    if (!form.title.trim()) return;
+  const sendEdits = () => {
     const rrule = parsedRepeat?.rrule ?? form.rrule;
     const body = {
       ...form,
@@ -161,6 +160,20 @@ export function TaskSheet({ id }: { id: string }) {
       body: { ...body, updatedAt: editTime() },
       label: "Couldn't save the task",
     });
+  };
+
+  const save = () => {
+    if (!form.title.trim()) return;
+    sendEdits();
+    router.back();
+  };
+
+  // Complete and Reopen are ticking the row: the same write, sound and Undo, and a
+  // repeating task makes its next copy. Edits typed first are queued before it.
+  const toggleDone = () => {
+    if (!task) return;
+    if (form.title.trim()) sendEdits();
+    actions.toggleDone({ ...task, title: form.title.trim() || task.title });
     router.back();
   };
 
@@ -213,7 +226,15 @@ export function TaskSheet({ id }: { id: string }) {
               }}
             />
           ) : null}
-          <Button label="Done" onPress={save} disabled={!form.title.trim()} className="flex-1" />
+          {task ? (
+            <Button
+              label={task.status === "done" ? "Reopen" : "Complete"}
+              icon={task.status === "done" ? "restore" : "check"}
+              variant="secondary"
+              onPress={toggleDone}
+            />
+          ) : null}
+          <Button label="Save" onPress={save} disabled={!form.title.trim()} className="flex-1" />
         </View>
       }
     >

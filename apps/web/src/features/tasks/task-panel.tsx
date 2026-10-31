@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { newId } from "@tick-taka/shared/ids";
 import { parseRecurrence } from "@tick-taka/shared/recurrence";
-import { ChevronDown, ChevronUp, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, RotateCcw, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/empty-state";
@@ -126,6 +126,29 @@ function TaskForm({
     }
   };
 
+  // Complete and Reopen are ticking the row: the same write, sound and Undo toast, and
+  // a repeating task makes its next copy. Edits typed first are saved before it.
+  const toggleDone = async () => {
+    if (!task || saving) return;
+    if (dirty && form.title.trim()) {
+      setSaving(true);
+      try {
+        await write({
+          method: "PATCH",
+          path: `/tasks/${task.id}`,
+          body: taskBody(form, parsedRepeat?.rrule ?? null),
+          label: "Couldn't save the task",
+        });
+      } catch {
+        // The toast says why; what was typed stays.
+        setSaving(false);
+        return;
+      }
+    }
+    actions.toggleDone({ ...task, title: form.title.trim() || task.title });
+    onClose();
+  };
+
   // What's set behind "More", so a closed disclosure still says so.
   const moreSummary = [
     form.deadlineAt ? `Deadline ${formatWhen(form.deadlineAt, false, Date.now(), timeZone)}` : null,
@@ -157,6 +180,15 @@ function TaskForm({
               Delete
             </Button>
           ) : null}
+          {task ? (
+            <Button
+              icon={task.status === "done" ? RotateCcw : Check}
+              onClick={() => void toggleDone()}
+              disabled={saving}
+            >
+              {task.status === "done" ? "Reopen" : "Complete"}
+            </Button>
+          ) : null}
           <Button
             type="submit"
             form={FORM_ID}
@@ -165,7 +197,7 @@ function TaskForm({
             loading={saving}
             disabled={!form.title.trim()}
           >
-            Done
+            Save
           </Button>
         </>
       }

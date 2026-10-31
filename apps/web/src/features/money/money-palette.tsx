@@ -1,12 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { addMonths } from "@tick-taka/shared/dates";
 import { Command } from "cmdk";
+import { CalendarPlus, HandCoins } from "lucide-react";
 import { useEffect, useState } from "react";
-import { paletteItemClass, registerPaletteSearch } from "@/components/shell/command-palette";
+import {
+  paletteItemClass,
+  registerPaletteActions,
+  registerPaletteSearch,
+} from "@/components/shell/command-palette";
 import { Amount } from "@/components/ui/amount";
 import { api, unwrap } from "@/lib/api";
 import { formatWhen } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
-import { useUserTime } from "@/lib/use-today";
+import { useThisMonth, useUserTime } from "@/lib/use-today";
 import { transactionAmount } from "./transaction-amount";
 import { transactionTitle, useLookup } from "./transaction-row";
 
@@ -77,11 +84,38 @@ function TransactionHits({ query, close }: { query: string; close: () => void })
   );
 }
 
+const icon = "size-4 text-muted";
+
 /**
  * Adds transaction search to the command palette (GET /transactions?q=…): a hit opens
- * its panel over whichever view is open. Mount once inside the signed-in shell.
+ * its panel over whichever view is open. Also Budgets' two steps, so "payday" or
+ * "salary" still finds them. Mount once inside the signed-in shell.
  */
 export function MoneyPalette() {
+  const navigate = useNavigate();
+  const next = addMonths(useThisMonth(), 1);
+  useEffect(
+    () =>
+      registerPaletteActions(() => [
+        {
+          id: "split-my-pay",
+          label: "Split my pay",
+          group: "Actions",
+          icon: <HandCoins aria-hidden className={icon} />,
+          keywords: ["payday", "salary", "budget", "plan"],
+          run: () => void navigate({ to: "/money/budgets", search: { split: true } }),
+        },
+        {
+          id: "plan-next-month",
+          label: "Plan next month",
+          group: "Actions",
+          icon: <CalendarPlus aria-hidden className={icon} />,
+          keywords: ["budget", "payday", "salary"],
+          run: () => void navigate({ to: "/money/budgets", search: { plan: next } }),
+        },
+      ]),
+    [navigate, next],
+  );
   useEffect(
     () =>
       registerPaletteSearch((query, close) => (

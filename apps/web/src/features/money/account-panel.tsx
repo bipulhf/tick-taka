@@ -43,6 +43,7 @@ export function AccountPanel({ id, onClose }: PanelComponentProps) {
 function AccountForm({ account, onClose }: { account: Account | undefined; onClose: () => void }) {
   const actions = useAccountActions();
   const { data: settings } = useSettings();
+  const { data: accounts } = useAccounts();
   const [name, setName] = useState(account?.name ?? "");
   const [type, setType] = useState<AccountType>(account?.type ?? "cash");
   const [currency, setCurrency] = useState(account?.currency ?? "BDT");
@@ -74,7 +75,8 @@ function AccountForm({ account, onClose }: { account: Account | undefined; onClo
           body: { id: newAccountId, name: name.trim(), type, currency, openingMinor },
           label: "Couldn't add the account",
         });
-        if (!settings?.defaultAccountId)
+        // The first account, or the first since the default one was deleted, becomes the default.
+        if (!accounts?.some((a) => a.id === settings?.defaultAccountId))
           await write({
             method: "PATCH",
             path: "/settings",

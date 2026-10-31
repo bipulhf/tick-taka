@@ -12,7 +12,6 @@ import { RowMark } from "@/components/ui/group";
 import { Kbd } from "@/components/ui/kbd";
 import { NONE, Select } from "@/components/ui/select";
 import { formatAmount, formatWhen, plural } from "@/lib/format";
-import { useOpenPanel } from "@/lib/panel";
 import type { DayChoice } from "./quick-add-requests";
 import type { useQuickAdd } from "./use-quick-add";
 
@@ -158,6 +157,7 @@ export function QuickAddPreview({
   saving,
   onSave,
   onMore,
+  onAddAccount,
 }: {
   qa: QuickAdd;
   summaryId: string;
@@ -165,8 +165,9 @@ export function QuickAddPreview({
   saving: boolean;
   onSave: () => void;
   onMore: () => void;
+  /** Opens the account panel on top; closing it comes back here with the text. */
+  onAddAccount: () => void;
 }) {
-  const open = useOpenPanel();
   const { draft, reference } = qa;
   const summary = draftSummary(qa);
   const look = draft ? KIND_LOOK[draft.kind] : null;
@@ -198,7 +199,7 @@ export function QuickAddPreview({
       ) : null}
       {draft ? <Fixes qa={qa} /> : null}
       {moneyKind && reference.accountsLoaded && reference.accounts.length === 0 ? (
-        <Button size="sm" className="self-start" onClick={() => open("account:new")}>
+        <Button size="sm" className="self-start" onClick={onAddAccount}>
           Add your first account
         </Button>
       ) : null}

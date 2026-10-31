@@ -73,7 +73,8 @@ function AccountForm({ id }: { id: string | null }) {
         body: { id: newAccountId, name: name.trim(), type, currency, openingMinor },
         label: "Couldn't add the account",
       });
-      if (!settings?.defaultAccountId)
+      // The first account, or the first since the default one was deleted, becomes the default.
+      if (!accounts.some((a) => a.id === settings?.defaultAccountId))
         send({
           method: "PATCH",
           path: "/settings",

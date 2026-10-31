@@ -227,7 +227,8 @@ export function QuickAddSheet({
         <Button
           label="Add your first account"
           variant="secondary"
-          onPress={() => router.replace("/account/new")}
+          // On top of this sheet, so coming back finds the text as it was typed.
+          onPress={() => router.push("/account/new")}
         />
       ) : null}
     </Sheet>

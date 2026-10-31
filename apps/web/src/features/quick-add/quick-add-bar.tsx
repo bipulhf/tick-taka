@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { cx } from "@/components/ui/cx";
 import { IconButton } from "@/components/ui/icon-button";
 import { Kbd } from "@/components/ui/kbd";
-import { useOpenPanel } from "@/lib/panel";
+import { useOpenPanel, usePanelSearch } from "@/lib/panel";
 import { playSound } from "@/lib/sounds";
 import { useStore } from "@/lib/store";
 import { notify } from "@/lib/toast";
@@ -40,10 +40,22 @@ export function QuickAddBar() {
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
   const focusRequest = useStore(quickAddFocusStore);
+  const panel = usePanelSearch().panel;
+  /** The panel opened from here ("Add your first account"), to come back from. */
+  const openedPanel = useRef<string | null>(null);
 
   useEffect(() => {
     if (focusRequest) input.current?.focus();
   }, [focusRequest]);
+
+  // Once that panel closes, the field takes focus again and shows what was typed.
+  useEffect(() => {
+    if (!openedPanel.current || panel === openedPanel.current) return;
+    openedPanel.current = null;
+    // After the panel has handed focus back, so it can't take it away again.
+    const timer = setTimeout(() => input.current?.focus(), 0);
+    return () => clearTimeout(timer);
+  }, [panel]);
 
   // Clicking anywhere else closes the preview (the text stays for later).
   useEffect(() => {
@@ -196,6 +208,10 @@ export function QuickAddBar() {
           saving={saving}
           onSave={() => void save()}
           onMore={openFull}
+          onAddAccount={() => {
+            openedPanel.current = "account:new";
+            open("account:new");
+          }}
         />
       ) : null}
     </div>

@@ -2,8 +2,9 @@ import type { TikiMood } from "@tick-taka/shared/tiki";
 
 /**
  * The first-visit tour: Tiki points at one part of the screen at a time. `target`
- * names a `data-tour` attribute; a step whose target isn't on screen (no AI chat, a
- * phone without the sidebar's Settings) is skipped. Pure, so it can be tested.
+ * names a `data-tour` attribute; a step whose target isn't on screen (no AI chat) is
+ * skipped. Settings is the sidebar's, or Today's header button at phone width. Pure,
+ * so it can be tested.
  */
 export interface TourStep {
   id: string;

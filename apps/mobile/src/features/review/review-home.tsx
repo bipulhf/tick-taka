@@ -63,12 +63,6 @@ const ENTRIES: Entry[] = [
     icon: "currency-usd",
     ai: true,
   },
-  {
-    href: "/settings",
-    title: "Settings",
-    hint: "Views, goals, AI, sounds, export",
-    icon: "cog-outline",
-  },
 ];
 
 export function ReviewHome() {
@@ -80,7 +74,6 @@ export function ReviewHome() {
   const reviewToday = reviewDay !== undefined && isWeeklyReviewDay(today, reviewDay);
   const progress = game.data;
   const entries = ENTRIES.filter((e) => !e.ai || ai.data?.configured);
-  const settings = entries.filter((e) => e.href === "/settings");
   return (
     <Screen title="Review">
       <ShortcutRow
@@ -131,22 +124,7 @@ export function ReviewHome() {
         </Group>
       ) : null}
       <Group inset={60}>
-        {entries
-          .filter((e) => e.href !== "/settings")
-          .map((entry) => (
-            <ListRow
-              key={entry.href}
-              icon={entry.icon}
-              iconColor="muted"
-              title={entry.title}
-              subtitle={entry.hint}
-              chevron
-              onPress={() => router.push(entry.href as never)}
-            />
-          ))}
-      </Group>
-      <Group inset={60}>
-        {settings.map((entry) => (
+        {entries.map((entry) => (
           <ListRow
             key={entry.href}
             icon={entry.icon}

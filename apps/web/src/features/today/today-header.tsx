@@ -1,4 +1,5 @@
-import { ArrowRightCircle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ArrowRightCircle, Settings } from "lucide-react";
 import { Tiki, type TikiOutfit } from "@/components/tiki/tiki";
 import { formatClock, formatLocalDate } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
@@ -47,6 +48,15 @@ export function TodayHeader({
             </p>
           ) : null}
         </div>
+        {/* Phone width has no sidebar: Settings is reached from here, as on the phone. */}
+        <Link
+          to="/settings"
+          aria-label="Settings"
+          data-tour="nav-settings"
+          className="inline-flex size-12 shrink-0 items-center justify-center self-start rounded-xl text-muted transition-colors hover:bg-line/60 hover:text-ink sm:hidden"
+        >
+          <Settings aria-hidden className="size-5" strokeWidth={2} />
+        </Link>
       </div>
       {next ? (
         <button

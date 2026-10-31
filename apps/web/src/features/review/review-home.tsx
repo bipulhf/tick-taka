@@ -180,7 +180,8 @@ export function ReviewHome() {
               />
             ))}
           </Group>
-          <Group>
+          {/* Beside the sidebar's Settings; at phone width it lives in Today's header. */}
+          <Group className="hidden sm:block">
             <Row
               leading={<RowMark icon={Settings} />}
               title="Settings"

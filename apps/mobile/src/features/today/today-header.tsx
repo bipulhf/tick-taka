@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 import { Tiki, type TikiOutfit } from "@/components/tiki/tiki";
 import { Icon } from "@/components/ui/icon";
+import { IconButton } from "@/components/ui/icon-button";
 import { PrivacyToggle } from "@/components/ui/privacy-toggle";
 import { Text } from "@/components/ui/text";
 import { formatClock, formatLocalDate } from "@/lib/format";
@@ -40,6 +41,12 @@ export function TodayHeader({
           {formatLocalDate(data.date, "long")} · {goalText}
         </Text>
         <PrivacyToggle />
+        <IconButton
+          icon="cog-outline"
+          label="Settings"
+          color="muted"
+          onPress={() => router.push("/settings")}
+        />
       </View>
       <View className="flex-row items-center gap-3">
         <Tiki mood={data.tiki.mood} size={52} outfit={outfit} />

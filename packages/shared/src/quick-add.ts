@@ -88,6 +88,27 @@ export interface TransferDraft {
 
 export type AnyDraft = QuickAddDraft | TransferDraft;
 
+/**
+ * True when quick-add can show one summary line instead of its pickers: a money
+ * draft the parser (or the AI) read at high confidence, with an amount, a category
+ * of the same kind found by a rule, keyword or the AI, and an account that still
+ * exists. Anything else keeps the pickers on screen.
+ */
+export function isSureMoneyDraft(
+  draft: AnyDraft | null,
+  reference: {
+    accounts: { id: string }[];
+    categories: { id: string; kind: "expense" | "income" }[];
+  },
+): boolean {
+  if (!draft || (draft.kind !== "expense" && draft.kind !== "income")) return false;
+  if (draft.confidence !== "high") return false;
+  if (draft.amountMinor === null || draft.amountMinor <= 0) return false;
+  const category = reference.categories.find((c) => c.id === draft.categoryId);
+  if (!category || category.kind !== draft.kind) return false;
+  return reference.accounts.some((a) => a.id === draft.accountId);
+}
+
 const DURATION_RE =
   /^(?:(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours|ঘণ্টা|ঘন্টা))?\s*(?:(\d+)\s*(?:m|min|mins|minute|minutes|মিনিট))?(?=\s|$)/i;
 

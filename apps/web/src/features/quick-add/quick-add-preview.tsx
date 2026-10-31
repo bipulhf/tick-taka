@@ -1,3 +1,4 @@
+import { hiddenAmount } from "@tick-taka/shared/money";
 import { describeDraft, type QuickAddKind } from "@tick-taka/shared/quick-add";
 import {
   ArrowDownLeft,
@@ -7,11 +8,13 @@ import {
   type LucideIcon,
   Timer,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RowMark } from "@/components/ui/group";
 import { Kbd } from "@/components/ui/kbd";
 import { NONE, Select } from "@/components/ui/select";
 import { formatAmount, formatWhen, plural } from "@/lib/format";
+import { privacyStore, usePrivacy } from "@/lib/prefs";
 import type { DayChoice } from "./quick-add-requests";
 import type { useQuickAdd } from "./use-quick-add";
 
@@ -56,8 +59,10 @@ export function draftSummary(qa: QuickAdd): string | null {
   const { draft, reference } = qa;
   if (!draft) return null;
   const when = (ms: number, hasTime: boolean) => formatWhen(ms, hasTime, Date.now(), qa.timeZone);
+  // Hide amounts covers this line too; the field above still shows what was typed.
+  const money = (minor: number) => (privacyStore.get() ? hiddenAmount() : formatAmount(minor));
   if (draft.kind === "transfer") {
-    const amount = draft.amountMinor === null ? NO_AMOUNT : formatAmount(draft.amountMinor);
+    const amount = draft.amountMinor === null ? NO_AMOUNT : money(draft.amountMinor);
     return `Transfer ${amount} · ${when(draft.occurredAt, false)}`;
   }
   const names = {
@@ -69,7 +74,7 @@ export function draftSummary(qa: QuickAdd): string | null {
         : null,
     area: reference.areas.find((a) => a.id === draft.areaId)?.name,
   };
-  const text = describeDraft(draft, names, (m) => formatAmount(m), when).replace("—", NO_AMOUNT);
+  const text = describeDraft(draft, names, money, when).replace("—", NO_AMOUNT);
   return draft.kind === "expense" || draft.kind === "income"
     ? `${text} · ${when(draft.occurredAt, false)}`
     : text;
@@ -169,35 +174,76 @@ export function QuickAddPreview({
   onAddAccount: () => void;
 }) {
   const { draft, reference } = qa;
+  // Redraw when Hide amounts changes; draftSummary reads it.
+  usePrivacy();
   const summary = draftSummary(qa);
   const look = draft ? KIND_LOOK[draft.kind] : null;
   const moneyKind = draft?.kind === "expense" || draft?.kind === "income";
+  const sure = Boolean(draft && summary) && !qa.showPickers;
+  const fixes = useRef<HTMLDivElement>(null);
+  const [focusFixes, setFocusFixes] = useState(false);
+
+  // "Change" goes away as the pickers come back, so focus moves to the first of them.
+  useEffect(() => {
+    if (!focusFixes || !qa.showPickers) return;
+    fixes.current?.querySelector<HTMLElement>("button, [tabindex]")?.focus();
+    setFocusFixes(false);
+  }, [focusFixes, qa.showPickers]);
+
+  const mark = qa.aiBusy ? (
+    <span
+      role="status"
+      aria-label="Reading it"
+      className="flex size-9 shrink-0 items-center justify-center"
+    >
+      <span className="size-5 animate-spin rounded-full border-2 border-mango border-t-transparent" />
+    </span>
+  ) : look ? (
+    <RowMark icon={look.icon} tone={look.tone} />
+  ) : null;
+  const line = (
+    <p className={summary ? "flex-1 text-body font-bold" : "flex-1 text-callout text-muted"}>
+      {summary
+        ? `${qa.aiUsed ? "✨ " : ""}${summary}`
+        : "Type a task, an expense, “+45000 salary” or “2h thesis”."}
+    </p>
+  );
   return (
     <div className="absolute inset-x-0 top-full z-40 mt-2 flex animate-fade-in flex-col gap-3 rounded-2xl border border-line bg-card p-3 shadow-xl shadow-ink/10 max-sm:fixed max-sm:inset-x-3 max-sm:top-[68px] max-sm:mt-0">
       <div id={summaryId} aria-live="polite" className="flex min-h-9 items-center gap-3">
-        {qa.aiBusy ? (
-          <span
-            role="status"
-            aria-label="Reading it"
-            className="flex size-9 shrink-0 items-center justify-center"
+        {sure ? (
+          // Sure of the kind, amount, category and account: one line, and Change for the pickers.
+          <button
+            type="button"
+            aria-expanded={false}
+            aria-label={`${summary}. Change kind, account or category`}
+            onClick={() => {
+              qa.openPickers();
+              setFocusFixes(true);
+            }}
+            className="-m-1 flex flex-1 items-center gap-3 rounded-xl p-1 text-left transition-colors hover:bg-line/40"
           >
-            <span className="size-5 animate-spin rounded-full border-2 border-mango border-t-transparent" />
-          </span>
-        ) : look ? (
-          <RowMark icon={look.icon} tone={look.tone} />
-        ) : null}
-        <p className={summary ? "flex-1 text-body font-bold" : "flex-1 text-callout text-muted"}>
-          {summary
-            ? `${qa.aiUsed ? "✨ " : ""}${summary}`
-            : "Type a task, an expense, “+45000 salary” or “2h thesis”."}
-        </p>
+            {mark}
+            {line}
+            <span className="shrink-0 px-2 text-callout font-bold text-sky-text">Change</span>
+          </button>
+        ) : (
+          <>
+            {mark}
+            {line}
+          </>
+        )}
       </div>
       {qa.hoursOfWork ? (
         <p className="-mt-2 pl-12 text-callout text-muted">
           ≈ {plural(qa.hoursOfWork, "hour")} of work
         </p>
       ) : null}
-      {draft ? <Fixes qa={qa} /> : null}
+      {draft && !sure ? (
+        <div ref={fixes}>
+          <Fixes qa={qa} />
+        </div>
+      ) : null}
       {moneyKind && reference.accountsLoaded && reference.accounts.length === 0 ? (
         <Button size="sm" className="self-start" onClick={onAddAccount}>
           Add your first account

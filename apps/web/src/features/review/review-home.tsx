@@ -47,7 +47,7 @@ const ENTRIES: Entry[] = [
   {
     to: "/review/monthly",
     title: "Monthly review",
-    hint: "Budgets, net worth, hourly rates",
+    hint: "Budgets vs actual, then plan next month",
     icon: CalendarFold,
   },
   {

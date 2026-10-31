@@ -11,6 +11,7 @@ import {
   parseSuggested,
   withoutLine,
 } from "../src/features/money/budget-lines";
+import { validateBudgetsSearch } from "../src/features/money/budgets-search";
 
 const line = (over: Partial<Parameters<typeof lineProgress>[0]> = {}) => ({
   categoryId: "food",
@@ -99,5 +100,16 @@ describe("budget editor", () => {
     expect(parseSuggested("[1]")).toBeUndefined();
     expect(parseSuggested("{oops")).toBeUndefined();
     expect(parseSuggested(null)).toBeUndefined();
+  });
+});
+
+describe("budgets search", () => {
+  test("keeps a real month to plan and drops anything else", () => {
+    expect(validateBudgetsSearch({ plan: "2026-11" })).toMatchObject({ plan: "2026-11" });
+    expect(validateBudgetsSearch({ plan: "2026-13" }).plan).toBeUndefined();
+    expect(validateBudgetsSearch({ plan: 5 }).plan).toBeUndefined();
+    expect(validateBudgetsSearch({ panel: "budget:2026-11" })).toMatchObject({
+      panel: "budget:2026-11",
+    });
   });
 });

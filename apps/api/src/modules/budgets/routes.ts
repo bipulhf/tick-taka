@@ -9,6 +9,7 @@ import type { Deps } from "../../lib/deps";
 import { dateQuery } from "../../lib/params";
 import { validate } from "../../lib/validate";
 import { budgetMonth, putBudgetLine, putBudgets, safeToSpend } from "./service";
+import { suggestBudgets } from "./suggest";
 
 export const budgetsRoutes = (deps: Deps) =>
   new Hono()
@@ -28,6 +29,11 @@ export const budgetsRoutes = (deps: Deps) =>
         return c.json(putBudgetLine(deps, month, categoryId, c.req.valid("json")));
       },
     )
+    /** "Plan next month": limits from the three months before `month`, nothing saved. */
+    .get("/suggested", validate("query", budgetMonthQuerySchema), (c) => {
+      const { month } = c.req.valid("query");
+      return c.json({ month, budgets: suggestBudgets(deps, month) });
+    })
     .get("/safe-to-spend", validate("query", dateQuery), (c) =>
       c.json(safeToSpend(deps, c.req.valid("query").date)),
     );

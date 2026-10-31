@@ -207,3 +207,55 @@ describe("the first budget", () => {
     expect(after.leftTodayMinor).toBe(39_000);
   });
 });
+
+describe("GET /budgets/suggested", () => {
+  test("averages the three months before, rounds up to ৳100 and saves nothing", async () => {
+    const ctx = await createTestContext();
+    const { cash, category } = await setupMoney(ctx);
+    const spend = (name: string, amountMinor: number, occurredAt: number) =>
+      ctx.request("POST", "/transactions", {
+        type: "expense",
+        accountId: cash.id,
+        amountMinor,
+        categoryId: category(name).id,
+        occurredAt,
+      });
+    await spend("Food", 300_000, on(8, 10));
+    await spend("Food", 300_000, on(9, 10));
+    await spend("Food", 310_000, on(10, 3));
+    await spend("Fun", 50_000, on(10, 2));
+    // July is four months before November: left out.
+    await spend("Fun", 900_000, on(7, 10));
+    // A sub-category's spending counts in its parent's line.
+    const snacks = (
+      await ctx.request<Row>("POST", "/categories", {
+        name: "Snacks",
+        emoji: "🍿",
+        kind: "expense",
+        parentId: category("Fun").id,
+      })
+    ).body;
+    await ctx.request("POST", "/transactions", {
+      type: "expense",
+      accountId: cash.id,
+      amountMinor: 40_000,
+      categoryId: snacks.id,
+      occurredAt: on(9, 5),
+    });
+    const res = await ctx.request<{
+      month: string;
+      budgets: { categoryId: string; limitMinor: number }[];
+    }>("GET", "/budgets/suggested?month=2026-11");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      month: "2026-11",
+      budgets: [
+        { categoryId: category("Food").id, limitMinor: 310_000 },
+        { categoryId: category("Fun").id, limitMinor: 30_000 },
+      ],
+    });
+    const november = await ctx.request<{ lines: Row[] }>("GET", "/budgets?month=2026-11");
+    expect(november.body.lines.every((l) => l.hasBudget === false)).toBe(true);
+    expect((await ctx.request("GET", "/budgets/suggested?month=2026-13")).status).toBe(400);
+  });
+});

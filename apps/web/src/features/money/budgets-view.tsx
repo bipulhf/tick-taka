@@ -1,4 +1,5 @@
-import { Pencil } from "lucide-react";
+import { addMonths } from "@tick-taka/shared/dates";
+import { CalendarPlus, Pencil } from "lucide-react";
 import { useState } from "react";
 import { Amount } from "@/components/ui/amount";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   noBudgets,
   withoutLine,
 } from "./budget-lines";
+import { BudgetPlan } from "./budget-plan";
 import { type Budgets, useBudgets } from "./queries";
 
 /** The three buckets' totals for the month, beside the lines on a wide screen. */
@@ -70,11 +72,21 @@ function Editor({ month, onDone }: { month: string; onDone: () => void }) {
   );
 }
 
-/** Monthly limits in three buckets, with rollover and a calm pace heads-up. */
-export function BudgetsView() {
+/**
+ * Monthly limits in three buckets, with rollover and a calm pace heads-up. `plan` is
+ * the month being planned ("Plan next month"), from the URL.
+ */
+export function BudgetsView({
+  plan,
+  onPlan,
+}: {
+  plan?: string;
+  onPlan: (month: string | undefined) => void;
+}) {
   const thisMonth = useThisMonth();
-  const [month, setMonth] = useState(thisMonth);
+  const [viewMonth, setMonth] = useState(thisMonth);
   const [editing, setEditing] = useState(false);
+  const month = plan ?? viewMonth;
   const budgets = useBudgets(month);
   const data = budgets.data;
   const edit = () => setEditing(true);
@@ -113,6 +125,16 @@ export function BudgetsView() {
           <SkeletonRows rows={4} />
           <SkeletonRows rows={2} />
         </div>
+      );
+    if (plan)
+      return (
+        <BudgetPlan
+          month={plan}
+          onDone={() => {
+            setMonth(plan);
+            onPlan(undefined);
+          }}
+        />
       );
     if (editing) return <Editor month={month} onDone={() => setEditing(false)} />;
     if (noBudgets(data.lines))
@@ -160,24 +182,30 @@ export function BudgetsView() {
               onChange={(next) => {
                 setMonth(next);
                 setEditing(false);
+                if (plan) onPlan(undefined);
               }}
             />
-            {editing ? null : (
-              <Button icon={Pencil} onClick={edit} disabled={!data}>
-                Edit budgets
-              </Button>
+            {editing || plan ? null : (
+              <>
+                <Button icon={CalendarPlus} onClick={() => onPlan(addMonths(thisMonth, 1))}>
+                  Plan next month
+                </Button>
+                <Button icon={Pencil} onClick={edit} disabled={!data}>
+                  Edit budgets
+                </Button>
+              </>
             )}
           </>
         }
       />
-      {data?.inherited ? (
+      {data?.inherited && !plan ? (
         <p className="-mt-3 text-callout text-muted">
           Showing last month's limits. Save to keep them for {formatMonth(month)}.
         </p>
       ) : null}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-7 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
         <div className="min-w-0">{body()}</div>
-        {data && !noBudgets(data.lines) ? <BucketSummary data={data} /> : null}
+        {data && !plan && !noBudgets(data.lines) ? <BucketSummary data={data} /> : null}
       </div>
     </div>
   );

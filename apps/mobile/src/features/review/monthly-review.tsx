@@ -1,4 +1,3 @@
-import { useMutation } from "@tanstack/react-query";
 import { addMonths } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
 import { View } from "react-native";
@@ -9,37 +8,20 @@ import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
-import { api, unwrap } from "@/lib/api";
-import { friendlyError } from "@/lib/error-copy";
-import { formatAmount, formatMinutes, formatMonth, plural } from "@/lib/format";
-import { notify } from "@/lib/notify";
+import { formatAmount, formatMonth, plural } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { usePrivacy } from "@/lib/privacy";
-import { useAiStatus, useAreas, useCategories } from "@/lib/queries";
 import { useThisMonth } from "@/lib/use-today";
 import { useMonthlyReview } from "./queries";
 
-/** Budgets vs actual, net worth change, hourly rates, Someday, then next month's budgets. */
+/** Budgets vs actual and Someday, then a way into Budgets to plan next month. */
 export function MonthlyReview() {
   const router = useRouter();
   const send = useOutbox();
   const hidden = usePrivacy();
   const month = useThisMonth();
   const review = useMonthlyReview(month);
-  const ai = useAiStatus();
-  const { data: areas = [] } = useAreas();
-  const { data: categories = [] } = useCategories();
   const next = addMonths(month, 1);
-  const aiBudgets = useMutation({
-    mutationFn: () => unwrap(api.ai["budget-suggestions"].$post({ json: { month: next } })),
-    onSuccess: (result) => {
-      const suggested = Object.fromEntries(result.budgets.map((b) => [b.categoryId, b.limitMinor]));
-      router.push(
-        `/budget-edit?month=${next}&suggested=${encodeURIComponent(JSON.stringify(suggested))}`,
-      );
-    },
-    onError: (e) => notify(friendlyError(e)),
-  });
   const data = review.data;
   const money = (minor: number | null) =>
     minor === null ? "—" : hidden ? "•••" : formatAmount(minor, { signed: false });
@@ -83,44 +65,6 @@ export function MonthlyReview() {
           </Card>
         )}
       </Section>
-      <Section title="Net worth">
-        <Card>
-          <Text
-            variant="title"
-            tone={(data.netWorth.changeMinor ?? 0) < 0 ? "coral" : "mint"}
-            numeric
-          >
-            {data.netWorth.changeMinor === null
-              ? "—"
-              : `${data.netWorth.changeMinor >= 0 ? "+" : "−"}${money(Math.abs(data.netWorth.changeMinor))}`}
-          </Text>
-          <Text tone="muted">Now {money(data.netWorth.endMinor)}</Text>
-        </Card>
-      </Section>
-      <Section title="Hourly rate by area">
-        {data.hourlyRates.length === 0 ? (
-          <EmptyState
-            title="No hourly rates yet"
-            message="Tag income and time with areas to see which work pays best."
-          />
-        ) : (
-          <Card className="gap-2">
-            {data.hourlyRates.map((rate) => {
-              const area = areas.find((a) => a.id === rate.areaId);
-              return (
-                <View key={rate.areaId} className="flex-row justify-between">
-                  <Text>{area ? `${area.emoji} ${area.name}` : "Area"}</Text>
-                  <Text numeric>
-                    {rate.rateMinor === null || rate.incomeMinor === 0
-                      ? `${formatMinutes(rate.minutes)}, no income`
-                      : `${money(rate.rateMinor)}/h`}
-                  </Text>
-                </View>
-              );
-            })}
-          </Card>
-        )}
-      </Section>
       <Section title="Someday">
         {data.someday.length === 0 ? (
           <EmptyState
@@ -156,35 +100,14 @@ export function MonthlyReview() {
       ) : null}
       <Section title={`Budgets for ${formatMonth(next)}`}>
         <Card className="gap-2">
-          {data.suggestedBudgets.slice(0, 6).map((line) => {
-            const category = categories.find((c) => c.id === line.categoryId);
-            return (
-              <View key={line.categoryId} className="flex-row justify-between">
-                <Text>{category ? `${category.emoji} ${category.name}` : "Category"}</Text>
-                <Text numeric>{money(line.limitMinor)}</Text>
-              </View>
-            );
-          })}
-          <Text variant="caption" tone="muted">
-            From the average of the last three months.
+          <Text tone="muted">
+            Plan them in Budgets, started from the average of the last three months.
           </Text>
           <Button
-            label="Use these"
-            onPress={() =>
-              router.push(
-                `/budget-edit?month=${next}&suggested=${encodeURIComponent(JSON.stringify(Object.fromEntries(data.suggestedBudgets.map((b) => [b.categoryId, b.limitMinor]))))}`,
-              )
-            }
+            label={`Plan ${formatMonth(next)}`}
+            icon="calendar-plus"
+            onPress={() => router.push(`/budget-edit?month=${next}&plan=1`)}
           />
-          {ai.data?.configured && ai.data.features.budgetSuggestions ? (
-            <Button
-              label="Ask AI for suggestions"
-              variant="secondary"
-              icon="auto-fix"
-              loading={aiBudgets.isPending}
-              onPress={() => aiBudgets.mutate()}
-            />
-          ) : null}
         </Card>
       </Section>
     </Screen>

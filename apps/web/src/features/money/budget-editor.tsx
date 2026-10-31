@@ -103,8 +103,11 @@ export function BudgetSaveButton({
   );
 }
 
-/** "Ask AI for suggestions", only when AI is set up and the feature is on. */
-function AiSuggestions({
+/**
+ * "Refine with Tiki" in Plan next month, only when AI is set up and budget suggestions
+ * are on. What comes back fills the same editor; nothing is saved until Save.
+ */
+export function RefineWithTiki({
   month,
   onSuggested,
 }: {
@@ -116,7 +119,7 @@ function AiSuggestions({
     mutationFn: () => unwrap(api.ai["budget-suggestions"].$post({ json: { month } })),
     onSuccess: (result) => {
       onSuggested(Object.fromEntries(result.budgets.map((b) => [b.categoryId, b.limitMinor])));
-      notify("Filled in AI suggestions. Check them before saving.");
+      notify("Tiki filled in its suggestions. Check them before saving.");
     },
     onError: (error) => notify(friendlyError(error)),
   });
@@ -129,7 +132,7 @@ function AiSuggestions({
       onClick={() => suggest.mutate()}
       className="self-start"
     >
-      Ask AI for suggestions
+      Refine with Tiki
     </Button>
   );
 }
@@ -138,9 +141,12 @@ function AiSuggestions({
 export function BudgetEditorFields({
   editor,
   month,
+  planning = false,
 }: {
   editor: BudgetEditorState;
   month: string;
+  /** Plan next month says where the numbers came from itself. */
+  planning?: boolean;
 }) {
   const parents = useMemo(
     () => (editor.budgets.data?.lines ?? []).filter((l) => l.parentId === null),
@@ -149,12 +155,11 @@ export function BudgetEditorFields({
   if (!editor.budgets.data) return <PanelSkeleton fields={6} />;
   return (
     <div className="flex flex-col gap-5">
-      {editor.budgets.data.inherited ? (
+      {editor.budgets.data.inherited && !planning ? (
         <p className="px-1 text-callout text-muted">
           Showing last month's limits. Save to keep them for {formatMonth(month)}.
         </p>
       ) : null}
-      <AiSuggestions month={month} onSuggested={editor.fill} />
       {BUCKETS.map((bucket) => {
         const lines = parents.filter((l) => l.budgetType === bucket.key);
         if (lines.length === 0) return null;

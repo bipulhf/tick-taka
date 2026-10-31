@@ -1,3 +1,4 @@
+import { addMonths } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -65,12 +66,22 @@ export function BudgetsScreen() {
           Showing last month's limits. Save to keep them for {formatMonth(month)}.
         </Text>
       ) : null}
-      <Button
-        label="Edit budgets"
-        variant="secondary"
-        icon="pencil"
-        onPress={() => router.push(`/budget-edit?month=${month}`)}
-      />
+      <View className="flex-row gap-2">
+        <Button
+          label="Plan next month"
+          variant="secondary"
+          icon="calendar-plus"
+          className="flex-1"
+          onPress={() => router.push(`/budget-edit?month=${addMonths(thisMonth, 1)}&plan=1`)}
+        />
+        <Button
+          label="Edit budgets"
+          variant="secondary"
+          icon="pencil"
+          className="flex-1"
+          onPress={() => router.push(`/budget-edit?month=${month}`)}
+        />
+      </View>
       <AsyncContent
         query={budgets}
         skeleton={

@@ -8,8 +8,8 @@ import { BudgetEditorFields, BudgetSaveButton, useBudgetEditor } from "./budget-
 import { parseSuggested } from "./budget-lines";
 
 /**
- * "budget:<YYYY-MM>": set a month's limits per category, from anywhere (Review's
- * "Use these" opens it with `suggested`, a JSON object of categoryId → limitMinor).
+ * "budget:<YYYY-MM>": set a month's limits per category, from anywhere. A `suggested`
+ * preset (a JSON object of categoryId → limitMinor) pre-fills it.
  */
 export function BudgetPanel({ id, preset, onClose }: PanelComponentProps) {
   const thisMonth = useThisMonth();

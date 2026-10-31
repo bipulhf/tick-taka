@@ -17,13 +17,11 @@ import type { Deps } from "../../lib/deps";
 import { spendingRows, sumBy } from "../../lib/money-queries";
 import { userTime } from "../../lib/user-time";
 import { budgetMonth } from "../budgets/service";
+import { suggestBudgets } from "../budgets/suggest";
 import { habitService } from "../habits/service";
 import { spotSubscriptions } from "../insights/spotter";
 import { insightsSummary, netWorthSeries } from "../insights/summary";
 import { timeEntryService } from "../time-entries/service";
-
-/** Rounds a suggested limit up to the next ৳100. */
-const roundUpTo100Taka = (minor: number) => Math.ceil(minor / 10_000) * 10_000;
 
 /** Numbers for the 5-minute Sunday review. AI may explain these, never compute them. */
 export function weeklyReview(deps: Deps, weekStartInput?: LocalDate) {
@@ -170,27 +168,6 @@ export function monthlyReview(deps: Deps, monthInput?: LocalMonth) {
     subscriptions: spotSubscriptions(deps),
     suggestedBudgets: suggestBudgets(deps, addMonths(month, 1)),
   };
-}
-
-/** Next month's budgets from the average of the last three months of spending. */
-export function suggestBudgets(deps: Deps, month: LocalMonth) {
-  const { timeZone } = userTime(deps);
-  const totals = new Map<string | null, number>();
-  for (let i = 1; i <= 3; i++) {
-    const rows = spendingRows(deps.db, localMonthRange(addMonths(month, -i), timeZone));
-    for (const [categoryId, amount] of sumBy(
-      rows,
-      (r) => r.categoryId,
-      (r) => r.amountMinor,
-    )) {
-      totals.set(categoryId, (totals.get(categoryId) ?? 0) + amount);
-    }
-  }
-  return [...totals.entries()]
-    .filter((entry): entry is [string, number] => entry[0] !== null)
-    .map(([categoryId, total]) => ({ categoryId, limitMinor: roundUpTo100Taka(total / 3) }))
-    .filter((line) => line.limitMinor > 0)
-    .sort((a, b) => b.limitMinor - a.limitMinor);
 }
 
 /** Daily shutdown: what's left to close the day. */

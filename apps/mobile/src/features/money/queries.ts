@@ -35,6 +35,15 @@ export function useBudgets(month: string) {
   });
 }
 
+/** "Plan next month": the month's limits from the three months before it (nothing saved). */
+export function useBudgetSuggestion(month: string, options: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: ["budgets", "suggested", month],
+    queryFn: () => unwrap(api.budgets.suggested.$get({ query: { month } })),
+    enabled: options.enabled ?? true,
+  });
+}
+
 export function useGoals() {
   return useQuery({ queryKey: ["goals"], queryFn: () => unwrap(api.goals.$get()) });
 }

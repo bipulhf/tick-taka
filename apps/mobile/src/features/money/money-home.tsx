@@ -200,14 +200,6 @@ export function MoneyHome() {
             onPress={() => router.push("/money/events")}
           />
           <ListRow
-            icon="calendar-month"
-            iconColor="sky"
-            title="Calendar"
-            subtitle="Spending by day"
-            chevron
-            onPress={() => router.push("/money/calendar")}
-          />
-          <ListRow
             icon="wallet-outline"
             iconColor="mint"
             title="Accounts"

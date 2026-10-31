@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
   ArrowUpDown,
-  CalendarDays,
   HandCoins,
   Landmark,
   type LucideIcon,
@@ -75,12 +74,6 @@ export function MoneyMore() {
     <Group>
       <MoreRow to="/money/debts" icon={HandCoins} title="Debts" subtitle="Who owes whom" />
       <MoreRow to="/money/events" icon={Plane} title="Events" subtitle="Trips and occasions" />
-      <MoreRow
-        to="/money/calendar"
-        icon={CalendarDays}
-        title="Calendar"
-        subtitle="Spending by day"
-      />
       <MoreRow
         to="/money/accounts"
         icon={Landmark}

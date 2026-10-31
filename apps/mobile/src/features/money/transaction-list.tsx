@@ -1,4 +1,9 @@
-import { toLocalDate } from "@tick-taka/shared/dates";
+import {
+  endOfLocalDay,
+  localMonthRange,
+  startOfLocalDay,
+  toLocalDate,
+} from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, SectionList, View } from "react-native";
@@ -6,19 +11,39 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/button";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { PickerField } from "@/components/ui/picker-field";
+import { Segmented } from "@/components/ui/segmented";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { formatLocalDate } from "@/lib/format";
 import { useAccounts, useCategories, useSettings } from "@/lib/queries";
+import { useThisMonth } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
+import { SpendingMonth } from "./money-calendar";
 import { type Transaction, useTransactions } from "./queries";
 import { TransactionRow, useLookup } from "./transaction-row";
 
 type TypeFilter = "expense" | "income" | "transfer" | undefined;
+type Layout = "list" | "month";
 
-/** Every transaction, newest first, with search and filters; pages load as I scroll. */
-export function TransactionList({ accountId, eventId }: { accountId?: string; eventId?: string }) {
+const LAYOUTS: { value: Layout; label: string }[] = [
+  { value: "list", label: "List" },
+  { value: "month", label: "Month" },
+];
+
+/**
+ * Every transaction, newest first, with search and filters; pages load as I scroll.
+ * "Month" puts a grid of daily spending on top; tapping a day shows only that day.
+ */
+export function TransactionList({
+  accountId,
+  eventId,
+  view = "list",
+}: {
+  accountId?: string;
+  eventId?: string;
+  view?: Layout;
+}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: settings } = useSettings();
@@ -28,14 +53,26 @@ export function TransactionList({ accountId, eventId }: { accountId?: string; ev
   const [q, setQ] = useState("");
   const [type, setType] = useState<TypeFilter>(undefined);
   const [account, setAccount] = useState<string | undefined>(accountId);
+  const [layout, setLayout] = useState<Layout>(view);
+  const thisMonth = useThisMonth();
+  const [month, setMonth] = useState(thisMonth);
+  const [day, setDay] = useState<string | undefined>(undefined);
+  const timeZone = userTime(settings).timeZone;
+  // The month view lists the picked day, or the whole month on show.
+  const range =
+    layout === "month"
+      ? day
+        ? { from: startOfLocalDay(day, timeZone), to: endOfLocalDay(day, timeZone) }
+        : localMonthRange(month, timeZone)
+      : null;
   const query = useTransactions({
     ...(q ? { q } : {}),
     ...(type ? { type } : {}),
     ...(account ? { accountId: account } : {}),
     ...(eventId ? { eventId } : {}),
+    ...(range ? { from: String(range.from), to: String(range.to) } : {}),
   });
-  const filtered = Boolean(q || type || account || eventId);
-  const timeZone = userTime(settings).timeZone;
+  const filtered = Boolean(q || type || account || eventId || range);
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
   const sections: { title: string; data: Transaction[] }[] = [];
   for (const tx of items) {
@@ -70,6 +107,13 @@ export function TransactionList({ accountId, eventId }: { accountId?: string; ev
               onPress={() => router.push("/transaction/new")}
             />
           </View>
+          <Segmented
+            label="Show"
+            kind="tabs"
+            options={LAYOUTS}
+            value={layout}
+            onChange={setLayout}
+          />
           <TextField value={q} onChangeText={setQ} placeholder="Search notes" />
           <View className="flex-row gap-2">
             <PickerField
@@ -95,6 +139,17 @@ export function TransactionList({ accountId, eventId }: { accountId?: string; ev
               onChange={(id) => setAccount(id ?? undefined)}
             />
           </View>
+          {layout === "month" ? (
+            <SpendingMonth
+              month={month}
+              onMonth={(next) => {
+                setMonth(next);
+                setDay(undefined);
+              }}
+              selected={day}
+              onSelect={setDay}
+            />
+          ) : null}
         </View>
       }
       renderSectionHeader={({ section }) => (
@@ -114,6 +169,12 @@ export function TransactionList({ accountId, eventId }: { accountId?: string; ev
           ) : (
             <SkeletonList rows={6} trailing />
           )
+        ) : range && day && !(q || type || account || eventId) ? (
+          <EmptyState
+            title="Nothing logged this day"
+            message="A quiet day for your wallet. Tap another day to see where money moved."
+            mood="relaxed"
+          />
         ) : (
           <EmptyState
             title={filtered ? "No matches" : "No transactions yet"}

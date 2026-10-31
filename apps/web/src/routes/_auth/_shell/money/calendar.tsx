@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { MoneyCalendar } from "@/features/money/money-calendar";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+/** The spending calendar is Transactions' month view now; old links still land there. */
 export const Route = createFileRoute("/_auth/_shell/money/calendar")({
-  component: MoneyCalendar,
+  beforeLoad: () => {
+    throw redirect({ to: "/money/transactions", search: { view: "month" }, replace: true });
+  },
 });

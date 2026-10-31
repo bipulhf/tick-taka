@@ -1,54 +1,50 @@
 import {
   addDays,
   daysInMonth,
-  endOfLocalDay,
   firstDayOfMonth,
   localMonthRange,
-  startOfLocalDay,
   startOfWeek,
   weekdayOf,
 } from "@tick-taka/shared/dates";
-import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
 import { AsyncContent } from "@/components/ui/async-content";
+import { Button } from "@/components/ui/button";
 import { CALENDAR_GRID } from "@/components/ui/calendar-grid";
 import { Card } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
 import { MonthStepper } from "@/components/ui/month-stepper";
-import { Screen } from "@/components/ui/screen";
-import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatAmount, formatLocalDate, formatMonth } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
-import { useAccounts, useCategories, useSettings } from "@/lib/queries";
-import { useTodayDate } from "@/lib/use-today";
+import { useSettings } from "@/lib/queries";
 import { userTime } from "@/lib/user-time";
-import { useInsights, useTransactions } from "./queries";
-import { TransactionRow, useLookup } from "./transaction-row";
+import { useInsights } from "./queries";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 const WEEK_OFFSETS = [0, 1, 2, 3, 4, 5, 6];
 
-/** A month grid of daily spending; tap a spike to see what it was. */
-export function MoneyCalendar() {
+/**
+ * Transactions' month view: a grid of daily spending; tap a spike to see what it was
+ * (the list below shows that day). `selected` is the picked day, if any.
+ */
+export function SpendingMonth({
+  month,
+  onMonth,
+  selected,
+  onSelect,
+}: {
+  month: string;
+  onMonth: (month: string) => void;
+  selected: string | undefined;
+  onSelect: (date: string | undefined) => void;
+}) {
   const { data: settings } = useSettings();
-  const { data: accounts = [] } = useAccounts();
-  const { data: categories = [] } = useCategories();
   const hidden = usePrivacy();
   const timeZone = userTime(settings).timeZone;
   const weekStartsOn = userTime(settings).weekStartsOn;
-  const today = useTodayDate();
-  const [month, setMonth] = useState(today.slice(0, 7));
-  const [selected, setSelected] = useState(today);
   const range = localMonthRange(month, timeZone);
   const insights = useInsights(range.from, range.to);
-  const dayTx = useTransactions({
-    from: String(startOfLocalDay(selected, timeZone)),
-    to: String(endOfLocalDay(selected, timeZone)),
-    limit: "100",
-  });
-  const lookup = useLookup(accounts, categories);
   const byDay = new Map((insights.data?.byDay ?? []).map((d) => [d.date, d.spentMinor]));
   const max = Math.max(1, ...byDay.values());
   const leading = (weekdayOf(firstDayOfMonth(month)) - weekStartsOn + 7) % 7;
@@ -56,16 +52,13 @@ export function MoneyCalendar() {
     addDays(startOfWeek(firstDayOfMonth(month), weekStartsOn), i),
   );
   return (
-    <Screen
-      title={formatMonth(month)}
-      subtitle={
-        insights.data
-          ? `Spent ${hidden ? "•••" : formatAmount(insights.data.totals.spentMinor)}`
-          : undefined
-      }
-      tabBarPadding={false}
-      right={<MonthStepper month={month} onChange={setMonth} />}
-    >
+    <View className="gap-3">
+      <View className="flex-row items-center justify-between gap-3">
+        <Text variant="heading" className="flex-1">
+          {formatMonth(month)}
+        </Text>
+        <MonthStepper month={month} onChange={onMonth} />
+      </View>
       <AsyncContent
         query={insights}
         skeleton={<Skeleton className="h-[26rem] w-full rounded-3xl" />}
@@ -89,7 +82,7 @@ export function MoneyCalendar() {
               return (
                 <Pressable
                   key={date}
-                  onPress={() => setSelected(date)}
+                  onPress={() => onSelect(date)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={`${formatLocalDate(date)}, spent ${hidden ? "amount hidden" : formatAmount(spent)}`}
@@ -118,16 +111,16 @@ export function MoneyCalendar() {
           </Card>
         )}
       </AsyncContent>
-      {/* The selected day's spend, at a readable size, instead of a figure in every cell. */}
-      <View className="flex-row items-baseline justify-between gap-3">
+      {/* The picked day's (or the month's) spend, at a readable size, instead of a figure in every cell. */}
+      <View className="flex-row items-center justify-between gap-3">
         <Text variant="heading" className="flex-1">
-          {formatLocalDate(selected, "long")}
+          {selected ? formatLocalDate(selected, "long") : "All days"}
         </Text>
         {insights.data ? (
           <Text variant="callout" tone="muted">
             Spent{" "}
             <Amount
-              minor={byDay.get(selected) ?? 0}
+              minor={selected ? (byDay.get(selected) ?? 0) : insights.data.totals.spentMinor}
               variant="callout"
               className="font-nunito-bold"
               animate={false}
@@ -135,28 +128,14 @@ export function MoneyCalendar() {
           </Text>
         ) : null}
       </View>
-      <AsyncContent
-        query={dayTx}
-        skeleton={<SkeletonList rows={3} trailing />}
-        isEmpty={(data) => data.pages.every((p) => p.items.length === 0)}
-        empty={
-          <EmptyState
-            title="Nothing logged this day"
-            message="A quiet day for your wallet. Tap another day to see where money moved."
-            mood="relaxed"
-          />
-        }
-      >
-        {(data) => (
-          <Card className="py-1">
-            {data.pages
-              .flatMap((p) => p.items)
-              .map((tx) => (
-                <TransactionRow key={tx.id} tx={tx} lookup={lookup} placement="card" />
-              ))}
-          </Card>
-        )}
-      </AsyncContent>
-    </Screen>
+      {selected ? (
+        <Button
+          label="All days"
+          variant="secondary"
+          size="sm"
+          onPress={() => onSelect(undefined)}
+        />
+      ) : null}
+    </View>
   );
 }

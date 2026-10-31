@@ -74,7 +74,6 @@ export const NAV: NavSection[] = [
       { to: "/money/goals", label: "Goals", icon: PiggyBank },
       { to: "/money/debts", label: "Debts", icon: HandCoins },
       { to: "/money/events", label: "Events", icon: Plane },
-      { to: "/money/calendar", label: "Spending calendar", icon: CalendarDays },
       { to: "/money/accounts", label: "Accounts", icon: Landmark, key: "a" },
     ],
   },

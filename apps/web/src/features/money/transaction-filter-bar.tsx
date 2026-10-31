@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NONE, Select } from "@/components/ui/select";
 import { inputClass } from "@/components/ui/text-field";
-import { formatMonth } from "@/lib/format";
+import { formatLocalDate, formatMonth } from "@/lib/format";
 import { useAccounts, useCategories } from "@/lib/queries";
 import { useThisMonth } from "@/lib/use-today";
 import { useEvents } from "./queries";
@@ -15,13 +15,18 @@ import {
   type TypeFilter,
 } from "./transaction-filters";
 
-/** Search and the four filters (type, account, category, month), as one quiet column. */
+/**
+ * Search and the four filters (type, account, category, month), as one quiet column.
+ * In the month view the grid picks the month and the day, so those two stay out.
+ */
 export function TransactionFilterBar({
   filters,
   onChange,
+  monthView = false,
 }: {
   filters: TransactionFilters;
   onChange: (patch: Partial<TransactionFilters>) => void;
+  monthView?: boolean;
 }) {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
@@ -81,15 +86,17 @@ export function TransactionFilterBar({
           options={[{ value: NONE, label: "All" }, ...categoryOptions(categories)]}
           onChange={(id) => onChange({ categoryId: pick(id) })}
         />
-        <Select
-          label="Month"
-          value={filters.month ?? NONE}
-          options={[
-            { value: NONE, label: "Any time" },
-            ...recentMonths(thisMonth).map((m) => ({ value: m, label: formatMonth(m) })),
-          ]}
-          onChange={(month) => onChange({ month: pick(month) })}
-        />
+        {monthView ? null : (
+          <Select
+            label="Month"
+            value={filters.month ?? NONE}
+            options={[
+              { value: NONE, label: "Any time" },
+              ...recentMonths(thisMonth).map((m) => ({ value: m, label: formatMonth(m) })),
+            ]}
+            onChange={(month) => onChange({ month: pick(month) })}
+          />
+        )}
       </div>
       {event ? (
         <div className="flex items-center gap-2 rounded-xl bg-line/50 py-1.5 pr-1.5 pl-3 text-callout">
@@ -100,6 +107,21 @@ export function TransactionFilterBar({
             type="button"
             aria-label={`Stop showing only ${event.name}`}
             onClick={() => onChange({ eventId: undefined })}
+            className="flex size-7 items-center justify-center rounded-lg text-muted hover:bg-line hover:text-ink"
+          >
+            <X aria-hidden className="size-4" />
+          </button>
+        </div>
+      ) : null}
+      {filters.day && !monthView ? (
+        <div className="flex items-center gap-2 rounded-xl bg-line/50 py-1.5 pr-1.5 pl-3 text-callout">
+          <span className="flex-1 truncate font-semibold">
+            {formatLocalDate(filters.day, "long")}
+          </span>
+          <button
+            type="button"
+            aria-label="All days"
+            onClick={() => onChange({ day: undefined })}
             className="flex size-7 items-center justify-center rounded-lg text-muted hover:bg-line hover:text-ink"
           >
             <X aria-hidden className="size-4" />
@@ -120,6 +142,7 @@ export function TransactionFilterBar({
               categoryId: undefined,
               eventId: undefined,
               month: undefined,
+              day: undefined,
             });
           }}
         >

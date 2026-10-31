@@ -1,7 +1,18 @@
-import { addMonths, isLocalMonth, localMonthRange, toLocalDate } from "@tick-taka/shared/dates";
+import {
+  addMonths,
+  endOfLocalDay,
+  isLocalDate,
+  isLocalMonth,
+  localMonthRange,
+  startOfLocalDay,
+  toLocalDate,
+} from "@tick-taka/shared/dates";
 import { type PanelSearch, validatePanelSearch } from "@/lib/panel";
 
-/** The transactions view's filters, kept in the URL (`?accountId=…&month=2026-10`). Pure. */
+/**
+ * The transactions view's filters, kept in the URL (`?accountId=…&month=2026-10`), and
+ * whether it shows the list or the month grid (`?view=month&day=2026-10-12`). Pure.
+ */
 
 export type TypeFilter = "expense" | "income" | "transfer";
 const TYPES: TypeFilter[] = ["expense", "income", "transfer"];
@@ -14,16 +25,26 @@ export interface TransactionFilters {
   eventId?: string;
   /** "YYYY-MM" */
   month?: string;
+  /** "YYYY-MM-DD": one day, picked on the month grid. */
+  day?: string;
+}
+
+/** The month grid instead of the list; the list stays below it. */
+export type TransactionsLayout = "list" | "month";
+
+export interface TransactionSearch extends TransactionFilters, PanelSearch {
+  view?: "month";
 }
 
 const text = (value: unknown) => (typeof value === "string" && value.trim() ? value : undefined);
 
 /** The route's search: the filters plus the panel's own keys. */
-export function validateTransactionSearch(
-  search: Record<string, unknown>,
-): TransactionFilters & PanelSearch {
+export function validateTransactionSearch(search: Record<string, unknown>): TransactionSearch {
   const month = text(search.month);
+  const day = text(search.day);
   return {
+    view: search.view === "month" ? "month" : undefined,
+    day: day && isLocalDate(day) ? day : undefined,
     ...validatePanelSearch(search),
     q: text(search.q),
     type: TYPES.find((t) => t === search.type),
@@ -41,12 +62,20 @@ export const isFiltered = (filters: TransactionFilters) =>
       filters.accountId ||
       filters.categoryId ||
       filters.eventId ||
-      filters.month,
+      filters.month ||
+      filters.day,
   );
 
-/** The API query for the filters; a month becomes its instant range in the user's zone. */
+/**
+ * The API query for the filters; a day or a month becomes its instant range in the
+ * user's zone (a day wins over the month around it).
+ */
 export function filtersToQuery(filters: TransactionFilters, timeZone: string) {
-  const range = filters.month ? localMonthRange(filters.month, timeZone) : null;
+  const range = filters.day
+    ? { from: startOfLocalDay(filters.day, timeZone), to: endOfLocalDay(filters.day, timeZone) }
+    : filters.month
+      ? localMonthRange(filters.month, timeZone)
+      : null;
   return {
     ...(filters.q?.trim() ? { q: filters.q.trim() } : {}),
     ...(filters.type ? { type: filters.type } : {}),

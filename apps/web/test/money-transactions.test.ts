@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { localMonthRange } from "@tick-taka/shared/dates";
+import { endOfLocalDay, localMonthRange, startOfLocalDay } from "@tick-taka/shared/dates";
 import {
   amountText,
   isSum,
@@ -195,6 +195,23 @@ describe("transaction filters", () => {
     });
     expect(isFiltered({})).toBe(false);
     expect(isFiltered({ eventId: "e" })).toBe(true);
+  });
+  test("the month view and a picked day come from the URL", () => {
+    expect(validateTransactionSearch({ view: "month", day: "2026-10-12" })).toMatchObject({
+      view: "month",
+      day: "2026-10-12",
+    });
+    expect(validateTransactionSearch({ view: "grid", day: "12 Oct" })).toMatchObject({
+      view: undefined,
+      day: undefined,
+    });
+  });
+  test("a day becomes its own range and wins over its month", () => {
+    expect(filtersToQuery({ month: "2026-10", day: "2026-10-12" }, TZ)).toEqual({
+      from: String(startOfLocalDay("2026-10-12", TZ)),
+      to: String(endOfLocalDay("2026-10-12", TZ)),
+    });
+    expect(isFiltered({ day: "2026-10-12" })).toBe(true);
   });
   test("groups by local day, newest first", () => {
     const at = (iso: string) => Date.parse(iso);

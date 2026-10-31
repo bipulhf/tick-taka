@@ -5,6 +5,7 @@ import { defined } from "@tick-taka/shared/defined";
 import { newId } from "@tick-taka/shared/ids";
 import type { Env } from "../env";
 import { errorFields, log, userTag } from "../lib/log";
+import { createAdminStore } from "./admin-store";
 import { type DbHandle, openDatabase } from "./client";
 import { createHandleCache } from "./handle-cache";
 import { createJobRunStore } from "./job-runs";
@@ -103,6 +104,7 @@ export function createUserRegistry(
   const sessions = createSessionStore(registry, now);
   const jobRuns = createJobRunStore(registry);
   const usageTotals = createUsageTotalStore(registry);
+  const admin = createAdminStore(registry, now);
 
   /** The owner inherits the single-user data once, on their first sign-in. */
   const claimsLegacy = (email: string) =>
@@ -127,6 +129,18 @@ export function createUserRegistry(
     jobRuns,
     /** Each user's AI use per month, for the owner's report. */
     usageTotals,
+    /** The owner's per-account controls, sign-up mode and invited emails. */
+    admin,
+
+    /** Where this user's database, receipt photos and backups live. */
+    paths(user: User): { db: string; uploads: string; backups: string } {
+      return dataPaths(user);
+    },
+
+    /** Whether this Google account has signed in before. */
+    knows(googleSub: string): boolean {
+      return bySub.get(googleSub) !== null;
+    },
 
     find(id: string): User | undefined {
       const row = byId.get(id);
@@ -227,6 +241,7 @@ export function createUserRegistry(
       sessions.removeForUser(user.id);
       jobRuns.removeForUser(user.id);
       usageTotals.removeForUser(user.id);
+      admin.removeForUser(user.id);
       open.close(user.id);
       deleteUserFiles(dataPaths(user), user.legacy);
       removeUser.run(user.id);

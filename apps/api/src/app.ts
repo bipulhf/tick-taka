@@ -1,10 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Deps } from "./lib/deps";
+import { startedAt } from "./lib/metrics";
 import { requireAuth } from "./middleware/auth";
 import { onError, onNotFound } from "./middleware/error-handler";
 import { requestLog } from "./middleware/request-log";
 import { accountsRoutes } from "./modules/accounts/routes";
+import { adminRoutes } from "./modules/admin/routes";
 import type { Dispatch } from "./modules/ai/assistant/dispatch";
 import { aiRoutes } from "./modules/ai/routes";
 import { areasRoutes } from "./modules/areas/routes";
@@ -32,14 +34,12 @@ import { todayRoutes } from "./modules/today/routes";
 import { transactionsRoutes } from "./modules/transactions/routes";
 import { uploadsRoutes } from "./modules/uploads/routes";
 
-const startedAt = Date.now();
-
 export function createApp(deps: Deps) {
   // The chat assistant calls the app's own routes, so its writes get the same validation.
   const dispatch: Dispatch = async (path, init) => app.request(path, init);
   const api = new Hono()
     .use(requireAuth(deps))
-    .route("/me", meRoutes())
+    .route("/me", meRoutes(deps))
     .route("/settings", settingsRoutes(deps))
     .route("/areas", areasRoutes(deps))
     .route("/projects", projectsRoutes(deps))
@@ -65,7 +65,8 @@ export function createApp(deps: Deps) {
     .route("/gamification", gamificationRoutes(deps))
     .route("/sync", syncRoutes(deps))
     .route("/export", exportRoutes(deps))
-    .route("/ai", aiRoutes(deps, dispatch));
+    .route("/ai", aiRoutes(deps, dispatch))
+    .route("/admin", adminRoutes(deps));
 
   // The web app on its own host (WEB_ORIGINS) calls the API with a bearer token; no
   // cookies, so no credentials. With no origins listed, browsers get no CORS headers.

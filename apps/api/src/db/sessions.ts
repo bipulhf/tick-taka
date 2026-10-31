@@ -78,6 +78,17 @@ export function createSessionStore(registry: Database, now: () => number) {
     "UPDATE sessions SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL",
   );
   const removeForUser = registry.query("DELETE FROM sessions WHERE user_id = ?");
+  const revokeForUser = registry.query(
+    "UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL",
+  );
+  const activity = registry.query<
+    { user_id: string; last_used_at: number; live: number },
+    [number]
+  >(
+    `SELECT user_id, max(last_used_at) AS last_used_at,
+       sum(CASE WHEN revoked_at IS NULL AND expires_at > ?1 THEN 1 ELSE 0 END) AS live
+     FROM sessions GROUP BY user_id`,
+  );
   const prune = registry.query(
     "DELETE FROM sessions WHERE expires_at < ? OR (revoked_at IS NOT NULL AND revoked_at < ?)",
   );
@@ -128,6 +139,23 @@ export function createSessionStore(registry: Database, now: () => number) {
 
     removeForUser(userId: string): void {
       removeForUser.run(userId);
+    },
+
+    /** Ends every session of this user at once: signed out on every device. */
+    revokeForUser(userId: string): void {
+      revokeForUser.run(now(), userId);
+    },
+
+    /**
+     * Per user: when any of their sessions was last used (sessions only note it every
+     * few minutes) and how many are live, for the owner's dashboard.
+     */
+    activityByUser(): Map<string, { lastUsedAt: number; liveSessions: number }> {
+      return new Map(
+        activity
+          .all(now())
+          .map((row) => [row.user_id, { lastUsedAt: row.last_used_at, liveSessions: row.live }]),
+      );
     },
   };
 }

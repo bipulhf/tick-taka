@@ -9,6 +9,7 @@ import type { UsageTotals } from "../db/usage-totals";
 import type { Deps } from "../lib/deps";
 import { AppError } from "../lib/errors";
 import { errorFields, log } from "../lib/log";
+import { isOwner } from "../lib/owner";
 import { currentScope } from "../lib/user-scope";
 import { userTime } from "../lib/user-time";
 import type { AiClient, AiUsage } from "./client";
@@ -83,12 +84,15 @@ export function usageTotalsByMonth(db: Db, timeZone: string): Map<string, UsageT
 
 /**
  * Most the signed-in user's AI may cost this month, or null for no limit. The owner
- * (OWNER_EMAIL) pays the bill and is never limited; everyone else gets the server's
- * AI_USER_MONTHLY_CAP_MICROS (0 turns the limit off).
+ * (OWNER_EMAIL) pays the bill and is never limited; everyone else gets the cap the
+ * owner set for them, or else the server's AI_USER_MONTHLY_CAP_MICROS (0 turns it off).
  */
 export function monthlyCapMicros(deps: Deps): number | null {
-  const email = currentScope()?.user.email;
-  if (email && email === deps.env.OWNER_EMAIL) return null;
+  const user = currentScope()?.user;
+  if (user && isOwner(deps.env, user)) return null;
+  // A cap the owner set for this account wins over the server's.
+  const own = user ? deps.users.admin.controls(user.id).aiCapMicros : null;
+  if (own !== null) return own;
   return deps.env.AI_USER_MONTHLY_CAP_MICROS || null;
 }
 
@@ -99,6 +103,9 @@ export function monthlyCapMicros(deps: Deps): number | null {
  * nothing lost.
  */
 export function requireAi(deps: Deps, feature: AiFeature): AiClient {
+  const user = currentScope()?.user;
+  if (user && !isOwner(deps.env, user) && deps.users.admin.controls(user.id).aiDisabled)
+    throw new AppError(403, "ai_disabled", "AI is switched off for this account");
   const { settings } = userTime(deps);
   if (!isAiFeatureEnabled(settings, feature))
     throw new AppError(403, "ai_disabled", "AI is switched off for this");

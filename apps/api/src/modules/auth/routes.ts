@@ -4,6 +4,7 @@ import type { User } from "../../db/user-registry";
 import { clientIp } from "../../lib/client-ip";
 import type { Deps } from "../../lib/deps";
 import { AppError, unauthorized } from "../../lib/errors";
+import { isOwner } from "../../lib/owner";
 import { currentScope } from "../../lib/user-scope";
 import { validate } from "../../lib/validate";
 import { requireAuth } from "../../middleware/auth";
@@ -12,11 +13,13 @@ import { issueSession } from "./session-token";
 
 const googleSchema = z.object({ idToken: z.string().min(20).max(4096) });
 
-export const profileOf = (user: User) => ({
+export const profileOf = (user: User, env: Deps["env"]) => ({
   id: user.id,
   email: user.email,
   name: user.name,
   pictureUrl: user.pictureUrl,
+  /** The owner sees the admin dashboard (account facts only, never records). */
+  isAdmin: isOwner(env, user),
 });
 
 function signedIn() {
@@ -54,19 +57,34 @@ export const authRoutes = (deps: Deps) => {
           );
         }
         const profile = await deps.verifyGoogle(c.req.valid("json").idToken);
+        const email = profile.email.toLowerCase();
+        const owner = isOwner(deps.env, { email });
+        if (
+          !owner &&
+          !deps.users.knows(profile.sub) &&
+          deps.users.admin.signupMode() === "invite" &&
+          !deps.users.admin.isAllowed(email)
+        )
+          throw new AppError(
+            403,
+            "invite_only",
+            "Sign-ups are invite-only right now. Ask for an invite to join.",
+          );
         const { user, created } = deps.users.signIn(profile);
+        if (!owner && deps.users.admin.controls(user.id).blocked)
+          throw new AppError(403, "account_blocked", "This account can't sign in right now.");
         limiter.reset(ip);
         // Open (and seed) the new user's database now, so their first screen is ready.
         deps.users.data(user);
         const { token, expiresAt } = await issue(user);
-        return c.json({ token, expiresAt, user: profileOf(user), created });
+        return c.json({ token, expiresAt, user: profileOf(user, deps.env), created });
       })
       .post("/refresh", requireAuth(deps), async (c) => {
         const { user, sessionId } = signedIn();
         // Not revoked here: requests the phone already sent with the old token would
         // come back 401. It retires a minute after the new token is first used.
         const { token, expiresAt } = await issue(user, sessionId ?? null);
-        return c.json({ token, expiresAt, user: profileOf(user) });
+        return c.json({ token, expiresAt, user: profileOf(user, deps.env) });
       })
       .post("/logout", requireAuth(deps), (c) => {
         const { sessionId } = signedIn();
@@ -82,9 +100,9 @@ export const authRoutes = (deps: Deps) => {
 };
 
 /** GET /me: who is signed in. */
-export const meRoutes = () =>
+export const meRoutes = (deps: Deps) =>
   new Hono().get("/", (c) => {
     const scope = currentScope();
     if (!scope) throw new AppError(401, "unauthorized", "Sign in again");
-    return c.json(profileOf(scope.user));
+    return c.json(profileOf(scope.user, deps.env));
   });

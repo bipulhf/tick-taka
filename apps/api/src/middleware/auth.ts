@@ -2,8 +2,9 @@ import { createMiddleware } from "hono/factory";
 import { verify } from "hono/jwt";
 import { JwtTokenExpired } from "hono/utils/jwt/types";
 import type { Deps } from "../lib/deps";
-import { sessionExpired, unauthorized } from "../lib/errors";
+import { AppError, sessionExpired, unauthorized } from "../lib/errors";
 import { setRequestUser } from "../lib/log";
+import { isOwner } from "../lib/owner";
 import { runAsUser } from "../lib/user-scope";
 
 /**
@@ -36,6 +37,9 @@ export const requireAuth = (deps: Deps) =>
     // Tokens from the single-user days carry no user, so they sign out once.
     const user = typeof payload.sub === "string" ? deps.users.find(payload.sub) : undefined;
     if (!user) throw unauthorized("Sign in with Google to continue");
+    // Blocking revokes every session; this also stops a token that was mid-flight.
+    if (deps.users.admin.controls(user.id).blocked && !isOwner(deps.env, user))
+      throw new AppError(401, "account_blocked", "This account can't be used right now.");
     // Tokens issued before sessions existed have no jti; see LEGACY_TOKENS_UNTIL.
     let sessionId: string | undefined;
     if (payload.jti === undefined) {

@@ -117,15 +117,17 @@ also get Focus and Tiki.
 **Money**
 
 - Accounts (cash, bank, mobile wallet, card, savings) with transfers and fees.
-- Budgets split into flexible, fixed and non-monthly, with rollover.
-- Bills and income on a schedule, savings goals, debts (who owes whom), trips and events,
-  and a spending calendar.
+- Budgets split into flexible, fixed and non-monthly, with rollover. "Plan next month"
+  starts from the last three months (Tiki can refine it), and "Split my pay" gives every
+  taka of a salary a job; marking a salary received offers the split.
+- Transactions as a list or a month grid of daily spending; pick a day to see it.
+- Bills and income on a schedule, with repeating charges suggested as subscriptions to
+  track, savings goals, debts (who owes whom), trips and events.
 - Foreign-currency income converted at the rate you received it.
 
 **Review**
 
-- Daily shutdown, weekly and monthly reviews, reports, a dashboard per area of life, a
-  payday plan and a subscription spotter.
+- Daily shutdown, weekly and monthly reviews, reports and a dashboard per area of life.
 - Streaks for your daily task goal and for logging spending the same day, with freeze
   days so one missed day doesn't reset them.
 - Soft sounds and vibration when you finish something: a chime for a task or habit, a

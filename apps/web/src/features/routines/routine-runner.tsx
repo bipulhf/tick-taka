@@ -86,7 +86,7 @@ export function RoutineRunner({
       {editing ? (
         <RoutineEditor routine={routine} onDone={() => onEditingChange(false)} />
       ) : (
-        <div className="flex max-w-2xl flex-col gap-5">
+        <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <ProgressBar value={total ? doneCount / total : 0} tone="sky" label="Steps done" />
             {total ? (

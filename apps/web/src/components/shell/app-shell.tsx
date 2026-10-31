@@ -39,7 +39,7 @@ export function AppShell({
         <OfflineBanner />
         <TopBar quickAdd={quickAdd} timer={timer} assistant={assistantButton} />
         <main id="main" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto outline-none">
-          <div className="mx-auto w-full max-w-[1180px] px-4 pt-6 pb-28 sm:px-8 sm:pb-16">
+          <div className="w-full px-4 pt-6 pb-28 sm:px-8 sm:pb-16 xl:px-10">
             <Outlet />
           </div>
         </main>

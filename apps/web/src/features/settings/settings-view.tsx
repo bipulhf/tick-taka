@@ -200,7 +200,7 @@ export function SettingsView({ section }: { section?: SettingsSectionId }) {
         </nav>
         <section
           aria-labelledby="settings-section-title"
-          className="flex max-w-[720px] flex-col gap-4"
+          className="flex min-w-0 flex-col gap-4"
         >
           {desk ? null : (
             <Link

@@ -40,7 +40,7 @@ export function RoutineEditor({ routine, onDone }: { routine: Routine; onDone: (
 
   return (
     <form
-      className="flex max-w-2xl flex-col gap-5"
+      className="flex flex-col gap-5"
       onSubmit={(event) => {
         event.preventDefault();
         void save();

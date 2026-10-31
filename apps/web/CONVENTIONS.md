@@ -39,8 +39,8 @@ messages, error labels). Change the layout for a wide screen, not the content.
 
 ## Layout
 
-- Wide screens are the main target (1280 to 1440 px). The content column is at most
-  1180 px. Use two columns where the phone stacks two independent blocks
+- Wide screens are the main target (1280 to 1920 px). Every signed-in view takes the
+  full width beside the sidebar; never cap a page's width. Use two columns where the phone stacks two independent blocks
   (`grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]` or a 3:2 split), one column
   for a single list. Everything must still work at 390 px.
 - Grouped lists (`Group` + `Row`) instead of separate cards. A card only for a hero.

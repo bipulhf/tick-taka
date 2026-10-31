@@ -75,7 +75,7 @@ export function SomedayList() {
           </Button>
         }
       />
-      <div className="max-w-3xl">
+      <div>
         {tasks.isError && !tasks.data ? (
           <ErrorState onRetry={() => void tasks.refetch()} />
         ) : !tasks.data ? (

@@ -13,7 +13,7 @@ export function AccountsView() {
   const open = useOpenPanel();
   const add = () => open("account:new");
   return (
-    <div className="flex max-w-3xl flex-col gap-7">
+    <div className="flex flex-col gap-7">
       <PageHeader
         title="Accounts"
         back={{ to: "/money", label: "Money" }}

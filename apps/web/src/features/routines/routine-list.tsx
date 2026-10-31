@@ -48,7 +48,7 @@ export function RoutineList() {
         subtitle="Fewer decisions at the edges of the day"
         back={{ to: "/plan", label: "Plan" }}
       />
-      <div className="flex max-w-2xl flex-col gap-5">
+      <div className="flex flex-col gap-5">
         {routines.isError && !routines.data ? (
           <ErrorState onRetry={() => void routines.refetch()} />
         ) : !routines.data ? (

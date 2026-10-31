@@ -85,7 +85,7 @@ export function EventsView() {
   const events = useEvents();
   const create = () => open("event:new");
   return (
-    <div className="flex max-w-3xl flex-col gap-7">
+    <div className="flex flex-col gap-7">
       <PageHeader
         title="Events"
         back={{ to: "/money", label: "Money" }}

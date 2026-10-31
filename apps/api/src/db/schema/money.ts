@@ -16,8 +16,6 @@ const BUDGET_TYPES = ["fixed", "non_monthly", "flexible"] as const;
 const DEBT_DIRECTIONS = ["owed_to_me", "i_owe"] as const;
 const RECURRING_KINDS = ["bill", "income"] as const;
 const TRANSACTION_TYPES = ["expense", "income", "transfer", "adjustment"] as const;
-const SMS_DIRECTIONS = ["in", "out", "cash_out"] as const;
-const SMS_STATUSES = ["pending", "added", "ignored"] as const;
 
 export const accounts = sqliteTable(
   "accounts",
@@ -208,29 +206,4 @@ export const categoryRules = sqliteTable(
     areaId: text("area_id").references(() => areas.id),
   },
   (t) => [uniqueIndex("category_rules_match_uq").on(t.matchText)],
-);
-
-/**
- * From the SMS capture that was dropped (docs/IMPLEMENTATION_PLAN.md, Scope changes).
- * Nothing writes to it any more, but databases from before the drop hold real rows,
- * so the table stays and its rows keep appearing in the JSON export.
- */
-export const smsImports = sqliteTable(
-  "sms_imports",
-  {
-    ...baseColumns(),
-    fingerprint: text("fingerprint").notNull(),
-    sender: text("sender").notNull(),
-    receivedAt: integer("received_at").notNull(),
-    amountMinor: integer("amount_minor").notNull(),
-    direction: text("direction", { enum: SMS_DIRECTIONS }).notNull(),
-    status: text("status", { enum: SMS_STATUSES }).notNull().default("pending"),
-    transactionId: text("transaction_id").references(() => transactions.id),
-  },
-  (t) => [
-    index("sms_imports_updated_at_idx").on(t.updatedAt),
-    uniqueIndex("sms_imports_fingerprint_uq").on(t.fingerprint),
-    check("sms_imports_direction_check", oneOf("direction", SMS_DIRECTIONS)),
-    check("sms_imports_status_check", oneOf("status", SMS_STATUSES)),
-  ],
 );

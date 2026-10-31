@@ -32,7 +32,6 @@ const TABLE_PATHS: Record<string, string> = {
   debts: "/debts",
   events: "/events",
   category_rules: "/category-rules",
-  sms_imports: "/transactions",
 };
 
 /**

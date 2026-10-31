@@ -8,7 +8,6 @@ import {
   events,
   goals,
   recurring,
-  smsImports,
   transactions,
 } from "./schema/money";
 import { aiUsage, settings } from "./schema/system";
@@ -43,7 +42,6 @@ export const SYNC_TABLES = {
   debts,
   events,
   category_rules: categoryRules,
-  sms_imports: smsImports,
 } as const;
 
 /** Every table, for the full JSON export. */

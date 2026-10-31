@@ -187,3 +187,67 @@ describe("0004_constraints on a populated database", () => {
     sqlite.close();
   });
 });
+
+describe("0008_drop_removed_features on a populated database", () => {
+  test("drops the shopping and SMS tables and the task columns, keeping every task", () => {
+    const path = join(work, "removed-features.db");
+    const before = new Database(path, { create: true });
+    migrate(drizzle({ client: before }), {
+      migrationsFolder: migrationsUpTo("0007_assistant_threads"),
+    });
+    const now = Date.UTC(2026, 9, 31, 4);
+    seedDefaults(drizzle({ client: before }), now);
+    const stamp = `${now}, ${now}, NULL`;
+    const [cash, tx, parent, child, entry] = Array.from({ length: 5 }, () => newId());
+    before.exec(`
+      INSERT INTO accounts (id, created_at, updated_at, deleted_at, name, type, currency, opening_minor, sort)
+        VALUES ('${cash}', ${stamp}, 'Cash', 'cash', 'BDT', 500000, 0);
+      INSERT INTO transactions (id, created_at, updated_at, deleted_at, type, account_id, amount_minor, fee_minor, occurred_at)
+        VALUES ('${tx}', ${stamp}, 'expense', '${cash}', 45000, 0, ${now});
+      INSERT INTO tasks (id, created_at, updated_at, deleted_at, title, status, priority, has_time, when_slot, energy, urgent, sort, top3_date)
+        VALUES ('${parent}', ${stamp}, 'Move flat', 'open', 'high', 0, 'day', 'high', 1, 0, '2026-10-31');
+      INSERT INTO tasks (id, created_at, updated_at, deleted_at, parent_id, title, status, priority, has_time, when_slot, urgent, sort)
+        VALUES ('${child}', ${stamp}, '${parent}', 'Pack', 'done', 'normal', 0, 'day', 0, 0);
+      INSERT INTO time_entries (id, created_at, updated_at, deleted_at, task_id, started_at, ended_at, source, billable)
+        VALUES ('${entry}', ${stamp}, '${parent}', ${now - 3_600_000}, ${now}, 'focus', 0);
+      INSERT INTO shopping_items (id, created_at, updated_at, deleted_at, list_name, title, est_minor, checked_at, transaction_id, sort)
+        VALUES ('${newId()}', ${stamp}, 'Bazar', 'Rice', 45000, ${now}, '${tx}', 0);
+      INSERT INTO sms_imports (id, created_at, updated_at, deleted_at, fingerprint, sender, received_at, amount_minor, direction, status)
+        VALUES ('${newId()}', ${stamp}, 'f1', 'bKash', ${now}, 1000, 'in', 'pending');
+    `);
+    before.close();
+
+    const { sqlite } = openDatabase(path);
+    const tableNames = sqlite
+      .query("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .all()
+      .map((row) => (row as { name: string }).name);
+    expect(tableNames).not.toContain("shopping_items");
+    expect(tableNames).not.toContain("sms_imports");
+    const columns = sqlite
+      .query("PRAGMA table_info(tasks)")
+      .all()
+      .map((row) => (row as { name: string }).name);
+    expect(columns).not.toContain("urgent");
+    expect(columns).not.toContain("energy");
+    expect(count(sqlite, "tasks")).toBe(2);
+    expect(count(sqlite, "transactions")).toBe(1);
+    expect(
+      sqlite.query(`SELECT title, priority, top3_date FROM tasks WHERE id = '${parent}'`).get(),
+    ).toEqual({ title: "Move flat", priority: "high", top3_date: "2026-10-31" });
+    expect(sqlite.query(`SELECT parent_id FROM tasks WHERE id = '${child}'`).get()).toEqual({
+      parent_id: parent,
+    });
+    expect(sqlite.query(`SELECT task_id FROM time_entries WHERE id = '${entry}'`).get()).toEqual({
+      task_id: parent,
+    });
+    expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);
+    expect(sqlite.query("PRAGMA integrity_check").get()).toEqual({ integrity_check: "ok" });
+    const indexes = sqlite
+      .query("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'tasks'")
+      .all();
+    expect(indexes.length).toBeGreaterThanOrEqual(5);
+    expect(() => sqlite.exec(`UPDATE tasks SET status = 'later' WHERE id = '${parent}'`)).toThrow();
+    sqlite.close();
+  });
+});

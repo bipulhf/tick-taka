@@ -136,3 +136,44 @@ apps; each section says what the server does and what the apps show.
   createdAt }[] }` (at most 50, newest first; the owner's time zone decides the month).
 - Apps: thumbs under each stored reply; down offers an optional one-line comment.
   Web admin › AI cost shows the feedback summary.
+
+## 11. Questions as small forms (added 1 Nov 2026)
+
+When Tiki needs something only the user can give (a new account's name, type and
+opening balance; a bill's amount and due day; "which account?"; "go ahead with these
+7 changes?"), it asks with a small form in the chat instead of a paragraph, and never
+invents the missing values.
+
+- New assistant tool `ask { question, fields, submitLabel? }`. `question` ≤ 160
+  characters. `fields` (1 to 6), each `{ key, label (≤ 40), type, required?, default?,
+  placeholder?, options? }` with `type` one of:
+  - `choice`: `options: { value, label }[]` (2 to 8), one pick. A form that is a single
+    `choice` field is a **quick reply**: tapping an option sends it at once.
+  - `text` (≤ 80 characters), `amount` (minor units, the user's currency; typed with the
+    app's amount input and the user's digits), `date` (YYYY-MM-DD), `time` (HH:MM).
+  - `account`, `category` (`options` may narrow it: `"expense"` or `"income"` as the
+    only option value), `area`: a picker over the user's own records.
+  `default` prefills what the user already said or a sensible default (e.g. account
+  type `cash`, opening balance 0 when they said nothing). Shared Zod schema:
+  `assistantQuestionSchema` in `@tick-taka/shared/schemas/ai`.
+- `ask` ends the turn: the server stops calling the model after it. The reply text is
+  the question; `done` gains `question?: AssistantQuestion`. At most one per turn.
+- Stored with the reply (migration: `assistant_messages.question` json, nullable), and
+  returned in `GET /ai/threads/:id` messages, so a reopened chat shows it. A question
+  counts as answered when a later message exists in the thread.
+- Answering: the app sends the next user message as plain text, one line per field,
+  `Label: value`, with record picks as `Label: Name [id <ULID>]` and amounts as the
+  number in major units plus currency (`Opening balance: 5000 BDT`). A skipped optional
+  field is left out. Quick replies send the option's label. The model reads it like any
+  message (history keeps the question as the assistant's text).
+- Apps: a form card under Tiki's message using the apps' own inputs (choice chips,
+  amount input with the keypad on the phone, date/time pickers, record pickers).
+  Required fields gate Send; Enter submits on the web; the composer stays usable (the
+  user may type instead, which leaves the form unanswered). After sending, the card
+  collapses to the answers. Disabled while a turn is running.
+- Prompt rule: before creating a record, if a field the user must decide is missing
+  (account: name, type, opening balance; bill or income: name, amount, due date or
+  repeat; goal: name, target; debt: person, direction, amount; habit: name, how often),
+  call `ask` once with only the missing fields, prefilled with everything already
+  known; never ask for what can be defaulted. Use a quick reply for yes/no and
+  either/or questions, including the "more than 5 changes" check (§9).

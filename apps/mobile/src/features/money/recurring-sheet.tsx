@@ -17,6 +17,7 @@ import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { type PayBody, payRecurring } from "@/features/money/recurring-pay";
+import { notifyLogged, useSplitOffer } from "@/features/money/split-offer";
 import { useRecurring } from "@/features/plan/queries";
 import { formatAmount, formatLocalDate, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -50,6 +51,7 @@ export function RecurringSheet({ id }: { id: string | null }) {
 function RecurringForm({ id }: { id: string | null }) {
   const router = useRouter();
   const send = useOutbox();
+  const splitOffer = useSplitOffer();
   const remove = useRemove();
   const { data: list } = useRecurring();
   const { data: accounts = [] } = useAccounts();
@@ -124,13 +126,15 @@ function RecurringForm({ id }: { id: string | null }) {
       body.rate = value;
     }
     const undo = payRecurring(send, item, body);
-    notify(skip ? "Skipped this one" : `${item.name} logged`, {
-      label: "Undo",
-      onPress: () => {
-        undo();
-        notify(`Took back ${item.name}`);
-      },
-    });
+    if (skip)
+      notify("Skipped this one", {
+        label: "Undo",
+        onPress: () => {
+          undo();
+          notify(`Took back ${item.name}`);
+        },
+      });
+    else notifyLogged(item.name, undo, splitOffer({ ...item, income: item.kind === "income" }));
     router.back();
   };
 

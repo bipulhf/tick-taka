@@ -113,3 +113,20 @@ describe("budgets search", () => {
     });
   });
 });
+
+describe("budgets search: split my pay", () => {
+  test("opens the split, with a whole positive amount only", () => {
+    expect(validateBudgetsSearch({ split: true, amount: 4_500_000 })).toMatchObject({
+      split: true,
+      amount: 4_500_000,
+    });
+    expect(validateBudgetsSearch({ split: "true" }).split).toBe(true);
+    expect(validateBudgetsSearch({ split: true, amount: -5 }).amount).toBeUndefined();
+    expect(validateBudgetsSearch({ split: true, amount: 1.5 }).amount).toBeUndefined();
+    // An amount without the split means nothing.
+    expect(validateBudgetsSearch({ amount: 4_500_000 })).toMatchObject({
+      split: undefined,
+      amount: undefined,
+    });
+  });
+});

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { localParts, startOfLocalDay } from "@tick-taka/shared/dates";
+import { budgetLines, jarMoves, leftToAssign, prefill } from "../src/features/money/payday-math";
 import { cents, costByDay, dollars, thousands } from "../src/features/review/ai-usage-format";
 import { compactNumber, fraction, niceDomain, niceStep } from "../src/features/review/charts/scale";
 import { stepIndex } from "../src/features/review/charts/use-width";
@@ -11,7 +12,6 @@ import {
   rollUpByParent,
   spendingByDay,
 } from "../src/features/review/insights-data";
-import { budgetLines, jarMoves, leftToAssign, prefill } from "../src/features/review/payday-math";
 import { withTopPicked, withTopUnpicked } from "../src/features/review/shutdown-cache";
 import {
   carriedTo,

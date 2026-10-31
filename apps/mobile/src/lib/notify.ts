@@ -5,6 +5,9 @@ export interface Snack {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** A second action before the first: "Split" beside "Undo" after a salary lands. */
+  secondLabel?: string;
+  onSecond?: () => void;
 }
 
 /** The single snackbar slot. Deleting shows Undo here instead of an "Are you sure?" dialog. */
@@ -14,6 +17,15 @@ let nextId = 1;
 /** Extra room (dp) the snackbar keeps above the tab bar, for bars that float there. */
 export const snackLiftStore = createStore(0);
 
-export function notify(message: string, action?: { label: string; onPress: () => void }): void {
-  snackStore.set({ id: nextId++, message, actionLabel: action?.label, onAction: action?.onPress });
+type SnackAction = { label: string; onPress: () => void };
+
+export function notify(message: string, action?: SnackAction, second?: SnackAction): void {
+  snackStore.set({
+    id: nextId++,
+    message,
+    actionLabel: action?.label,
+    onAction: action?.onPress,
+    secondLabel: second?.label,
+    onSecond: second?.onPress,
+  });
 }

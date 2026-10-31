@@ -9,9 +9,9 @@ import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { billStatusText } from "@/features/money/bill-status";
 import { payRecurring } from "@/features/money/recurring-pay";
+import { notifyLogged, useSplitOffer } from "@/features/money/split-offer";
 import { TaskRow } from "@/features/tasks/task-row";
 import { formatClock, formatMinutes } from "@/lib/format";
-import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { type TodayData, useAccounts, useSettings } from "@/lib/queries";
 import { useUserTime } from "@/lib/use-today";
@@ -25,6 +25,7 @@ function MoneyRow({ item }: { item: Extract<Item, { kind: "bill" | "payday" }> }
   const send = useOutbox();
   const { data: accounts } = useAccounts();
   const { data: settings } = useSettings();
+  const splitOffer = useSplitOffer();
   const isBill = item.kind === "bill";
   return (
     <ListRow
@@ -52,14 +53,7 @@ function MoneyRow({ item }: { item: Extract<Item, { kind: "bill" | "payday" }> }
               // moved past it and changes nothing, and Undo moves the bill back to it.
               dueAt: item.dueAt,
             });
-            notify(`${item.name} logged`, {
-              label: "Undo",
-              onPress: () => {
-                // Saved like any change: it holds even if the app closes before syncing.
-                undo();
-                notify(`Took back ${item.name}`);
-              },
-            });
+            notifyLogged(item.name, undo, splitOffer({ ...item, income: !isBill }));
           }}
         />
       }

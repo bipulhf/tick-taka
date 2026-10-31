@@ -12,22 +12,32 @@ import { Section } from "@/components/ui/section";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
-import { useBudgets, useGoals } from "@/features/money/queries";
 import { formatAmount } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { useSettings } from "@/lib/queries";
 import { useThisMonth } from "@/lib/use-today";
+import { useBudgets, useGoals } from "./queries";
 
-/** Payday plan: split the salary across rent, bills, family, jars and flexible spending until ৳0 is left. */
-export function PaydayPlan() {
+/**
+ * Payday plan ("Split my pay" in Budgets): split the salary across rent, bills, family,
+ * jars and flexible spending until ৳0 is left. `amount` (minor units) pre-fills what
+ * landed, when it comes from a Received income. Saving lands on Budgets.
+ */
+export function PaydayPlan({
+  amount,
+  fromBudgets = false,
+}: {
+  amount?: number;
+  fromBudgets?: boolean;
+}) {
   const router = useRouter();
   const send = useOutbox();
   const month = useThisMonth();
   const budgets = useBudgets(month);
   const goals = useGoals();
   const { data: settings } = useSettings();
-  const [salary, setSalary] = useState("");
+  const [salary, setSalary] = useState(amount ? String(toMajor(amount)) : "");
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const lines = (budgets.data?.lines ?? []).filter((l) => l.parentId === null);
   const jars = (goals.data ?? []).filter((g) => !g.reached);
@@ -80,7 +90,8 @@ export function PaydayPlan() {
       }
     }
     notify("Every taka has a job.");
-    router.back();
+    if (fromBudgets) router.back();
+    else router.replace("/money/budgets");
   };
 
   const row = (key: string, label: string) => (

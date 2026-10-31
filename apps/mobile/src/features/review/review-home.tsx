@@ -27,7 +27,6 @@ const RITUALS: { href: string; label: string; icon: IconName; color: ColorName }
   { href: "/review/shutdown", label: "Shutdown", icon: "weather-night", color: "sky" },
   { href: "/review/weekly", label: "Weekly", icon: "calendar-week", color: "sky" },
   { href: "/review/insights", label: "Reports", icon: "chart-bar", color: "mint" },
-  { href: "/review/payday", label: "Payday", icon: "cash-multiple", color: "mint" },
 ];
 
 const ENTRIES: Entry[] = [

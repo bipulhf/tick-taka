@@ -1,7 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { isWeeklyReviewDay, weeklyReviewHint } from "@tick-taka/shared/weekly-review";
 import {
-  Banknote,
   BarChart3,
   Bot,
   CalendarCheck,
@@ -40,7 +39,6 @@ const RITUALS: { to: string; label: string; icon: LucideIcon; tint: string }[] =
   { to: "/review/shutdown", label: "Shutdown", icon: Moon, tint: "bg-sky/15 text-sky-text" },
   { to: "/review/weekly", label: "Weekly", icon: CalendarCheck, tint: "bg-sky/15 text-sky-text" },
   { to: "/review/reports", label: "Reports", icon: BarChart3, tint: "bg-mint/15 text-mint-text" },
-  { to: "/review/payday", label: "Payday", icon: Banknote, tint: "bg-mint/15 text-mint-text" },
 ];
 
 const ENTRIES: Entry[] = [
@@ -101,7 +99,7 @@ export function ReviewHome() {
       <PageHeader title="Review" />
       <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-8">
         <div className="flex flex-col gap-7">
-          <nav aria-label="Rituals" className="grid grid-cols-4 gap-2">
+          <nav aria-label="Rituals" className="grid grid-cols-3 gap-2">
             {RITUALS.map((ritual) => (
               <button
                 key={ritual.to}

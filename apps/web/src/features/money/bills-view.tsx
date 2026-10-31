@@ -16,6 +16,7 @@ import { billStatusText } from "./bill-status";
 import { RowMenu } from "./money-ui";
 import { type Recurring, useRecurring } from "./queries";
 import { payRecurring } from "./recurring-pay";
+import { useSplitOffer } from "./split-offer";
 
 /** "Due soon · Sat 31 Oct · Every month on the 10th"; a late bill names its date once. */
 export function recurringSubtitle(item: Recurring): string {
@@ -33,6 +34,7 @@ function RecurringRow({ item }: { item: Recurring }) {
   const open = useOpenPanel();
   const { data: accounts } = useAccounts();
   const { data: settings } = useSettings();
+  const splitOffer = useSplitOffer();
   const edit = () => open(`recurring:${item.id}`);
   const ref = { id: item.id, name: item.name, dueAt: item.nextDueAt };
   const drop = () => void remove(`/recurring/${item.id}`, `“${item.name}”`).catch(() => {});
@@ -40,7 +42,10 @@ function RecurringRow({ item }: { item: Recurring }) {
   const pay = () => {
     // Another currency than the account's: the panel asks for the rate first.
     if (payNeedsRate(item, accounts, settings)) edit();
-    else void payRecurring(ref).catch(() => {});
+    else
+      void payRecurring(ref, {
+        split: splitOffer({ ...item, income: item.kind === "income" }),
+      }).catch(() => {});
   };
   const paidLabel = item.kind === "bill" ? "Paid" : "Received";
   return (

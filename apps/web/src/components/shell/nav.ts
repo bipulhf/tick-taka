@@ -1,7 +1,6 @@
 import {
   Archive,
   ArrowUpDown,
-  Banknote,
   BarChart3,
   BookCheck,
   Bot,
@@ -92,7 +91,6 @@ export const NAV: NavSection[] = [
       { to: "/review/monthly", label: "Monthly", icon: CalendarFold },
       { to: "/review/reports", label: "Reports", icon: BarChart3 },
       { to: "/review/areas", label: "Areas", icon: LayoutGrid },
-      { to: "/review/payday", label: "Payday plan", icon: Banknote },
       { to: "/review/subscriptions", label: "Subscriptions", icon: RefreshCcw },
       { to: "/review/ai-usage", label: "AI usage", icon: Bot },
     ],

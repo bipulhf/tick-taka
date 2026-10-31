@@ -66,6 +66,12 @@ export function BudgetsScreen() {
           Showing last month's limits. Save to keep them for {formatMonth(month)}.
         </Text>
       ) : null}
+      <Button
+        label="Edit budgets"
+        variant="secondary"
+        icon="pencil"
+        onPress={() => router.push(`/budget-edit?month=${month}`)}
+      />
       <View className="flex-row gap-2">
         <Button
           label="Plan next month"
@@ -75,11 +81,11 @@ export function BudgetsScreen() {
           onPress={() => router.push(`/budget-edit?month=${addMonths(thisMonth, 1)}&plan=1`)}
         />
         <Button
-          label="Edit budgets"
+          label="Split my pay"
           variant="secondary"
-          icon="pencil"
+          icon="cash-multiple"
           className="flex-1"
-          onPress={() => router.push(`/budget-edit?month=${month}`)}
+          onPress={() => router.push("/money/budgets?split=1&back=1")}
         />
       </View>
       <AsyncContent

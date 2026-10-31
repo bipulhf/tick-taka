@@ -18,6 +18,7 @@ import { DeleteButton, PanelSkeleton } from "./money-ui";
 import { type Recurring, useRecurring } from "./queries";
 import { type RecurringDraft, RecurringFields } from "./recurring-fields";
 import { payRecurring } from "./recurring-pay";
+import { useSplitOffer } from "./split-offer";
 
 /** "recurring:<id>" or "recurring:new": a bill or expected income; Paid / Received logs it. */
 export function RecurringPanel({ id, onClose }: PanelComponentProps) {
@@ -61,6 +62,7 @@ function RecurringForm({ item, onClose }: { item: Recurring | undefined; onClose
   const [draft, setDraft] = useState(initial);
   const [rate, setRate] = useState("");
   const [busy, setBusy] = useState<"save" | "pay" | "skip" | null>(null);
+  const splitOffer = useSplitOffer();
   const [tried, setTried] = useState(false);
   const set = (patch: Partial<RecurringDraft>) => setDraft((d) => ({ ...d, ...patch }));
   const parsed = useMemo(
@@ -117,7 +119,10 @@ function RecurringForm({ item, onClose }: { item: Recurring | undefined; onClose
     }
     setBusy(skip ? "skip" : "pay");
     try {
-      await payRecurring({ id: item.id, name: item.name, dueAt: item.nextDueAt }, { skip, extra });
+      await payRecurring(
+        { id: item.id, name: item.name, dueAt: item.nextDueAt },
+        { skip, extra, split: splitOffer({ ...item, income: item.kind === "income" }) },
+      );
       onClose();
     } catch {
       setBusy(null);

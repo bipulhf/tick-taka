@@ -36,6 +36,18 @@ export function Toaster() {
           )}
         >
           <p className="flex-1 font-semibold">{toast.message}</p>
+          {toast.secondLabel && toast.onSecond ? (
+            <button
+              type="button"
+              onClick={() => {
+                toast.onSecond?.();
+                toastStore.set(null);
+              }}
+              className="rounded-lg px-2.5 py-1 font-extrabold text-mango-inverse hover:bg-background/10"
+            >
+              {toast.secondLabel}
+            </button>
+          ) : null}
           {toast.actionLabel && toast.onAction ? (
             <button
               type="button"

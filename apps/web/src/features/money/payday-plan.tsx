@@ -8,8 +8,6 @@ import { Group } from "@/components/ui/group";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SkeletonRows } from "@/components/ui/skeleton";
-import { AmountField } from "@/features/money/amount-field";
-import { useBudgets, useGoals } from "@/features/money/queries";
 import { formatAmount } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import { usePrivacy } from "@/lib/prefs";
@@ -17,7 +15,10 @@ import { useSettings } from "@/lib/queries";
 import { notify } from "@/lib/toast";
 import { useThisMonth } from "@/lib/use-today";
 import { fire, write } from "@/lib/write";
+import { AmountField } from "./amount-field";
+import { amountText } from "./amount-text";
 import { type Amounts, budgetLines, jarMoves, leftToAssign, minorOf, prefill } from "./payday-math";
+import { useBudgets, useGoals } from "./queries";
 
 function AmountRow({
   label,
@@ -42,8 +43,12 @@ function AmountRow({
   );
 }
 
-/** Payday plan: split the salary across rent, bills, family, jars and flexible spending until ৳0 is left. */
-export function PaydayPlan() {
+/**
+ * Payday plan ("Split my pay" in Budgets): split the salary across rent, bills, family,
+ * jars and flexible spending until ৳0 is left. `amount` (minor units) pre-fills what
+ * landed, when it comes from a Received income.
+ */
+export function PaydayPlan({ amount }: { amount?: number }) {
   const navigate = useNavigate();
   const open = useOpenPanel();
   const hidden = usePrivacy();
@@ -51,7 +56,7 @@ export function PaydayPlan() {
   const budgets = useBudgets(month);
   const goals = useGoals();
   const { data: settings } = useSettings();
-  const [salary, setSalary] = useState("");
+  const [salary, setSalary] = useState(amount ? amountText(amount) : "");
   const [amounts, setAmounts] = useState<Amounts>({});
   const [saving, setSaving] = useState(false);
   const lines = (budgets.data?.lines ?? []).filter((l) => l.parentId === null);
@@ -87,7 +92,7 @@ export function PaydayPlan() {
         label: `Couldn't fill ${move.name}`,
       });
     notify("Every taka has a job.");
-    void navigate({ to: "/review" });
+    void navigate({ to: "/money/budgets" });
   };
 
   const group = (title: string, type: string) => {
@@ -123,7 +128,7 @@ export function PaydayPlan() {
       <PageHeader
         title="Payday plan"
         subtitle="Give every taka a job"
-        back={{ to: "/review", label: "Review" }}
+        back={{ to: "/money/budgets", label: "Budgets" }}
       />
       <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-8">
         <div className="flex flex-col gap-5 lg:sticky lg:top-6">

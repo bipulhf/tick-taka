@@ -30,7 +30,7 @@ export function PageHeader({
         <h1 className="text-large-title">{title}</h1>
         {subtitle ? <p className="mt-0.5 text-callout text-muted">{subtitle}</p> : null}
       </div>
-      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
   );
 }

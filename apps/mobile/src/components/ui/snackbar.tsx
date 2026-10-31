@@ -14,7 +14,10 @@ export function Snackbar() {
   useEffect(() => {
     if (!snack) return;
     const hasAction = Boolean(snack.onAction);
-    AccessibilityInfo.announceForAccessibility(snackAnnouncement(snack.message, snack.actionLabel));
+    const labels = [snack.secondLabel, snack.actionLabel].filter(Boolean).join(" and ");
+    AccessibilityInfo.announceForAccessibility(
+      snackAnnouncement(snack.message, labels || undefined),
+    );
     let timer: ReturnType<typeof setTimeout> | undefined;
     let cancelled = false;
     void (async () => {
@@ -55,6 +58,21 @@ export function Snackbar() {
         >
           {snack.message}
         </Text>
+        {snack.secondLabel ? (
+          <Pressable
+            hitSlop={12}
+            accessibilityRole="button"
+            className="min-h-10 justify-center"
+            onPress={() => {
+              snack.onSecond?.();
+              snackStore.set(null);
+            }}
+          >
+            <Text variant="strong" tone="mangoOnInk">
+              {snack.secondLabel}
+            </Text>
+          </Pressable>
+        ) : null}
         {snack.actionLabel ? (
           <Pressable
             hitSlop={12}

@@ -7,6 +7,7 @@ import { Group, Row, RowMark } from "@/components/ui/group";
 import { Section, SectionAction } from "@/components/ui/section";
 import { billStatusText } from "@/features/money/bill-status";
 import { payRecurring } from "@/features/money/recurring-pay";
+import { useSplitOffer } from "@/features/money/split-offer";
 import { formatClock, formatLocalDate } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import { type TodayData, useAccounts, useSettings } from "@/lib/queries";
@@ -21,6 +22,7 @@ function MoneyRow({ item }: { item: MoneyItem }) {
   const { data: accounts } = useAccounts();
   const { data: settings } = useSettings();
   const [paying, setPaying] = useState(false);
+  const splitOffer = useSplitOffer();
   const isBill = item.kind === "bill";
   const openItem = () => open(`recurring:${item.id}`);
   return (
@@ -43,7 +45,9 @@ function MoneyRow({ item }: { item: MoneyItem }) {
             // A foreign-currency bill or payday needs its rate, which the panel asks for.
             if (payNeedsRate(item, accounts, settings)) return openItem();
             setPaying(true);
-            await payRecurring(item).catch(() => {});
+            await payRecurring(item, {
+              split: splitOffer({ ...item, income: !isBill }),
+            }).catch(() => {});
             setPaying(false);
           }}
         >

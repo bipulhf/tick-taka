@@ -1,6 +1,10 @@
 import { newId } from "@tick-taka/shared/ids";
+import { splitOfferMessage } from "@tick-taka/shared/payday";
+import { formatAmount } from "@/lib/format";
+import { privacyStore } from "@/lib/prefs";
 import { notify } from "@/lib/toast";
 import { fire, type WriteRequest, write } from "@/lib/write";
+import type { SplitOffer } from "./split-offer";
 
 /** What a "Paid" / "Received" / "Skip" sends, as far as its Undo needs it. */
 export interface PayBody extends Record<string, unknown> {
@@ -27,11 +31,12 @@ export function unpayRequest(item: { id: string; name: string }, body: PayBody):
 
 /**
  * Pays (or skips) a bill or income, then offers Undo in a toast. `extra` carries the
- * panel's choices (account, amount, rate) when the pay came from there.
+ * panel's choices (account, amount, rate) when the pay came from there; `split` is a
+ * received income's "Split this ৳X?" (from `useSplitOffer`), offered beside Undo.
  */
 export async function payRecurring(
   item: { id: string; name: string; dueAt: number },
-  options: { skip?: boolean; extra?: Record<string, unknown> } = {},
+  options: { skip?: boolean; extra?: Record<string, unknown>; split?: SplitOffer } = {},
 ): Promise<void> {
   const body: PayBody = {
     ...options.extra,
@@ -47,11 +52,22 @@ export async function payRecurring(
     body,
     label: `Couldn't log ${item.name}`,
   });
-  notify(options.skip ? `Skipped ${item.name}` : `${item.name} logged`, {
+  const undo = {
     label: "Undo",
     onPress: () => {
       fire(unpayRequest(item, body));
       notify(`Took back ${item.name}`);
     },
-  });
+  };
+  const split = options.skip ? undefined : options.split;
+  if (split)
+    notify(
+      splitOfferMessage(
+        item.name,
+        privacyStore.get() ? null : formatAmount(split.amountMinor, { signed: false }),
+      ),
+      undo,
+      { label: "Split", onPress: split.open },
+    );
+  else notify(options.skip ? `Skipped ${item.name}` : `${item.name} logged`, undo);
 }

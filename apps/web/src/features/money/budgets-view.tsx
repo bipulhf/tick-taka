@@ -1,5 +1,5 @@
 import { addMonths } from "@tick-taka/shared/dates";
-import { CalendarPlus, Pencil } from "lucide-react";
+import { Banknote, CalendarPlus, Pencil } from "lucide-react";
 import { useState } from "react";
 import { Amount } from "@/components/ui/amount";
 import { Button } from "@/components/ui/button";
@@ -79,9 +79,12 @@ function Editor({ month, onDone }: { month: string; onDone: () => void }) {
 export function BudgetsView({
   plan,
   onPlan,
+  onSplit,
 }: {
   plan?: string;
   onPlan: (month: string | undefined) => void;
+  /** "Split my pay": the payday plan. */
+  onSplit: () => void;
 }) {
   const thisMonth = useThisMonth();
   const [viewMonth, setMonth] = useState(thisMonth);
@@ -189,6 +192,9 @@ export function BudgetsView({
               <>
                 <Button icon={CalendarPlus} onClick={() => onPlan(addMonths(thisMonth, 1))}>
                   Plan next month
+                </Button>
+                <Button icon={Banknote} onClick={onSplit}>
+                  Split my pay
                 </Button>
                 <Button icon={Pencil} onClick={edit} disabled={!data}>
                   Edit budgets

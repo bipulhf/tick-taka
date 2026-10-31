@@ -1,6 +1,6 @@
 import type { AssistantScreen } from "@tick-taka/shared/schemas/ai";
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tiki } from "@/components/tiki/tiki";
@@ -17,7 +17,10 @@ import { ChatList } from "./chat-list";
 import { asksToGoAhead } from "./chat-threads";
 import { LiveBubble, MessageBubble } from "./message-bubble";
 import { recordNoun } from "./message-cards";
+import { QuestionCard } from "./question-card";
+import { openQuestionId } from "./question-form";
 import { useAssistant } from "./use-assistant";
+import { useChatScroll } from "./use-chat-scroll";
 import { useChatThreads } from "./use-chat-threads";
 
 /**
@@ -34,7 +37,6 @@ export function AssistantSheet({
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const keyboard = useKeyboardHeight();
-  const scroll = useRef<ScrollView>(null);
   const [screen, setScreen] = useState(openedFrom);
   const [showing, setShowing] = useState<"chat" | "chats">("chat");
   const askAbout = useStore(askAboutStore);
@@ -52,6 +54,7 @@ export function AssistantSheet({
     thinking,
   } = useAssistant(screen);
   const threads = useChatThreads(thinking);
+  const chatScroll = useChatScroll(messages.length);
 
   // Sheets opened from here come back to this chat for "Ask Tiki".
   useEffect(() => {
@@ -66,12 +69,14 @@ export function AssistantSheet({
   }, [askAbout]);
 
   const last = messages.at(-1);
+  const openQuestion = openQuestionId(messages);
   // "I'll move 7 tasks to Friday. Go ahead?": a one-tap answer under the question.
   const goAhead =
     !thinking &&
     last?.role === "assistant" &&
     !last.failed &&
     last.deletionChoice !== "pending" &&
+    !last.question &&
     !last.drafts?.some((draft) => draft.state === "pending") &&
     asksToGoAhead(last.content);
   const record = screen.record;
@@ -132,11 +137,12 @@ export function AssistantSheet({
       ) : (
         <>
           <ScrollView
-            ref={scroll}
+            ref={chatScroll.scroll}
+            innerViewRef={chatScroll.inner}
             className="flex-1"
             contentContainerClassName="gap-3 px-5 pb-4 pt-1"
             keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
+            onContentSizeChange={chatScroll.onContentSizeChange}
           >
             {messages.length === 0 ? (
               <ChatIntro view={screen.view} onAsk={(text) => void ask(text)} />
@@ -145,6 +151,17 @@ export function AssistantSheet({
               <MessageBubble
                 key={message.id}
                 message={message}
+                form={
+                  message.question ? (
+                    <QuestionCard
+                      question={message.question}
+                      open={message.id === openQuestion}
+                      busy={thinking}
+                      onAnswer={(text) => void ask(text)}
+                      scroll={chatScroll.field}
+                    />
+                  ) : undefined
+                }
                 onUndo={(index) => undo(message.id, index)}
                 onConfirmDeletions={() => confirmDeletions(message.id)}
                 onKeep={() => keepAll(message.id)}

@@ -7,7 +7,14 @@ import {
   mergeThread,
   type ServerMessage,
 } from "../src/features/assistant/chat-threads";
-import { parseQuestion } from "../src/features/assistant/question-form";
+import {
+  type FormRecords,
+  formAnswer,
+  initialAnswers,
+  openQuestionId,
+  parseQuestion,
+  readableMessage,
+} from "../src/features/assistant/question-form";
 
 const cash = newId();
 
@@ -122,5 +129,86 @@ describe("questions in stored chats", () => {
     ) as ChatMessage[];
     expect(mergeThread(saved, [server(cash, "assistant", "Hello", 2)])).toEqual(saved);
     expect(saved.every((message) => message.question === undefined)).toBe(true);
+  });
+});
+
+describe("openQuestionId", () => {
+  const asks = (at: number) =>
+    local({ role: "assistant", content: newAccount.question, at, question: newAccount });
+
+  test("Tiki's latest reply with a question takes answers", () => {
+    const chat = [local({ role: "user", content: "Add bKash", at: 1 }), asks(2)];
+    expect(openQuestionId(chat)).toBe("l-2");
+  });
+
+  test("a later message answers it, typed or sent from the form", () => {
+    const chat = [asks(1), local({ role: "user", content: "Call it bKash", at: 2 })];
+    expect(openQuestionId(chat)).toBeNull();
+    const replied = [...chat, local({ role: "assistant", content: "Added", at: 3 })];
+    expect(openQuestionId(replied)).toBeNull();
+  });
+
+  test("only the latest question is open, never an older one", () => {
+    const chat = [
+      asks(1),
+      local({ role: "user", content: "Name: bKash", at: 2 }),
+      local({ role: "assistant", content: "Which account?", at: 3 }),
+    ];
+    expect(openQuestionId(chat)).toBeNull();
+    expect(openQuestionId([...chat, asks(4)])).toBe("l-4");
+  });
+
+  test("a turn that failed leaves the question open to send again", () => {
+    const chat = [
+      asks(1),
+      local({ role: "user", content: "Name: bKash", at: 2 }),
+      local({ role: "assistant", content: "I couldn't connect", at: 3, failed: true }),
+    ];
+    expect(openQuestionId(chat)).toBe("l-1");
+  });
+
+  test("no question, or no chat, has nothing open", () => {
+    expect(openQuestionId([])).toBeNull();
+    expect(openQuestionId([local({ role: "assistant", content: "Hello", at: 1 })])).toBeNull();
+  });
+});
+
+describe("the form's answers", () => {
+  const records: FormRecords = {
+    account: [{ id: cash, name: "Cash" }],
+    category: [],
+    area: [],
+  };
+
+  test("starts from what Tiki already knows", () => {
+    expect(initialAnswers(newAccount)).toEqual({ type: "cash", opening: 0 });
+  });
+
+  test("becomes one line per answer, picks named from the app's lists", () => {
+    const text = formAnswer(
+      newAccount,
+      { name: "bKash", type: "cash", opening: 500000, from: cash },
+      { currency: "BDT", records },
+    );
+    expect(text).toBe(
+      `Name: bKash\nType: Cash\nOpening balance: 5000 BDT\nMoved from: Cash [id ${cash}]`,
+    );
+  });
+
+  test("a skipped optional field is left out; an unknown pick keeps its id", () => {
+    const other = newId();
+    const text = formAnswer(
+      newAccount,
+      { name: "bKash", type: "cash", opening: null, from: other },
+      { records },
+    );
+    expect(text).toBe(`Name: bKash\nType: Cash\nMoved from: [id ${other}]`);
+  });
+
+  test("the user's bubble reads without the ids the model needs", () => {
+    expect(readableMessage(`Name: bKash\nMoved from: Cash [id ${cash}]`)).toBe(
+      "Name: bKash\nMoved from: Cash",
+    );
+    expect(readableMessage("Move it to [id] later")).toBe("Move it to [id] later");
   });
 });

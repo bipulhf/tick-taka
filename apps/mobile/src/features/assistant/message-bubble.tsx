@@ -1,5 +1,5 @@
 import type { AssistantRating } from "@tick-taka/shared/schemas/ai";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
@@ -9,6 +9,7 @@ import type { ChatAction, ChatMessage, ChatStep } from "./chat-store";
 import { DraftCard } from "./draft-card";
 import { MessageCards } from "./message-cards";
 import { MessageFeedback } from "./message-feedback";
+import { readableMessage } from "./question-form";
 import { StreamingCaret, ThinkingIndicator } from "./thinking-indicator";
 import type { LiveTurn } from "./use-assistant";
 
@@ -175,10 +176,12 @@ function DeletionCard({
 /**
  * One chat turn; Tiki's turns show totals and records to open, list what changed,
  * ask before deleting anything, hold proposed money changes until Save and take a
- * thumbs up or down once stored.
+ * thumbs up or down once stored. `form` is Tiki's question as a small form, shown
+ * right under the question.
  */
 export function MessageBubble({
   message,
+  form,
   onUndo,
   onConfirmDeletions,
   onKeep,
@@ -187,6 +190,7 @@ export function MessageBubble({
   onRate,
 }: {
   message: ChatMessage;
+  form?: ReactNode;
   onUndo: (index: number) => void;
   onConfirmDeletions: () => void;
   onKeep: () => void;
@@ -198,7 +202,7 @@ export function MessageBubble({
     return (
       <View className="max-w-[85%] self-end rounded-3xl rounded-br-lg bg-ink px-4 py-3">
         <Text tone="background" selectable>
-          {message.content}
+          {readableMessage(message.content)}
         </Text>
       </View>
     );
@@ -211,6 +215,7 @@ export function MessageBubble({
           {message.content}
         </Text>
       </View>
+      {form}
       {message.cards?.length ? <MessageCards cards={message.cards} /> : null}
       {message.actions?.length ? <ActionList actions={message.actions} onUndo={onUndo} /> : null}
       {message.drafts?.map((draft, index) => (

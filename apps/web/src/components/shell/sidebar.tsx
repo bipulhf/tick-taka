@@ -10,7 +10,7 @@ import { profileStore, signOut } from "@/lib/auth";
 import { railStore, toggleRail } from "@/lib/prefs";
 import { useAreas, useSettings } from "@/lib/queries";
 import { useStore } from "@/lib/store";
-import { NAV, type NavLink, sectionOf } from "./nav";
+import { NAV, type NavLink, sectionOf, tourId } from "./nav";
 
 /** The current path inside /app, "/" for Today. */
 export function usePath(): string {
@@ -37,6 +37,7 @@ function Item({
   const content = (
     <Link
       to={link.to}
+      data-tour={depth === 0 ? tourId(link.to) : undefined}
       aria-current={active ? "page" : undefined}
       aria-label={rail ? link.label : undefined}
       className={cx(

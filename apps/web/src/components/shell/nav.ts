@@ -113,3 +113,6 @@ export function sectionOf(pathname: string): NavSection {
     (NAV[0] as NavSection)
   );
 }
+
+/** The app tour's name for a place's link, the same in the sidebar and the tab bar. */
+export const tourId = (to: string) => `nav-${to.replace(/^\//, "") || "today"}`;

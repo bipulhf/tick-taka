@@ -25,6 +25,7 @@ export function AssistantButton() {
   return (
     <button
       type="button"
+      data-tour="tiki"
       aria-label={open ? "Close chat with Tiki" : "Chat with Tiki"}
       aria-expanded={open}
       title={open ? "Close chat (Ctrl J)" : "Chat with Tiki (Ctrl J)"}

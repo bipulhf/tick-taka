@@ -104,6 +104,7 @@ export function QuickAddBar() {
     // biome-ignore lint/a11y/noStaticElementInteractions: a drop target for receipts and a focus boundary; the input inside is the control
     <div
       ref={wrap}
+      data-tour="quick-add"
       className="relative mx-auto w-full max-w-[640px]"
       onFocus={() => setActive(true)}
       onBlur={(event) => {

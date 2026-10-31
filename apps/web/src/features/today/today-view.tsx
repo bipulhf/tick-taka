@@ -79,12 +79,16 @@ export function TodayView() {
       {desk ? (
         <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start gap-8">
           <div className="flex flex-col gap-7">
-            <TopThree data={data} />
+            <div data-tour="top-three">
+              <TopThree data={data} />
+            </div>
             <NextUp data={data} areaEmoji={areaEmoji} />
             <LaterToday data={data} />
           </div>
           <div className="flex flex-col gap-7">
-            <SafeToSpendCard data={data} />
+            <div data-tour="safe-to-spend">
+              <SafeToSpendCard data={data} />
+            </div>
             <MoneyDue data={data} />
             <HabitChips data={data} />
             <QuickActions />
@@ -107,8 +111,12 @@ function PhoneOrder({
 }) {
   return (
     <>
-      <SafeToSpendCard data={data} />
-      <TopThree data={data} />
+      <div data-tour="safe-to-spend">
+        <SafeToSpendCard data={data} />
+      </div>
+      <div data-tour="top-three">
+        <TopThree data={data} />
+      </div>
       <NextUp data={data} areaEmoji={areaEmoji} />
       <MoneyDue data={data} />
       <HabitChips data={data} />

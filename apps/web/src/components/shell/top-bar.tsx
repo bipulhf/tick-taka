@@ -16,26 +16,28 @@ export function TopBar({ quickAdd, timer }: { quickAdd: ReactNode; timer?: React
     <div className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-line/70 bg-background/90 px-3 backdrop-blur-sm sm:px-5">
       <div className="min-w-0 flex-1">{quickAdd}</div>
       {timer}
-      <IconButton
-        icon={hidden ? EyeOff : Eye}
-        label={hidden ? "Show amounts" : "Hide amounts"}
-        shortcut="⇧ H"
-        pressed={hidden}
-        onClick={togglePrivacy}
-      />
-      <IconButton
-        icon={dark ? Sun : Moon}
-        label={dark ? "Switch to light theme" : "Switch to dark theme"}
-        shortcut="⇧ D"
-        onClick={toggleTheme}
-      />
-      <IconButton
-        icon={Search}
-        label="Go to or search"
-        shortcut="Ctrl K"
-        onClick={() => paletteOpenStore.set(true)}
-        className="hidden sm:inline-flex"
-      />
+      <div data-tour="top-tools" className="flex items-center gap-2">
+        <IconButton
+          icon={hidden ? EyeOff : Eye}
+          label={hidden ? "Show amounts" : "Hide amounts"}
+          shortcut="⇧ H"
+          pressed={hidden}
+          onClick={togglePrivacy}
+        />
+        <IconButton
+          icon={dark ? Sun : Moon}
+          label={dark ? "Switch to light theme" : "Switch to dark theme"}
+          shortcut="⇧ D"
+          onClick={toggleTheme}
+        />
+        <IconButton
+          icon={Search}
+          label="Go to or search"
+          shortcut="Ctrl K"
+          onClick={() => paletteOpenStore.set(true)}
+          className="hidden sm:inline-flex"
+        />
+      </div>
     </div>
   );
 }

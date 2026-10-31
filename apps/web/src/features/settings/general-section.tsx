@@ -1,4 +1,4 @@
-import { Keyboard } from "lucide-react";
+import { Compass, Keyboard } from "lucide-react";
 import { Group, Row, RowMark } from "@/components/ui/group";
 import { Kbd } from "@/components/ui/kbd";
 import { Segmented } from "@/components/ui/segmented";
@@ -7,6 +7,7 @@ import { ToggleRow } from "@/components/ui/toggle";
 import { formatAmount } from "@/lib/format";
 import { setFeedbackPrefs, togglePrivacy, useFeedbackPrefs, usePrivacy } from "@/lib/prefs";
 import { shortcutsOpenStore } from "@/lib/ui-state";
+import { startTour } from "../tour/tour-store";
 import { GroupLabel, SelectRow, SettingRow } from "./setting-row";
 import type { SectionProps } from "./settings-types";
 
@@ -84,6 +85,13 @@ export function GeneralSection({ s, update }: SectionProps) {
           subtitle="Every key that works in the app"
           trailing={<Kbd>?</Kbd>}
           onClick={() => shortcutsOpenStore.set(true)}
+        />
+        <Row
+          leading={<RowMark icon={Compass} />}
+          title="Take the tour again"
+          subtitle="Tiki shows you around the app in about a minute"
+          onClick={startTour}
+          chevron
         />
       </Group>
     </>

@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { cx } from "@/components/ui/cx";
 import { focusQuickAdd } from "@/lib/ui-state";
-import { NAV, sectionOf } from "./nav";
+import { NAV, sectionOf, tourId } from "./nav";
 import { usePath } from "./sidebar";
 
 /**
@@ -20,6 +20,7 @@ export function BottomTabs() {
       <Link
         key={section.to}
         to={section.to}
+        data-tour={tourId(section.to)}
         aria-current={isOpen(section.to) ? "page" : undefined}
         className={cx(
           "flex h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl text-tab font-bold",

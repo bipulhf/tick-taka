@@ -344,6 +344,15 @@ only from the site and Google's sign-in (the session token lives in the browser)
 every unknown path under `/app/` to `index.html`, and caches the hashed files for good.
 Update with `git pull`, the build and the `rsync` again.
 
+### On separate hosts (tick.bipulhf.dev)
+
+The running copy keeps the app and its public pages on `tick.bipulhf.dev` and the API on
+`api.tick.bipulhf.dev`. The API lists the app's origin in `WEB_ORIGINS` (CORS) and runs
+with `TRUST_PROXY=true`; the app is built with `VITE_API_URL=https://api.tick.bipulhf.dev`
+in `apps/web/.env.production`. `deploy/nginx-tick-bipulhf.conf` is that Nginx site (both
+hosts, certbot certificates), and on the server `deploy/update-tick-bipulhf.sh` pulls,
+builds the app, restarts the API under pm2 and installs and reloads the Nginx site.
+
 ### Backups
 
 Every night at 3 am in each user's time zone, the API writes a `VACUUM INTO` copy of that
@@ -390,21 +399,28 @@ blocked in the build, so the phone can't grant them even by accident.
 
 ## Use it on the web
 
-`https://tick.mehedismathacademy.com/app/` signs in with the same Google account and
-shows the same data. Everything the phone does is there, arranged for a laptop: a
-sidebar, Today in two columns, edit panels that slide in beside the list, Tiki's chat as
-a column next to the content, and the keyboard (`N` to add anything, `Ctrl K` to go
-anywhere or search, `G` then a letter to jump, `J`/`K`/`X` in lists, `?` for the rest).
-It also works in a phone browser, with the bottom tab bar.
+**https://tick.bipulhf.dev** is the public home page; the app itself is at
+[`/app/`](https://tick.bipulhf.dev/app/) and signs in with the same Google account, with
+the same data. Everything the phone does is there, arranged for a laptop: a sidebar,
+views that use the full width, Today in two columns, edit panels that slide in beside the
+list, Tiki's chat floating at the bottom right of every page, and the keyboard (`N` to
+add anything, `Ctrl K` to go anywhere or search, `G` then a letter to jump, `J`/`K`/`X`
+in lists, `?` for the rest). It is light by default; the sun/moon button in the top bar
+(or `Shift D`) switches to dark, and the public pages share the choice. It also works in
+a phone browser, with the bottom tab bar.
 
-|                                    Today                                    |                                   Week                                    |
-| :-------------------------------------------------------------------------: | :-----------------------------------------------------------------------: |
-|  <img src="docs/screenshots/web-today.png" width="420" alt="Today on the web" />  |  <img src="docs/screenshots/web-week.png" width="420" alt="Week planner on the web" />  |
-|                                  **Money**                                  |                                **Reports**                                |
-|  <img src="docs/screenshots/web-money.png" width="420" alt="Money on the web" />  | <img src="docs/screenshots/web-reports.png" width="420" alt="Reports on the web" /> |
+|                                        Today                                         |                                    Today, dark                                     |
+| :----------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
+|       <img src="docs/screenshots/web-today.png" width="420" alt="Today on the web" />       | <img src="docs/screenshots/web-today-dark.png" width="420" alt="Today in dark mode" /> |
+|                                    **Tiki's chat**                                    |                                    **Week**                                     |
+| <img src="docs/screenshots/web-chat.png" width="420" alt="Tiki's chat floating over Today" /> |   <img src="docs/screenshots/web-week.png" width="420" alt="Week planner" />    |
+|                                      **Money**                                       |                                   **Reports**                                   |
+|       <img src="docs/screenshots/web-money.png" width="420" alt="Money overview" />        |    <img src="docs/screenshots/web-reports.png" width="420" alt="Reports" />     |
+|                                     **Settings**                                     |                                   **Sign in**                                   |
+|  <img src="docs/screenshots/web-settings.png" width="420" alt="Settings, one section at a time" />  |  <img src="docs/screenshots/web-login.png" width="420" alt="Sign-in page" />  |
 
 <p align="center">
-  <img src="docs/screenshots/web-today-dark.png" width="640" alt="Today on the web in dark mode" />
+  <img src="docs/screenshots/web-home.png" width="640" alt="The public home page" />
 </p>
 
 What differs from the phone:
@@ -412,7 +428,8 @@ What differs from the phone:
 - **Online only.** Nothing is cached or queued: when the connection drops, a banner says
   so and saving waits for it.
 - **Reminders** come as browser notifications, only while a tab is open and after you
-  turn them on in Settings › Notifications.
+  turn them on in Settings › Reminders.
+- **Light or dark** is a choice of each browser, not synced with the phone.
 - **No fingerprint lock** and no home-screen widget; the app can be installed from the
   browser, with shortcuts for a new task, a new expense and Focus. Hide amounts works
   the same.

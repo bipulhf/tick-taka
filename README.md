@@ -491,8 +491,9 @@ The full product and technical spec is in `tick_taka_spec.pdf`; the build order 
   same record, are set aside with it so they never go first; writes that only refer to
   a record the server already has keep going. PATCHes carry the edit time and lose to
   newer rows.
-- **Weekdays** in plain-words recurrence ("every weekday") follow the Bangladesh work
-  week, Sunday to Thursday; the default week starts on Saturday. Both are settings.
+- **Weekdays** in plain-words recurrence ("every weekday") follow the Workdays setting,
+  Saturday to Thursday by default (the Bangladesh week); the days left out are days off
+  for the daily goal and streaks. The default week starts on Saturday. Both are settings.
 - A few columns beyond the spec's table list: `tasks.sort` (ordering), `tasks.goal_id`
   (goals become tasks), `time_entries.note`, `habits.remind_at`,
   `recurring.currency/active/overdue_at`, `goals.create_tasks`, `debts.remind_at`, and

@@ -1,4 +1,4 @@
-import { weekdayOf } from "@tick-taka/shared/dates";
+import { isWeeklyReviewDay, weeklyReviewHint } from "@tick-taka/shared/weekly-review";
 import { useRouter } from "expo-router";
 import { Group } from "@/components/ui/group";
 import type { IconName } from "@/components/ui/icon";
@@ -9,7 +9,7 @@ import { ShortcutRow } from "@/components/ui/shortcut-row";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { plural } from "@/lib/format";
 import { bestText, streakText } from "@/lib/gentle-progress";
-import { useAiStatus } from "@/lib/queries";
+import { useAiStatus, useSettings } from "@/lib/queries";
 import { useTodayDate } from "@/lib/use-today";
 import type { ColorName } from "@/theme/colors";
 import { useGamification } from "./queries";
@@ -75,7 +75,9 @@ export function ReviewHome() {
   const router = useRouter();
   const game = useGamification();
   const ai = useAiStatus();
-  const sunday = weekdayOf(useTodayDate()) === 0;
+  const today = useTodayDate();
+  const reviewDay = useSettings().data?.weeklyReviewDay;
+  const reviewToday = reviewDay !== undefined && isWeeklyReviewDay(today, reviewDay);
   const progress = game.data;
   const entries = ENTRIES.filter((e) => !e.ai || ai.data?.configured);
   const settings = entries.filter((e) => e.href === "/settings");
@@ -116,13 +118,13 @@ export function ReviewHome() {
       ) : game.isPending ? (
         <SkeletonCard lines={1} />
       ) : null}
-      {sunday ? (
+      {reviewToday ? (
         <Group>
           <ListRow
             icon="calendar-week"
             iconColor="muted"
             title="Weekly review"
-            subtitle="It's Sunday, a good day for it"
+            subtitle={weeklyReviewHint(reviewDay)}
             chevron
             onPress={() => router.push("/review/weekly")}
           />

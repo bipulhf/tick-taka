@@ -65,7 +65,8 @@ export const settingsSchema = z.object({
     .object({ start: clockSchema.default("23:00"), end: clockSchema.default("07:00") })
     .default({ start: "23:00", end: "07:00" }),
   shutdownTime: clockSchema.default("21:30"),
-  weeklyReviewDay: z.number().int().min(0).max(6).default(0),
+  /** 0 = Sunday … 6 = Saturday; Friday by default (the Bangladesh weekend). */
+  weeklyReviewDay: z.number().int().min(0).max(6).default(5),
   weeklyReviewTime: clockSchema.default("19:00"),
   costInHours: z.boolean().default(true),
   costInHoursThresholdMinor: z.number().int().nonnegative().default(100_000),

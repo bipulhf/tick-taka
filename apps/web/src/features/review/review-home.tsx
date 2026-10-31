@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { weekdayOf } from "@tick-taka/shared/dates";
+import { isWeeklyReviewDay, weeklyReviewHint } from "@tick-taka/shared/weekly-review";
 import {
   Banknote,
   BarChart3,
@@ -21,7 +21,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { plural } from "@/lib/format";
-import { useAiStatus } from "@/lib/queries";
+import { useAiStatus, useSettings } from "@/lib/queries";
 import { assistantOpenStore } from "@/lib/ui-state";
 import { useTodayDate } from "@/lib/use-today";
 import { bestText, streakText } from "./gentle-progress";
@@ -88,7 +88,9 @@ export function ReviewHome() {
   const navigate = useNavigate();
   const game = useGamification();
   const ai = useAiStatus();
-  const sunday = weekdayOf(useTodayDate()) === 0;
+  const today = useTodayDate();
+  const reviewDay = useSettings().data?.weeklyReviewDay;
+  const reviewToday = reviewDay !== undefined && isWeeklyReviewDay(today, reviewDay);
   const progress = game.data;
   const entries = ENTRIES.filter((e) => !e.ai || ai.data?.configured);
   const go = (entry: Entry) =>
@@ -120,12 +122,12 @@ export function ReviewHome() {
               </button>
             ))}
           </nav>
-          {sunday ? (
+          {reviewToday ? (
             <Group>
               <Row
                 leading={<RowMark icon={CalendarCheck} />}
                 title="Weekly review"
-                subtitle="It's Sunday, a good day for it"
+                subtitle={weeklyReviewHint(reviewDay)}
                 chevron
                 onClick={() => void navigate({ to: "/review/weekly" })}
               />

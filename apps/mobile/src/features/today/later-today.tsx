@@ -1,5 +1,5 @@
 import { onlineManager } from "@tanstack/react-query";
-import { weekdayOf } from "@tick-taka/shared/dates";
+import { isWeeklyReviewDay } from "@tick-taka/shared/weekly-review";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import type { OutboxRequest } from "@/lib/outbox-policy";
 import { usePrivacy } from "@/lib/privacy";
-import type { TodayData } from "@/lib/queries";
+import { type TodayData, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { movedBefore, movedMessage, undoMoves } from "./bulk-move";
 
@@ -29,7 +29,8 @@ export function LaterToday({ data }: { data: TodayData }) {
   const overdue = data.counts.overdue;
   const nextBill = data.upcoming[0];
   const overflow = data.dayFit.overflowMinutes;
-  const friday = weekdayOf(data.date) === 5;
+  const reviewDay = useSettings().data?.weeklyReviewDay;
+  const reviewToday = reviewDay !== undefined && isWeeklyReviewDay(data.date, reviewDay);
 
   // The server picks the tasks; once it answers, name them and offer Undo.
   const bulkMove = (request: OutboxRequest, where: string) => {
@@ -155,7 +156,7 @@ export function LaterToday({ data }: { data: TodayData }) {
         onPress={() => router.push("/plan")}
       />
     ) : null,
-    friday ? (
+    reviewToday ? (
       <ListRow
         key="recap"
         icon="chart-line"

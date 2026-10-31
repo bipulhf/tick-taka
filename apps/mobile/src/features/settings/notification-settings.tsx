@@ -1,14 +1,16 @@
+import { View } from "react-native";
 import { Card } from "@/components/ui/card";
 import { PickerField } from "@/components/ui/picker-field";
 import { clockLabel, clockOptions } from "@/components/ui/picker-options";
 import { Section } from "@/components/ui/section";
 import { ToggleRow } from "@/components/ui/toggle-row";
 import { setFeedbackPrefs, useFeedbackPrefs } from "@/lib/feedback-prefs";
+import { LONG_DAYS } from "./planning-settings";
 import { ReminderStatusBanner } from "./reminder-status-banner";
 import { SettingsPage } from "./settings-page";
 import { useUpdateSettings } from "./use-update-settings";
 
-/** Quiet hours, the shutdown reminder, and sounds and vibration. */
+/** Quiet hours, the shutdown and weekly review reminders, and sounds and vibration. */
 export function NotificationSettings() {
   const feedback = useFeedbackPrefs();
   const update = useUpdateSettings();
@@ -44,6 +46,26 @@ export function NotificationSettings() {
                 describe={clockLabel}
                 onChange={(t) => update({ shutdownTime: t ?? s.shutdownTime })}
               />
+              <View className="flex-row gap-3">
+                <PickerField
+                  label="Weekly review"
+                  span="half"
+                  value={String(s.weeklyReviewDay)}
+                  options={LONG_DAYS.map((day, i) => ({ id: String(i), label: day }))}
+                  describe={(d) => LONG_DAYS[Number(d)] ?? d}
+                  onChange={(d) =>
+                    update({ weeklyReviewDay: d === null ? s.weeklyReviewDay : Number(d) })
+                  }
+                />
+                <PickerField
+                  label="Review time"
+                  span="half"
+                  value={s.weeklyReviewTime}
+                  options={clockOptions(["09:00", "17:00", "19:00", "21:00"])}
+                  describe={clockLabel}
+                  onChange={(t) => update({ weeklyReviewTime: t ?? s.weeklyReviewTime })}
+                />
+              </View>
             </Card>
           </Section>
           <Section title="Sounds and vibration">

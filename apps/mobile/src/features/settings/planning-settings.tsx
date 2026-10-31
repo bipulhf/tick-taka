@@ -13,7 +13,15 @@ import { phoneTimeZone, timeZoneLabel, timeZoneOptions } from "./time-zones";
 import { useUpdateSettings } from "./use-update-settings";
 
 export const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const LONG_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export const LONG_DAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 // Tiki and the server accept values outside the presets; these label them too.
 const goalLabel = (n: number) => (n === 0 ? "Off" : plural(n, "task"));

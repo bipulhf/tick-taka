@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { weekdayOf } from "@tick-taka/shared/dates";
+import { isWeeklyReviewDay } from "@tick-taka/shared/weekly-review";
 import { ChartLine, ChevronDown, ChevronUp, History, Inbox, Moon, Scale } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Group, Row, RowMark } from "@/components/ui/group";
 import { Section } from "@/components/ui/section";
 import { TaskRow } from "@/features/tasks/task-row";
 import { formatMinutes, plural } from "@/lib/format";
-import type { TodayData } from "@/lib/queries";
+import { type TodayData, useSettings } from "@/lib/queries";
 import { notify } from "@/lib/toast";
 import { fire, type WriteRequest, write } from "@/lib/write";
 import { movedBefore, movedMessage, undoMoves } from "./bulk-move";
@@ -22,7 +22,8 @@ export function LaterToday({ data }: { data: TodayData }) {
   const [moving, setMoving] = useState<string | null>(null);
   const overdue = data.counts.overdue;
   const overflow = data.dayFit.overflowMinutes;
-  const friday = weekdayOf(data.date) === 5;
+  const reviewDay = useSettings().data?.weeklyReviewDay;
+  const reviewToday = reviewDay !== undefined && isWeeklyReviewDay(data.date, reviewDay);
 
   // The server picks the tasks; once it answers, name them and offer Undo.
   const bulkMove = async (key: string, request: WriteRequest, where: string) => {
@@ -153,7 +154,7 @@ export function LaterToday({ data }: { data: TodayData }) {
         onClick={() => void navigate({ to: "/plan" })}
       />
     ) : null,
-    friday ? (
+    reviewToday ? (
       <Row
         as="li"
         key="recap"

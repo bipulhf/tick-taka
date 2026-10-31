@@ -1,3 +1,4 @@
+import { AI_GROUPS, isAiGroupOn, setAiGroup } from "@tick-taka/shared/ai-groups";
 import { useRouter } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { Group } from "@/components/ui/group";
@@ -9,19 +10,12 @@ import { SettingsPage } from "./settings-page";
 import { TikiNotes } from "./tiki-notes";
 import { useUpdateSettings } from "./use-update-settings";
 
-const AI_LABELS = {
-  assistant: "Chat with Tiki (and voice)",
-  parse: "Smart quick-add",
-  receipt: "Receipt scan",
-  planDay: "Plan my day",
-  breakdown: "Break it down",
-  weeklyReview: "Weekly coach",
-  budgetSuggestions: "Budget suggestions",
-} as const;
-
 export const dollars = (micros: number) => `$${(micros / 1_000_000).toFixed(2)}`;
 
-/** One switch for all AI, one per feature, what Tiki remembers and what it cost this month. */
+/**
+ * One switch for all AI, three group switches (each sets the server's flags for the
+ * features in it), what Tiki remembers and what it cost this month.
+ */
 export function AiSettings() {
   const router = useRouter();
   const ai = useAiStatus();
@@ -41,13 +35,16 @@ export function AiSettings() {
               onChange={(on) => update({ ai: { ...s.ai, enabled: on } })}
             />
             {s.ai.enabled
-              ? (Object.keys(AI_LABELS) as (keyof typeof AI_LABELS)[]).map((feature) => (
+              ? AI_GROUPS.map((group) => (
                   <ToggleRow
-                    key={feature}
-                    label={AI_LABELS[feature]}
-                    value={s.ai.features[feature] !== false}
+                    key={group.id}
+                    label={group.label}
+                    hint={group.hint}
+                    value={isAiGroupOn(s.ai.features, group.id)}
                     onChange={(on) =>
-                      update({ ai: { ...s.ai, features: { ...s.ai.features, [feature]: on } } })
+                      update({
+                        ai: { ...s.ai, features: setAiGroup(s.ai.features, group.id, on) },
+                      })
                     }
                   />
                 ))

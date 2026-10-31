@@ -108,10 +108,13 @@ also get Focus and Tiki.
 **Plan and time**
 
 - Inbox, upcoming, projects by area of life, someday and a logbook of finished work.
-- Day timeline and week planner with drag to schedule; "Plan my day" with AI.
+  Each area's page sums up its hours this week, its money this month and its open tasks.
+- Day timeline and week planner with drag to schedule; "Plan my day" with AI. A month
+  calendar shows tasks with bills and paydays; tap a bill to open it.
 - Repeating tasks in plain words ("every other Tuesday"), subtasks, deadlines and
   priority.
-- Routines (a Morning one to start), time tracking, and a focus timer that grows a plant.
+- Routines (a Morning one to start), time tracking (switch to Focus only for the focus
+  chart), and a focus timer that grows a plant.
 - Habits with daily or weekly targets, streaks and freeze days.
 
 **Money**
@@ -127,7 +130,7 @@ also get Focus and Tiki.
 
 **Review**
 
-- Daily shutdown, weekly and monthly reviews, reports and a dashboard per area of life.
+- Daily shutdown, weekly and monthly reviews, and reports (including a by-area comparison).
 - Streaks for your daily task goal and for logging spending the same day, with freeze
   days so one missed day doesn't reset them.
 - Soft sounds and vibration when you finish something: a chime for a task or habit, a

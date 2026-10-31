@@ -23,8 +23,9 @@ describe("window titles", () => {
 
   test("an unknown page still says the app's name", () => {
     expect(pageTitle("/nowhere")).toBe("Tick & Taka");
-    // Focus statistics redirects to Time and has no title of its own.
+    // Focus statistics and Review › Areas redirect and have no title of their own.
     expect(pageTitle("/plan/focus-stats")).toBe("Tick & Taka");
+    expect(pageTitle("/review/areas")).toBe("Tick & Taka");
   });
 
   test("an address that isn't a page says so", () => {

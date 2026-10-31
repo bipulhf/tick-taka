@@ -64,12 +64,6 @@ export const useMonthlySeries = (months = 6) =>
     queryFn: () => unwrap(api.insights.monthly.$get({ query: { months: String(months) } })),
   });
 
-export const useAreaDashboard = () =>
-  useQuery({
-    queryKey: ["area-dashboard"],
-    queryFn: () => unwrap(api.insights.areas.$get({ query: {} })),
-  });
-
 export const useGamification = () =>
   useQuery({ queryKey: ["gamification"], queryFn: () => unwrap(api.gamification.$get()) });
 

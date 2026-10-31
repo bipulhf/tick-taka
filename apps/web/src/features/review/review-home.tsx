@@ -6,7 +6,6 @@ import {
   CalendarCheck,
   CalendarFold,
   Flame,
-  LayoutGrid,
   type LucideIcon,
   MessagesSquare,
   Moon,
@@ -46,12 +45,6 @@ const ENTRIES: Entry[] = [
     title: "Monthly review",
     hint: "Budgets vs actual, then plan next month",
     icon: CalendarFold,
-  },
-  {
-    to: "/review/areas",
-    title: "Areas",
-    hint: "Each part of life at a glance",
-    icon: LayoutGrid,
   },
   {
     // The chat opens beside the content rather than on a page of its own.

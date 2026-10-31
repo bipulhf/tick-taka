@@ -22,3 +22,13 @@ export function useRecurring() {
 }
 
 export type PlanTask = NonNullable<ReturnType<typeof useTasks>["data"]>[number];
+
+/**
+ * Every area's hours this week, money in and out this month and open tasks
+ * (GET /insights/areas); the area page's header shows its own row.
+ */
+export const useAreaSummaries = () =>
+  useQuery({
+    queryKey: ["area-dashboard"],
+    queryFn: () => unwrap(api.insights.areas.$get({ query: {} })),
+  });

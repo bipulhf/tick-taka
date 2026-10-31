@@ -15,6 +15,7 @@ import { TaskRow } from "@/features/tasks/task-row";
 import { useOpenPanel } from "@/lib/panel";
 import { useAreas } from "@/lib/queries";
 import { remove, write } from "@/lib/write";
+import { AreaSummary } from "./area-summary";
 import { ProjectStatusMenu } from "./project-status";
 import { type PlanTask, type Project, useAllProjects, useTasks } from "./queries";
 
@@ -63,7 +64,7 @@ function ProjectBlock({ project, tasks }: { project: Project; tasks: PlanTask[] 
   );
 }
 
-/** Areas hold projects; projects hold tasks. */
+/** Areas hold projects; projects hold tasks. The header sums up the week and the month. */
 export function AreaDetail({ areaId }: { areaId: string }) {
   const open = useOpenPanel();
   const areas = useAreas();
@@ -108,6 +109,7 @@ export function AreaDetail({ areaId }: { areaId: string }) {
     <div className="flex flex-col gap-7">
       <PageHeader
         title={`${area.emoji} ${area.name}`}
+        subtitle={<AreaSummary areaId={area.id} />}
         back={{ to: "/plan", label: "Plan" }}
         actions={
           <>

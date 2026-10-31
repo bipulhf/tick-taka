@@ -1,6 +1,6 @@
 import { addDays, endOfLocalDay, startOfLocalDay, toLocalDate } from "@tick-taka/shared/dates";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { AsyncContent } from "@/components/ui/async-content";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -20,12 +20,17 @@ import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useProjects, useTasks } from "./queries";
 
-type Tab = "inbox" | "upcoming" | "projects";
+export type PlanTab = "inbox" | "upcoming" | "projects";
 
-export function PlanHome() {
+/** `tab` picks a segment from a link (old Review › Areas opens Projects). */
+export function PlanHome({ tab: linked }: { tab?: PlanTab }) {
   const router = useRouter();
   const remove = useRemove();
-  const [tab, setTab] = useState<Tab>("inbox");
+  const [tab, setTab] = useState<PlanTab>(linked ?? "inbox");
+  // The tab screen stays mounted, so a later link to a segment has to switch it.
+  useEffect(() => {
+    if (linked) setTab(linked);
+  }, [linked]);
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
   const timeZone = userTime(settings).timeZone;
@@ -76,7 +81,7 @@ export function PlanHome() {
           },
         ]}
       />
-      <Segmented<Tab>
+      <Segmented<PlanTab>
         kind="tabs"
         value={tab}
         onChange={setTab}

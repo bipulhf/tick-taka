@@ -17,9 +17,10 @@ import { useOutbox } from "@/lib/outbox";
 import { useAreas } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useRemove } from "@/lib/use-remove";
+import { AreaSummary } from "./area-summary";
 import { useProjects, useTasks } from "./queries";
 
-/** Areas hold projects; projects hold tasks. */
+/** Areas hold projects; projects hold tasks. The header sums up the week and the month. */
 export function AreaDetail({ areaId }: { areaId: string }) {
   const router = useRouter();
   const send = useOutbox();
@@ -33,7 +34,20 @@ export function AreaDetail({ areaId }: { areaId: string }) {
   const loose = (tasks.data ?? []).filter((t) => !t.projectId);
 
   return (
-    <Screen title={`${area?.emoji ?? ""} ${area?.name ?? "Area"}`} tabBarPadding={false}>
+    <Screen
+      title={`${area?.emoji ?? ""} ${area?.name ?? "Area"}`}
+      tabBarPadding={false}
+      right={
+        <Button
+          label="Edit"
+          size="sm"
+          variant="secondary"
+          icon="pencil"
+          onPress={() => router.push(`/area/${areaId}`)}
+        />
+      }
+    >
+      <AreaSummary areaId={areaId} />
       <View className="flex-row gap-2">
         <TextField
           value={name}
@@ -141,12 +155,6 @@ export function AreaDetail({ areaId }: { areaId: string }) {
           </AsyncContent>
         )}
       </AsyncContent>
-      <Button
-        label="Rename or recolour areas"
-        variant="ghost"
-        size="sm"
-        onPress={() => router.push("/settings/areas")}
-      />
     </Screen>
   );
 }

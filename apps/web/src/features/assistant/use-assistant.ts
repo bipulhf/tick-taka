@@ -26,7 +26,7 @@ const HISTORY = 20;
 
 function errorText(error: unknown): string {
   if (error instanceof ApiError && error.code === "ai_disabled")
-    return "The assistant is switched off in Settings › AI.";
+    return "The assistant is switched off in Settings › Tiki and AI.";
   if (error instanceof ApiError) return friendlyError(error);
   return "I couldn't connect just now. Check your internet and try again.";
 }

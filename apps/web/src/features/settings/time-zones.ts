@@ -1,7 +1,7 @@
 import { isTimeZone, timeZoneOffsetMs } from "@tick-taka/shared/dates";
 
 /**
- * Zones offered in Settings › Today and planning: home first, then where people from
+ * Zones offered in Settings › Your day: home first, then where people from
  * home most often are. Any other IANA zone (set by the browser or elsewhere) is listed
  * too, so the field always names the zone in use.
  */

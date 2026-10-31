@@ -1,21 +1,23 @@
-import { LogOut, Trash2, UserRound } from "lucide-react";
+import { Download, LogOut, Trash2, UserRound } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Section } from "@/components/ui/section";
 import { profileStore, signOut } from "@/lib/auth";
 import { useStore } from "@/lib/store";
 import { DeleteAccount } from "./delete-account";
+import { GroupLabel } from "./setting-row";
+import { useExportData } from "./use-export-data";
 
 /**
- * The Google account this space belongs to, and the way out of it. It sits at the end
- * of Settings; deleting the account opens its own steps with export and a typed confirm.
+ * Who is signed in and the way out, a copy of everything, and, last and quiet, deleting
+ * the account (its own steps: the export question, then a typed confirmation).
  */
 export function AccountSection() {
   const profile = useStore(profileStore);
+  const { busy, exportData } = useExportData();
   const [deleting, setDeleting] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   return (
-    <Section id="settings-account" title="Account">
+    <>
       <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-card p-4">
         {profile?.pictureUrl ? (
           <img
@@ -44,15 +46,31 @@ export function AccountSection() {
           Sign out
         </Button>
       </div>
+
+      <GroupLabel>Your data</GroupLabel>
+      <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-card p-4">
+        <p className="min-w-[12rem] flex-1 text-callout text-muted">
+          Everything lives on the server, apart from everyone else's. Download a copy now and then:
+          one JSON file with all your records.
+        </p>
+        <Button icon={Download} loading={busy} onClick={exportData}>
+          Export all data
+        </Button>
+      </div>
+
+      <GroupLabel>Danger zone</GroupLabel>
       {deleting ? (
         <DeleteAccount onCancel={() => setDeleting(false)} />
       ) : (
-        <div>
-          <Button variant="ghost" size="sm" icon={Trash2} onClick={() => setDeleting(true)}>
+        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-dashed border-line-strong/60 p-4">
+          <p className="min-w-[12rem] flex-1 text-callout text-muted">
+            Deletes your account and everything in it, at once and for good.
+          </p>
+          <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleting(true)}>
             Delete account…
           </Button>
         </div>
       )}
-    </Section>
+    </>
   );
 }

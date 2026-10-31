@@ -1,5 +1,7 @@
-import type { ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
+import { type ReactNode, useId, useState } from "react";
 import { Chip } from "@/components/ui/chip";
+import { cx } from "@/components/ui/cx";
 import { Select, type SelectOption } from "@/components/ui/select";
 
 /** One setting in a grouped list: what it is on the left, its control on the right. */
@@ -98,6 +100,76 @@ export function DaysRow({
         ))}
       </fieldset>
     </SettingRow>
+  );
+}
+
+/** Two short pickers side by side in one row ("Sunday at 7:00 pm", "11 pm to 7 am"). */
+export function PairRow<A extends string, B extends string>({
+  label,
+  description,
+  first,
+  joiner,
+  second,
+}: {
+  label: string;
+  description?: ReactNode;
+  first: { label: string; value: A; options: SelectOption<A>[]; onChange: (value: A) => void };
+  joiner: string;
+  second: { label: string; value: B; options: SelectOption<B>[]; onChange: (value: B) => void };
+}) {
+  return (
+    <SettingRow label={label} description={description}>
+      <div className="flex w-full items-center gap-2 sm:w-auto">
+        <Select
+          ariaLabel={first.label}
+          value={first.value}
+          options={first.options}
+          onChange={first.onChange}
+          size="sm"
+          className="flex-1 sm:w-36"
+        />
+        <span className="text-callout text-muted">{joiner}</span>
+        <Select
+          ariaLabel={second.label}
+          value={second.value}
+          options={second.options}
+          onChange={second.onChange}
+          size="sm"
+          className="flex-1 sm:w-36"
+        />
+      </div>
+    </SettingRow>
+  );
+}
+
+/**
+ * Settings most people never change, folded away until asked for. The label says how
+ * many are inside, so nothing feels hidden.
+ */
+export function MoreOptions({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1 self-start rounded-lg px-1 py-0.5 text-callout font-bold text-sky-text hover:bg-sky/10"
+      >
+        <ChevronRight
+          aria-hidden
+          className={cx("size-4 transition-transform duration-150", open && "rotate-90")}
+        />
+        {label}
+      </button>
+      {open ? (
+        <div id={id} className="flex flex-col gap-3">
+          {children}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

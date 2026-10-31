@@ -1,10 +1,11 @@
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { Group, Row, RowMark } from "@/components/ui/group";
 import { IconButton } from "@/components/ui/icon-button";
 import { Menu } from "@/components/ui/menu";
-import { Section } from "@/components/ui/section";
+import { Segmented } from "@/components/ui/segmented";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { areaColorName, areaColorValue } from "@/features/plan/area-panel";
 import { plural } from "@/lib/format";
@@ -12,7 +13,6 @@ import { useOpenPanel } from "@/lib/panel";
 import { useAreas, useCategories } from "@/lib/queries";
 import { remove } from "@/lib/write";
 import { CategoryRules } from "./category-rules";
-import { GroupLabel } from "./setting-row";
 
 const BUCKET_LABEL: Record<string, string> = {
   flexible: "Flexible",
@@ -49,12 +49,15 @@ function RowMenu({
   );
 }
 
+type Tab = "areas" | "categories" | "rules";
+
 /**
- * Areas and spending categories as two plain lists, then the rules that sort
- * spending by its note. Click a row to change it; Delete (or its menu) removes it,
- * and Undo brings it back.
+ * Areas, spending categories and the rules that sort spending by its note, one list at
+ * a time. Click a row to change it; Delete (or its menu) removes it, and Undo brings
+ * it back.
  */
 export function AreasSection() {
+  const [tab, setTab] = useState<Tab>("areas");
   const open = useOpenPanel();
   const areasQuery = useAreas();
   const categoriesQuery = useCategories();
@@ -88,14 +91,9 @@ export function AreasSection() {
     );
   };
 
-  return (
-    <Section
-      id="settings-areas"
-      title="Areas and categories"
-      caption="Click one to change it. Delete removes it; Undo brings it back."
-    >
-      <GroupLabel>Areas</GroupLabel>
-      <p className="-mt-1 px-1 text-callout text-muted">
+  const areasList = (
+    <>
+      <p className="px-1 text-callout text-muted">
         The parts of your life tasks and spending belong to, like Work, Home or Health.
       </p>
       {areasQuery.isPending ? (
@@ -139,9 +137,12 @@ export function AreasSection() {
           New area
         </Button>
       </div>
+    </>
+  );
 
-      <GroupLabel>Categories</GroupLabel>
-      <p className="-mt-1 px-1 text-callout text-muted">
+  const categoriesList = (
+    <>
+      <p className="px-1 text-callout text-muted">
         How spending is sorted. Subcategories sit under their parent in reports and budgets.
       </p>
       {categoriesQuery.isPending ? (
@@ -163,8 +164,26 @@ export function AreasSection() {
           New category
         </Button>
       </div>
+    </>
+  );
 
-      <CategoryRules />
-    </Section>
+  return (
+    <>
+      <Segmented<Tab>
+        label="Show"
+        value={tab}
+        onChange={setTab}
+        className="self-start"
+        options={[
+          { value: "areas", label: `Areas${areasQuery.data ? ` · ${areas.length}` : ""}` },
+          {
+            value: "categories",
+            label: `Categories${categoriesQuery.data ? ` · ${categories.length}` : ""}`,
+          },
+          { value: "rules", label: "Rules" },
+        ]}
+      />
+      {tab === "areas" ? areasList : tab === "categories" ? categoriesList : <CategoryRules />}
+    </>
   );
 }

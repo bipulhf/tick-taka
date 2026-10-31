@@ -16,7 +16,7 @@ function unavailableReason(ai: ReturnType<typeof useAiStatus>["data"]): string |
   if (!ai) return null;
   if (!ai.configured)
     return "Plan my day uses AI, which isn't set up yet. Drag tasks onto the hours instead.";
-  if (!ai.features.planDay) return "Plan my day is switched off in Settings › AI.";
+  if (!ai.features.planDay) return "Plan my day is switched off in Settings › Tiki and AI.";
   if (ai.capReached) return "This month's AI limit is used up. It resets on the 1st.";
   return null;
 }

@@ -90,9 +90,9 @@ export function ShoppingView() {
         <PageHeader title="Shopping" back={{ to: "/money", label: "Money" }} />
         <EmptyState
           title="Shopping list is off"
-          message="Turn on Shopping list in Settings › Today and planning › Advanced views."
+          message="Turn on Shopping list in Settings › Your day › More options."
           actionLabel="Open Settings"
-          onAction={() => void navigate({ to: "/settings" })}
+          onAction={() => void navigate({ to: "/settings", search: { section: "day" } })}
         />
       </div>
     );

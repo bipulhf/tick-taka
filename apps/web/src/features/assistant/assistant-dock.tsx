@@ -32,11 +32,11 @@ function Unavailable({ configured }: { configured: boolean }) {
   return configured ? (
     <EmptyState
       title="The chat is switched off"
-      message="Turn on Chat with Tiki in Settings › AI to talk to Tiki here."
+      message="Turn on Chat with Tiki in Settings › Tiki and AI to talk to Tiki here."
       actionLabel="Open Settings"
       onAction={() => {
         close();
-        void navigate({ to: "/settings" });
+        void navigate({ to: "/settings", search: { section: "ai" } });
       }}
       mood="calm"
     />

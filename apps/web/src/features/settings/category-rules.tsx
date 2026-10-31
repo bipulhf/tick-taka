@@ -6,7 +6,6 @@ import { SkeletonRows } from "@/components/ui/skeleton";
 import { useAreas, useCategories, useCategoryRules } from "@/lib/queries";
 import { notify } from "@/lib/toast";
 import { fire, write } from "@/lib/write";
-import { GroupLabel } from "./setting-row";
 
 type Rule = NonNullable<ReturnType<typeof useCategoryRules>["data"]>[number];
 
@@ -37,8 +36,7 @@ export function CategoryRules() {
   const list = rules.data ?? [];
   return (
     <>
-      <GroupLabel>Category rules</GroupLabel>
-      <p className="-mt-1 px-1 text-callout text-muted">
+      <p className="px-1 text-callout text-muted">
         When you change an expense's category, the same note gets it next time. Delete a rule to
         stop that.
       </p>

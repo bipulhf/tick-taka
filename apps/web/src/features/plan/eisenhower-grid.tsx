@@ -43,11 +43,12 @@ export function EisenhowerGrid() {
         {header}
         <EmptyState
           title="The Eisenhower grid is off"
-          message="Turn it on in Settings › Today and planning to sort tasks by urgent and important."
+          message="Turn it on in Settings › Your day › More options to sort tasks by urgent and important."
           mood="calm"
         />
         <Link
           to="/settings"
+          search={{ section: "day" }}
           className="self-center text-callout font-bold text-sky-text hover:underline"
         >
           Open Settings

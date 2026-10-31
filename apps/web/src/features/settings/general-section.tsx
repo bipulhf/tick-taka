@@ -1,13 +1,13 @@
 import { Keyboard } from "lucide-react";
 import { Group, Row, RowMark } from "@/components/ui/group";
 import { Kbd } from "@/components/ui/kbd";
-import { Section } from "@/components/ui/section";
+import { Segmented } from "@/components/ui/segmented";
 import { NONE } from "@/components/ui/select";
 import { ToggleRow } from "@/components/ui/toggle";
 import { formatAmount } from "@/lib/format";
-import { setFeedbackPrefs, useFeedbackPrefs } from "@/lib/prefs";
+import { setFeedbackPrefs, togglePrivacy, useFeedbackPrefs, usePrivacy } from "@/lib/prefs";
 import { shortcutsOpenStore } from "@/lib/ui-state";
-import { SelectRow } from "./setting-row";
+import { GroupLabel, SelectRow, SettingRow } from "./setting-row";
 import type { SectionProps } from "./settings-types";
 
 export const ACCENTS = [
@@ -25,34 +25,33 @@ const OUTFITS = [
 const choices = (list: { id: string | null; label: string }[]) =>
   list.map((item) => ({ value: item.id ?? NONE, label: item.label }));
 
-/** Theme, digits for amounts, accent colour, Tiki's outfit and sounds. */
-export function AppearanceSection({ s, update }: SectionProps) {
+/**
+ * How the app looks and sounds, and hiding amounts. Light or dark isn't here: the
+ * top bar's button switches it for this browser.
+ */
+export function GeneralSection({ s, update }: SectionProps) {
   const feedback = useFeedbackPrefs();
+  const hidden = usePrivacy();
   return (
-    <Section id="settings-appearance" title="Appearance">
+    <>
       <Group>
-        <SelectRow<"system" | "light" | "dark">
-          label="Theme"
-          value={s.theme}
-          onChange={(theme) => update({ theme })}
-          options={[
-            { value: "system", label: "System" },
-            { value: "light", label: "Light" },
-            { value: "dark", label: "Dark" },
-          ]}
-        />
-        <SelectRow<"latn" | "beng">
+        <SettingRow
           label="Numbers"
-          description={`How amounts are shown, like ${formatAmount(125_000, { numerals: s.numerals })}. Dates and times stay 0-9. You can type either.`}
-          value={s.numerals}
-          onChange={(numerals) => update({ numerals })}
-          options={[
-            { value: "latn", label: "English 123" },
-            { value: "beng", label: "বাংলা ১২৩" },
-          ]}
-        />
+          description={`Amounts show like ${formatAmount(125_000, { numerals: s.numerals })}. You can type either.`}
+        >
+          <Segmented<"latn" | "beng">
+            label="Numbers"
+            value={s.numerals}
+            onChange={(numerals) => update({ numerals })}
+            options={[
+              { value: "latn", label: "English 123" },
+              { value: "beng", label: "বাংলা ১২৩" },
+            ]}
+          />
+        </SettingRow>
         <SelectRow
           label="Accent"
+          description="A tint for the background"
           value={s.rewardTheme ?? NONE}
           options={choices(ACCENTS)}
           onChange={(id) => update({ rewardTheme: id === NONE ? null : id })}
@@ -63,11 +62,21 @@ export function AppearanceSection({ s, update }: SectionProps) {
           options={choices(OUTFITS)}
           onChange={(id) => update({ tikiOutfit: id === NONE ? null : id })}
         />
+      </Group>
+
+      <GroupLabel>This browser</GroupLabel>
+      <Group>
         <ToggleRow
           label="Sounds"
           description="A soft chime when you finish something"
           checked={feedback.sounds}
           onChange={(on) => setFeedbackPrefs({ sounds: on })}
+        />
+        <ToggleRow
+          label="Hide amounts"
+          description="Every amount shows as ৳•••. Shift H does it from anywhere."
+          checked={hidden}
+          onChange={togglePrivacy}
         />
         <Row
           leading={<RowMark icon={Keyboard} />}
@@ -77,6 +86,6 @@ export function AppearanceSection({ s, update }: SectionProps) {
           onClick={() => shortcutsOpenStore.set(true)}
         />
       </Group>
-    </Section>
+    </>
   );
 }

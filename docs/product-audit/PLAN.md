@@ -7,7 +7,7 @@ From `REPORT.md` (31 Oct 2026). One phase at a time; each phase ends green and c
 - **Audience:** the owner plus invited people. New non-owner accounts get neutral defaults; `PRODUCT.md` is updated to say so.
 - **Weekly review default:** Friday 19:00 for new users (existing saved settings are untouched). Today, Review home and the reminder all follow the setting.
 - **Remove now:** Eisenhower grid (and the Urgent field it needs), Energy tags, Shopping list. Events stay.
-- **Phone:** the reminder fix ships; final deploy covers API + web + a signed APK 1.3.0.
+- **Phone:** the reminder fix is built and tested in code. Final deploy (owner, 1 Nov 2026) covers API + web only; no APK this round.
 - Off-site backups: `BACKUP_OFFSITE_CMD` is not set in production, so the privacy page's "backups removed at once" holds (Q4 closed).
 - Not changed: the app name ("TickNTaka" vs "Tick & Taka", Q3) and the AI model env (Q5) — server config, owner's call.
 
@@ -35,7 +35,7 @@ Local test rig: demo API from source on `127.0.0.1:3000` (`/tmp/tt-demo/run-api.
 | 7   | **Quick-add**                            | R-05 pickers only when the parser is unsure                                                                                          | shared, web, phone                    | Medium                                  |
 | 8   | **Server fixes**                         | R-21 receipt cleanup, R-22 goal task in the job, R-25 "last used" per feature in Admin                                               | API, web admin                        | Low                                     |
 | 9   | **Reminders**                            | R-20 30-day horizon, background refresh, permission in context                                                                       | phone (native module)                 | Medium                                  |
-| 10  | **Docs and deploy**                      | README and privacy page, deploy API + web, APK 1.3.0 (versionCode 4), emulator smoke test, live checks                               | all                                   | Low                                     |
+| 10  | **Docs and deploy**                      | README and privacy page, deploy API + web, live checks (no APK this round)                               | all                                   | Low                                     |
 
 ### Phase 1 — Clear out
 
@@ -101,4 +101,4 @@ Local test rig: demo API from source on `127.0.0.1:3000` (`/tmp/tt-demo/run-api.
 
 - README (features, screenshots of changed web views), privacy page wording, `docs/product-audit/REPORT.md` status column.
 - Deploy: push `main`, `deploy/update-tick-bipulhf.sh` on the server (migrations run on first open), check `/`, `/app/`, API health, sign-in page.
-- APK 1.3.0 (versionCode 4), same signing key; emulator smoke test of first run, quick-add, safe-to-spend setup, Budgets, Bills, Settings entry, Tiki.
+- No APK this round (owner, 1 Nov 2026). The phone changes wait for the next build, with the device checks each phase listed. The API keeps old 1.2.0 phones working (derived `daysOff`, monthly review fields, `users` in AI usage).

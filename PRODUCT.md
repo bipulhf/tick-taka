@@ -6,7 +6,7 @@ product
 
 ## Users
 
-One person (the owner) juggling two remote jobs, teaching, research and home. Uses the app on an Android phone many times a day in short bursts: one-handed on a rickshaw or at a shop counter in daylight, between work blocks at a desk, and in bed at night for the shutdown. Never shared, never onboarded.
+The owner first: one person juggling two remote jobs, teaching, research and home. Then a small number of invited people like them: same city, same languages, similar habits. Each uses the app on an Android phone many times a day in short bursts: one-handed on a rickshaw or at a shop counter in daylight, between work blocks at a desk, and in bed at night for the shutdown. Every account is private, and the first run must work without a guide.
 
 ## Product Purpose
 

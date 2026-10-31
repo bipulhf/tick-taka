@@ -31,5 +31,8 @@ export const settingsRoutes = (deps: Deps) =>
                 })),
             ];
       }
+      // A saved focus is dated, so Today can let it go once its week is over.
+      if (patch.weeklyFocus !== undefined && patch.weeklyFocusOn === undefined)
+        patch.weeklyFocusOn = patch.weeklyFocus?.trim() ? today : null;
       return c.json(writeSettings(deps.db, patch, deps.now()));
     });

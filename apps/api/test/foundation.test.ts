@@ -96,6 +96,18 @@ describe("foundation", () => {
     expect(after.body).toMatchObject({ vacationMode: true, dailyTaskGoal: 3 });
   });
 
+  test("saving the week's focus dates it; clearing it clears the date", async () => {
+    const { request } = await createTestContext();
+    type Focus = { weeklyFocus: string | null; weeklyFocusOn: string | null };
+    const saved = await request<Focus>("PATCH", "/settings", { weeklyFocus: "Rest more" });
+    // DEFAULT_NOW is 4 Oct 2026 in Dhaka.
+    expect(saved.body).toMatchObject({ weeklyFocus: "Rest more", weeklyFocusOn: "2026-10-04" });
+    const other = await request<Focus>("PATCH", "/settings", { dailyTaskGoal: 4 });
+    expect(other.body.weeklyFocusOn).toBe("2026-10-04");
+    const cleared = await request<Focus>("PATCH", "/settings", { weeklyFocus: null });
+    expect(cleared.body).toMatchObject({ weeklyFocus: null, weeklyFocusOn: null });
+  });
+
   test("settings saved by an older build still read, keeping what still exists", async () => {
     const { deps, request } = await createTestContext();
     const old = {

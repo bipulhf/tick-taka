@@ -1,3 +1,4 @@
+import { currentWeeklyFocus } from "@tick-taka/shared/weekly-review";
 import type { TikiOutfit } from "@/components/tiki/tiki";
 import { ErrorState } from "@/components/ui/empty-state";
 import { Skeleton, SkeletonRows } from "@/components/ui/skeleton";
@@ -63,6 +64,7 @@ export function TodayView() {
         data={data}
         outfit={(settings?.tikiOutfit ?? null) as TikiOutfit}
         timeZone={userTime(settings).timeZone}
+        focus={settings ? currentWeeklyFocus(settings, data.date) : null}
       />
       {data.date < localToday ? (
         // Past midnight with yesterday's numbers on screen: say so until today's load.

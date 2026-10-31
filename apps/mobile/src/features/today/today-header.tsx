@@ -9,17 +9,21 @@ import type { TodayData } from "@/lib/queries";
 import { nextThing } from "./next-thing";
 
 /**
- * Date, a one-line greeting beside Tiki, and the next thing to do: compact, so
- * safe-to-spend and the top three sit above the fold.
+ * Date, a one-line greeting beside Tiki, the week's focus from the last weekly
+ * review, and the next thing to do: compact, so safe-to-spend and the top three sit
+ * above the fold.
  */
 export function TodayHeader({
   data,
   outfit,
   timeZone,
+  focus,
 }: {
   data: TodayData;
   outfit: TikiOutfit;
   timeZone: string;
+  /** "Next week's focus" from the weekly review, while it is current. */
+  focus: string | null;
 }) {
   const router = useRouter();
   const goal = data.gamification.dailyGoal;
@@ -48,6 +52,14 @@ export function TodayHeader({
           </Text>
         </View>
       </View>
+      {focus ? (
+        <Text variant="callout" numberOfLines={1}>
+          <Text variant="callout" tone="muted">
+            This week:{" "}
+          </Text>
+          {focus}
+        </Text>
+      ) : null}
       {next ? (
         <Pressable
           onPress={() => router.push(`/task/${next.id}`)}

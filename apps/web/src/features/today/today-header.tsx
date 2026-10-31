@@ -6,17 +6,21 @@ import type { TodayData } from "@/lib/queries";
 import { nextThing } from "./next-thing";
 
 /**
- * Date and the day's goal, Tiki with a one-line greeting, and the next thing to do:
- * compact, so safe-to-spend and the top three sit above the fold.
+ * Date and the day's goal, Tiki with a one-line greeting, the week's focus from the
+ * last weekly review, and the next thing to do: compact, so safe-to-spend and the top
+ * three sit above the fold.
  */
 export function TodayHeader({
   data,
   outfit,
   timeZone,
+  focus,
 }: {
   data: TodayData;
   outfit: TikiOutfit;
   timeZone: string;
+  /** "Next week's focus" from the weekly review, while it is current. */
+  focus: string | null;
 }) {
   const open = useOpenPanel();
   const goal = data.gamification.dailyGoal;
@@ -36,6 +40,12 @@ export function TodayHeader({
           </p>
           <h1 className="truncate text-large-title">{data.greeting}</h1>
           <p className="line-clamp-2 text-callout text-muted">{data.tiki.line}</p>
+          {focus ? (
+            <p className="mt-1 truncate text-callout">
+              <span className="text-muted">This week: </span>
+              {focus}
+            </p>
+          ) : null}
         </div>
       </div>
       {next ? (

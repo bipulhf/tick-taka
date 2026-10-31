@@ -1,9 +1,11 @@
-import { AlarmClock, Flag, MoreHorizontal, Star, StarOff, Trash2 } from "lucide-react";
+import { AlarmClock, Flag, MoreHorizontal, Sparkles, Star, StarOff, Trash2 } from "lucide-react";
 import { useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Row } from "@/components/ui/group";
 import { IconButton } from "@/components/ui/icon-button";
-import { Menu } from "@/components/ui/menu";
+import { Menu, type MenuItem } from "@/components/ui/menu";
+import { askTikiAbout } from "@/features/assistant/ask-tiki";
+import { useAssistantAvailable } from "@/features/assistant/assistant-button";
 import { formatMinutes, formatWhen } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import type { TaskRow as Task } from "@/lib/queries";
@@ -31,6 +33,7 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji, as }: 
   const today = useTodayDate();
   const open = useOpenPanel();
   const actions = useTaskActions();
+  const tiki = useAssistantAvailable();
   const done = task.status === "done";
   const now = Date.now();
   const deadlineSoon =
@@ -106,6 +109,16 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji, as }: 
                 shortcut: "T",
                 onSelect: () => actions.toggleTopThree(task, today),
               },
+              ...(tiki
+                ? [
+                    {
+                      label: "Ask Tiki about this",
+                      icon: Sparkles,
+                      onSelect: () =>
+                        askTikiAbout({ kind: "task", id: task.id, title: task.title }),
+                    } satisfies MenuItem,
+                  ]
+                : []),
               "separator",
               {
                 label: "Delete",

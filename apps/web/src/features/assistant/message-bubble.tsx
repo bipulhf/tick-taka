@@ -1,3 +1,4 @@
+import type { AssistantRating } from "@tick-taka/shared/schemas/ai";
 import {
   Check,
   ChevronDown,
@@ -14,6 +15,8 @@ import { cx } from "@/components/ui/cx";
 import { plural } from "@/lib/format";
 import type { ChatAction, ChatMessage, ChatStep } from "./chat-store";
 import { DraftCard } from "./draft-card";
+import { ReplyCards } from "./reply-cards";
+import { ReplyFeedback } from "./reply-feedback";
 import { StreamingCaret, ThinkingIndicator } from "./thinking-indicator";
 import type { LiveTurn } from "./use-assistant";
 
@@ -172,6 +175,7 @@ export function MessageBubble({
   onKeep,
   onSaveDraft,
   onDiscardDraft,
+  onRate,
 }: {
   message: ChatMessage;
   onUndo: (index: number) => void;
@@ -179,6 +183,7 @@ export function MessageBubble({
   onKeep: () => void;
   onSaveDraft: (index: number) => void;
   onDiscardDraft: (index: number) => void;
+  onRate: (rating: AssistantRating, comment?: string) => void;
 }) {
   if (message.role === "user") {
     return (
@@ -214,6 +219,10 @@ export function MessageBubble({
         <DeletionCard message={message} onConfirm={onConfirmDeletions} onKeep={onKeep} />
       ) : message.deletionChoice === "kept" ? (
         <p className="px-1 text-caption text-muted">Kept everything. Nothing was deleted.</p>
+      ) : null}
+      {message.cards?.length ? <ReplyCards cards={message.cards} /> : null}
+      {message.messageId && !message.failed ? (
+        <ReplyFeedback rating={message.rating ?? null} onRate={onRate} />
       ) : null}
     </div>
   );

@@ -1,11 +1,18 @@
-import { MessagesSquare, X } from "lucide-react";
+import { Command } from "cmdk";
+import { MessagesSquare, Sparkles, X } from "lucide-react";
 import { useEffect } from "react";
-import { registerPaletteActions } from "@/components/shell/command-palette";
+import {
+  PALETTE_FALLBACK,
+  paletteItemClass,
+  registerPaletteActions,
+  registerPaletteFallback,
+} from "@/components/shell/command-palette";
 import { Tiki } from "@/components/tiki/tiki";
 import { cx } from "@/components/ui/cx";
 import { useAiStatus } from "@/lib/queries";
 import { useStore } from "@/lib/store";
 import { assistantOpenStore } from "@/lib/ui-state";
+import { askTiki } from "./ask-tiki";
 
 /** Whether the chat is available: the server has AI and the chat is switched on. */
 export function useAssistantAvailable(): boolean {
@@ -52,9 +59,37 @@ export function AssistantButton() {
   );
 }
 
-/** Adds "Chat with Tiki" to the command palette while the chat is available. */
+/** "Ask Tiki: <what was typed>", below every other match: Enter opens the chat and sends it. */
+function AskTikiItem({ query, close }: { query: string; close: () => void }) {
+  return (
+    <Command.Group
+      heading="Tiki"
+      className="px-1 py-1 text-caption text-muted [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5"
+    >
+      <Command.Item
+        value={`${PALETTE_FALLBACK}ask-tiki ${query}`}
+        onSelect={() => {
+          close();
+          askTiki(query);
+        }}
+        className={paletteItemClass}
+      >
+        <Sparkles aria-hidden className="size-4 shrink-0 text-muted" />
+        <span className="truncate font-semibold text-ink">
+          Ask Tiki: <span className="font-normal">{query}</span>
+        </span>
+      </Command.Item>
+    </Command.Group>
+  );
+}
+
+/** Adds "Chat with Tiki" and "Ask Tiki: …" to the command palette while the chat is available. */
 export function AssistantPalette() {
   const available = useAssistantAvailable();
+  useEffect(() => {
+    if (!available) return;
+    return registerPaletteFallback((query, close) => <AskTikiItem query={query} close={close} />);
+  }, [available]);
   useEffect(() => {
     if (!available) return;
     return registerPaletteActions(() => [

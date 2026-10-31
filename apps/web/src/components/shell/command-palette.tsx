@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Command } from "cmdk";
+import { Command, defaultFilter } from "cmdk";
 import { Eye, Keyboard, Moon, Settings, Sun } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -33,6 +33,22 @@ export function registerPaletteSearch(search: PaletteSearch): () => void {
   searches.add(search);
   return () => searches.delete(search);
 }
+
+/** Results offered for anything typed, below every other group ("Ask Tiki: …"). */
+const fallbacks = new Set<PaletteSearch>();
+export function registerPaletteFallback(search: PaletteSearch): () => void {
+  fallbacks.add(search);
+  return () => fallbacks.delete(search);
+}
+
+/**
+ * Items whose value starts with this always match whatever is typed and rank below
+ * every real match (fallbacks, e.g. "Ask Tiki: …"), so Enter still picks a real one first.
+ */
+export const PALETTE_FALLBACK = "fallback:";
+
+const paletteFilter = (value: string, search: string, keywords?: string[]) =>
+  value.startsWith(PALETTE_FALLBACK) ? 0.001 : defaultFilter(value, search, keywords);
 
 const itemClass =
   "flex min-h-10 cursor-pointer items-center gap-3 rounded-xl px-3 text-body outline-none select-none data-[selected=true]:bg-line/60";
@@ -116,6 +132,7 @@ export function CommandPalette() {
             label="Go to or search"
             loop
             shouldFilter
+            filter={paletteFilter}
             value={selected}
             onValueChange={setSelected}
           >
@@ -192,6 +209,12 @@ export function CommandPalette() {
                   <span className="font-semibold text-ink">Settings</span>
                 </Command.Item>
               </Command.Group>
+              {query.trim().length >= 2
+                ? [...fallbacks].map((search, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: registered fallbacks keep their order
+                    <div key={i}>{search(query.trim(), close)}</div>
+                  ))
+                : null}
             </Command.List>
           </Command>
         </Dialog.Content>

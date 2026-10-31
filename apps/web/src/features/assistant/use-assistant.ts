@@ -1,10 +1,11 @@
+import type { AssistantCard, AssistantRating, AssistantScreen } from "@tick-taka/shared/schemas/ai";
 import { useEffect } from "react";
-import { ApiError } from "@/lib/api";
+import { ApiError, api, unwrap } from "@/lib/api";
 import { friendlyError } from "@/lib/error-copy";
 import { useIsOnline } from "@/lib/online";
 import { queryClient } from "@/lib/query-client";
 import { createStore, useStore } from "@/lib/store";
-import { notify } from "@/lib/toast";
+import { notify, notifyError } from "@/lib/toast";
 import { type WriteRequest, write } from "@/lib/write";
 import {
   appendMessage,
@@ -12,15 +13,16 @@ import {
   type ChatDeletion,
   type ChatStep,
   chatStore,
-  clearChat,
   markUndone,
   updateMessage,
 } from "./chat-store";
+import { threadIdForSend } from "./current-thread";
 import { postEventStream } from "./event-stream";
 import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
 import { ownWrites } from "./own-writes";
 import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
 import { serverNow } from "./server-clock";
+import { refreshThreads, startNewChat } from "./threads";
 
 const HISTORY = 20;
 
@@ -45,6 +47,10 @@ type StreamEvent =
       /** Proposed money changes (we always ask for drafts); older servers omit it. */
       drafts?: unknown;
       memo: string;
+      /** Records and totals to show under the reply; older servers omit it. */
+      cards?: AssistantCard[];
+      /** The stored reply, when the chat is kept on the server. */
+      messageId?: string;
     }
   | { type: "error"; code: string; message: string };
 
@@ -76,7 +82,8 @@ export function useAssistant() {
     if (online) void recoverDroppedTurns();
   }, [online]);
 
-  const ask = async (text: string) => {
+  /** Sends a message, with what's on screen so "this" and "here" mean something. */
+  const ask = async (text: string, screen?: AssistantScreen) => {
     const content = text.trim();
     if (!content || liveStore.get()) return;
     appendMessage({ role: "user", content });
@@ -89,6 +96,8 @@ export function useAssistant() {
         content: body.slice(0, 4000),
         ...(memo ? { memo: memo.slice(-3900) } : {}),
       }));
+    // The chat is kept on the server under this id (made with its first message).
+    const threadId = threadIdForSend();
     liveStore.set({ steps: [], actions: [], text: "" });
     const change = (update: (turn: LiveTurn) => LiveTurn) => {
       const turn = liveStore.get();
@@ -103,7 +112,8 @@ export function useAssistant() {
     const settled = () => liveStore.get()?.steps.map((step) => ({ ok: false, ...step })) ?? [];
     try {
       // Money is never written by the AI on its own: it comes back as drafts to confirm.
-      await postEventStream("/ai/assistant", { messages: history, draftMoney: true }, (data) => {
+      const body = { messages: history, draftMoney: true, threadId, ...(screen ? { screen } : {}) };
+      await postEventStream("/ai/assistant", body, (data) => {
         const event = data as StreamEvent;
         switch (event.type) {
           case "status":
@@ -142,6 +152,8 @@ export function useAssistant() {
                 ? { deletions: event.deletions, deletionChoice: "pending" as const }
                 : {}),
               ...(drafts.length ? { drafts } : {}),
+              ...(event.cards?.length ? { cards: event.cards } : {}),
+              ...(event.messageId ? { messageId: event.messageId, rating: null } : {}),
             });
             if (event.actions.length) void queryClient.invalidateQueries();
             return;
@@ -169,6 +181,8 @@ export function useAssistant() {
       }
     } finally {
       liveStore.set(null);
+      // The chat list shows this chat (new, or newest now).
+      refreshThreads();
     }
   };
 
@@ -245,6 +259,23 @@ export function useAssistant() {
     }));
   };
 
+  /** A thumbs up or down on a stored reply; rating again (or adding a comment) replaces it. */
+  const rate = (id: string, rating: AssistantRating, comment?: string) => {
+    const message = chatStore.get().find((m) => m.id === id);
+    if (!message?.messageId) return;
+    const before = message.rating ?? null;
+    updateMessage(id, (m) => ({ ...m, rating }));
+    const json = { messageId: message.messageId, rating, ...(comment ? { comment } : {}) };
+    unwrap(api.ai.feedback.$post({ json }))
+      .then(() => {
+        if (comment) notify("Thanks. That helps Tiki get better.");
+      })
+      .catch((error: unknown) => {
+        updateMessage(id, (m) => ({ ...m, rating: before }));
+        notifyError(`Couldn't send that. ${friendlyError(error, "save")}`);
+      });
+  };
+
   const keepAll = (messageId: string) => {
     updateMessage(messageId, (m) => ({
       ...m,
@@ -264,7 +295,8 @@ export function useAssistant() {
     keepAll,
     saveDraft,
     discardDraft,
-    clear: clearChat,
+    rate,
+    clear: startNewChat,
     thinking: live !== null,
   };
 }

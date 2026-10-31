@@ -1,6 +1,9 @@
-import { ArrowLeftRight, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeftRight, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { Amount } from "@/components/ui/amount";
 import { Row, RowMark } from "@/components/ui/group";
+import type { MenuItem } from "@/components/ui/menu";
+import { askTikiAbout } from "@/features/assistant/ask-tiki";
+import { useAssistantAvailable } from "@/features/assistant/assistant-button";
 import { formatClock, formatWhen } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import { useAccounts, useCategories } from "@/lib/queries";
@@ -68,6 +71,7 @@ export function TransactionRow({
 }) {
   const { timeZone } = useUserTime();
   const open = useOpenPanel();
+  const tiki = useAssistantAvailable();
   const category = lookup.category(tx.categoryId);
   const account = lookup.account(tx.accountId);
   const title = transactionTitle(tx, lookup);
@@ -124,6 +128,15 @@ export function TransactionRow({
             label={`More for ${title}`}
             items={[
               { label: "Edit", icon: Pencil, onSelect: edit },
+              ...(tiki
+                ? [
+                    {
+                      label: "Ask Tiki about this",
+                      icon: Sparkles,
+                      onSelect: () => askTikiAbout({ kind: "transaction", id: tx.id, title }),
+                    } satisfies MenuItem,
+                  ]
+                : []),
               { label: "Delete", icon: Trash2, onSelect: drop, danger: true, shortcut: "Del" },
             ]}
           />

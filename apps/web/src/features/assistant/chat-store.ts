@@ -1,3 +1,4 @@
+import type { AssistantCard, AssistantRating } from "@tick-taka/shared/schemas/ai";
 import type { HttpMethod } from "@/lib/api";
 import { tokenStore } from "@/lib/auth";
 import { createStore } from "@/lib/store";
@@ -43,6 +44,11 @@ export interface ChatMessage {
    * heard about between these server times. Cleared once they have been looked up.
    */
   recover?: { since: number; until: number };
+  /** The reply's id on the server, once the chat is kept there; it can then be rated. */
+  messageId?: string;
+  /** Records and totals in the reply, to click or glance at. */
+  cards?: AssistantCard[];
+  rating?: AssistantRating | null;
   at: number;
 }
 
@@ -97,6 +103,11 @@ export function updateMessage(messageId: string, change: (message: ChatMessage) 
 
 export function clearChat() {
   save([]);
+}
+
+/** Shows another chat: the messages of a chat loaded from the server. */
+export function replaceChat(messages: ChatMessage[]) {
+  save(messages);
 }
 
 // Signing out takes the chat with it; the next person starts with their own.

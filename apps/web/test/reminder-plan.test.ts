@@ -106,6 +106,26 @@ test("bills and income ring days before and on the day at 9 am, soonest first", 
   expect(plan[0]?.body).toContain("50,000");
 });
 
+test("Hide amounts keeps the figure out of bill and income reminders", () => {
+  const plan = planReminders(
+    base({
+      hidden: true,
+      recurring: [
+        {
+          id: "r1",
+          kind: "bill",
+          name: "Rent",
+          amountMinor: 1_500_000,
+          currency: "BDT",
+          dueDate: "2026-11-03",
+          remindDays: 2,
+        },
+      ],
+    }),
+  );
+  expect(plan.map((n) => n.body)).toEqual(["৳•••", "৳•••"]);
+});
+
 test("a habit nudges today only if not done, and tomorrow either way", () => {
   const habit = { id: "h", name: "Read", emoji: "📚", remindAt: "20:00" };
   const open = planReminders(base({ habits: [{ ...habit, doneToday: false }] }));

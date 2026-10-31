@@ -1,3 +1,4 @@
+import { hiddenAmount } from "@tick-taka/shared/money";
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "react-native-reanimated";
 import { formatAmount, numeralsStore } from "@/lib/format";
@@ -44,9 +45,7 @@ export function Amount({ minor, currency, signed, animate = true, ...props }: Am
     return () => cancelAnimationFrame(frame);
   }, [minor, animate, reduceMotion]);
 
-  const text = hidden
-    ? `${formatAmount(0, { currency, numerals: "latn" }).replace(/[\d.,]+/, "")}•••`
-    : formatAmount(shown, { currency, signed });
+  const text = hidden ? hiddenAmount(currency) : formatAmount(shown, { currency, signed });
   return (
     <Text
       numeric

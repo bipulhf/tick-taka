@@ -96,6 +96,14 @@ export function formatAmount(minor: number, options: FormatAmountOptions = {}): 
   return `${sign}${currencySymbol(currency)}${shown}`;
 }
 
+/**
+ * An amount while Hide amounts is on: the currency sign and dots, `"৳•••"`. Every
+ * place that would show a figure (screens, widget, reminders) uses this one mask.
+ */
+export function hiddenAmount(currency: string = DEFAULT_CURRENCY): string {
+  return `${currencySymbol(currency)}•••`;
+}
+
 const CURRENCY_WORD = String.raw`(?:৳|tk\.?|taka|টাকা)`;
 
 /** A currency sign or word written next to an amount: ৳, tk, taka, টাকা. */

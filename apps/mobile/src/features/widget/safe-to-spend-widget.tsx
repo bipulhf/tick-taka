@@ -1,7 +1,6 @@
 // The widget library walks this tree as plain functions; the React Compiler must not wrap it.
 "use no memo";
 
-import { formatAmount as formatAmountIn } from "@tick-taka/shared/money";
 import { FlexWidget, SvgWidget, TextWidget } from "react-native-android-widget";
 import type { WidgetCache } from "./widget-cache";
 import { type WidgetColors, widgetColors } from "./widget-colors";
@@ -14,6 +13,7 @@ import {
   widgetLayout,
 } from "./widget-layout";
 import { canUndo, lastLogText } from "./widget-quick-log";
+import { widgetMoney } from "./widget-snapshot";
 
 /** The widget library only takes hex colours. */
 type Hex = `#${string}`;
@@ -181,7 +181,7 @@ export function SafeToSpendWidget({
   const c = widgetColors(scheme);
   if (!cache.signedIn) return <SignedOut c={c} />;
 
-  const money = (minor: number) => formatAmountIn(minor, { numerals: cache.numerals });
+  const money = widgetMoney(cache);
   const left = cache.leftTodayMinor;
   const over = left !== null && left < 0;
   const spentShare = cache.dailyMinor > 0 ? cache.spentTodayMinor / cache.dailyMinor : 0;

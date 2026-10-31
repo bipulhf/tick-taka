@@ -38,6 +38,28 @@ describe("planNotifications", () => {
     expect(planned[1]!.body).toBe("৳1,200");
   });
 
+  test("Hide amounts keeps the figure out of bill and income reminders", () => {
+    const planned = planNotifications({
+      ...base,
+      hidden: true,
+      recurring: [
+        {
+          id: "i1",
+          kind: "income",
+          name: "Salary",
+          amountMinor: 8_000_000,
+          currency: "BDT",
+          dueDate: "2026-10-07",
+          remindDays: 2,
+        },
+      ],
+    });
+    expect(planned.map((p) => [p.title, p.body])).toEqual([
+      ["Salary expected in 2 days", "৳•••"],
+      ["Salary expected today", "৳•••"],
+    ]);
+  });
+
   test("task reminders inside quiet hours wait for the morning; done and past are skipped", () => {
     const planned = planNotifications({
       ...base,

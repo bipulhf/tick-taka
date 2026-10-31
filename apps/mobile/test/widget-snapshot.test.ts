@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
-import { widgetAssistant, widgetSnapshot } from "../src/features/widget/widget-snapshot";
+import {
+  widgetAssistant,
+  widgetMoney,
+  widgetSnapshot,
+} from "../src/features/widget/widget-snapshot";
 import type { TodayData } from "../src/lib/queries";
 
 const TZ = "Asia/Dhaka";
@@ -74,5 +78,16 @@ describe("widget snapshot", () => {
     // Not loaded yet: the last answer stands.
     expect(widgetAssistant(undefined, true)).toBe(true);
     expect(widgetAssistant(undefined, false)).toBe(false);
+  });
+});
+
+describe("widget money", () => {
+  test("shows figures in the user's digits", () => {
+    expect(widgetMoney({ numerals: "latn", hidden: false })(35_000)).toBe("৳350");
+    expect(widgetMoney({ numerals: "beng", hidden: false })(35_000)).toBe("৳৩৫০");
+  });
+
+  test("Hide amounts masks every figure", () => {
+    expect(widgetMoney({ numerals: "latn", hidden: true })(35_000)).toBe("৳•••");
   });
 });

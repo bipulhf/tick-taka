@@ -1,4 +1,5 @@
 import { addDays, parseLocalDate, toLocalDate, zonedTimeToUtc } from "@tick-taka/shared/dates";
+import { hiddenAmount } from "@tick-taka/shared/money";
 import {
   deferPastQuietHours,
   isInQuietHours,
@@ -31,6 +32,8 @@ export interface ReminderInputs {
   now: number;
   timeZone: string;
   quietHours: QuietHours;
+  /** Hide amounts is on: bills and income say "৳•••" instead of the figure. */
+  hidden?: boolean;
   tasks: { id: string; title: string; reminderAt: number | null; status: string }[];
   recurring: {
     id: string;
@@ -101,7 +104,9 @@ export function planReminders(input: ReminderInputs): PlannedReminder[] {
     });
   }
   for (const item of input.recurring) {
-    const amount = formatAmount(item.amountMinor, { currency: item.currency });
+    const amount = input.hidden
+      ? hiddenAmount(item.currency)
+      : formatAmount(item.amountMinor, { currency: item.currency });
     const verb = item.kind === "bill" ? "due" : "expected";
     const target = { to: "/money/bills", panel: `recurring:${item.id}` };
     if (item.remindDays > 0) {

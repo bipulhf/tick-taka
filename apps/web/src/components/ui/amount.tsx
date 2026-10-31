@@ -1,3 +1,4 @@
+import { hiddenAmount } from "@tick-taka/shared/money";
 import { type HTMLAttributes, useEffect, useRef, useState } from "react";
 import { formatAmount, numeralsStore } from "@/lib/format";
 import { usePrivacy } from "@/lib/prefs";
@@ -59,9 +60,7 @@ export function Amount({
       : tone === "out" || (tone === "flow" && minor < 0)
         ? "text-coral-text"
         : undefined;
-  const text = hidden
-    ? `${formatAmount(0, { currency, numerals: "latn" }).replace(/[\d.,]+/, "")}•••`
-    : formatAmount(shown, { currency, signed });
+  const text = hidden ? hiddenAmount(currency) : formatAmount(shown, { currency, signed });
   return (
     <span className={cx("tabular whitespace-nowrap", color, className)} {...props}>
       <span aria-hidden>{text}</span>

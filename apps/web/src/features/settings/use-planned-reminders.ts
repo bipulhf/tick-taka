@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef } from "react";
 import { api, unwrap } from "@/lib/api";
+import { usePrivacy } from "@/lib/prefs";
 import { fetchToday, keys, useSettings } from "@/lib/queries";
 import { createStore } from "@/lib/store";
 import { useTodayDate } from "@/lib/use-today";
@@ -39,6 +40,8 @@ export function usePlannedReminders(on: boolean) {
   const zone = userTime(settings).timeZone;
   const quiet = settings?.quietHours;
   const today = useTodayDate();
+  // Hide amounts: bills and income ring without their figure.
+  const hidden = usePrivacy();
 
   // The views' own query keys, so a write that changes them refreshes the plan too.
   const tasks = useQuery({
@@ -96,6 +99,7 @@ export function usePlannedReminders(on: boolean) {
     const inputs = {
       timeZone: zone,
       quietHours: quiet,
+      hidden,
       tasks: tasks.data ?? [],
       recurring: recurring.data ?? [],
       habits: habits.data ?? [],
@@ -115,7 +119,7 @@ export function usePlannedReminders(on: boolean) {
     };
     check();
     return () => clearTimeout(timer);
-  }, [on, quiet, zone, tasks.data, recurring.data, habits.data, debts.data, open]);
+  }, [on, quiet, zone, hidden, tasks.data, recurring.data, habits.data, debts.data, open]);
 
   // Pace alert: one calm heads-up per category per month, never a stream.
   const pace = todayData.data?.paceAlert;

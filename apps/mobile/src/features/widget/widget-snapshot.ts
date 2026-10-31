@@ -1,3 +1,4 @@
+import { formatAmount, hiddenAmount } from "@tick-taka/shared/money";
 import { formatClock } from "@/lib/format";
 import type { TodayData } from "@/lib/queries";
 import type { WidgetCache } from "./widget-cache";
@@ -55,4 +56,10 @@ export function widgetSnapshot(data: TodayData, now: number, timeZone: string): 
       total: data.habits.length,
     },
   };
+}
+
+/** How the widget writes an amount: in the user's digits, or masked while Hide amounts is on. */
+export function widgetMoney(cache: Pick<WidgetCache, "numerals" | "hidden">) {
+  return (minor: number) =>
+    cache.hidden ? hiddenAmount() : formatAmount(minor, { numerals: cache.numerals });
 }

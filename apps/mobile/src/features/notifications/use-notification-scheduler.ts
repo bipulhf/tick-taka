@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { api, unwrap } from "@/lib/api";
 import { ensureNotificationPermission, reminderSyncError } from "@/lib/notifications";
+import { privacyStore, usePrivacy } from "@/lib/privacy";
 import { useSettings } from "@/lib/queries";
 import { useToday } from "@/lib/use-today";
 import { planNotifications } from "./plan-notifications";
@@ -26,6 +27,7 @@ async function reschedule(settings: NonNullable<ReturnType<typeof useSettings>["
     now,
     timeZone: settings.timeZone,
     quietHours: settings.quietHours,
+    hidden: privacyStore.get(),
     tasks,
     recurring,
     habits,
@@ -99,13 +101,15 @@ async function rescheduleSafely(settings: Parameters<typeof reschedule>[0]): Pro
 export function useNotificationScheduler() {
   const { data: settings } = useSettings();
   const today = useToday();
+  // Hide amounts changes what bill reminders say, so switching it reschedules them.
+  const hidden = usePrivacy();
   const lastRun = useRef<number | null>(null);
   const latest = useRef(settings);
   useEffect(() => {
     latest.current = settings;
   }, [settings]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on start and again each time Today's data refreshes (dataUpdatedAt), not only when settings change.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on start and again each time Today's data refreshes (dataUpdatedAt) or Hide amounts flips, not only when settings change.
   useEffect(() => {
     if (!settings) return;
     const timer = setTimeout(() => {
@@ -113,7 +117,7 @@ export function useNotificationScheduler() {
       void rescheduleSafely(settings);
     }, 1500);
     return () => clearTimeout(timer);
-  }, [settings, today.dataUpdatedAt]);
+  }, [settings, today.dataUpdatedAt, hidden]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (status) => {

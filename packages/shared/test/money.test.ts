@@ -6,6 +6,7 @@ import {
   defaultGrouping,
   formatAmount,
   groupDigits,
+  hiddenAmount,
   minorDigits,
   minorFactor,
   parseAmountToMinor,
@@ -22,6 +23,11 @@ describe("money", () => {
     expect(toMinor(-0.005)).toBe(-1);
     expect(toMinor(1000, "JPY")).toBe(1000);
     expect(toMajor(61_667)).toBeCloseTo(616.67);
+  });
+
+  test("hides an amount behind its currency sign", () => {
+    expect(hiddenAmount()).toBe("৳•••");
+    expect(hiddenAmount("USD")).toBe(`${currencySymbol("USD")}•••`);
   });
 
   test("formats with the taka sign and drops zero fractions", () => {

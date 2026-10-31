@@ -22,6 +22,7 @@ const cache: WidgetCache = {
   status: null,
   lastLog: null,
   numerals: "latn",
+  hidden: false,
   assistant: true,
   updatedAt: 0,
 };

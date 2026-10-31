@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { requestWidgetUpdate } from "react-native-android-widget";
 import { useTransactions } from "@/features/money/queries";
 import { outbox, startOutbox, useOutbox } from "@/lib/outbox";
+import { usePrivacy } from "@/lib/privacy";
 import { useAiStatus, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useToday } from "@/lib/use-today";
@@ -56,6 +57,7 @@ export function useWidgetSync() {
   const { timeZone } = userTime(settings);
   const recent = useTransactions({ type: "expense", limit: "200" });
   const { data: ai } = useAiStatus();
+  const hidden = usePrivacy();
 
   useEffect(() => {
     void handOverWidgetWrites({
@@ -84,6 +86,7 @@ export function useWidgetSync() {
         // The widget keeps offering Undo for its last quick-log while the app refreshes.
         lastLog: previous.lastLog,
         numerals: settings?.numerals ?? "latn",
+        hidden,
         assistant: widgetAssistant(ai, previous.assistant),
         updatedAt: editTime(),
       };
@@ -110,5 +113,13 @@ export function useWidgetSync() {
         }),
       }).catch(() => {});
     })();
-  }, [today.data, recent.data, settings?.defaultAccountId, settings?.numerals, timeZone, ai]);
+  }, [
+    today.data,
+    recent.data,
+    settings?.defaultAccountId,
+    settings?.numerals,
+    timeZone,
+    ai,
+    hidden,
+  ]);
 }

@@ -19,7 +19,7 @@ const LONG_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 const goalLabel = (n: number) => (n === 0 ? "Off" : plural(n, "task"));
 const minutesLabel = (m: string) => plural(Number(m), "minute");
 
-/** The daily goal, days off, time zone, focus timer lengths and the optional planning views. */
+/** The daily goal, days off, time zone and focus timer lengths. */
 export function PlanningSettings() {
   const update = useUpdateSettings();
   const phone = phoneTimeZone();

@@ -14,7 +14,7 @@ const minutes = (n: number) => `${n} min`;
 
 /**
  * The day's shape: the goal, workdays, time zone and time off up front; capacity, the
- * week's first day, focus lengths and the extra views folded under More options.
+ * week's first day and focus lengths folded under More options.
  */
 export function DaySection({ s, update }: SectionProps) {
   const browser = browserTimeZone();

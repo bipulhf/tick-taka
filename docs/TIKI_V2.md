@@ -8,7 +8,7 @@ apps; each section says what the server does and what the apps show.
 - `POST /ai/assistant` accepts an optional `screen`:
   `{ view: string (≤ 120, the route, e.g. "/money/transactions"), record?: { kind, id } }`
   where `kind` is one of `task, transaction, habit, goal, debt, account, event, project,
-  recurring, shopping_item, time_entry, routine` and `id` is a ULID.
+  recurring, time_entry, routine` and `id` is a ULID.
 - The server looks the record up itself (the user's own data, through the app's routes)
   and adds one line to the system context: `The user is looking at the <kind>
   “<title>” (id <id>) on <view>. "this", "it" and "here" mean that record.` A record that

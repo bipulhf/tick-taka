@@ -109,8 +109,8 @@ also get Focus and Tiki.
 
 - Inbox, upcoming, projects by area of life, someday and a logbook of finished work.
 - Day timeline and week planner with drag to schedule; "Plan my day" with AI.
-- Repeating tasks in plain words ("every other Tuesday"), subtasks, deadlines, priority,
-  an Eisenhower view.
+- Repeating tasks in plain words ("every other Tuesday"), subtasks, deadlines and
+  priority.
 - Morning and shutdown routines, time tracking, and a focus timer that grows a plant.
 - Habits with daily or weekly targets, streaks and freeze days.
 
@@ -119,7 +119,7 @@ also get Focus and Tiki.
 - Accounts (cash, bank, mobile wallet, card, savings) with transfers and fees.
 - Budgets split into flexible, fixed and non-monthly, with rollover.
 - Bills and income on a schedule, savings goals, debts (who owes whom), trips and events,
-  a shopping list and a spending calendar.
+  and a spending calendar.
 - Foreign-currency income converted at the rate you received it.
 
 **Review**
@@ -138,7 +138,7 @@ also get Focus and Tiki.
 - Chat or talk, in Bangla or English, to add, change, delete or ask about anything. Adds,
   edits, deletions, budgets, habit logs, settings and paying or skipping a bill come with
   Undo in the chat; the timer and the other money actions (adding to a goal, repaying a
-  debt, a balance check, a shopping checkout) are corrected in their own screens.
+  debt, a balance check) are corrected in their own screens.
 - Weekly coach, budget suggestions, "break it down" for big tasks.
 - A monthly AI budget per user, which the server checks before every model call.
 - Deletions always wait for your tap. A client that sends `draftMoney: true` with
@@ -488,10 +488,10 @@ The full product and technical spec is in `tick_taka_spec.pdf`; the build order 
   newer rows.
 - **Weekdays** in plain-words recurrence ("every weekday") follow the Bangladesh work
   week, Sunday to Thursday; the default week starts on Saturday. Both are settings.
-- A few columns beyond the spec's table list: `tasks.urgent` and `tasks.sort`
-  (Eisenhower and ordering), `tasks.goal_id` (goals become tasks), `time_entries.note`,
-  `habits.remind_at`, `recurring.currency/active/overdue_at`, `goals.create_tasks`,
-  `debts.remind_at`, and `sort` columns on lists.
+- A few columns beyond the spec's table list: `tasks.sort` (ordering), `tasks.goal_id`
+  (goals become tasks), `time_entries.note`, `habits.remind_at`,
+  `recurring.currency/active/overdue_at`, `goals.create_tasks`, `debts.remind_at`, and
+  `sort` columns on lists.
 - **Dependency advisories** (`bun run audit`, which CI runs): `uuid` is pinned to a
   patched 11.x through `overrides` in `package.json`. The rest are accepted in
   `scripts/audit-allowlist.json`, each with its reason, and the audit fails only on an

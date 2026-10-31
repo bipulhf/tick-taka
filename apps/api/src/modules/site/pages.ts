@@ -21,7 +21,7 @@ export const privacyPage = (site: SiteInfo) =>
 <tbody>
 <tr><td>Name, email address and profile picture from your Google account, and Google's account ID</td><td>Google Sign-In, when you sign in</td><td>To create your account, sign you in, keep your data separate from other users' and show who is signed in</td></tr>
 <tr><td>Planner records: tasks, projects, areas, habits and habit check-ins, routines, focus sessions and time entries</td><td>You, when you enter them</td><td>To provide the planner features and your reviews and reports</td></tr>
-<tr><td>Money records: transactions, accounts and balances, categories, budgets, bills, savings goals, debts (including the name you give the other person), events and shopping lists</td><td>You, when you enter them</td><td>To provide the money features, budgets and reports</td></tr>
+<tr><td>Money records: transactions, accounts and balances, categories, budgets, bills, savings goals, debts (including the name you give the other person) and events</td><td>You, when you enter them</td><td>To provide the money features, budgets and reports</td></tr>
 <tr><td>Receipt photos</td><td>You, if you choose to attach one</td><td>To keep the receipt with the expense and, if you use receipt scan, to read the amount</td></tr>
 <tr><td>Voice recordings</td><td>Your phone's microphone, only while you hold a conversation with Tiki</td><td>To turn your speech into text; the recording is not stored</td></tr>
 <tr><td>Messages to the assistant (Tiki)</td><td>You</td><td>To answer and carry out what you ask, and to show your chats on each device you sign in on. Chats are kept in your own space on our server until you delete them, which you can do at any time</td></tr>

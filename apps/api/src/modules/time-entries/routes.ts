@@ -35,9 +35,6 @@ export const timeEntriesRoutes = (deps: Deps) => {
       const { from, to } = c.req.valid("query");
       return c.json(service().focusStats({ from, to }, userTime(deps).timeZone));
     })
-    .get("/by-area", validate("query", rangeQuerySchema), (c) =>
-      c.json(service().minutesByArea(c.req.valid("query"))),
-    )
     .post("/", validate("json", timeEntryCreateSchema), (c) =>
       c.json(service().create(c.req.valid("json")), 201),
     )

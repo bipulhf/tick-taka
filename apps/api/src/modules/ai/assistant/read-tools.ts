@@ -7,21 +7,17 @@ import {
 } from "@tick-taka/shared/dates";
 import { toMajor } from "@tick-taka/shared/money";
 import { and, eq, gte, isNull, lt } from "drizzle-orm";
-import type { AiChatMessage, AiToolDefinition } from "../../ai/client";
-import { callAi, logUsage, requireAi } from "../../ai/usage";
-import { tasks } from "../../db/schema/time";
-import type { Deps } from "../../lib/deps";
-import { incomeRows, spendingRows, sumBy } from "../../lib/money-queries";
-import { userTime } from "../../lib/user-time";
-import { accountService } from "../accounts/service";
-import { budgetMonth } from "../budgets/service";
-import { debtService } from "../debts/service";
-import { habitService } from "../habits/service";
-import { timeEntryService } from "../time-entries/service";
-import { vocabulary } from "./context";
-import { ASK_PROMPT } from "./prompts";
-
-const MAX_ROUNDS = 5;
+import type { AiToolDefinition } from "../../../ai/client";
+import { tasks } from "../../../db/schema/time";
+import type { Deps } from "../../../lib/deps";
+import { incomeRows, spendingRows, sumBy } from "../../../lib/money-queries";
+import { userTime } from "../../../lib/user-time";
+import { accountService } from "../../accounts/service";
+import { budgetMonth } from "../../budgets/service";
+import { debtService } from "../../debts/service";
+import { habitService } from "../../habits/service";
+import { timeEntryService } from "../../time-entries/service";
+import { vocabulary } from "../context";
 
 const rangeParams = {
   type: "object",
@@ -34,7 +30,7 @@ const rangeParams = {
 };
 const noParams = { type: "object", properties: {}, required: [], additionalProperties: false };
 
-/** The only things "Ask my data" can do: fixed, read-only queries. It never writes or runs SQL. */
+/** Tiki's report functions: fixed, read-only queries. They never write or run SQL. */
 export const ASK_TOOLS: AiToolDefinition[] = [
   {
     name: "spendByCategory",
@@ -199,37 +195,4 @@ export function runAskTool(deps: Deps, name: string, rawArgs: string): unknown {
     default:
       throw new Error(`Unknown function ${name}`);
   }
-}
-
-/** "Ask my data": function calling over the fixed query set above. */
-export async function aiAsk(deps: Deps, question: string) {
-  const ai = requireAi(deps, "ask");
-  const { today } = userTime(deps);
-  const messages: AiChatMessage[] = [
-    { role: "system", content: `${ASK_PROMPT}\nToday is ${today}.` },
-    { role: "user", content: question },
-  ];
-  const toolsUsed: string[] = [];
-  for (let round = 0; round < MAX_ROUNDS; round++) {
-    const result = await callAi(() => ai.chat({ model: "fast", messages, tools: ASK_TOOLS }));
-    logUsage(deps, "ask", "fast", result.model, result.usage);
-    if (result.toolCalls.length === 0) {
-      return { answer: result.content?.trim() || "I couldn't find an answer to that.", toolsUsed };
-    }
-    messages.push({ role: "assistant", content: result.content, toolCalls: result.toolCalls });
-    for (const call of result.toolCalls) {
-      toolsUsed.push(call.name);
-      let content: string;
-      try {
-        content = JSON.stringify(runAskTool(deps, call.name, call.arguments));
-      } catch (error) {
-        content = JSON.stringify({ error: (error as Error).message });
-      }
-      messages.push({ role: "tool", toolCallId: call.id, content });
-    }
-  }
-  return {
-    answer: "That question needed too many lookups. Try asking something narrower.",
-    toolsUsed,
-  };
 }

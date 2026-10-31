@@ -27,7 +27,6 @@ export const aiBreakdownRequestSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 export const aiWeeklyReviewRequestSchema = z.object({ weekStart: localDateSchema.optional() });
-export const aiAskRequestSchema = z.object({ question: z.string().trim().min(3).max(500) });
 export const aiBudgetSuggestionsRequestSchema = z.object({ month: localMonthSchema });
 
 // Structured outputs ----------------------------------------------------------

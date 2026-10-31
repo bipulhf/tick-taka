@@ -9,7 +9,7 @@ import { MoreOptions } from "./setting-row";
 import type { SectionProps } from "./settings-types";
 import { TikiNotes } from "./tiki-notes";
 
-/** What each feature is called; "ask" has no screen of its own, so it isn't offered. */
+/** What each feature is called. */
 const AI_LABELS: Partial<Record<AiFeature, string>> = {
   assistant: "Chat with Tiki (and voice)",
   parse: "Smart quick-add",

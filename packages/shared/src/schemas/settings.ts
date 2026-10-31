@@ -10,11 +10,18 @@ export const AI_FEATURES = [
   "planDay",
   "breakdown",
   "weeklyReview",
-  "ask",
   "budgetSuggestions",
   "assistant",
 ] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
+
+/** One optional switch per feature. A stored name that's no longer a feature is dropped. */
+const aiFeatureSwitchesSchema = z.object(
+  Object.fromEntries(AI_FEATURES.map((feature) => [feature, z.boolean().optional()])) as Record<
+    AiFeature,
+    z.ZodOptional<z.ZodBoolean>
+  >,
+);
 
 /**
  * Every setting with its default. Stored as one row per key with a JSON value;
@@ -75,7 +82,7 @@ export const settingsSchema = z.object({
   ai: z
     .object({
       enabled: z.boolean().default(true),
-      features: z.partialRecord(z.enum(AI_FEATURES), z.boolean()).default({}),
+      features: aiFeatureSwitchesSchema.default({}),
     })
     .default({ enabled: true, features: {} }),
   billOverdueGraceDays: z.number().int().min(0).max(30).default(0),

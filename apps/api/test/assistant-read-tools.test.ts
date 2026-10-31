@@ -1,23 +1,22 @@
 import { describe, expect, test } from "bun:test";
 import type { AiToolCall } from "../src/ai/client";
+import { chat } from "./assistant-helpers";
 import { FakeAi } from "./fake-ai";
 import { createTestContext, DEFAULT_NOW, type TestContext } from "./helpers";
 import { type Row, setupMoney } from "./money-helpers";
 
-type Answer = { answer: string; toolsUsed: string[] };
-
 let callId = 0;
 const tool = (name: string, args: Record<string, unknown> = {}): AiToolCall => ({
-  id: `ask_${++callId}`,
+  id: `read_${++callId}`,
   name,
   arguments: JSON.stringify(args),
 });
 const OCTOBER = { from: "2026-10-01", to: "2026-10-31" };
 
-/** Asks with the model calling `calls` in one round; returns each tool's reply, parsed. */
+/** Asks Tiki with the model calling `calls` in one round; returns each tool's reply, parsed. */
 async function askWith(ctx: TestContext, ai: FakeAi, calls: AiToolCall[]) {
   ai.queueChat({ toolCalls: calls }, { content: "Here you go." });
-  const res = await ctx.request<Answer>("POST", "/ai/ask", { question: "How am I doing?" });
+  const res = await chat(ctx, [{ role: "user", content: "How am I doing?" }]);
   const replies = ai.chatRequests
     .at(-1)
     ?.messages.filter((m) => m.role === "tool")
@@ -68,8 +67,8 @@ async function activity(ctx: TestContext) {
   return { cash, usd, category };
 }
 
-// CQ-042 / QA-406: every "ask my data" tool, through /ai/ask with the fake AI.
-describe("ask my data tools", () => {
+// CQ-042 / QA-406: every report tool Tiki can call, with the fake AI.
+describe("Tiki's read tools", () => {
   test("money tools answer in taka from default-currency rows only", async () => {
     const ai = new FakeAi();
     const ctx = await createTestContext({ ai });
@@ -81,16 +80,7 @@ describe("ask my data tools", () => {
       tool("budgetStatus", { month: "2026-10" }),
       tool("accountBalances"),
     ]);
-    expect(res.body).toEqual({
-      answer: "Here you go.",
-      toolsUsed: [
-        "spendByCategory",
-        "spendByArea",
-        "incomeByCategory",
-        "budgetStatus",
-        "accountBalances",
-      ],
-    });
+    expect(res.body.reply).toBe("Here you go.");
     const [byCategory, byArea, income, budget, balances] = replies;
     expect(byCategory).toEqual([
       { name: "Food", taka: 250 },
@@ -146,25 +136,20 @@ describe("ask my data tools", () => {
     expect(replies).toEqual([
       { error: "Dates must be YYYY-MM-DD" },
       { error: "Month must be YYYY-MM" },
-      { error: "Unknown function dropTables" },
+      { error: "Unknown function" },
     ]);
   });
 
-  test("a model that keeps looking things up is stopped after five rounds", async () => {
+  test("debt names never reach the model", async () => {
     const ai = new FakeAi();
     const ctx = await createTestContext({ ai });
-    for (let round = 0; round < 6; round++) ai.queueChat({ toolCalls: [tool("accountBalances")] });
-    const res = await ctx.request<Answer>("POST", "/ai/ask", { question: "Everything?" });
-    expect(res.body.answer).toContain("too many lookups");
-    expect(res.body.toolsUsed).toHaveLength(5);
-    expect(ai.chatRequests).toHaveLength(5);
-  });
-
-  test("an empty answer reads as not found", async () => {
-    const ai = new FakeAi();
-    const ctx = await createTestContext({ ai });
-    ai.queueChat({ content: "  " });
-    const res = await ctx.request<Answer>("POST", "/ai/ask", { question: "Anything?" });
-    expect(res.body).toEqual({ answer: "I couldn't find an answer to that.", toolsUsed: [] });
+    await ctx.request("POST", "/debts", {
+      person: "Rahim Uddin",
+      direction: "owed_to_me",
+      principalMinor: 50_000,
+    });
+    const { replies } = await askWith(ctx, ai, [tool("debtsSummary")]);
+    expect(replies).toEqual([[{ person: "Person 1", direction: "owed_to_me", outstanding: 500 }]]);
+    expect(JSON.stringify(ai.chatRequests)).not.toContain("Rahim");
   });
 });

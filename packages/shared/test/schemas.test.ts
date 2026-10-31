@@ -37,6 +37,17 @@ describe("schemas", () => {
     expect(settingsPatchSchema.parse({ vacationMode: true })).toEqual({ vacationMode: true });
   });
 
+  test("settings stored by older builds still parse, keeping what still exists", () => {
+    // "ask" was a feature switch with no screen.
+    const stored = { ai: { enabled: false, features: { ask: false, parse: false } } };
+    const parsed = settingsSchema.parse({ ...DEFAULT_SETTINGS, ...stored });
+    expect(parsed.ai).toEqual({ enabled: false, features: { parse: false } });
+    // An older phone sending the same back is accepted too.
+    expect(settingsPatchSchema.parse(stored)).toEqual({
+      ai: { enabled: false, features: { parse: false } },
+    });
+  });
+
   test("transfers need two different accounts", () => {
     const base = { type: "transfer", accountId: newId(), amountMinor: 100, occurredAt: 1 };
     expect(transactionCreateSchema.safeParse(base).success).toBe(false);

@@ -289,11 +289,7 @@ describe("timer and time entries", () => {
       `/time-entries/focus-stats?${range}`,
     );
     expect(stats.body).toMatchObject({ totalMinutes: 25, sessions: 1 });
-    const byArea = await ctx.request<{ areaId: string | null; minutes: number }[]>(
-      "GET",
-      `/time-entries/by-area?${range}`,
-    );
-    expect(byArea.body.find((a) => a.areaId === research.id)?.minutes).toBe(25);
+    expect(stats.body.byArea.find((a) => a.areaId === research.id)?.minutes).toBe(25);
   });
 
   test("manual entries validate times", async () => {

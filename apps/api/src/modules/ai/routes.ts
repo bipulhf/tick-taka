@@ -1,5 +1,4 @@
 import {
-  aiAskRequestSchema,
   aiBreakdownRequestSchema,
   aiBudgetSuggestionsRequestSchema,
   aiCategorizeRequestSchema,
@@ -25,7 +24,6 @@ import { currentScope } from "../../lib/user-scope";
 import { userTime } from "../../lib/user-time";
 import { validate } from "../../lib/validate";
 import { SlidingWindowLimiter } from "../../middleware/rate-limit";
-import { aiAsk } from "./ask";
 import { type AssistantEvent, aiAssistant } from "./assistant/agent";
 import type { Dispatch } from "./assistant/dispatch";
 import { threadRoutes, threadService } from "./assistant/threads";
@@ -81,7 +79,6 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
           planDay: isAiFeatureEnabled(settings, "planDay"),
           breakdown: isAiFeatureEnabled(settings, "breakdown"),
           weeklyReview: isAiFeatureEnabled(settings, "weeklyReview"),
-          ask: isAiFeatureEnabled(settings, "ask"),
           budgetSuggestions: isAiFeatureEnabled(settings, "budgetSuggestions"),
           assistant: isAiFeatureEnabled(settings, "assistant"),
         },
@@ -107,9 +104,6 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
     )
     .post("/weekly-review", validate("json", aiWeeklyReviewRequestSchema), async (c) =>
       c.json(await aiWeeklyCoach(deps, c.req.valid("json").weekStart)),
-    )
-    .post("/ask", validate("json", aiAskRequestSchema), async (c) =>
-      c.json(await aiAsk(deps, c.req.valid("json").question)),
     )
     /**
      * Server-sent events, in order: status (a step), delta (reply text), reset,

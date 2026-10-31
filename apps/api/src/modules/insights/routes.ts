@@ -4,7 +4,6 @@ import { z } from "zod";
 import type { Deps } from "../../lib/deps";
 import { dateQuery } from "../../lib/params";
 import { validate } from "../../lib/validate";
-import { weeklyRecap } from "./recap";
 import { spotSubscriptions } from "./spotter";
 import {
   areaDashboard,
@@ -31,7 +30,4 @@ export const insightsRoutes = (deps: Deps) =>
     .get("/areas", validate("query", dateQuery), (c) =>
       c.json(areaDashboard(deps, c.req.valid("query").date)),
     )
-    .get("/subscriptions", (c) => c.json(spotSubscriptions(deps)))
-    .get("/weekly-recap", validate("query", dateQuery), (c) =>
-      c.json(weeklyRecap(deps, c.req.valid("query").date)),
-    );
+    .get("/subscriptions", (c) => c.json(spotSubscriptions(deps)));

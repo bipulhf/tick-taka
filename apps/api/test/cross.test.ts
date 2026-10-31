@@ -226,36 +226,6 @@ describe("insights", () => {
     );
     expect(res.body).toEqual([expect.objectContaining({ note: "Netflix", occurrences: 3 })]);
   });
-
-  test("weekly recap compares with the same days last week", async () => {
-    const ctx = await createTestContext();
-    const { cash, category } = await setupMoney(ctx);
-    await ctx.request("POST", "/transactions", {
-      type: "expense",
-      accountId: cash.id,
-      amountMinor: 30_000,
-      categoryId: category("Food").id,
-      occurredAt: DEFAULT_NOW,
-    });
-    await ctx.request("POST", "/transactions", {
-      type: "expense",
-      accountId: cash.id,
-      amountMinor: 20_000,
-      occurredAt: DEFAULT_NOW - 7 * DAY_MS,
-    });
-    const res = await ctx.request<{
-      thisWeekMinor: number;
-      lastWeekMinor: number;
-      topCategory: { name: string };
-      tip: string;
-    }>("GET", "/insights/weekly-recap");
-    expect(res.body).toMatchObject({
-      thisWeekMinor: 30_000,
-      lastWeekMinor: 20_000,
-      topCategory: { name: "Food" },
-    });
-    expect(res.body.tip).toContain("Up 50%");
-  });
 });
 
 describe("reviews", () => {

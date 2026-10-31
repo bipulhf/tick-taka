@@ -9,6 +9,7 @@ import { recurringService } from "../modules/recurring/service";
 import { readSettings } from "../modules/settings/service";
 import { runBackup } from "./backup";
 import { copyBackupsOffsite } from "./offsite";
+import { sweepReceipts } from "./receipt-sweep";
 
 interface NightlyJob {
   name: string;
@@ -31,6 +32,11 @@ const JOBS: NightlyJob[] = [
     name: "nightly-backup",
     hour: 3,
     run: (_deps, data, now, timeZone) => runBackup(data.sqlite, data.backupsDir, now, timeZone),
+  },
+  {
+    name: "receipt-sweep",
+    hour: 4,
+    run: (_deps, data, now) => sweepReceipts(data.db, data.uploadsDir, now),
   },
 ];
 

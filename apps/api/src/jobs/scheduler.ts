@@ -5,6 +5,7 @@ import type { User, UserData } from "../db/user-registry";
 import type { Deps } from "../lib/deps";
 import { errorFields, log, userTag } from "../lib/log";
 import { runAsUser } from "../lib/user-scope";
+import { goalService } from "../modules/goals/service";
 import { recurringService } from "../modules/recurring/service";
 import { readSettings } from "../modules/settings/service";
 import { runBackup } from "./backup";
@@ -20,6 +21,8 @@ interface NightlyJob {
 
 const JOBS: NightlyJob[] = [
   { name: "overdue-bills", hour: 0, run: (deps) => recurringService(deps).markOverdue() },
+  // This month's "move ৳X to the jar" task for each goal; skips goals that already have one.
+  { name: "goal-tasks", hour: 0, run: (deps) => goalService(deps).ensureMonthlyTasks() },
   {
     // Recounts users.db's AI totals from the user's own rows: fills in months from
     // before the totals existed, and any call whose total failed to record.

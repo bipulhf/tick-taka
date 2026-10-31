@@ -93,6 +93,8 @@ export function goalService(deps: Deps) {
         ...fields,
         ...(done === undefined ? {} : { doneAt: done ? deps.now() : null }),
       });
+      // A deadline added or tasks switched on mid-month shouldn't wait for the nightly job.
+      service.ensureMonthlyTasks();
       return service.getWithProgress(id);
     },
 
@@ -130,7 +132,9 @@ export function goalService(deps: Deps) {
 
     /**
      * Goals become tasks: each goal with a deadline gets one "move ৳X to the jar"
-     * task per month. Safe to call repeatedly.
+     * task per month. Safe to call repeatedly: a goal with a task this month (even
+     * one the user deleted) gets no second one. Run by the nightly job and after a
+     * goal is created or changed; reading Today never writes.
      */
     ensureMonthlyTasks(): number {
       const { timeZone, today } = userTime(deps);

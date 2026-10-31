@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DAY_MS, HOUR_MS, startOfLocalDay, zonedTimeToUtc } from "@tick-taka/shared/dates";
 import { runBackup } from "../src/jobs/backup";
+import { runHourlyJobs } from "../src/jobs/scheduler";
 import { createTestContext, DEFAULT_NOW } from "./helpers";
 import { type Row, setupMoney } from "./money-helpers";
 
@@ -89,7 +90,7 @@ describe("GET /today", () => {
     expect(res.body.tiki.mood).toBe("relaxed");
   });
 
-  test("goal tasks are created when Today loads", async () => {
+  test("loading Today makes no goal task; the nightly job does", async () => {
     const ctx = await createTestContext();
     const { deps } = ctx;
     const { goals } = await import("../src/db/schema/money");
@@ -106,6 +107,8 @@ describe("GET /today", () => {
       })
       .run();
     await ctx.request("GET", "/today");
+    expect((await ctx.request<Row[]>("GET", "/tasks")).body).toEqual([]);
+    await runHourlyJobs(deps);
     const tasks = await ctx.request<Row[]>("GET", "/tasks");
     expect(tasks.body.map((t) => t.title)).toEqual(["Move ৳1,000 to the Bike jar"]);
   });

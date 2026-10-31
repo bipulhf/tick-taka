@@ -15,7 +15,6 @@ import type { Deps } from "../../lib/deps";
 import { userTime } from "../../lib/user-time";
 import { budgetMonth, safeToSpend } from "../budgets/service";
 import { gamificationSummary } from "../gamification/service";
-import { goalService } from "../goals/service";
 import { habitService } from "../habits/service";
 import { recurringService } from "../recurring/service";
 import { timeEntryService } from "../time-entries/service";
@@ -60,8 +59,6 @@ export function todayView(deps: Deps, date?: LocalDate) {
   const from = startOfLocalDay(day, timeZone);
   const to = endOfLocalDay(day, timeZone);
   const db = deps.db;
-
-  goalService(deps).ensureMonthlyTasks();
 
   const dayTasks = db
     .select()

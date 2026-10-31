@@ -5,27 +5,20 @@ import { ProgressBar } from "@/components/ui/progress";
 import { plural } from "@/lib/format";
 import { usePrivacy } from "@/lib/prefs";
 import type { TodayData } from "@/lib/queries";
+import { FirstBudget } from "./first-budget";
 import { safeToSpendLabel } from "./safe-to-spend-label";
 
 const CARD =
   "group block rounded-3xl bg-card p-6 transition-colors duration-150 hover:bg-line/25 focus-visible:outline-offset-4";
 
-/** One number for the shop counter: what's safe to spend today. Opens Budgets. */
+/**
+ * One number for the shop counter: what's safe to spend today. Opens Budgets. Before
+ * any flexible budget, it asks for this month's spending money instead.
+ */
 export function SafeToSpendCard({ data }: { data: TodayData }) {
   const hidden = usePrivacy();
   const money = data.safeToSpend;
-  if (!money.hasBudgets) {
-    return (
-      <Link
-        to="/money/budgets"
-        aria-label="Safe to spend today. Set a flexible budget to see a daily number. Opens budgets"
-        className={CARD}
-      >
-        <p className="text-callout text-muted">Safe to spend today</p>
-        <p className="mt-1 text-body font-bold">Set a flexible budget to see a daily number.</p>
-      </Link>
-    );
-  }
+  if (!money.hasBudgets) return <FirstBudget data={data} />;
   const over = money.leftTodayMinor < 0;
   const pace = data.paceAlert ? `${data.paceAlert.name} is running ahead of the month` : null;
   return (

@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
+import {
+  type FirstBudgetCategory,
+  firstBudgetCategory,
+  type SafeToSpendNumbers,
+  withFirstBudget,
+} from "@tick-taka/shared/first-budget";
 import { createTestContext } from "./helpers";
 import { type Row, setupMoney } from "./money-helpers";
 
@@ -167,5 +173,37 @@ describe("PUT /budgets/:month/:categoryId", () => {
     expect(res.body.lines.find((l) => l.categoryId === food.id)?.hasBudget).toBe(false);
     const september = await ctx.request<{ lines: Row[] }>("GET", "/budgets?month=2026-09");
     expect(september.body.lines.find((l) => l.categoryId === food.id)?.limitMinor).toBe(500_000);
+  });
+});
+
+describe("the first budget", () => {
+  test("one line on Other gives the number the card predicts", async () => {
+    const ctx = await createTestContext();
+    const { cash, category } = await setupMoney(ctx);
+    // ৳1,000 on food on 2 Oct and ৳250 today (4 Oct), before any budget exists.
+    for (const [amountMinor, occurredAt] of [
+      [100_000, on(10, 2)],
+      [25_000, ctx.clock.now],
+    ] as const)
+      await ctx.request("POST", "/transactions", {
+        type: "expense",
+        accountId: cash.id,
+        amountMinor,
+        categoryId: category("Food").id,
+        occurredAt,
+      });
+    const before = (await ctx.request<SafeToSpendNumbers>("GET", "/budgets/safe-to-spend")).body;
+    expect(before.hasBudgets).toBe(false);
+
+    const categories = (await ctx.request<FirstBudgetCategory[]>("GET", "/categories")).body;
+    const categoryId = firstBudgetCategory(categories);
+    expect(categoryId).toBe(category("Other").id);
+    const saved = await ctx.request("PUT", `/budgets/2026-10/${categoryId}`, {
+      limitMinor: 1_892_000,
+    });
+    expect(saved.status).toBe(200);
+    const after = (await ctx.request<SafeToSpendNumbers>("GET", "/budgets/safe-to-spend")).body;
+    expect(after).toEqual(withFirstBudget(before, 1_892_000, "2026-10-04"));
+    expect(after.leftTodayMinor).toBe(39_000);
   });
 });

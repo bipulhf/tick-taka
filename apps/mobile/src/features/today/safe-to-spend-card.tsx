@@ -7,28 +7,18 @@ import { Text } from "@/components/ui/text";
 import { plural } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import type { TodayData } from "@/lib/queries";
+import { FirstBudget } from "./first-budget";
 import { safeToSpendLabel } from "./safe-to-spend-label";
 
-/** One number for the shop counter: what's safe to spend today. */
+/**
+ * One number for the shop counter: what's safe to spend today. Before any flexible
+ * budget, it asks for this month's spending money instead.
+ */
 export function SafeToSpendCard({ data }: { data: TodayData }) {
   const router = useRouter();
   const hidden = usePrivacy();
   const money = data.safeToSpend;
-  if (!money.hasBudgets) {
-    return (
-      <Card
-        onPress={() => router.push("/money/budgets")}
-        accessibilityLabel="Safe to spend today. Set a flexible budget to see a daily number."
-        accessibilityHint="Opens budgets"
-        className="gap-1"
-      >
-        <Text variant="callout" tone="muted">
-          Safe to spend today
-        </Text>
-        <Text variant="strong">Set a flexible budget to see a daily number.</Text>
-      </Card>
-    );
-  }
+  if (!money.hasBudgets) return <FirstBudget data={data} />;
   const over = money.leftTodayMinor < 0;
   const pace = data.paceAlert ? `${data.paceAlert.name} is running ahead of the month` : null;
   return (

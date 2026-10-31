@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tick & Taka",
     "slug": "tick-taka",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ticktaka",
@@ -10,7 +10,7 @@
     "platforms": ["android"],
     "android": {
       "package": "com.mehedismathacademy.tick",
-      "versionCode": 2,
+      "versionCode": 3,
       "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#FFF8EE",

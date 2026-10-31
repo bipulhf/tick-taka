@@ -58,6 +58,8 @@ export type AssistantEvent =
       messageId?: string;
     };
 
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 function context(deps: Deps, screen: string | null): string {
   const { today, timeZone, settings, now } = userTime(deps);
   const vocab = vocabulary(deps);
@@ -78,6 +80,8 @@ function context(deps: Deps, screen: string | null): string {
   return [
     `Today is ${today} (${clock}), time zone ${timeZone}.`,
     `Default account: ${defaultAccount}.`,
+    // "This week" means the user's week, not Monday to Sunday.
+    `Weeks start on ${WEEKDAYS[settings.weekStartsOn] ?? "Saturday"}.`,
     describeVocabulary(vocab),
     notes,
     screen,

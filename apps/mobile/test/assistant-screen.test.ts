@@ -28,7 +28,7 @@ describe("screenFromRoute", () => {
   });
 
   test("new sheets, other routes and odd ids name no record", () => {
-    expect(screenFromRoute("/task/new").record).toBeUndefined();
+    expect(screenFromRoute("/goal/new").record).toBeUndefined();
     expect(screenFromRoute("/time-entry").record).toBeUndefined();
     expect(screenFromRoute(`/area/${ID}`).record).toBeUndefined();
     expect(screenFromRoute(`/plan/area/${ID}`).record).toBeUndefined();

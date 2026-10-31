@@ -1,4 +1,3 @@
-import { newId } from "@tick-taka/shared/ids";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -27,10 +26,11 @@ const STATUSES: { value: Status; label: string }[] = [
 ];
 
 /** Rename a project, move it to another area or change its status. */
-export function ProjectSheet({ id }: { id: string | null }) {
+export function ProjectSheet({ id }: { id: string }) {
   const projects = useProjects();
+  const project = projects.data?.find((p) => p.id === id);
   // Wait for the record so the form's fields start filled, even with nothing cached.
-  if (id && !projects.data?.some((p) => p.id === id))
+  if (!project)
     return (
       <Sheet title="Project">
         {projects.isError ? (
@@ -40,49 +40,39 @@ export function ProjectSheet({ id }: { id: string | null }) {
         )}
       </Sheet>
     );
-  return <ProjectForm project={projects.data?.find((p) => p.id === id) ?? null} />;
+  return <ProjectForm project={project} />;
 }
 
-function ProjectForm({ project }: { project: Project | null }) {
+function ProjectForm({ project }: { project: Project }) {
   const router = useRouter();
   const send = useOutbox();
   const remove = useRemove();
   const { data: areas = [] } = useAreas();
-  const [name, setName] = useState(project?.name ?? "");
-  const [areaId, setAreaId] = useState<string | null>(project?.areaId ?? null);
-  const [status, setStatus] = useState<Status>(project?.status ?? "active");
+  const [name, setName] = useState(project.name);
+  const [areaId, setAreaId] = useState<string | null>(project.areaId);
+  const [status, setStatus] = useState<Status>(project.status);
   const save = () => {
     if (!name.trim() || !areaId) return;
     const body = { name: name.trim(), areaId, status };
-    if (project)
-      send({
-        method: "PATCH",
-        path: `/projects/${project.id}`,
-        body: { ...body, updatedAt: editTime() },
-        label: "Couldn't save",
-      });
-    else
-      send({
-        method: "POST",
-        path: "/projects",
-        body: { id: newId(), ...body },
-        label: "Couldn't add the project",
-      });
+    send({
+      method: "PATCH",
+      path: `/projects/${project.id}`,
+      body: { ...body, updatedAt: editTime() },
+      label: "Couldn't save",
+    });
     router.back();
   };
   return (
     <Sheet
-      title={project ? project.name : "New project"}
+      title={project.name}
       footer={
         <View className="flex-row gap-2">
-          {project ? (
-            <DeleteButton
-              onPress={() => {
-                remove(`/projects/${project.id}`, `“${project.name}”`);
-                router.back();
-              }}
-            />
-          ) : null}
+          <DeleteButton
+            onPress={() => {
+              remove(`/projects/${project.id}`, `“${project.name}”`);
+              router.back();
+            }}
+          />
           <Button
             label="Save"
             onPress={save}
@@ -92,7 +82,7 @@ function ProjectForm({ project }: { project: Project | null }) {
         </View>
       }
     >
-      <TextField label="Name" value={name} onChangeText={setName} autoFocus={!project} />
+      <TextField label="Name" value={name} onChangeText={setName} />
       <PickerField
         label="Area"
         value={areaId}

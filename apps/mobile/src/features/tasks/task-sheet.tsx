@@ -7,7 +7,6 @@ import {
   toLocalDate,
 } from "@tick-taka/shared/dates";
 import { defined } from "@tick-taka/shared/defined";
-import { newId } from "@tick-taka/shared/ids";
 import { parseRecurrence } from "@tick-taka/shared/recurrence";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -38,8 +37,8 @@ import { useTaskActions } from "./use-task-actions";
 /** "More options" stays open or closed the way it was last left. */
 let moreOpenLastTime = false;
 
-/** Create or edit a task in a bottom sheet. */
-export function TaskSheet({ id }: { id: string | null }) {
+/** Edit a task in a bottom sheet. */
+export function TaskSheet({ id }: { id: string }) {
   const router = useRouter();
   const send = useOutbox();
   const actions = useTaskActions();
@@ -49,8 +48,7 @@ export function TaskSheet({ id }: { id: string | null }) {
   const today = useTodayDate();
   const query = useQuery({
     queryKey: ["task", id],
-    queryFn: () => unwrap(api.tasks[":id"].$get({ param: { id: defined(id, "the task id") } })),
-    enabled: Boolean(id),
+    queryFn: () => unwrap(api.tasks[":id"].$get({ param: { id } })),
   });
   const [form, setForm] = useState<Form>(EMPTY);
   const [repeatText, setRepeatText] = useState("");
@@ -157,20 +155,12 @@ export function TaskSheet({ id }: { id: string | null }) {
       rrule,
       reminderAt: form.hasTime ? form.doAt : null,
     };
-    if (id)
-      send({
-        method: "PATCH",
-        path: `/tasks/${id}`,
-        body: { ...body, updatedAt: editTime() },
-        label: "Couldn't save the task",
-      });
-    else
-      send({
-        method: "POST",
-        path: "/tasks",
-        body: { id: newId(), ...body },
-        label: "Couldn't save the task",
-      });
+    send({
+      method: "PATCH",
+      path: `/tasks/${id}`,
+      body: { ...body, updatedAt: editTime() },
+      label: "Couldn't save the task",
+    });
     router.back();
   };
 
@@ -198,8 +188,8 @@ export function TaskSheet({ id }: { id: string | null }) {
     .filter(Boolean)
     .join(" · ");
 
-  // Editing: hold the form back until the task has filled it (any edit replaces EMPTY).
-  if (id && form === EMPTY)
+  // Hold the form back until the task has filled it (any edit replaces EMPTY).
+  if (form === EMPTY)
     return (
       <Sheet title="Task">
         {query.isError ? (
@@ -212,10 +202,10 @@ export function TaskSheet({ id }: { id: string | null }) {
 
   return (
     <Sheet
-      title={id ? "Task" : "New task"}
+      title="Task"
       footer={
         <View className="flex-row gap-2">
-          {id && task ? (
+          {task ? (
             <DeleteButton
               onPress={() => {
                 actions.remove(task);
@@ -232,7 +222,6 @@ export function TaskSheet({ id }: { id: string | null }) {
         onChangeText={(v) => set("title", v)}
         placeholder="What needs doing?"
         accessibilityLabel="Title"
-        autoFocus={!id}
       />
       <TextField
         value={form.notes}
@@ -316,19 +305,17 @@ export function TaskSheet({ id }: { id: string | null }) {
           setDeadline={setDeadline}
         />
       ) : null}
-      {id && task ? <TaskSubtasks id={id} task={task} form={form} /> : null}
-      {id && task ? <AskTikiButton kind="task" id={id} /> : null}
-      {id ? (
-        <Pressable
-          onPress={() => router.replace(`/plan/logbook`)}
-          accessibilityRole="link"
-          className="min-h-12 items-center justify-center"
-        >
-          <Text variant="caption" tone="muted">
-            Finished tasks live in the Logbook
-          </Text>
-        </Pressable>
-      ) : null}
+      {task ? <TaskSubtasks id={id} task={task} form={form} /> : null}
+      {task ? <AskTikiButton kind="task" id={id} /> : null}
+      <Pressable
+        onPress={() => router.replace(`/plan/logbook`)}
+        accessibilityRole="link"
+        className="min-h-12 items-center justify-center"
+      >
+        <Text variant="caption" tone="muted">
+          Finished tasks live in the Logbook
+        </Text>
+      </Pressable>
     </Sheet>
   );
 }

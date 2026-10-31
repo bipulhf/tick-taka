@@ -298,10 +298,12 @@ App (`apps/mobile/.env`, and `env` in `eas.json` for EAS builds):
 Run exactly one pm2 instance in fork mode: SQLite wants a single writer and the
 scheduled jobs must run once.
 
-One host and port everywhere: the API is served at `https://tick.mehedismathacademy.com`
-(`server_name` in `deploy/nginx-tick-taka.conf`, `EXPO_PUBLIC_API_URL` in
-`apps/mobile/eas.json`) and listens on `127.0.0.1:3003` (`proxy_pass` in the Nginx file,
-`PORT` in the server's `.env`). Locally the API stays on the default port 3000, which the
+One host and port everywhere: with `deploy/nginx-tick-taka.conf` the API is served at
+`https://tick.mehedismathacademy.com` (`server_name` in that file) and listens on
+`127.0.0.1:3003` (`proxy_pass` in the Nginx file, `PORT` in the server's `.env`). The
+Android builds in `apps/mobile/eas.json` point at the running copy on separate hosts,
+`https://api.tick.bipulhf.dev` (see below); change `EXPO_PUBLIC_API_URL` there to match
+your own. Locally the API stays on the default port 3000, which the
 Android emulator reaches as `http://10.0.2.2:3000`.
 
 ```bash

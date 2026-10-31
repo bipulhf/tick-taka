@@ -50,6 +50,9 @@ const BY_CODE: Record<string, string> = {
   ai_unavailable: "AI isn't set up yet. Use the form instead.",
   ai_cap_reached: "This month's AI limit is used up. It resets on the 1st.",
   ai_error: "AI didn't answer. Use the form instead.",
+  invite_only: "Sign-ups are invite-only right now. Ask for an invite to join.",
+  account_blocked: "This account can't be used right now. Contact the owner.",
+  forbidden: "That's only for the owner.",
 };
 
 /** Codes whose server message is already written for people ("Pick two different accounts"). */

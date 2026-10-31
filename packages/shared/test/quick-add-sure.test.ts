@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { zonedTimeToUtc } from "../src/dates";
-import { isSureMoneyDraft, parseQuickAdd, type QuickAddContext } from "../src/quick-add";
+import {
+  isSureMoneyDraft,
+  parseQuickAdd,
+  type QuickAddContext,
+  showQuickAddPickers,
+} from "../src/quick-add";
 
 const TZ = "Asia/Dhaka";
 const now = zonedTimeToUtc({ year: 2026, month: 10, day: 4, hour: 10 }, TZ);
@@ -72,5 +77,24 @@ describe("quick-add is sure enough to hide its pickers", () => {
     expect(isSureMoneyDraft({ ...ai, categoryId: "cat_salary" }, context)).toBe(false);
     expect(isSureMoneyDraft({ ...ai, accountId: "acc_gone" }, context)).toBe(false);
     expect(isSureMoneyDraft({ ...ai, confidence: "low" }, context)).toBe(false);
+  });
+});
+
+describe("pickers stay once the person is using them", () => {
+  test("a sure draft shows the summary until the person opens or picks", () => {
+    expect(showQuickAddPickers({ sure: true, opened: false, picks: {} })).toBe(false);
+    expect(showQuickAddPickers({ sure: true, opened: true, picks: {} })).toBe(true);
+  });
+
+  test("an AI answer that turns the draft sure after a pick doesn't fold them away", () => {
+    expect(showQuickAddPickers({ sure: false, opened: false, picks: {} })).toBe(true);
+    const picks = { accountId: "acc_bkash" };
+    expect(showQuickAddPickers({ sure: true, opened: false, picks })).toBe(true);
+  });
+
+  test("a pick that was cleared doesn't count", () => {
+    expect(
+      showQuickAddPickers({ sure: true, opened: false, picks: { categoryId: undefined } }),
+    ).toBe(false);
   });
 });

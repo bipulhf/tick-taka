@@ -109,6 +109,20 @@ export function isSureMoneyDraft(
   return reference.accounts.some((a) => a.id === draft.accountId);
 }
 
+/**
+ * Whether quick-add shows its pickers. Once the person opened them ("Change") or
+ * picked anything in them they stay, so an AI answer that arrives late and turns
+ * the draft sure never folds them away mid-edit. Otherwise only while unsure.
+ */
+export function showQuickAddPickers(state: {
+  sure: boolean;
+  opened: boolean;
+  picks: object;
+}): boolean {
+  if (state.opened || Object.values(state.picks).some((value) => value !== undefined)) return true;
+  return !state.sure;
+}
+
 const DURATION_RE =
   /^(?:(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours|ঘণ্টা|ঘন্টা))?\s*(?:(\d+)\s*(?:m|min|mins|minute|minutes|মিনিট))?(?=\s|$)/i;
 

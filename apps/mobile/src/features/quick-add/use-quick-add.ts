@@ -8,6 +8,7 @@ import {
   parseQuickAdd,
   type QuickAddContext,
   type QuickAddKind,
+  showQuickAddPickers,
 } from "@tick-taka/shared/quick-add";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, unwrap } from "@/lib/api";
@@ -114,10 +115,15 @@ export function useQuickAdd(initialText = "", initialKind: QuickAddKind | null =
     return base ? applyOverrides(base, overrides, timeZone) : null;
   }, [aiDraft, localDraft, overrides, timeZone]);
 
-  // A sure read shows one summary line; "Change" (or any doubt) brings the pickers back.
-  const showPickers =
-    pickersOpen ||
-    !isSureMoneyDraft(draft, { accounts: reference.accounts, categories: reference.categories });
+  // A sure read shows one summary line; "Change", a pick or any doubt brings the pickers back.
+  const showPickers = showQuickAddPickers({
+    sure: isSureMoneyDraft(draft, {
+      accounts: reference.accounts,
+      categories: reference.categories,
+    }),
+    opened: pickersOpen,
+    picks: overrides,
+  });
 
   const hoursOfWork = useMemo(() => {
     const settings = reference.settings;

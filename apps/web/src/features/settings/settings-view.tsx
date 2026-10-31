@@ -198,10 +198,7 @@ export function SettingsView({ section }: { section?: SettingsSectionId }) {
         <nav aria-label="Settings sections" className="hidden lg:block">
           <div className="sticky top-2">{list("side")}</div>
         </nav>
-        <section
-          aria-labelledby="settings-section-title"
-          className="flex min-w-0 flex-col gap-4"
-        >
+        <section aria-labelledby="settings-section-title" className="flex min-w-0 flex-col gap-4">
           {desk ? null : (
             <Link
               to="/settings"

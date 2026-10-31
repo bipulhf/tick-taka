@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { addDays, DEFAULT_TIME_ZONE, DEFAULT_WEEK_STARTS_ON, isTimeZone } from "../dates";
-import { DEFAULT_WORKDAYS } from "../recurrence";
+import { DEFAULT_WORKDAYS, daysOffFrom } from "../recurrence";
 import { clockSchema, currencySchema, idSchema, localDateSchema } from "./common";
 
 export const AI_FEATURES = [
@@ -22,6 +22,8 @@ const aiFeatureSwitchesSchema = z.object(
   >,
 );
 
+const weekdaysSchema = z.array(z.number().int().min(0).max(6));
+
 /**
  * Every setting with its default. Stored as one row per key with a JSON value;
  * reads merge stored values over these defaults.
@@ -40,7 +42,8 @@ export const settingsSchema = z.object({
   /** Tiki's outfit: "cap", "scarf", "crown" or none. */
   tikiOutfit: z.string().nullable().default(null),
   weekStartsOn: z.number().int().min(0).max(6).default(DEFAULT_WEEK_STARTS_ON),
-  workdays: z.array(z.number().int().min(0).max(6)).default(DEFAULT_WORKDAYS),
+  /** Days of the week (0 = Sunday) with work; the rest are days off (`daysOffFrom`). */
+  workdays: weekdaysSchema.default(DEFAULT_WORKDAYS),
   /** Free minutes on a working day, used by the "does my day fit?" bar. */
   dayCapacityMinutes: z
     .number()
@@ -49,7 +52,6 @@ export const settingsSchema = z.object({
     .max(24 * 60)
     .default(6 * 60),
   dailyTaskGoal: z.number().int().min(0).max(50).default(5),
-  daysOff: z.array(z.number().int().min(0).max(6)).default([5]),
   vacationMode: z.boolean().default(false),
   /** Vacation periods, kept so past streaks stay intact; `to: null` is the current one. */
   vacations: z
@@ -107,6 +109,28 @@ export const settingsPatchSchema = z.object(
   ) as PatchShape,
 );
 export type SettingsPatch = z.infer<typeof settingsPatchSchema>;
+
+/** What the two settings defaulted to before `daysOff` folded into `workdays`. */
+const LEGACY_WORKDAYS = [0, 1, 2, 3, 4];
+const LEGACY_DAYS_OFF = [5];
+const sameDays = (a: readonly number[], b: readonly number[]) =>
+  a.length === b.length && a.every((day) => b.includes(day));
+
+/**
+ * Stored settings rows (key → value) from before `daysOff` was dropped, made current.
+ * Someone who changed their days off but never their workdays cared about the days
+ * off, so their workdays become the other days. Otherwise stored workdays are kept
+ * (and none stored means the default, Saturday to Thursday). `daysOff` goes either way.
+ */
+export function upgradeStoredSettings(stored: Record<string, unknown>): Record<string, unknown> {
+  const { daysOff, ...rest } = stored;
+  const oldDaysOff = weekdaysSchema.safeParse(daysOff);
+  if (!oldDaysOff.success || sameDays(oldDaysOff.data, LEGACY_DAYS_OFF)) return rest;
+  const workdays = weekdaysSchema.safeParse(rest.workdays);
+  if (workdays.success && !sameDays(workdays.data, LEGACY_WORKDAYS)) return rest;
+  // The complement works both ways: the days that aren't days off.
+  return { ...rest, workdays: daysOffFrom(oldDaysOff.data) };
+}
 
 export function isAiFeatureEnabled(settings: Settings, feature: AiFeature): boolean {
   return settings.ai.enabled && settings.ai.features[feature] !== false;

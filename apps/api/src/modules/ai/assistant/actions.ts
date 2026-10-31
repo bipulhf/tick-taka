@@ -33,7 +33,6 @@ const ASSISTANT_SETTINGS = new Set<SettingsKey>([
   "workdays",
   "dayCapacityMinutes",
   "dailyTaskGoal",
-  "daysOff",
   "vacationMode",
   "focus",
   "quietHours",

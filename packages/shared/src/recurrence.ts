@@ -48,8 +48,13 @@ const MONTH_NAMES = [
   "December",
 ];
 
-/** Bangladesh work week: Sunday to Thursday. */
-export const DEFAULT_WORKDAYS = [0, 1, 2, 3, 4];
+/** Bangladesh work week: Saturday to Thursday, so Friday is the one day off. */
+export const DEFAULT_WORKDAYS = [6, 0, 1, 2, 3, 4];
+
+/** The days of the week (0 = Sunday) that aren't workdays: days off. */
+export function daysOffFrom(workdays: readonly number[]): number[] {
+  return [0, 1, 2, 3, 4, 5, 6].filter((day) => !workdays.includes(day));
+}
 
 export function formatRRule(rule: RecurrenceRule): string {
   const parts = [`FREQ=${rule.freq}`];
@@ -356,11 +361,7 @@ const PATTERNS: Pattern[] = [
   {
     // every weekend
     regex: /\b(?:every\s+weekend|on\s+weekends|weekends)\b/i,
-    build: (_m, workdays) => ({
-      freq: "WEEKLY",
-      interval: 1,
-      byDay: [0, 1, 2, 3, 4, 5, 6].filter((d) => !workdays.includes(d)),
-    }),
+    build: (_m, workdays) => ({ freq: "WEEKLY", interval: 1, byDay: daysOffFrom(workdays) }),
   },
   {
     // every other Tuesday / every 2 weeks on Sun and Tue / every Sun, Tue

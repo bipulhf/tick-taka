@@ -60,7 +60,7 @@ export function SettingsScreen() {
               `${timeZoneCity(s.timeZone)} time`,
               s.vacationMode && "on vacation",
             )
-          : "Daily goal, days off, time zone, focus",
+          : "Daily goal, workdays, time zone, focus",
         icon: "calendar-check-outline",
         color: "sky",
       },

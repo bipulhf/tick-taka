@@ -27,7 +27,7 @@ export const LONG_DAYS = [
 const goalLabel = (n: number) => (n === 0 ? "Off" : plural(n, "task"));
 const minutesLabel = (m: string) => plural(Number(m), "minute");
 
-/** The daily goal, days off, time zone and focus timer lengths. */
+/** The daily goal, workdays, time zone and focus timer lengths. */
 export function PlanningSettings() {
   const update = useUpdateSettings();
   const phone = phoneTimeZone();
@@ -46,23 +46,26 @@ export function PlanningSettings() {
                 onChange={(n) => update({ dailyTaskGoal: Number(n) })}
               />
               {/* Several can be picked, so these stay chips (checkboxes), not a picker. */}
-              <ChoiceRow label="Days off" choice="multi">
+              <ChoiceRow label="Workdays" choice="multi">
                 {DAYS.map((day, i) => (
                   <Chip
                     key={day}
                     label={day}
                     choice="multi"
-                    selected={s.daysOff.includes(i)}
+                    selected={s.workdays.includes(i)}
                     onPress={() =>
                       update({
-                        daysOff: s.daysOff.includes(i)
-                          ? s.daysOff.filter((d) => d !== i)
-                          : [...s.daysOff, i],
+                        workdays: s.workdays.includes(i)
+                          ? s.workdays.filter((d) => d !== i)
+                          : [...s.workdays, i].sort((a, b) => a - b),
                       })
                     }
                   />
                 ))}
               </ChoiceRow>
+              <Text variant="caption" tone="muted">
+                Other days are days off, with no goal. Repeats like “every weekday” use these.
+              </Text>
               <ToggleRow
                 label="Vacation mode"
                 hint="Pauses goals so streaks survive"

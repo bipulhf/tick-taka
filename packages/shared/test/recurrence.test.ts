@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+  DEFAULT_WORKDAYS,
+  daysOffFrom,
   describeRRule,
   firstOccurrence,
   formatRRule,
@@ -56,11 +58,13 @@ describe("plain-words recurrence", () => {
     ],
     ["team sync every other Tuesday", "FREQ=WEEKLY;INTERVAL=2;BYDAY=TU", "team sync"],
     ["water plants every 3 days", "FREQ=DAILY;INTERVAL=3", "water plants"],
+    // "Weekday" is a workday, Saturday to Thursday by default (the Bangladesh week).
     [
       "standup every weekday at 9:30am",
-      "FREQ=WEEKLY;BYDAY=SU,MO,TU,WE,TH;BYHOUR=9;BYMINUTE=30",
+      "FREQ=WEEKLY;BYDAY=SA,SU,MO,TU,WE,TH;BYHOUR=9;BYMINUTE=30",
       "standup",
     ],
+    ["family lunch every weekend", "FREQ=WEEKLY;BYDAY=FR", "family lunch"],
     ["review budget monthly", "FREQ=MONTHLY", "review budget"],
     ["pay rent on the 1st of every month", "FREQ=MONTHLY;BYMONTHDAY=1", "pay rent"],
     ["renew domain every year on Oct 4", "FREQ=YEARLY;BYMONTHDAY=4;BYMONTH=10", "renew domain"],
@@ -74,6 +78,18 @@ describe("plain-words recurrence", () => {
       expect(parsed?.rest).toBe(rest);
     });
   }
+  test("weekdays and weekends follow the user's workdays", () => {
+    const sunToThu = { workdays: [0, 1, 2, 3, 4] };
+    expect(parseRecurrence("standup every weekday", sunToThu)?.rrule).toBe(
+      "FREQ=WEEKLY;BYDAY=SU,MO,TU,WE,TH",
+    );
+    expect(parseRecurrence("hike every weekend", sunToThu)?.rrule).toBe("FREQ=WEEKLY;BYDAY=FR,SA");
+  });
+  test("days off are the days that aren't workdays", () => {
+    expect(daysOffFrom(DEFAULT_WORKDAYS)).toEqual([5]);
+    expect(daysOffFrom([1, 2, 3, 4, 5])).toEqual([0, 6]);
+    expect(daysOffFrom([0, 1, 2, 3, 4, 5, 6])).toEqual([]);
+  });
   test("returns null without a recurrence", () => {
     expect(parseRecurrence("call bank tomorrow 5pm")).toBeNull();
   });

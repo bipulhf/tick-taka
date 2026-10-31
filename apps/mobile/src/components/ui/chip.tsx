@@ -6,7 +6,7 @@ import { Text } from "./text";
 /**
  * - action: a one-off tap (a suggestion, "No deadline"); a button.
  * - single: one of a row, picked alone; a radio, announced as checked.
- * - multi: one of a row where several can be picked (days off); a checkbox.
+ * - multi: one of a row where several can be picked (workdays); a checkbox.
  */
 export type ChipChoice = "action" | "single" | "multi";
 

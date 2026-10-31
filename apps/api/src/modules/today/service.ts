@@ -6,6 +6,7 @@ import {
   startOfLocalDay,
   weekdayOf,
 } from "@tick-taka/shared/dates";
+import { daysOffFrom } from "@tick-taka/shared/recurrence";
 import { greeting, tikiLine, tikiMood } from "@tick-taka/shared/tiki";
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { debts } from "../../db/schema/money";
@@ -144,7 +145,7 @@ export function todayView(deps: Deps, date?: LocalDate) {
     (sum, task) => sum + (task.estimateMin ?? DEFAULT_TASK_MINUTES),
     0,
   );
-  const isDayOff = settings.daysOff.includes(weekdayOf(day));
+  const isDayOff = daysOffFrom(settings.workdays).includes(weekdayOf(day));
   const capacityMinutes = settings.dayCapacityMinutes;
 
   const evening = dayTasks.filter(

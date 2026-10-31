@@ -31,7 +31,7 @@ export function DaySection({ s, update }: SectionProps) {
         />
         <DaysRow
           label="Workdays"
-          description="Repeats like “every workday” follow these"
+          description="Other days are days off, with no goal. Repeats like “every weekday” use these."
           value={s.workdays}
           onChange={(workdays) => update({ workdays })}
         />
@@ -56,12 +56,6 @@ export function DaySection({ s, update }: SectionProps) {
 
       <GroupLabel>Time off</GroupLabel>
       <Group>
-        <DaysRow
-          label="Days off"
-          description="No goal on these days"
-          value={s.daysOff}
-          onChange={(daysOff) => update({ daysOff })}
-        />
         <ToggleRow
           label="Vacation mode"
           description="Pauses goals so streaks survive"

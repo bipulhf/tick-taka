@@ -1,5 +1,6 @@
 import { addDays, toLocalDate, weekdayOf } from "@tick-taka/shared/dates";
 import { computeStreak, type StreakResult } from "@tick-taka/shared/gamification";
+import { daysOffFrom } from "@tick-taka/shared/recurrence";
 import { vacationDates } from "@tick-taka/shared/schemas/settings";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { transactions } from "../../db/schema/money";
@@ -54,9 +55,10 @@ export function gamificationSummary(deps: Deps): GamificationSummary {
 
   const vacation = vacationDates(settings, today);
   const skip = new Set(vacation);
+  const daysOff = daysOffFrom(settings.workdays);
   for (let i = 0; i < LOOKBACK_DAYS; i++) {
     const date = addDays(today, -i);
-    if (settings.daysOff.includes(weekdayOf(date))) skip.add(date);
+    if (daysOff.includes(weekdayOf(date))) skip.add(date);
   }
   const goalDays = [...tasksDoneByDay.entries()]
     .filter(([, count]) => settings.dailyTaskGoal > 0 && count >= settings.dailyTaskGoal)
@@ -68,7 +70,7 @@ export function gamificationSummary(deps: Deps): GamificationSummary {
       goal: settings.dailyTaskGoal,
       doneToday,
       reached: settings.dailyTaskGoal > 0 && doneToday >= settings.dailyTaskGoal,
-      isDayOff: settings.daysOff.includes(weekdayOf(today)),
+      isDayOff: daysOff.includes(weekdayOf(today)),
       onVacation: vacation.has(today),
       streak: computeStreak({
         schedule: "daily",

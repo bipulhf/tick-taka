@@ -3,15 +3,19 @@ import {
   type Settings,
   type SettingsPatch,
   settingsSchema,
+  upgradeStoredSettings,
 } from "@tick-taka/shared/schemas/settings";
-import { inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "../../db/client";
 import { settings } from "../../db/schema/system";
 
-/** Settings live one key per row; reads merge stored values over the defaults. */
+/**
+ * Settings live one key per row; reads merge stored values over the defaults. A row
+ * an older build wrote (`daysOff`) is folded in on every read until it's retired.
+ */
 export function readSettings(db: Db): Settings {
   const rows = db.select().from(settings).where(isNull(settings.deletedAt)).all();
-  const stored = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  const stored = upgradeStoredSettings(Object.fromEntries(rows.map((row) => [row.key, row.value])));
   const parsed = settingsSchema.safeParse({ ...DEFAULT_SETTINGS, ...stored });
   if (parsed.success) return parsed.data;
   // A bad stored value must never lock the app out: fall back key by key.
@@ -38,6 +42,12 @@ export function writeSettings(db: Db, patch: SettingsPatch, now: number): Settin
           })
           .run();
       }
+      // Workdays chosen now replace the old days-off row the read was folding in.
+      if (patch.workdays !== undefined)
+        tx.update(settings)
+          .set({ deletedAt: now, updatedAt: now })
+          .where(and(eq(settings.key, "daysOff"), isNull(settings.deletedAt)))
+          .run();
     });
   }
   return readSettings(db);

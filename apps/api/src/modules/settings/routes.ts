@@ -1,14 +1,26 @@
 import { addDays } from "@tick-taka/shared/dates";
-import { type SettingsPatch, settingsPatchSchema } from "@tick-taka/shared/schemas/settings";
+import { daysOffFrom } from "@tick-taka/shared/recurrence";
+import {
+  type Settings,
+  type SettingsPatch,
+  settingsPatchSchema,
+} from "@tick-taka/shared/schemas/settings";
 import { Hono } from "hono";
 import type { Deps } from "../../lib/deps";
 import { userTime } from "../../lib/user-time";
 import { validate } from "../../lib/validate";
 import { readSettings, writeSettings } from "./service";
 
+/**
+ * Phones before 1.3.0 read `daysOff` and break without it, so replies still carry it,
+ * derived from workdays. Typed without it: current clients use `daysOffFrom`.
+ */
+const withOldDaysOff = (settings: Settings): Settings =>
+  ({ ...settings, daysOff: daysOffFrom(settings.workdays) }) as Settings;
+
 export const settingsRoutes = (deps: Deps) =>
   new Hono()
-    .get("/", (c) => c.json(readSettings(deps.db)))
+    .get("/", (c) => c.json(withOldDaysOff(readSettings(deps.db))))
     .patch("/", validate("json", settingsPatchSchema), (c) => {
       const patch: SettingsPatch = { ...c.req.valid("json") };
       const { settings, today } = userTime(deps);
@@ -34,5 +46,5 @@ export const settingsRoutes = (deps: Deps) =>
       // A saved focus is dated, so Today can let it go once its week is over.
       if (patch.weeklyFocus !== undefined && patch.weeklyFocusOn === undefined)
         patch.weeklyFocusOn = patch.weeklyFocus?.trim() ? today : null;
-      return c.json(writeSettings(deps.db, patch, deps.now()));
+      return c.json(withOldDaysOff(writeSettings(deps.db, patch, deps.now())));
     });

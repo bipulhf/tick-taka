@@ -111,6 +111,31 @@ export const assistantMessageSchema = z.object({
   /** What the assistant changed in that turn, with ids, so follow-ups like "move it" work. */
   memo: z.string().max(4000).optional(),
 });
+
+/** Kinds of record the app can show the assistant (`screen.record`) and Tiki can link to (cards). */
+export const ASSISTANT_RECORD_KINDS = [
+  "task",
+  "transaction",
+  "habit",
+  "goal",
+  "debt",
+  "account",
+  "event",
+  "project",
+  "recurring",
+  "shopping_item",
+  "time_entry",
+  "routine",
+] as const;
+export type AssistantRecordKind = (typeof ASSISTANT_RECORD_KINDS)[number];
+
+/** What the user is looking at: the route, and the record open in a panel or sheet. */
+export const assistantScreenSchema = z.object({
+  view: z.string().max(120),
+  record: z.object({ kind: z.enum(ASSISTANT_RECORD_KINDS), id: idSchema }).optional(),
+});
+export type AssistantScreen = z.infer<typeof assistantScreenSchema>;
+
 export const assistantRequestSchema = z.object({
   messages: z.array(assistantMessageSchema).min(1).max(30),
   /**
@@ -119,8 +144,36 @@ export const assistantRequestSchema = z.object({
    * `done.drafts` for the user to confirm, instead of being saved.
    */
   draftMoney: z.boolean().optional(),
+  /** The screen the message was sent from, so "this" and "here" mean something. */
+  screen: assistantScreenSchema.optional(),
+  /** The chat this turn belongs to (a ULID the app makes); with it the server keeps the chat. */
+  threadId: idSchema.optional(),
 });
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
+
+/** Something in Tiki's answer the app can show as a tappable card (`done.cards`). */
+export type AssistantCard =
+  | {
+      type: "record";
+      kind: AssistantRecordKind;
+      id: string;
+      title: string;
+      subtitle?: string;
+    }
+  | { type: "total"; label: string; amountMinor?: number; minutes?: number; count?: number };
+
+export const ASSISTANT_RATINGS = ["up", "down"] as const;
+export type AssistantRating = (typeof ASSISTANT_RATINGS)[number];
+
+/** POST /ai/feedback: a thumbs up or down on a stored reply. */
+export const assistantFeedbackSchema = z.object({
+  messageId: idSchema,
+  rating: z.enum(ASSISTANT_RATINGS),
+  comment: z.string().trim().max(500).optional(),
+});
+
+/** PATCH /ai/threads/:id */
+export const assistantThreadPatchSchema = z.object({ title: z.string().trim().min(1).max(60) });
 
 export const VOICE_MIME_TYPES = [
   "audio/mp4",

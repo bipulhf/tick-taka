@@ -81,6 +81,8 @@ export const settingsSchema = z.object({
   billOverdueGraceDays: z.number().int().min(0).max(30).default(0),
   /** "Next week's focus" picked at the end of the weekly review. */
   weeklyFocus: z.string().max(200).nullable().default(null),
+  /** What the user asked Tiki to remember ("I get paid on the 25th"), oldest first. */
+  tikiNotes: z.array(z.string().trim().min(1).max(200)).max(30).default([]),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 export type SettingsKey = keyof Settings;

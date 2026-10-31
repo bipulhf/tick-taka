@@ -19,7 +19,8 @@ export const QUESTION_TOOL: AiToolDefinition = {
   name: "ask",
   description: [
     "Ask the user with a small form when only they can give something (a missing name, amount, date, which account, or whether to go ahead). Your turn ends when this works: the question is your reply, so do not also write it out. At most once per message.",
-    "1 to 6 fields, only what is missing. Field types: choice (options: 2 to 8 {value, label}, one pick), text (up to 80 characters), amount, date (YYYY-MM-DD), time (HH:MM), account, category, area (pickers over the user's own records; a category's options may be one option with value expense or income to narrow it). Other types get options null.",
+    "Write the question, labels and option labels in the language of the user's latest message (an English message gets English, even about Bangla words like Nagad).",
+    "1 to 6 fields, only what is missing: leave out anything the user already said (\"my Nagad wallet\" gives the name Nagad and the type mobile wallet). Field types: choice (options: 2 to 8 {value, label}, one pick), text (up to 80 characters), amount, date (YYYY-MM-DD), time (HH:MM), account, category, area (pickers over the user's own records; a category's options may be one option with value expense or income to narrow it). Other types get options null.",
     "A single choice field is a quick reply (tapping an option sends it): use it for yes/no and either/or questions.",
     "default prefills a field with what the user already said or a sensible default: an option value, the text, the amount in taka (major units), a date, a time, or the name of an account, category or area.",
   ].join("\n"),
@@ -28,7 +29,8 @@ export const QUESTION_TOOL: AiToolDefinition = {
     properties: {
       question: {
         type: "string",
-        description: "The question, at most 160 characters, in the user's language",
+        description:
+          "The question, at most 160 characters, in the language of the user's latest message",
       },
       fields: {
         type: "array",

@@ -8,6 +8,7 @@ import { Menu } from "@/components/ui/menu";
 import { PageHeader } from "@/components/ui/page-header";
 import { ProgressBar } from "@/components/ui/progress";
 import { Section } from "@/components/ui/section";
+import { Segmented } from "@/components/ui/segmented";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { useNow } from "@/features/timer/use-now";
 import { formatClock, formatLocalDate, formatMinutes } from "@/lib/format";
@@ -16,6 +17,7 @@ import { useAreas } from "@/lib/queries";
 import { useTodayDate, useUserTime } from "@/lib/use-today";
 import { remove } from "@/lib/write";
 import { type TimeEntry, useTimeEntries } from "./queries";
+import { TIME_VIEWS, type TimeView } from "./time-search";
 import { entriesByDay, minutesByArea, minutesOf } from "./time-totals";
 import { TimerCard } from "./timer-card";
 
@@ -76,8 +78,11 @@ function EntryRow({
   );
 }
 
-/** Start/stop timer or manual entry, per area, with a billable flag; this week's hours. */
-export function TimeTracking() {
+/**
+ * Start/stop timer or manual entry, per area, with a billable flag; this week's hours.
+ * "Focus only" swaps in the focus sessions' chart (`FocusStats`).
+ */
+export function TimeTracking({ onView }: { onView: (view: TimeView) => void }) {
   const open = useOpenPanel();
   const { timeZone, weekStartsOn } = useUserTime();
   const { data: areas = [] } = useAreas();
@@ -103,9 +108,12 @@ export function TimeTracking() {
         subtitle="Where this week's hours went"
         back={{ to: "/plan", label: "Plan" }}
         actions={
-          <Button icon={Plus} onClick={logTime}>
-            Log time
-          </Button>
+          <>
+            <Segmented label="Show" options={TIME_VIEWS} value="all" onChange={onView} />
+            <Button icon={Plus} onClick={logTime}>
+              Log time
+            </Button>
+          </>
         }
       />
       <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">

@@ -1,6 +1,14 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
-import { CircleCheckBig, CircleMinus, CirclePlus, Sprout, Star, Timer } from "lucide-react";
+import {
+  BarChart3,
+  CircleCheckBig,
+  CircleMinus,
+  CirclePlus,
+  Sprout,
+  Star,
+  Timer,
+} from "lucide-react";
 import { useEffect } from "react";
 import {
   paletteItemClass,
@@ -119,6 +127,14 @@ export function TodayPalette() {
           icon: <Sprout aria-hidden className={icon} />,
           keywords: ["timer", "pomodoro"],
           run: () => void navigate({ to: "/focus" }),
+        },
+        {
+          id: "focus-time",
+          label: "Focus time this week",
+          group: "Actions",
+          icon: <BarChart3 aria-hidden className={icon} />,
+          keywords: ["focus statistics", "stats", "deep work", "time"],
+          run: () => void navigate({ to: "/plan/time", search: { view: "focus" } }),
         },
       ]),
     [open, navigate, today],

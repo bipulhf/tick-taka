@@ -8,15 +8,20 @@ import { IconButton } from "@/components/ui/icon-button";
 import { PageHeader } from "@/components/ui/page-header";
 import { ProgressBar } from "@/components/ui/progress";
 import { Section } from "@/components/ui/section";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton, SkeletonRows } from "@/components/ui/skeleton";
 import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useAreas } from "@/lib/queries";
 import { useTodayDate, useUserTime } from "@/lib/use-today";
 import { useFocusStats } from "./queries";
+import { TIME_VIEWS, type TimeView } from "./time-search";
 import { WeekBars } from "./week-bars";
 
-/** Weekly focus minutes per day and per area, e.g. how much deep work Research got. */
-export function FocusStats() {
+/**
+ * Time's "Focus only" view: weekly focus minutes per day and per area, e.g. how much
+ * deep work Research got.
+ */
+export function FocusStats({ onView }: { onView: (view: TimeView) => void }) {
   const navigate = useNavigate();
   const { timeZone, weekStartsOn } = useUserTime();
   const { data: areas = [] } = useAreas();
@@ -43,7 +48,7 @@ export function FocusStats() {
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
-        title="Focus statistics"
+        title="Time"
         subtitle={`Week of ${formatLocalDate(weekStart)}`}
         back={{ to: "/plan", label: "Plan" }}
         actions={
@@ -59,6 +64,7 @@ export function FocusStats() {
               disabled={weeksBack === 0}
               onClick={() => setWeeksBack(weeksBack - 1)}
             />
+            <Segmented label="Show" options={TIME_VIEWS} value="focus" onChange={onView} />
           </>
         }
       />
@@ -115,7 +121,7 @@ export function FocusStats() {
             </Group>
             <p className="flex items-center gap-2 px-1 text-caption text-muted">
               <Sprout aria-hidden className="size-4 text-sky" />
-              Only focus sessions count here; other timers are under Time.
+              Only focus sessions count here; All shows every timer.
             </p>
           </Section>
         </div>

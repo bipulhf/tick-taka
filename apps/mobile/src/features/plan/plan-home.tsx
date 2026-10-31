@@ -193,13 +193,6 @@ export function PlanHome() {
             onPress={() => router.push("/plan/time")}
           />
           <ListRow
-            icon="chart-bar"
-            iconColor="sky"
-            title="Focus statistics"
-            chevron
-            onPress={() => router.push("/plan/focus-stats")}
-          />
-          <ListRow
             icon="weather-night"
             iconColor="muted"
             title="Someday"

@@ -1,6 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
-  BarChart3,
   BookCheck,
   CalendarDays,
   CalendarRange,
@@ -147,7 +146,6 @@ export function PlanLinks() {
       tone: "sky",
     },
     { to: "/plan/time", label: "Time", subtitle: "Where the hours went", icon: Timer, tone: "sky" },
-    { to: "/plan/focus-stats", label: "Focus statistics", icon: BarChart3, tone: "sky" },
     {
       to: "/plan/someday",
       label: "Someday",

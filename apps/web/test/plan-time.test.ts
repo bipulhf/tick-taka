@@ -20,6 +20,7 @@ import {
   START_HOUR,
 } from "../src/features/plan/timeline-layout";
 import { moveStep, stepsBody } from "../src/features/routines/routine-steps";
+import { validateTimeSearch } from "../src/features/time/time-search";
 import { entriesByDay, minutesByArea } from "../src/features/time/time-totals";
 
 const TZ = "Asia/Dhaka";
@@ -213,5 +214,17 @@ describe("habits, routines and time", () => {
       ["2026-10-30", ["3", "2"]],
       ["2026-10-29", ["1"]],
     ]);
+  });
+});
+
+describe("time search", () => {
+  test("Focus only is ?view=focus; anything else is All", () => {
+    expect(validateTimeSearch({ view: "focus" }).view).toBe("focus");
+    expect(validateTimeSearch({ view: "week" }).view).toBeUndefined();
+    expect(validateTimeSearch({}).view).toBeUndefined();
+    expect(validateTimeSearch({ view: "focus", panel: "time-entry:new" })).toMatchObject({
+      view: "focus",
+      panel: "time-entry:new",
+    });
   });
 });

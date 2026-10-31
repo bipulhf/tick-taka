@@ -9,6 +9,7 @@ describe("window titles", () => {
     expect(pageTitle("/plan")).toBe("Plan · Tick & Taka");
     expect(pageTitle("/plan/week")).toBe("Week · Plan · Tick & Taka");
     expect(pageTitle("/review/reports")).toBe("Reports · Review · Tick & Taka");
+    expect(pageTitle("/plan/time")).toBe("Time · Plan · Tick & Taka");
   });
 
   test("use a record's name or the chosen section when there is one", () => {
@@ -22,6 +23,8 @@ describe("window titles", () => {
 
   test("an unknown page still says the app's name", () => {
     expect(pageTitle("/nowhere")).toBe("Tick & Taka");
+    // Focus statistics redirects to Time and has no title of its own.
+    expect(pageTitle("/plan/focus-stats")).toBe("Tick & Taka");
   });
 
   test("an address that isn't a page says so", () => {

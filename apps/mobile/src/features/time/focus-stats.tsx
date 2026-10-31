@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { useChartAxis } from "@/components/ui/chart-axis";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
@@ -16,9 +17,13 @@ import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useColors } from "@/theme/colors";
 import { useFocusStats } from "./queries";
+import { TIME_VIEWS, type TimeView } from "./time-view";
 
-/** Weekly focus minutes per area, e.g. how much deep work Research actually got. */
-export function FocusStats() {
+/**
+ * Time's "Focus only" view: weekly focus minutes per area, e.g. how much deep work
+ * Research actually got.
+ */
+export function FocusStats({ onView }: { onView: (view: TimeView) => void }) {
   const colors = useColors();
   const axis = useChartAxis();
   const { data: settings } = useSettings();
@@ -38,7 +43,8 @@ export function FocusStats() {
     frontColor: colors.sky,
   }));
   return (
-    <Screen title="Focus" subtitle={`Week of ${formatLocalDate(weekStart)}`} tabBarPadding={false}>
+    <Screen title="Time" subtitle={`Week of ${formatLocalDate(weekStart)}`} tabBarPadding={false}>
+      <Segmented label="Show" kind="tabs" options={TIME_VIEWS} value="focus" onChange={onView} />
       <AsyncContent
         query={stats}
         skeleton={

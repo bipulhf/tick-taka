@@ -10,6 +10,7 @@ import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Screen } from "@/components/ui/screen";
 import { Section } from "@/components/ui/section";
+import { Segmented } from "@/components/ui/segmented";
 import { SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
 import { editDelete, SwipeRow, SwipeRowPressable } from "@/components/ui/swipe-row";
 import { Text } from "@/components/ui/text";
@@ -24,9 +25,13 @@ import { useRemove } from "@/lib/use-remove";
 import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
 import { useRunningTimer, useTimeEntries } from "./queries";
+import { TIME_VIEWS, type TimeView } from "./time-view";
 
-/** Start/stop timer or manual entry, per area, with a billable flag. */
-export function TimeTracking() {
+/**
+ * Start/stop timer or manual entry, per area, with a billable flag. "Focus only"
+ * swaps in the focus sessions' chart (`FocusStats`).
+ */
+export function TimeTracking({ onView }: { onView: (view: TimeView) => void }) {
   const router = useRouter();
   const send = useOutbox();
   const remove = useRemove();
@@ -71,6 +76,7 @@ export function TimeTracking() {
         />
       }
     >
+      <Segmented label="Show" kind="tabs" options={TIME_VIEWS} value="all" onChange={onView} />
       <AsyncContent query={running} skeleton={<SkeletonCard hero lines={1} />}>
         {() => (
           <Card className="gap-3">

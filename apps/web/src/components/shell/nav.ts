@@ -22,7 +22,6 @@ import {
   Plane,
   Receipt,
   Repeat2,
-  Sprout,
   Sun,
   Timer,
   Wallet,
@@ -58,7 +57,6 @@ export const NAV: NavSection[] = [
       { to: "/plan/habits", label: "Habits", icon: Repeat2, key: "h" },
       { to: "/plan/routines", label: "Routines", icon: ListChecks },
       { to: "/plan/time", label: "Time", icon: Timer },
-      { to: "/plan/focus-stats", label: "Focus statistics", icon: Sprout },
     ],
   },
   {

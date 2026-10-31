@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { FocusStats } from "@/features/time/focus-stats";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+/** Focus statistics is Time's Focus only view now; old links still land there. */
 export const Route = createFileRoute("/_auth/_shell/plan/focus-stats")({
-  component: FocusStats,
+  beforeLoad: () => {
+    throw redirect({ to: "/plan/time", search: { view: "focus" }, replace: true });
+  },
 });

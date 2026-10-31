@@ -45,6 +45,7 @@ import { Route as AuthShellReviewReportsRouteImport } from './routes/_auth/_shel
 import { Route as AuthShellReviewShutdownRouteImport } from './routes/_auth/_shell/review/shutdown'
 import { Route as AuthShellReviewSubscriptionsRouteImport } from './routes/_auth/_shell/review/subscriptions'
 import { Route as AuthShellReviewWeeklyRouteImport } from './routes/_auth/_shell/review/weekly'
+import { Route as AuthShellSettingsAiCostRouteImport } from './routes/_auth/_shell/settings_.ai-cost'
 import { Route as AuthShellPlanAreaIdRouteImport } from './routes/_auth/_shell/plan/area.$id'
 import { Route as AuthShellPlanProjectIdRouteImport } from './routes/_auth/_shell/plan/project.$id'
 import { Route as AuthShellPlanRoutineIdRouteImport } from './routes/_auth/_shell/plan/routine.$id'
@@ -229,6 +230,11 @@ const AuthShellReviewWeeklyRoute = AuthShellReviewWeeklyRouteImport.update({
   path: '/review/weekly',
   getParentRoute: () => AuthShellRoute,
 } as any)
+const AuthShellSettingsAiCostRoute = AuthShellSettingsAiCostRouteImport.update({
+  id: '/settings_/ai-cost',
+  path: '/settings/ai-cost',
+  getParentRoute: () => AuthShellRoute,
+} as any)
 const AuthShellPlanAreaIdRoute = AuthShellPlanAreaIdRouteImport.update({
   id: '/plan/area/$id',
   path: '/plan/area/$id',
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/review/shutdown': typeof AuthShellReviewShutdownRoute
   '/review/subscriptions': typeof AuthShellReviewSubscriptionsRoute
   '/review/weekly': typeof AuthShellReviewWeeklyRoute
+  '/settings/ai-cost': typeof AuthShellSettingsAiCostRoute
   '/money/': typeof AuthShellMoneyIndexRoute
   '/plan/': typeof AuthShellPlanIndexRoute
   '/review/': typeof AuthShellReviewIndexRoute
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   '/review/shutdown': typeof AuthShellReviewShutdownRoute
   '/review/subscriptions': typeof AuthShellReviewSubscriptionsRoute
   '/review/weekly': typeof AuthShellReviewWeeklyRoute
+  '/settings/ai-cost': typeof AuthShellSettingsAiCostRoute
   '/money': typeof AuthShellMoneyIndexRoute
   '/plan': typeof AuthShellPlanIndexRoute
   '/review': typeof AuthShellReviewIndexRoute
@@ -358,6 +366,7 @@ export interface FileRoutesById {
   '/_auth/_shell/review/shutdown': typeof AuthShellReviewShutdownRoute
   '/_auth/_shell/review/subscriptions': typeof AuthShellReviewSubscriptionsRoute
   '/_auth/_shell/review/weekly': typeof AuthShellReviewWeeklyRoute
+  '/_auth/_shell/settings_/ai-cost': typeof AuthShellSettingsAiCostRoute
   '/_auth/_shell/money/': typeof AuthShellMoneyIndexRoute
   '/_auth/_shell/plan/': typeof AuthShellPlanIndexRoute
   '/_auth/_shell/review/': typeof AuthShellReviewIndexRoute
@@ -399,6 +408,7 @@ export interface FileRouteTypes {
     | '/review/shutdown'
     | '/review/subscriptions'
     | '/review/weekly'
+    | '/settings/ai-cost'
     | '/money/'
     | '/plan/'
     | '/review/'
@@ -438,6 +448,7 @@ export interface FileRouteTypes {
     | '/review/shutdown'
     | '/review/subscriptions'
     | '/review/weekly'
+    | '/settings/ai-cost'
     | '/money'
     | '/plan'
     | '/review'
@@ -479,6 +490,7 @@ export interface FileRouteTypes {
     | '/_auth/_shell/review/shutdown'
     | '/_auth/_shell/review/subscriptions'
     | '/_auth/_shell/review/weekly'
+    | '/_auth/_shell/settings_/ai-cost'
     | '/_auth/_shell/money/'
     | '/_auth/_shell/plan/'
     | '/_auth/_shell/review/'
@@ -746,6 +758,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthShellReviewWeeklyRouteImport
       parentRoute: typeof AuthShellRoute
     }
+    '/_auth/_shell/settings_/ai-cost': {
+      id: '/_auth/_shell/settings_/ai-cost'
+      path: '/settings/ai-cost'
+      fullPath: '/settings/ai-cost'
+      preLoaderRoute: typeof AuthShellSettingsAiCostRouteImport
+      parentRoute: typeof AuthShellRoute
+    }
     '/_auth/_shell/plan/area/$id': {
       id: '/_auth/_shell/plan/area/$id'
       path: '/plan/area/$id'
@@ -800,6 +819,7 @@ interface AuthShellRouteChildren {
   AuthShellReviewShutdownRoute: typeof AuthShellReviewShutdownRoute
   AuthShellReviewSubscriptionsRoute: typeof AuthShellReviewSubscriptionsRoute
   AuthShellReviewWeeklyRoute: typeof AuthShellReviewWeeklyRoute
+  AuthShellSettingsAiCostRoute: typeof AuthShellSettingsAiCostRoute
   AuthShellMoneyIndexRoute: typeof AuthShellMoneyIndexRoute
   AuthShellPlanIndexRoute: typeof AuthShellPlanIndexRoute
   AuthShellReviewIndexRoute: typeof AuthShellReviewIndexRoute
@@ -838,6 +858,7 @@ const AuthShellRouteChildren: AuthShellRouteChildren = {
   AuthShellReviewShutdownRoute: AuthShellReviewShutdownRoute,
   AuthShellReviewSubscriptionsRoute: AuthShellReviewSubscriptionsRoute,
   AuthShellReviewWeeklyRoute: AuthShellReviewWeeklyRoute,
+  AuthShellSettingsAiCostRoute: AuthShellSettingsAiCostRoute,
   AuthShellMoneyIndexRoute: AuthShellMoneyIndexRoute,
   AuthShellPlanIndexRoute: AuthShellPlanIndexRoute,
   AuthShellReviewIndexRoute: AuthShellReviewIndexRoute,

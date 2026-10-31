@@ -12,7 +12,7 @@ export function PageHeader({
   title: string;
   subtitle?: ReactNode;
   /** Where the back chevron goes, e.g. "/money". */
-  back?: { to: string; label: string };
+  back?: { to: string; label: string; search?: Record<string, string> };
   actions?: ReactNode;
 }) {
   return (
@@ -21,6 +21,7 @@ export function PageHeader({
         {back ? (
           <Link
             to={back.to}
+            search={back.search}
             className="mb-1 inline-flex items-center gap-0.5 rounded-lg py-0.5 pr-1.5 text-callout font-bold text-muted hover:text-ink"
           >
             <ChevronLeft aria-hidden className="size-4" />

@@ -56,11 +56,11 @@ export function AiSettings() {
               <ListRow
                 icon="chart-bar"
                 iconColor="muted"
-                title={`${dollars(ai.data.monthSpendMicros)} this month`}
+                title="AI cost"
                 subtitle={
                   ai.data.monthlyCapMicros === null
-                    ? "Day by day and per feature"
-                    : `Limit ${dollars(ai.data.monthlyCapMicros)} a month, set on the server`
+                    ? `${dollars(ai.data.monthSpendMicros)} this month`
+                    : `${dollars(ai.data.monthSpendMicros)} this month, limit ${dollars(ai.data.monthlyCapMicros)}`
                 }
                 chevron
                 onPress={() => router.push("/review/ai-usage")}

@@ -51,14 +51,14 @@ export function AiSection({ s, update }: SectionProps) {
         <Group>
           <Row
             leading={<RowMark icon={BarChart3} />}
-            title={`${dollars(ai.data.monthSpendMicros)} this month`}
+            title="AI cost"
             subtitle={
               ai.data.monthlyCapMicros === null
-                ? "Day by day and per feature"
-                : `Limit ${dollars(ai.data.monthlyCapMicros)} a month, set on the server`
+                ? `${dollars(ai.data.monthSpendMicros)} this month`
+                : `${dollars(ai.data.monthSpendMicros)} this month, limit ${dollars(ai.data.monthlyCapMicros)}`
             }
             chevron
-            onClick={() => void navigate({ to: "/review/ai-usage" })}
+            onClick={() => void navigate({ to: "/settings/ai-cost" })}
           />
         </Group>
       ) : null}

@@ -54,7 +54,10 @@ function Row({ title, detail, value }: { title: string; detail: string; value: s
   );
 }
 
-/** What AI cost this month: by day, by feature and, for the owner, by user. */
+/**
+ * What AI cost this month, by day and by feature, opened from Settings › AI. Cost per
+ * person is the owner's, in Admin › AI cost on the web.
+ */
 export function AiUsageScreen() {
   const colors = useColors();
   const axis = useChartAxis();
@@ -89,7 +92,7 @@ export function AiUsageScreen() {
             <SkeletonCard lines={3} />
           </>
         }
-        isEmpty={(report) => report.calls === 0 && !report.users?.some((u) => u.calls > 0)}
+        isEmpty={(report) => report.calls === 0}
         empty={
           <EmptyState
             title="No AI use this month"
@@ -148,22 +151,6 @@ export function AiUsageScreen() {
                 <Text tone="muted">You didn't use AI this month.</Text>
               ) : null}
             </Card>
-            {report.users ? (
-              <Card className="gap-1">
-                <Text variant="label" tone="muted">
-                  Everyone on your server ·{" "}
-                  {dollars(report.users.reduce((sum, u) => sum + u.costMicros, 0))}
-                </Text>
-                {report.users.map((user) => (
-                  <Row
-                    key={user.email}
-                    title={user.me ? "You" : (user.name ?? user.email)}
-                    detail={`${user.me || !user.name ? "" : `${user.email} · `}${plural(user.calls, "request")}`}
-                    value={dollars(user.costMicros)}
-                  />
-                ))}
-              </Card>
-            ) : null}
           </>
         )}
       </AsyncContent>

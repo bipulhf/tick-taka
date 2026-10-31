@@ -16,13 +16,16 @@ const Value = ({ children }: { children: string }) => (
   <span className="text-callout font-bold tabular">{children}</span>
 );
 
-/** What AI cost this month: by day, by feature and, for the owner, by user. */
+/**
+ * What AI cost this month, by day and by feature, reached from Settings › Tiki and AI.
+ * Cost per person is the owner's, in Admin › AI cost.
+ */
 export function AiUsageScreen() {
   const current = useThisMonth();
   const [month, setMonth] = useState(current);
   const usage = useAiUsage(month === current ? undefined : month);
   const report = usage.data;
-  const empty = report && report.calls === 0 && !report.users?.some((u) => u.calls > 0);
+  const empty = report && report.calls === 0;
   const days = report ? costByDay(month, report.byDay) : [];
 
   return (
@@ -30,7 +33,7 @@ export function AiUsageScreen() {
       <PageHeader
         title="AI cost"
         subtitle={formatMonth(month)}
-        back={{ to: "/review", label: "Review" }}
+        back={{ to: "/settings", label: "Settings", search: { section: "ai" } }}
         actions={<MonthStepper month={month} onChange={setMonth} max={current} />}
       />
       {!report ? (
@@ -106,23 +109,6 @@ export function AiUsageScreen() {
                 </Group>
               )}
             </Section>
-            {report.users ? (
-              <Section
-                title="Everyone on your server"
-                caption={dollars(report.users.reduce((sum, u) => sum + u.costMicros, 0))}
-              >
-                <Group>
-                  {report.users.map((user) => (
-                    <Row
-                      key={user.email}
-                      title={user.me ? "You" : (user.name ?? user.email)}
-                      subtitle={`${user.me || !user.name ? "" : `${user.email} · `}${plural(user.calls, "request")}`}
-                      trailing={<Value>{dollars(user.costMicros)}</Value>}
-                    />
-                  ))}
-                </Group>
-              </Section>
-            ) : null}
           </div>
         </div>
       )}

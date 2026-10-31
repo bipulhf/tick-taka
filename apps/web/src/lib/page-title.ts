@@ -27,6 +27,7 @@ function titleParts(path: string, { part, name, notFound }: TitleExtras): string
   if (path.startsWith("/plan/area/")) return [name ?? "Area", "Plan"];
   if (path.startsWith("/plan/project/")) return [name ?? "Project", "Plan"];
   if (path.startsWith("/plan/routine/")) return [name ?? "Routine", "Routines"];
+  if (path === "/settings/ai-cost") return ["Settings › AI cost"];
   if (path.startsWith("/settings")) return [part ? `Settings › ${part}` : "Settings"];
   if (path.startsWith("/admin")) return [part ? `Admin › ${part}` : "Admin"];
   if (path.startsWith("/focus")) return ["Focus"];

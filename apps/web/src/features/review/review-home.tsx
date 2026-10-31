@@ -2,7 +2,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { isWeeklyReviewDay, weeklyReviewHint } from "@tick-taka/shared/weekly-review";
 import {
   BarChart3,
-  Bot,
   CalendarCheck,
   CalendarFold,
   Flame,
@@ -52,13 +51,6 @@ const ENTRIES: Entry[] = [
     title: "Chat with Tiki",
     hint: "Ask, add or change anything, by voice too",
     icon: MessagesSquare,
-    ai: true,
-  },
-  {
-    to: "/review/ai-usage",
-    title: "AI cost",
-    hint: "What AI cost this month, day by day",
-    icon: Bot,
     ai: true,
   },
 ];

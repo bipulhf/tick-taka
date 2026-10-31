@@ -19,6 +19,7 @@ describe("window titles", () => {
     expect(pageTitle("/admin", { part: "Users" })).toBe("Admin › Users · Tick & Taka");
     expect(pageTitle("/login")).toBe("Sign in · Tick & Taka");
     expect(pageTitle("/focus")).toBe("Focus · Tick & Taka");
+    expect(pageTitle("/settings/ai-cost")).toBe("Settings › AI cost · Tick & Taka");
   });
 
   test("an unknown page still says the app's name", () => {

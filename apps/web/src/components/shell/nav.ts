@@ -3,7 +3,6 @@ import {
   ArrowUpDown,
   BarChart3,
   BookCheck,
-  Bot,
   CalendarCheck,
   CalendarDays,
   CalendarFold,
@@ -85,7 +84,6 @@ export const NAV: NavSection[] = [
       { to: "/review/weekly", label: "Weekly", icon: CalendarCheck },
       { to: "/review/monthly", label: "Monthly", icon: CalendarFold },
       { to: "/review/reports", label: "Reports", icon: BarChart3 },
-      { to: "/review/ai-usage", label: "AI usage", icon: Bot },
     ],
   },
 ];

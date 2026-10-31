@@ -43,13 +43,6 @@ const ENTRIES: Entry[] = [
     icon: "chat-processing-outline",
     ai: true,
   },
-  {
-    href: "/review/ai-usage",
-    title: "AI cost",
-    hint: "What AI cost this month, day by day",
-    icon: "currency-usd",
-    ai: true,
-  },
 ];
 
 export function ReviewHome() {

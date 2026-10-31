@@ -62,7 +62,6 @@ export async function aiPlanDay(deps: Deps, date: LocalDate) {
       title: t.title,
       minutes: t.estimateMin ?? 30,
       priority: t.priority,
-      energy: t.energy,
       topThree: t.top3Date === date,
       evening: t.whenSlot === "evening",
     });

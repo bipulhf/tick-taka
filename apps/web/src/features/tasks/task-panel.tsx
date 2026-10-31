@@ -38,7 +38,6 @@ function formOf(task: TaskDetail): Form {
     status: task.status,
     deadlineAt: task.deadlineAt,
     priority: task.priority,
-    energy: task.energy,
     estimateMin: task.estimateMin,
     rrule: task.rrule,
     top3Date: task.top3Date,
@@ -223,7 +222,6 @@ function TaskForm({
             repeatText={repeatText}
             setRepeatText={setRepeatText}
             parsedRepeat={parsedRepeat}
-            advanced={settings?.advancedViews}
             areas={areas}
             projects={projects.data}
           />

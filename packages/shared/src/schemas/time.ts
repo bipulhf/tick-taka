@@ -19,7 +19,6 @@ export const PROJECT_STATUSES = ["active", "paused", "done"] as const;
 export const TASK_STATUSES = ["inbox", "open", "someday", "done"] as const;
 export const TASK_PRIORITIES = ["low", "normal", "high"] as const;
 export const WHEN_SLOTS = ["day", "evening"] as const;
-export const ENERGY_LEVELS = ["high", "low"] as const;
 export const TIME_SOURCES = ["timer", "focus", "manual"] as const;
 export const HABIT_SCHEDULES = ["daily", "weekly", "n_per_week"] as const;
 
@@ -68,7 +67,6 @@ const taskFields = {
   hasTime: z.boolean(),
   whenSlot: z.enum(WHEN_SLOTS),
   deadlineAt: epochMsSchema.nullable(),
-  energy: z.enum(ENERGY_LEVELS).nullable(),
   estimateMin: z
     .number()
     .int()
@@ -94,7 +92,6 @@ export const taskCreateSchema = z.object({
   hasTime: taskFields.hasTime.default(false),
   whenSlot: taskFields.whenSlot.default("day"),
   deadlineAt: taskFields.deadlineAt.optional(),
-  energy: taskFields.energy.optional(),
   estimateMin: taskFields.estimateMin.optional(),
   reminderAt: taskFields.reminderAt.optional(),
   rrule: taskFields.rrule.optional(),

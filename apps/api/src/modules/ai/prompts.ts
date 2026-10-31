@@ -13,7 +13,7 @@ the date (YYYY-MM-DD) if printed, line items, and the best matching category fro
 If a value is unreadable, return null rather than guessing.`;
 
 export const PLAN_DAY_PROMPT = `You plan one day as a timeline the user will drag around.
-Keep fixed blocks at their times. Put high-energy and high-priority work in the morning and low-energy chores late.
+Keep fixed blocks at their times. Put high-priority and top three work in the morning and small chores late.
 Add short breaks between long blocks. Never exceed the free minutes; leave out what doesn't fit (lowest priority first).
 Use HH:MM 24h times between the given start and end. Use the given task IDs; never invent tasks.
 Write one short, friendly sentence as the note.`;

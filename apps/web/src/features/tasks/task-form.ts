@@ -17,7 +17,6 @@ export interface Form {
   status: "inbox" | "open" | "someday" | "done";
   deadlineAt: number | null;
   priority: Priority;
-  energy: "high" | "low" | null;
   estimateMin: number | null;
   rrule: string | null;
   top3Date: string | null;
@@ -34,7 +33,6 @@ export const EMPTY: Form = {
   status: "inbox",
   deadlineAt: null,
   priority: "normal",
-  energy: null,
   estimateMin: null,
   rrule: null,
   top3Date: null,

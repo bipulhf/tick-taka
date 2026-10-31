@@ -14,7 +14,6 @@ const PROJECT_STATUSES = ["active", "paused", "done"] as const;
 const TASK_STATUSES = ["inbox", "open", "someday", "done"] as const;
 const PRIORITIES = ["low", "normal", "high"] as const;
 const WHEN_SLOTS = ["day", "evening"] as const;
-const ENERGIES = ["high", "low"] as const;
 const TIME_SOURCES = ["timer", "focus", "manual"] as const;
 const HABIT_SCHEDULES = ["daily", "weekly", "n_per_week"] as const;
 
@@ -61,7 +60,6 @@ export const tasks = sqliteTable(
     whenSlot: text("when_slot", { enum: WHEN_SLOTS }).notNull().default("day"),
     /** When it must be done */
     deadlineAt: integer("deadline_at"),
-    energy: text("energy", { enum: ENERGIES }),
     estimateMin: integer("estimate_min"),
     reminderAt: integer("reminder_at"),
     rrule: text("rrule"),
@@ -82,7 +80,6 @@ export const tasks = sqliteTable(
     check("tasks_status_check", oneOf("status", TASK_STATUSES)),
     check("tasks_priority_check", oneOf("priority", PRIORITIES)),
     check("tasks_when_slot_check", oneOf("when_slot", WHEN_SLOTS)),
-    check("tasks_energy_check", oneOf("energy", ENERGIES)),
     check("tasks_estimate_check", rule(`"estimate_min" >= 0`)),
     check("tasks_top3_date_check", isLocalDate("top3_date")),
     check("tasks_parent_self_check", rule(`"parent_id" <> "id"`)),

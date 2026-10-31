@@ -20,7 +20,6 @@ export function TaskMoreFields({
   repeatText,
   setRepeatText,
   parsedRepeat,
-  advanced,
   areas,
   projects,
   setDeadline,
@@ -32,7 +31,6 @@ export function TaskMoreFields({
   repeatText: string;
   setRepeatText: (text: string) => void;
   parsedRepeat: { rrule: string } | null;
-  advanced: { energy: boolean } | undefined;
   areas: { id: string; name: string; emoji: string }[];
   projects: { data?: { id: string; name: string }[] };
   setDeadline: () => Promise<void>;
@@ -89,18 +87,6 @@ export function TaskMoreFields({
           { value: "high", label: "High" },
         ]}
       />
-      {advanced?.energy ? (
-        <PickerField
-          label="Energy"
-          value={form.energy}
-          noneLabel="Any energy"
-          options={[
-            { id: "high", label: "High energy", emoji: "⚡" },
-            { id: "low", label: "Low energy", emoji: "🌙" },
-          ]}
-          onChange={(energy) => set("energy", energy as Form["energy"])}
-        />
-      ) : null}
 
       <View className="flex-row gap-3">
         <PickerField

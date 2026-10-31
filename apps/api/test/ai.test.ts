@@ -201,7 +201,6 @@ describe("planning and coaching", () => {
       title: "Deep work",
       status: "open",
       top3Date: "2026-10-04",
-      energy: "high",
       estimateMin: 120,
     });
     ai.queueJson({

@@ -18,7 +18,6 @@ export function TaskMoreFields({
   repeatText,
   setRepeatText,
   parsedRepeat,
-  advanced,
   areas,
   projects,
 }: {
@@ -30,7 +29,6 @@ export function TaskMoreFields({
   repeatText: string;
   setRepeatText: (text: string) => void;
   parsedRepeat: { rrule: string } | null;
-  advanced: { energy: boolean } | undefined;
   areas: { id: string; name: string; emoji: string }[];
   projects: { id: string; name: string }[] | undefined;
 }) {
@@ -77,19 +75,6 @@ export function TaskMoreFields({
           ]}
         />
       </div>
-
-      {advanced?.energy ? (
-        <Select
-          label="Energy"
-          value={form.energy ?? NONE}
-          onChange={(energy) => set("energy", energy === NONE ? null : (energy as Form["energy"]))}
-          options={[
-            { value: NONE, label: "Any energy" },
-            { value: "high", label: "High energy", leading: "⚡" },
-            { value: "low", label: "Low energy", leading: "🌙" },
-          ]}
-        />
-      ) : null}
 
       <div className="overflow-hidden rounded-2xl border border-line [&>*+*]:border-t [&>*+*]:border-line">
         <ToggleRow

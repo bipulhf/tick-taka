@@ -73,7 +73,6 @@ export function TaskSheet({ id }: { id: string | null }) {
       status: task.status,
       deadlineAt: task.deadlineAt,
       priority: task.priority,
-      energy: task.energy,
       estimateMin: task.estimateMin,
       rrule: task.rrule,
       top3Date: task.top3Date,
@@ -176,7 +175,6 @@ export function TaskSheet({ id }: { id: string | null }) {
   };
 
   const doDate = form.doAt ? toLocalDate(form.doAt, timeZone) : null;
-  const advanced = settings?.advancedViews;
   const whenValue: WhenChoice | null =
     form.status === "someday"
       ? "someday"
@@ -313,7 +311,6 @@ export function TaskSheet({ id }: { id: string | null }) {
           repeatText={repeatText}
           setRepeatText={setRepeatText}
           parsedRepeat={parsedRepeat}
-          advanced={advanced}
           areas={areas}
           projects={projects}
           setDeadline={setDeadline}

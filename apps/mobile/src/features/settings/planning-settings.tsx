@@ -124,11 +124,6 @@ export function PlanningSettings() {
           <Section title="Advanced views">
             <Card className="gap-3">
               <ToggleRow
-                label="Energy tags"
-                value={s.advancedViews.energy}
-                onChange={(on) => update({ advancedViews: { ...s.advancedViews, energy: on } })}
-              />
-              <ToggleRow
                 label="Shopping list"
                 value={s.advancedViews.shoppingList}
                 onChange={(on) =>

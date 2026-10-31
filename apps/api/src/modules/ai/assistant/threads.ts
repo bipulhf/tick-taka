@@ -3,6 +3,7 @@ import {
   ASSISTANT_RECORD_KINDS,
   type AssistantCard,
   type AssistantMessage,
+  type AssistantQuestion,
   type AssistantRating,
   assistantThreadPatchSchema,
 } from "@tick-taka/shared/schemas/ai";
@@ -47,6 +48,7 @@ export interface StoredReply {
   memo: string;
   cards: AssistantCard[];
   actions: { summary: string }[];
+  question: AssistantQuestion | null;
 }
 
 /** The signed-in user's chats with Tiki, in their own database. */
@@ -95,6 +97,7 @@ export function threadService(deps: Deps) {
           memo: assistantMessages.memo,
           cards: assistantMessages.cards,
           actions: assistantMessages.actions,
+          question: assistantMessages.question,
           rating: assistantMessages.rating,
           createdAt: assistantMessages.createdAt,
         })
@@ -112,6 +115,7 @@ export function threadService(deps: Deps) {
             (card) => card.type !== "record" || ASSISTANT_RECORD_KINDS.includes(card.kind),
           ),
           actions: message.actions ?? [],
+          question: message.question ?? null,
         })),
       };
     },
@@ -190,6 +194,7 @@ export function threadService(deps: Deps) {
             memo: reply.memo || null,
             cards: reply.cards,
             actions: reply.actions,
+            question: reply.question,
             createdAt: now,
           })
           .run();

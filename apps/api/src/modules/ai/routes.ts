@@ -140,6 +140,7 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
             memo: event.memo,
             cards: event.cards,
             actions: event.actions.map((action) => ({ summary: action.summary })),
+            question: event.question ?? null,
           });
           write({ ...event, threadId, messageId });
         };

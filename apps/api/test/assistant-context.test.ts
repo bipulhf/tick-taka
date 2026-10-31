@@ -183,6 +183,8 @@ describe("remember and forget", () => {
 describe("assistant prompt", () => {
   test("asks before changing more than 5 records", () => {
     expect(ASSISTANT_PROMPT).toContain("more than 5 records");
-    expect(ASSISTANT_PROMPT).toContain("I'll move 7 tasks to Friday.");
+    expect(ASSISTANT_PROMPT).toContain(
+      'ask as a quick reply whether to go ahead ("Move these 7 tasks to Friday?"',
+    );
   });
 });

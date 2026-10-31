@@ -64,6 +64,13 @@
       "when": 1793460131793,
       "tag": "0008_drop_removed_features",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1793473256167,
+      "tag": "0009_assistant_question",
+      "breakpoints": true
     }
   ]
 }

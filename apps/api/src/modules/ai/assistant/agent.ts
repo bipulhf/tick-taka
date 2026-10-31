@@ -2,6 +2,7 @@ import { defined } from "@tick-taka/shared/defined";
 import type {
   AssistantCard,
   AssistantMessage,
+  AssistantQuestion,
   AssistantScreen,
 } from "@tick-taka/shared/schemas/ai";
 import type { AiChatMessage, AiClient, AiToolCall } from "../../../ai/client";
@@ -13,6 +14,7 @@ import { describeVocabulary, vocabulary } from "../context";
 import { ASSISTANT_DRAFT_MONEY_NOTE, ASSISTANT_PROMPT } from "../prompts";
 import { createCaller, type Dispatch } from "./dispatch";
 import { NOTE_TOOLS } from "./notes";
+import { describeQuestion, QUESTION_TOOL, readQuestion } from "./question";
 import { ASK_TOOLS, runAskTool } from "./read-tools";
 import type { Action, Draft, PendingDelete } from "./records";
 import { describeScreen } from "./screen";
@@ -53,6 +55,11 @@ export type AssistantEvent =
       memo: string;
       /** Records to open and totals to show under the reply. */
       cards: AssistantCard[];
+      /**
+       * Tiki's question as a small form (the `ask` tool); `reply` is then its text.
+       * The turn ended on it, so the user's next message answers it.
+       */
+      question?: AssistantQuestion;
       /** With a threadId in the request: the chat, and the stored reply's id (for feedback). */
       threadId?: string;
       messageId?: string;
@@ -212,7 +219,7 @@ export async function aiAssistant(
             },
     ),
   ];
-  const tools = [...WRITE_TOOLS, ...NOTE_TOOLS, ...ASK_TOOLS];
+  const tools = [...WRITE_TOOLS, ...NOTE_TOOLS, ...ASK_TOOLS, QUESTION_TOOL];
   let writes = 0;
   let reported = 0;
   let failed = 0;
@@ -230,14 +237,17 @@ export async function aiAssistant(
     return result;
   };
 
-  const finish = (content: string | null) => {
+  /** With a question the reply is its text, whatever the model wrote around the call. */
+  const finish = (content: string | null, question?: AssistantQuestion) => {
     const asked = runner.pending.length;
     if (asked) notes.push(`asked to delete ${runner.pending.map((p) => p.path).join(", ")}`);
     if (runner.drafts.length)
       notes.push(`proposed for confirmation: ${runner.drafts.map((d) => d.summary).join(", ")}`);
+    if (question) notes.push(describeQuestion(question));
     // The failure note goes last and survives a long memo being cut.
     const done = notes.join("; ").slice(0, failed ? 3900 - STEP_FAILED.length - 2 : 3900);
     const reply =
+      question?.question ||
       content?.trim() ||
       (asked || runner.drafts.length
         ? "Please confirm on screen."
@@ -252,6 +262,7 @@ export async function aiAssistant(
       drafts: runner.drafts,
       memo: failed ? [done, STEP_FAILED].filter(Boolean).join("; ") : done,
       cards: runner.cards.list(reply),
+      ...(question ? { question } : {}),
     });
   };
   const didSomething = () =>
@@ -276,8 +287,23 @@ export async function aiAssistant(
     if (result.toolCalls.length === 0) return finish(result.content);
     if (result.content) emit({ type: "reset" });
     messages.push({ role: "assistant", content: result.content, toolCalls: result.toolCalls });
+    let question: AssistantQuestion | undefined;
     for (const call of result.toolCalls) {
       if (stopped()) return;
+      // A valid question ends the turn: later calls in this round don't run.
+      if (call.name === QUESTION_TOOL.name) {
+        const read = readQuestion(call.arguments, {
+          vocab: vocabulary(deps),
+          currency: userTime(deps).settings.defaultCurrency,
+        });
+        if ("question" in read) {
+          question = read.question;
+          break;
+        }
+        failed++;
+        messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(read) });
+        continue;
+      }
       emit({ type: "status", text: describe(call) });
       let output: unknown;
       if (WRITE_NAMES.has(call.name) && ++writes > MAX_WRITES) {
@@ -307,6 +333,7 @@ export async function aiAssistant(
         content: JSON.stringify(output ?? { error: "Unknown function" }),
       });
     }
+    if (question) return finish(result.content, question);
     if (failed || round + 1 >= FAST_ROUNDS) tier = "smart";
   }
 

@@ -252,3 +252,38 @@ describe("0008_drop_removed_features on a populated database", () => {
     sqlite.close();
   });
 });
+
+describe("0009_assistant_question on an existing database", () => {
+  test("keeps every chat message and adds an empty question to each", () => {
+    const path = join(work, "assistant-question.db");
+    const before = new Database(path, { create: true });
+    migrate(drizzle({ client: before }), {
+      migrationsFolder: migrationsUpTo("0008_drop_removed_features"),
+    });
+    const now = Date.UTC(2026, 10, 1, 4);
+    const [thread, asked, replied] = Array.from({ length: 3 }, () => newId());
+    before.exec(`
+      INSERT INTO assistant_threads (id, created_at, updated_at, deleted_at, title)
+        VALUES ('${thread}', ${now}, ${now}, NULL, 'New account');
+      INSERT INTO assistant_messages (id, thread_id, role, content, created_at)
+        VALUES ('${asked}', '${thread}', 'user', 'create a new account', ${now});
+      INSERT INTO assistant_messages (id, thread_id, role, content, memo, cards, actions, created_at)
+        VALUES ('${replied}', '${thread}', 'assistant', 'What should it be called?', NULL, '[]', '[]', ${now});
+    `);
+    before.close();
+
+    const { sqlite } = openDatabase(path);
+    expect(count(sqlite, "assistant_messages")).toBe(2);
+    expect(
+      sqlite.query("SELECT content, question FROM assistant_messages ORDER BY role DESC").all(),
+    ).toEqual([
+      { content: "create a new account", question: null },
+      { content: "What should it be called?", question: null },
+    ]);
+    sqlite.exec(
+      `UPDATE assistant_messages SET question = '{"question":"Name?","fields":[]}' WHERE id = '${replied}'`,
+    );
+    expect(sqlite.query("PRAGMA integrity_check").get()).toEqual({ integrity_check: "ok" });
+    sqlite.close();
+  });
+});

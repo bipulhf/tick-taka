@@ -1,4 +1,4 @@
-import type { AssistantCard } from "@tick-taka/shared/schemas/ai";
+import type { AssistantCard, AssistantQuestion } from "@tick-taka/shared/schemas/ai";
 import { check, index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { baseColumns, oneOf } from "../columns";
 
@@ -30,6 +30,8 @@ export const assistantMessages = sqliteTable(
     cards: text("cards", { mode: "json" }).$type<AssistantCard[]>(),
     /** The changes made, as their summaries (no Undo: that belongs to the turn that made them). */
     actions: text("actions", { mode: "json" }).$type<{ summary: string }[]>(),
+    /** Tiki's question as a small form, when the reply asked one (TIKI_V2 §11). */
+    question: text("question", { mode: "json" }).$type<AssistantQuestion>(),
     rating: text("rating", { enum: RATINGS }),
     createdAt: integer("created_at").notNull(),
   },

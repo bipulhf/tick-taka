@@ -1,9 +1,10 @@
-import { useRouter } from "expo-router";
+import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 import { Tiki } from "@/components/tiki/tiki";
 import { Icon } from "@/components/ui/icon";
 import { haptic } from "@/lib/haptics";
 import { useAiStatus } from "@/lib/queries";
+import { assistantHref, screenFromRoute } from "./assistant-screen";
 
 /** Whether the chat is available, so the tab bar can make room for its button. */
 export function useAssistantAvailable(): boolean {
@@ -14,11 +15,14 @@ export function useAssistantAvailable(): boolean {
 /** Round Tiki button at the left end of the tab bar: one thumb-tap to the chat. */
 export function AssistantButton({ size }: { size: number }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
   return (
     <Pressable
       onPress={() => {
         haptic.tap();
-        router.push("/assistant");
+        // The tab it was opened from, so suggestions and "here" fit it.
+        router.push(assistantHref(screenFromRoute(pathname, params)));
       }}
       accessibilityRole="button"
       accessibilityLabel="Chat with Tiki"

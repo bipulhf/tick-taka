@@ -50,7 +50,7 @@ const ENTRIES: Entry[] = [
     icon: "repeat-variant",
   },
   {
-    href: "/assistant",
+    href: "/assistant?view=/review",
     title: "Chat with Tiki",
     hint: "Ask, add or change anything, by voice too",
     icon: "chat-processing-outline",

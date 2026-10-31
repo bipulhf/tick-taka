@@ -1,3 +1,4 @@
+import type { AssistantRating } from "@tick-taka/shared/schemas/ai";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { Icon } from "@/components/ui/icon";
@@ -6,6 +7,8 @@ import { plural } from "@/lib/format";
 import { useColors } from "@/theme/colors";
 import type { ChatAction, ChatMessage, ChatStep } from "./chat-store";
 import { DraftCard } from "./draft-card";
+import { MessageCards } from "./message-cards";
+import { MessageFeedback } from "./message-feedback";
 import { StreamingCaret, ThinkingIndicator } from "./thinking-indicator";
 import type { LiveTurn } from "./use-assistant";
 
@@ -170,8 +173,9 @@ function DeletionCard({
 }
 
 /**
- * One chat turn; Tiki's turns list what changed, ask before deleting anything and
- * hold proposed money changes until Save.
+ * One chat turn; Tiki's turns show totals and records to open, list what changed,
+ * ask before deleting anything, hold proposed money changes until Save and take a
+ * thumbs up or down once stored.
  */
 export function MessageBubble({
   message,
@@ -180,6 +184,7 @@ export function MessageBubble({
   onKeep,
   onSaveDraft,
   onDiscardDraft,
+  onRate,
 }: {
   message: ChatMessage;
   onUndo: (index: number) => void;
@@ -187,6 +192,7 @@ export function MessageBubble({
   onKeep: () => void;
   onSaveDraft: (index: number) => void;
   onDiscardDraft: (index: number) => void;
+  onRate: (rating: AssistantRating, comment?: string) => void;
 }) {
   if (message.role === "user") {
     return (
@@ -205,6 +211,7 @@ export function MessageBubble({
           {message.content}
         </Text>
       </View>
+      {message.cards?.length ? <MessageCards cards={message.cards} /> : null}
       {message.actions?.length ? <ActionList actions={message.actions} onUndo={onUndo} /> : null}
       {message.drafts?.map((draft, index) => (
         <DraftCard
@@ -221,6 +228,9 @@ export function MessageBubble({
         <Text variant="caption" tone="muted" className="px-1">
           Kept everything. Nothing was deleted.
         </Text>
+      ) : null}
+      {message.serverId && !message.failed ? (
+        <MessageFeedback rating={message.rating} onRate={onRate} />
       ) : null}
     </View>
   );

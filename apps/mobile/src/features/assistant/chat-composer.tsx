@@ -45,10 +45,13 @@ export function ChatComposer({
   onSend,
   busy,
   start,
+  focusKey,
 }: {
   onSend: (text: string) => void;
   busy: boolean;
   start?: "talk";
+  /** Focuses the field whenever it changes (the chat was opened to ask about a record). */
+  focusKey?: string;
 }) {
   const colors = useColors();
   const input = useRef<TextInput>(null);
@@ -67,6 +70,10 @@ export function ChatComposer({
   useEffect(() => {
     if (start === "talk") void voice.start();
   }, [start]);
+
+  useEffect(() => {
+    if (focusKey) input.current?.focus();
+  }, [focusKey]);
 
   const send = () => {
     if (!text.trim() || busy) return;

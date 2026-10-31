@@ -1,5 +1,6 @@
+import type { AssistantCard, AssistantRating, AssistantScreen } from "@tick-taka/shared/schemas/ai";
 import { useEffect } from "react";
-import { ApiError } from "@/lib/api";
+import { ApiError, api, unwrap } from "@/lib/api";
 import { useIsOnline } from "@/lib/connection";
 import { friendlyError } from "@/lib/error-copy";
 import { postEventStream } from "@/lib/event-stream";
@@ -16,9 +17,10 @@ import {
   type ChatDeletion,
   type ChatStep,
   chatStore,
-  clearChat,
+  currentThreadId,
   loadChat,
   markUndone,
+  newChat,
   updateMessage,
 } from "./chat-store";
 import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
@@ -47,6 +49,10 @@ type StreamEvent =
       /** Proposed money changes (we always ask for drafts); older servers omit it. */
       drafts?: unknown;
       memo: string;
+      /** Records to open and totals; older servers omit them. */
+      cards?: AssistantCard[];
+      /** The stored reply, when the turn was sent with a threadId. */
+      messageId?: string;
     }
   | { type: "error"; code: string; message: string };
 
@@ -62,14 +68,17 @@ resetOnSignOut(() => liveStore.set(null));
 
 const lowerFirst = (text: string) => `${text[0]?.toLowerCase() ?? ""}${text.slice(1)}`;
 
-/** The chat with Tiki: history on the phone, the work on the server, streamed as it happens. */
-export function useAssistant() {
+/**
+ * The chat with Tiki: history on the phone (and the server), the work on the server,
+ * streamed as it happens. `screen` is what the user was looking at when they opened it.
+ */
+export function useAssistant(screen?: AssistantScreen) {
   const messages = useStore(chatStore);
   const live = useStore(liveStore);
   const send = useOutbox();
   const online = useIsOnline();
   useEffect(() => {
-    if (chatStore.get().length === 0) void loadChat();
+    void loadChat();
   }, []);
   // Look up what a dropped turn changed, once the connection is back.
   useEffect(() => {
@@ -79,6 +88,9 @@ export function useAssistant() {
   const ask = async (text: string) => {
     const content = text.trim();
     if (!content || liveStore.get()) return;
+    liveStore.set({ steps: [], actions: [], text: "" });
+    await loadChat();
+    const threadId = currentThreadId();
     appendMessage({ role: "user", content });
     const history = chatStore
       .get()
@@ -89,7 +101,6 @@ export function useAssistant() {
         content: body.slice(0, 4000),
         ...(memo ? { memo: memo.slice(-3900) } : {}),
       }));
-    liveStore.set({ steps: [], actions: [], text: "" });
     const change = (update: (turn: LiveTurn) => LiveTurn) => {
       const turn = liveStore.get();
       if (turn) liveStore.set(update(turn));
@@ -101,7 +112,8 @@ export function useAssistant() {
     const settled = () => liveStore.get()?.steps.map((step) => ({ ok: false, ...step })) ?? [];
     try {
       // Money is never written by the AI on its own: it comes back as drafts to confirm.
-      await postEventStream("/ai/assistant", { messages: history, draftMoney: true }, (data) => {
+      const body = { messages: history, draftMoney: true, threadId, ...(screen ? { screen } : {}) };
+      await postEventStream("/ai/assistant", body, (data) => {
         const event = data as StreamEvent;
         switch (event.type) {
           case "status":
@@ -140,6 +152,8 @@ export function useAssistant() {
                 ? { deletions: event.deletions, deletionChoice: "pending" as const }
                 : {}),
               ...(drafts.length ? { drafts } : {}),
+              ...(event.cards?.length ? { cards: event.cards } : {}),
+              ...(event.messageId ? { serverId: event.messageId } : {}),
             });
             if (event.actions.length) {
               haptic.success();
@@ -255,6 +269,27 @@ export function useAssistant() {
     haptic.tap();
   };
 
+  /** A thumbs up or down on a stored reply; rating it again (with a comment) replaces it. */
+  const rate = (messageId: string, rating: AssistantRating, comment?: string) => {
+    const message = chatStore.get().find((m) => m.id === messageId);
+    if (!message?.serverId) return;
+    if (!online) return notify("You're offline. Try again when you're connected.");
+    const before = message.rating;
+    updateMessage(messageId, (m) => ({ ...m, rating }));
+    haptic.select();
+    unwrap(
+      api.ai.feedback.$post({
+        json: { messageId: message.serverId, rating, ...(comment?.trim() ? { comment } : {}) },
+      }),
+    ).catch((error: unknown) => {
+      updateMessage(messageId, ({ rating: _sent, ...m }) =>
+        before ? { ...m, rating: before } : m,
+      );
+      notify(friendlyError(error));
+    });
+    if (comment?.trim()) notify("Thanks. That helps Tiki get better.");
+  };
+
   const keepAll = (messageId: string) => {
     updateMessage(messageId, (m) => ({
       ...m,
@@ -275,7 +310,8 @@ export function useAssistant() {
     keepAll,
     saveDraft,
     discardDraft,
-    clear: clearChat,
+    rate,
+    newChat,
     thinking: live !== null,
   };
 }

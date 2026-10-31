@@ -29,6 +29,7 @@ const GRAPE_OK = [
   "features/review/weekly-review.tsx", // the review's habit step
   "features/plan/plan-home.tsx", // the Habits tile
   "app/login.tsx", // the Habits feature line
+  "features/assistant/message-cards.tsx", // a habit card's icon in the chat
 ];
 
 /** Mango is the primary action: the FAB, primary buttons, a draft's Save, and Tiki. */

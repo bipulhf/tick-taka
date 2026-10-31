@@ -64,6 +64,11 @@ const SECTIONS: SectionDef[] = [
   { id: "account", label: "Account and data", icon: UserRound, render: () => <AccountSection /> },
 ];
 
+/** Each section's name, for the window title. */
+export const SETTINGS_SECTION_LABELS: Record<string, string> = Object.fromEntries(
+  SECTIONS.map((section) => [section.id, section.label]),
+);
+
 export const isSettingsSection = (value: unknown): value is SettingsSectionId =>
   SECTIONS.some((s) => s.id === value);
 

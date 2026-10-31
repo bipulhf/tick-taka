@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { PageTitle } from "@/components/shell/page-title";
 import { ThemeSync } from "@/components/shell/theme-sync";
 import { refreshSessionIfStale, tokenStore } from "@/lib/auth";
 import { useStore } from "@/lib/store";
@@ -23,6 +24,7 @@ function SignedIn() {
   return (
     <>
       <ThemeSync />
+      <PageTitle />
       <Outlet />
     </>
   );

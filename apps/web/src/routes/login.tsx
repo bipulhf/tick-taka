@@ -15,6 +15,7 @@ import {
 } from "@/lib/auth";
 import { DEMO_SIGN_IN } from "@/lib/config";
 import { friendlyError } from "@/lib/error-copy";
+import { pageTitle } from "@/lib/page-title";
 import { useStore } from "@/lib/store";
 import { toggleTheme, useTheme } from "@/lib/theme";
 
@@ -60,6 +61,9 @@ function SignIn() {
   }, [demoToken, finish]);
 
   const onUnavailable = useCallback((message: string) => setError(message), []);
+  useEffect(() => {
+    document.title = pageTitle("/login");
+  }, []);
 
   return (
     <div className="flex min-h-dvh flex-col" style={paperStyle}>

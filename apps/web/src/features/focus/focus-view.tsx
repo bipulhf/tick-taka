@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useUpdateSettings } from "@/features/settings/use-update-settings";
 import { api, unwrap } from "@/lib/api";
 import { formatTimer, plural } from "@/lib/format";
+import { APP_TITLE, pageTitle } from "@/lib/page-title";
 import { useSettings } from "@/lib/queries";
 import { isTypingTarget } from "@/lib/ui-state";
 import { focusAnnouncement } from "./focus-announcement";
@@ -78,6 +79,13 @@ export function FocusView({ taskId: initialTaskId, from }: { taskId?: string; fr
   }, [announcementKey]);
 
   const onBreak = session?.phase === "break";
+  // The tab shows the countdown, so it can be watched from another tab.
+  const countdown = session ? formatTimer(focus.remaining) : null;
+  useEffect(() => {
+    document.title = countdown
+      ? `${countdown} · ${onBreak ? "Break" : "Focus"} · ${APP_TITLE}`
+      : pageTitle("/focus");
+  }, [countdown, onBreak]);
   const drooping = session?.drooping ?? false;
   const title = task.data?.title ?? "Deep work";
 

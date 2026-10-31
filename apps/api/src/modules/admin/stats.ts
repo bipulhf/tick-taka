@@ -13,6 +13,7 @@ import type { Deps } from "../../lib/deps";
 import { requestMetrics, startedAt } from "../../lib/metrics";
 import { isOwner } from "../../lib/owner";
 import { userTime } from "../../lib/user-time";
+import { FEATURES, type FeatureKind, lastUsedByFeature } from "./last-used";
 
 /**
  * What the owner's dashboard shows. Account facts and counts only: who signed up and
@@ -158,14 +159,16 @@ function computeUsage(deps: Deps) {
   const since = now - 30 * DAY_MS;
   const perUser = deps.users.list().map((user) => {
     const counts = {} as Record<Kind, { total: number; recent: number }>;
+    let lastUsed = {} as Record<FeatureKind, number | null>;
     const lease = deps.users.lease(user);
     try {
       for (const [table] of COUNTED) counts[table] = countRows(lease.data.sqlite, table, since);
+      lastUsed = lastUsedByFeature(lease.data);
     } finally {
       // Opened just to count: close it again so the dashboard doesn't keep every user open.
       lease.release({ closeIfOpened: true });
     }
-    return { id: user.id, email: user.email, name: user.name, counts };
+    return { id: user.id, email: user.email, name: user.name, counts, lastUsed };
   });
   const totals = COUNTED.map(([table, label]) => ({
     kind: table,
@@ -174,9 +177,20 @@ function computeUsage(deps: Deps) {
     last30Days: perUser.reduce((sum, u) => sum + u.counts[table].recent, 0),
     users: perUser.filter((u) => u.counts[table].total > 0).length,
   }));
+  // Per feature: how many people used it in the last 30 days, and the latest use by anyone.
+  const features = FEATURES.map(({ kind, label }) => {
+    const uses = perUser.map((u) => u.lastUsed[kind]).filter((at): at is number => at !== null);
+    return {
+      kind,
+      label,
+      activeUsers30Days: uses.filter((at) => at >= since).length,
+      lastUsedAt: uses.length ? Math.max(...uses) : null,
+    };
+  });
   return {
     computedAt: now,
     totals,
+    features,
     perUser: perUser.map((u) => ({
       id: u.id,
       email: u.email,
@@ -186,6 +200,7 @@ function computeUsage(deps: Deps) {
         number
       >,
       last30Days: COUNTED.reduce((sum, [t]) => sum + u.counts[t].recent, 0),
+      lastUsed: u.lastUsed,
     })),
   };
 }

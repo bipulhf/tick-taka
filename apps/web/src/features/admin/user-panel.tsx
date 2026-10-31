@@ -154,6 +154,28 @@ export function AdminUserPanel({ id, onClose }: PanelComponentProps) {
             </section>
           ) : null}
 
+          {counts ? (
+            <section aria-labelledby="admin-user-last-used" className="flex flex-col gap-2">
+              <h3 id="admin-user-last-used" className="px-1 text-caption text-muted">
+                Last used (dates only)
+              </h3>
+              <div className="overflow-hidden rounded-2xl bg-card">
+                <dl className="divide-y divide-line">
+                  {(usage?.features ?? []).map((feature) => {
+                    const at = counts.lastUsed[feature.kind];
+                    return (
+                      <Fact
+                        key={feature.kind}
+                        label={feature.label}
+                        value={at === null ? "Never" : ago(at)}
+                      />
+                    );
+                  })}
+                </dl>
+              </div>
+            </section>
+          ) : null}
+
           {user.isOwner ? (
             <p className="text-callout text-muted">
               This is your own account. The controls below don't apply to the owner.

@@ -2,7 +2,7 @@ import { ErrorState } from "@/components/ui/empty-state";
 import { Section } from "@/components/ui/section";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { BarList } from "../review/charts/bar-list";
-import { useAdminUsage } from "./queries";
+import { ago, useAdminUsage } from "./queries";
 
 /** The main kinds shown per user; the panel shows every kind. */
 const PER_USER = ["tasks", "habits", "time_entries", "transactions", "accounts", "goals"] as const;
@@ -82,6 +82,33 @@ export function UsageTab() {
           </div>
         </Section>
       </div>
+      <Section
+        title="Features in use"
+        caption="How many people used each feature in the last 30 days, and when anyone last did"
+      >
+        <div className="overflow-x-auto rounded-2xl bg-card">
+          <table className="w-full text-callout">
+            <thead className="text-caption text-muted">
+              <tr className="border-b border-line">
+                <th className="px-4 py-2.5 text-left font-semibold">Feature</th>
+                <th className="px-4 py-2.5 text-right font-semibold">People, 30 days</th>
+                <th className="px-4 py-2.5 text-right font-semibold">Last used</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.features.map((f) => (
+                <tr key={f.kind} className="border-b border-line last:border-0">
+                  <td className="px-4 py-2 font-semibold">{f.label}</td>
+                  <td className="px-4 py-2 text-right tabular">{f.activeUsers30Days}</td>
+                  <td className="px-4 py-2 text-right tabular text-muted">
+                    {f.lastUsedAt === null ? "Never" : ago(f.lastUsedAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
       <Section title="Per person" caption="Main kinds, live records">
         <div className="overflow-x-auto rounded-2xl bg-card">
           <table className="w-full min-w-[640px] text-callout">

@@ -23,6 +23,8 @@ describe("admin area", () => {
   test("users and usage show account facts and counts, never record content", async () => {
     const ctx = await createTestContext(OWNER);
     const asha = await ctx.tokenFor("sub-asha", "asha@example.com");
+    // A minute after sign-up, so the tasks are newer than what was seeded.
+    ctx.clock.advance(60_000);
     await ctx.request("POST", "/tasks", { title: "Asha's secret plan", status: "open" }, as(asha));
     await ctx.request("POST", "/tasks", { title: "Another", status: "open" }, as(asha));
 
@@ -31,10 +33,21 @@ describe("admin area", () => {
     expect(users.body.find((u) => u.email === "test@example.com")?.isOwner).toBe(true);
 
     const usage = await ctx.request<{
-      perUser: { email: string; counts: { tasks: number } }[];
+      perUser: {
+        email: string;
+        counts: { tasks: number };
+        lastUsed: Record<string, number | null>;
+      }[];
       totals: { kind: string; total: number }[];
+      features: { kind: string; activeUsers30Days: number; lastUsedAt: number | null }[];
     }>("GET", "/admin/usage");
-    expect(usage.body.perUser.find((u) => u.email === "asha@example.com")?.counts.tasks).toBe(2);
+    const ashaUsage = usage.body.perUser.find((u) => u.email === "asha@example.com");
+    expect(ashaUsage?.counts.tasks).toBe(2);
+    expect(ashaUsage?.lastUsed).toMatchObject({ tasks: ctx.clock.now, habits: null });
+    expect(usage.body.features.find((f) => f.kind === "tasks")).toMatchObject({
+      activeUsers30Days: 1,
+      lastUsedAt: ctx.clock.now,
+    });
     expect(usage.body.totals.find((t) => t.kind === "tasks")?.total).toBeGreaterThanOrEqual(2);
     for (const path of ["/admin/users", "/admin/usage", "/admin/overview", "/admin/health"]) {
       const text = JSON.stringify((await ctx.request("GET", path)).body);

@@ -173,8 +173,9 @@ function Header({ onNewChat, thinking }: { onNewChat?: () => void; thinking: boo
 }
 
 /**
- * Tiki's chat beside the content on a wide screen (a 400 px column, so changes can be
- * watched landing in the list next to it), and a full-screen layer below that.
+ * Tiki's chat as a floating window above its launcher at the bottom right (the page
+ * stays visible and usable behind it, so changes can be watched landing), and a
+ * full-screen layer on a phone.
  */
 export function AssistantDock() {
   const open = useStore(assistantOpenStore);
@@ -209,7 +210,7 @@ export function AssistantDock() {
     <aside
       ref={dock}
       aria-label="Chat with Tiki"
-      className="flex w-[400px] shrink-0 animate-fade-in flex-col border-l border-line bg-chrome"
+      className="fixed right-6 bottom-28 z-30 flex h-[min(640px,calc(100dvh-9rem))] w-[400px] animate-sheet-in flex-col overflow-hidden rounded-3xl border-2 border-ink/90 bg-chrome shadow-[6px_8px_0_rgb(35_32_43/0.9)]"
     >
       {body}
     </aside>

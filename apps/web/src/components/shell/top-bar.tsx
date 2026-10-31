@@ -7,17 +7,9 @@ import { paletteOpenStore } from "@/lib/ui-state";
 
 /**
  * The slim bar over every view: quick-add in the middle (the one thing to reach
- * from anywhere), then the running timer, hide amounts, Tiki and the palette.
+ * from anywhere), then the running timer, hide amounts, the theme and the palette.
  */
-export function TopBar({
-  quickAdd,
-  timer,
-  assistant,
-}: {
-  quickAdd: ReactNode;
-  timer?: ReactNode;
-  assistant?: ReactNode;
-}) {
+export function TopBar({ quickAdd, timer }: { quickAdd: ReactNode; timer?: ReactNode }) {
   const hidden = usePrivacy();
   const dark = useTheme() === "dark";
   return (
@@ -37,7 +29,6 @@ export function TopBar({
         shortcut="⇧ D"
         onClick={toggleTheme}
       />
-      {assistant}
       <IconButton
         icon={Search}
         label="Go to or search"

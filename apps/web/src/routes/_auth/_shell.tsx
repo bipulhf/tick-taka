@@ -24,8 +24,12 @@ function Shell() {
       <AppShell
         quickAdd={<QuickAddBar />}
         timer={<RunningTimer />}
-        assistantButton={<AssistantButton />}
-        assistantDock={<AssistantDock />}
+        assistantDock={
+          <>
+            <AssistantDock />
+            <AssistantButton />
+          </>
+        }
       />
     </>
   );

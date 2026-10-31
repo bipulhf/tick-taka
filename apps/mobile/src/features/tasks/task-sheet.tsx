@@ -21,11 +21,12 @@ import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { AskTikiButton } from "@/features/assistant/ask-tiki";
 import { api, unwrap } from "@/lib/api";
 import { formatMinutes, formatWhen } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
 import { pickDate, pickTime } from "@/lib/pick-date";
-import { useAiStatus, useAreas, useSettings } from "@/lib/queries";
+import { useAreas, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useTodayDate } from "@/lib/use-today";
 import { userTime } from "@/lib/user-time";
@@ -44,7 +45,6 @@ export function TaskSheet({ id }: { id: string | null }) {
   const actions = useTaskActions();
   const { data: settings } = useSettings();
   const { data: areas = [] } = useAreas();
-  const _ai = useAiStatus();
   const timeZone = userTime(settings).timeZone;
   const today = useTodayDate();
   const query = useQuery({
@@ -321,6 +321,7 @@ export function TaskSheet({ id }: { id: string | null }) {
         />
       ) : null}
       {id && task ? <TaskSubtasks id={id} task={task} form={form} /> : null}
+      {id && task ? <AskTikiButton kind="task" id={id} /> : null}
       {id ? (
         <Pressable
           onPress={() => router.replace(`/plan/logbook`)}

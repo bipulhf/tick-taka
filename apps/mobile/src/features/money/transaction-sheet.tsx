@@ -17,6 +17,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { AskTikiButton } from "@/features/assistant/ask-tiki";
 import { formatWhen, plural } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { notify } from "@/lib/notify";
@@ -311,6 +312,7 @@ export function TransactionSheet({ id }: { id: string | null }) {
         values={values}
         onRead={() => setKeypadKey((k) => k + 1)}
       />
+      {id ? <AskTikiButton kind="transaction" id={id} /> : null}
     </Sheet>
   );
 }

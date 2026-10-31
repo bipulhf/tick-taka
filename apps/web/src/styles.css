@@ -172,6 +172,43 @@
   }
 }
 
+/*
+ * Scrollbars: thin, rounded, in ink at low strength so they read in both themes and
+ * never compete with the content. Firefox takes the standard properties; Chrome and
+ * Safari take the ::-webkit-scrollbar rules (Chrome ignores those once the standard
+ * ones are set, and would then draw arrow buttons).
+ */
+@layer base {
+  @supports (-moz-appearance: none) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in oklab, var(--tt-ink) 22%, transparent) transparent;
+    }
+    *:hover {
+      scrollbar-color: color-mix(in oklab, var(--tt-ink) 38%, transparent) transparent;
+    }
+  }
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--tt-ink) 22%, transparent) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--tt-ink) 40%, transparent) padding-box;
+  }
+}
+
 @layer base {
   html {
     background: var(--tt-background);

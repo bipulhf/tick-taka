@@ -5,6 +5,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { togglePrivacy } from "@/lib/prefs";
 import { handleRowKey } from "@/lib/row-keys";
 import { useStore } from "@/lib/store";
+import { toggleTheme } from "@/lib/theme";
 import {
   assistantOpenStore,
   focusQuickAdd,
@@ -70,6 +71,9 @@ export function useGlobalShortcuts() {
       } else if (key === "H" && event.shiftKey) {
         event.preventDefault();
         togglePrivacy();
+      } else if (key === "D" && event.shiftKey) {
+        event.preventDefault();
+        toggleTheme();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -85,6 +89,7 @@ const GROUPS: { title: string; rows: [string[], string][] }[] = [
       [["Ctrl", "K"], "Go to or search"],
       [["Ctrl", "J"], "Chat with Tiki"],
       [["⇧", "H"], "Hide or show amounts"],
+      [["⇧", "D"], "Light or dark theme"],
       [["?"], "These shortcuts"],
       [["Esc"], "Close a panel"],
     ],

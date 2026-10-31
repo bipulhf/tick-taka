@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /*
- * DESIGN.md's tokens, the same values as apps/mobile/src/theme/palette.ts. The theme
- * follows the system unless Settings pins it (data-theme on <html>); accent themes
+ * DESIGN.md's tokens, the same values as apps/mobile/src/theme/palette.ts. Light by
+ * default; the top bar's theme button sets data-theme="dark" on <html>; accent themes
  * (data-accent) only tint the surfaces. test/tokens.test.ts keeps both apps in step.
  */
 :root {
@@ -26,30 +26,6 @@
   /* The sidebar and other chrome: one step from the page, toward the line colour. */
   --tt-chrome: #f8efe2;
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --tt-mango: #ffc266;
-    --tt-sky: #7aa2ff;
-    --tt-mint: #4fd8b5;
-    --tt-coral: #ff9385;
-    --tt-grape: #b996ff;
-    --tt-mango-text: #ffc266;
-    --tt-sky-text: #7aa2ff;
-    --tt-mint-text: #4fd8b5;
-    --tt-coral-text: #ff9385;
-    --tt-grape-text: #b996ff;
-    --tt-mango-inverse: #8a5a00;
-    --tt-background: #16151c;
-    --tt-card: #22202b;
-    --tt-ink: #f4f1ea;
-    --tt-muted: #a09aa6;
-    --tt-line: #34313f;
-    --tt-line-strong: #7a748c;
-    --tt-chrome: #1c1b23;
-    color-scheme: dark;
-  }
 }
 
 :root[data-theme="dark"] {
@@ -84,20 +60,6 @@
   --tt-background: #f6f1ff;
   --tt-line: #e6def6;
   --tt-chrome: #ede6fa;
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-accent="mint-breeze"]:not([data-theme="light"]) {
-    --tt-background: #101c1a;
-    --tt-card: #1a2825;
-    --tt-line: #34313f;
-    --tt-chrome: #142220;
-  }
-  :root[data-accent="grape-dusk"]:not([data-theme="light"]) {
-    --tt-background: #181424;
-    --tt-card: #241e34;
-    --tt-line: #34313f;
-    --tt-chrome: #1c172b;
-  }
 }
 :root[data-theme="dark"][data-accent="mint-breeze"] {
   --tt-background: #101c1a;
@@ -205,11 +167,6 @@
 }
 
 @custom-variant dark {
-  @media (prefers-color-scheme: dark) {
-    &:where(:root:not([data-theme="light"]) *) {
-      @slot;
-    }
-  }
   &:where([data-theme="dark"] *) {
     @slot;
   }

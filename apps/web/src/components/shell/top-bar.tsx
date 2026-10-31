@@ -1,7 +1,8 @@
-import { Eye, EyeOff, Search } from "lucide-react";
+import { Eye, EyeOff, Moon, Search, Sun } from "lucide-react";
 import type { ReactNode } from "react";
 import { IconButton } from "@/components/ui/icon-button";
 import { togglePrivacy, usePrivacy } from "@/lib/prefs";
+import { toggleTheme, useTheme } from "@/lib/theme";
 import { paletteOpenStore } from "@/lib/ui-state";
 
 /**
@@ -18,6 +19,7 @@ export function TopBar({
   assistant?: ReactNode;
 }) {
   const hidden = usePrivacy();
+  const dark = useTheme() === "dark";
   return (
     <div className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-line/70 bg-background/90 px-3 backdrop-blur-sm sm:px-5">
       <div className="min-w-0 flex-1">{quickAdd}</div>
@@ -28,6 +30,12 @@ export function TopBar({
         shortcut="⇧ H"
         pressed={hidden}
         onClick={togglePrivacy}
+      />
+      <IconButton
+        icon={dark ? Sun : Moon}
+        label={dark ? "Switch to light theme" : "Switch to dark theme"}
+        shortcut="⇧ D"
+        onClick={toggleTheme}
       />
       {assistant}
       <IconButton

@@ -1,12 +1,12 @@
 /**
  * The public pages' one stylesheet, inlined into each page: DESIGN.md's tokens and
  * Nunito (served from /site/nunito.woff2 on this host), so there are no scripts and no
- * files from anywhere else. Light and dark follow the system.
+ * files from anywhere else. Always light, like the app by default.
  */
 export const SITE_CSS = `
 @font-face { font-family: "Nunito"; src: url("/site/nunito.woff2") format("woff2"); font-weight: 200 1000; font-display: swap; }
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --bg: #FFF8EE; --card: #FFFFFF; --chrome: #F8EFE2; --ink: #23202B; --muted: #6B655F;
   --line: #EEE5D8; --line-strong: #8F8475;
   --mango: #FFB547; --on-mango: #23202B; --sky: #5B8CFF; --mint: #2EC4A0; --coral: #FF7A6B; --grape: #A57BFF;
@@ -14,15 +14,6 @@ export const SITE_CSS = `
   --hero: #FFB547; --hero-ink: #23202B; --hero-soft: rgba(35, 32, 43, 0.72);
   --shadow: 0 24px 60px -24px rgba(58, 42, 26, 0.35);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16151C; --card: #22202B; --chrome: #1C1B23; --ink: #F4F1EA; --muted: #A09AA6;
-    --line: #34313F; --line-strong: #7A748C;
-    --mango: #FFC266; --sky: #7AA2FF; --mint: #4FD8B5; --coral: #FF9385; --grape: #B996FF;
-    --mango-text: #FFC266; --sky-text: #7AA2FF; --mint-text: #4FD8B5; --coral-text: #FF9385; --grape-text: #B996FF;
-    --hero: #FFC266; --shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
-  }
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }

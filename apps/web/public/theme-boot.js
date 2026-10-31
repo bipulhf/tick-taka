@@ -1,10 +1,13 @@
-// Applies the saved theme before the first paint, so a pinned theme never flashes.
-// A file rather than an inline script, so the Content-Security-Policy can forbid inline scripts.
+// Applies the theme before the first paint: light unless this browser picked dark with the
+// top bar's button. A file rather than an inline script, so the Content-Security-Policy can
+// forbid inline scripts.
 (() => {
   try {
-    const theme = localStorage.getItem("tt.theme");
-    if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+    const dark = localStorage.getItem("tt.theme") === "dark";
+    const root = document.documentElement;
+    root.dataset.theme = dark ? "dark" : "light";
+    root.style.colorScheme = dark ? "dark" : "light";
     const accent = localStorage.getItem("tt.accent");
-    if (accent) document.documentElement.dataset.accent = accent;
+    if (accent) root.dataset.accent = accent;
   } catch (_) {}
 })();

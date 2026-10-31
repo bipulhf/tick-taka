@@ -68,8 +68,7 @@ export function page(
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(meta.title)}</title>
 <meta name="description" content="${escapeHtml(meta.description)}">
-<meta name="theme-color" content="#FFB547" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#16151C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFF8EE">
 <link rel="preload" href="/site/nunito.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">

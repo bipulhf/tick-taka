@@ -6,8 +6,8 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { togglePrivacy } from "@/lib/prefs";
 import { useSettings } from "@/lib/queries";
 import { useStore } from "@/lib/store";
+import { toggleTheme, useTheme } from "@/lib/theme";
 import { paletteOpenStore, shortcutsOpenStore } from "@/lib/ui-state";
-import { fire } from "@/lib/write";
 import { NAV } from "./nav";
 
 export interface PaletteAction {
@@ -63,6 +63,7 @@ export function CommandPalette() {
     return () => observer.disconnect();
   }, [open, selected]);
   const { data: settings } = useSettings();
+  const theme = useTheme();
   const close = () => {
     paletteOpenStore.set(false);
     setQuery("");
@@ -82,21 +83,15 @@ export function CommandPalette() {
     },
     {
       id: "theme",
-      label: settings?.theme === "dark" ? "Use light theme" : "Use dark theme",
+      label: theme === "dark" ? "Use light theme" : "Use dark theme",
       group: "Actions",
       icon:
-        settings?.theme === "dark" ? (
+        theme === "dark" ? (
           <Sun aria-hidden className="size-4 text-muted" />
         ) : (
           <Moon aria-hidden className="size-4 text-muted" />
         ),
-      run: () =>
-        fire({
-          method: "PATCH",
-          path: "/settings",
-          body: { theme: settings?.theme === "dark" ? "light" : "dark" },
-          label: "Couldn't change the theme",
-        }),
+      run: toggleTheme,
     },
     {
       id: "shortcuts",

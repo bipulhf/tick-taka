@@ -27,12 +27,14 @@ describe("design tokens", () => {
       expect(light[kebab(name)]).toBe(value.toLowerCase());
   });
 
-  test("dark tokens match the phone, pinned and following the system", () => {
-    for (const selector of [':root[data-theme="dark"]', ':root:not([data-theme="light"])']) {
-      const dark = block(selector);
-      for (const [name, value] of Object.entries(palette.dark))
-        expect(dark[kebab(name)]).toBe(value.toLowerCase());
-    }
+  test("dark tokens match the phone", () => {
+    const dark = block(':root[data-theme="dark"]');
+    for (const [name, value] of Object.entries(palette.dark))
+      expect(dark[kebab(name)]).toBe(value.toLowerCase());
+  });
+
+  test("light is the default: dark never follows the system", () => {
+    expect(css).not.toContain("prefers-color-scheme");
   });
 
   test("accent themes tint the same surfaces as the phone", () => {

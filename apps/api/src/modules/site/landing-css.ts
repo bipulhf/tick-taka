@@ -5,9 +5,6 @@
  */
 export const LANDING_CSS = `
 :root { --paper-dot: rgba(35, 32, 43, 0.09); --edge: #23202B; --hard: 5px 6px 0 #23202B; --tint-sky: #E3ECFF; --tint-mint: #DDF6EE; --tint-grape: #EEE6FF; --tint-mango: #FFE9C7; --tint-coral: #FFE4E0; }
-@media (prefers-color-scheme: dark) {
-  :root { --paper-dot: rgba(244, 241, 234, 0.07); --edge: #F4F1EA; --hard: 5px 6px 0 #000; --tint-sky: #232B45; --tint-mint: #1C3530; --tint-grape: #2C2342; --tint-mango: #3A2E1A; --tint-coral: #3D2524; }
-}
 html:has(body.landing) { overflow-x: clip; }
 body.landing { background-color: var(--bg); background-image: radial-gradient(var(--paper-dot) 1.2px, transparent 1.3px); background-size: 22px 22px; overflow-x: hidden; }
 .landing .bar nav a:hover { background: var(--line); }

@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthShellRouteImport } from './routes/_auth/_shell'
 import { Route as AuthFocusRouteImport } from './routes/_auth/focus'
 import { Route as AuthShellIndexRouteImport } from './routes/_auth/_shell/index'
+import { Route as AuthShellSplatRouteImport } from './routes/_auth/_shell/$'
 import { Route as AuthShellAdminRouteImport } from './routes/_auth/_shell/admin'
 import { Route as AuthShellSettingsRouteImport } from './routes/_auth/_shell/settings'
 import { Route as AuthShellMoneyIndexRouteImport } from './routes/_auth/_shell/money/index'
@@ -69,6 +70,11 @@ const AuthFocusRoute = AuthFocusRouteImport.update({
 const AuthShellIndexRoute = AuthShellIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthShellRoute,
+} as any)
+const AuthShellSplatRoute = AuthShellSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
   getParentRoute: () => AuthShellRoute,
 } as any)
 const AuthShellAdminRoute = AuthShellAdminRouteImport.update({
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthShellIndexRoute
   '/login': typeof LoginRoute
   '/focus': typeof AuthFocusRoute
+  '/$': typeof AuthShellSplatRoute
   '/admin': typeof AuthShellAdminRoute
   '/settings': typeof AuthShellSettingsRoute
   '/money/accounts': typeof AuthShellMoneyAccountsRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthShellIndexRoute
   '/login': typeof LoginRoute
   '/focus': typeof AuthFocusRoute
+  '/$': typeof AuthShellSplatRoute
   '/admin': typeof AuthShellAdminRoute
   '/settings': typeof AuthShellSettingsRoute
   '/money/accounts': typeof AuthShellMoneyAccountsRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_auth/_shell': typeof AuthShellRouteWithChildren
   '/_auth/focus': typeof AuthFocusRoute
+  '/_auth/_shell/$': typeof AuthShellSplatRoute
   '/_auth/_shell/admin': typeof AuthShellAdminRoute
   '/_auth/_shell/settings': typeof AuthShellSettingsRoute
   '/_auth/_shell/': typeof AuthShellIndexRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/focus'
+    | '/$'
     | '/admin'
     | '/settings'
     | '/money/accounts'
@@ -400,6 +410,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/focus'
+    | '/$'
     | '/admin'
     | '/settings'
     | '/money/accounts'
@@ -439,6 +450,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_auth/_shell'
     | '/_auth/focus'
+    | '/_auth/_shell/$'
     | '/_auth/_shell/admin'
     | '/_auth/_shell/settings'
     | '/_auth/_shell/'
@@ -515,6 +527,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthShellIndexRouteImport
+      parentRoute: typeof AuthShellRoute
+    }
+    '/_auth/_shell/$': {
+      id: '/_auth/_shell/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AuthShellSplatRouteImport
       parentRoute: typeof AuthShellRoute
     }
     '/_auth/_shell/admin': {
@@ -752,6 +771,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthShellRouteChildren {
+  AuthShellSplatRoute: typeof AuthShellSplatRoute
   AuthShellAdminRoute: typeof AuthShellAdminRoute
   AuthShellSettingsRoute: typeof AuthShellSettingsRoute
   AuthShellIndexRoute: typeof AuthShellIndexRoute
@@ -789,6 +809,7 @@ interface AuthShellRouteChildren {
 }
 
 const AuthShellRouteChildren: AuthShellRouteChildren = {
+  AuthShellSplatRoute: AuthShellSplatRoute,
   AuthShellAdminRoute: AuthShellAdminRoute,
   AuthShellSettingsRoute: AuthShellSettingsRoute,
   AuthShellIndexRoute: AuthShellIndexRoute,

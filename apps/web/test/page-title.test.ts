@@ -23,4 +23,8 @@ describe("window titles", () => {
   test("an unknown page still says the app's name", () => {
     expect(pageTitle("/nowhere")).toBe("Tick & Taka");
   });
+
+  test("an address that isn't a page says so", () => {
+    expect(pageTitle("/money/shopping", { notFound: true })).toBe("Not found · Tick & Taka");
+  });
 });

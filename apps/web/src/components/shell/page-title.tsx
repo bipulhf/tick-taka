@@ -6,6 +6,8 @@ import { useRoutines } from "@/features/routines/queries";
 import { SETTINGS_SECTION_LABELS } from "@/features/settings/settings-view";
 import { pageTitle } from "@/lib/page-title";
 import { useAreas } from "@/lib/queries";
+import { useStore } from "@/lib/store";
+import { notFoundStore } from "@/lib/ui-state";
 
 /** Keeps the window title on the page that's open (signed-in pages; sign-in sets its own). */
 export function PageTitle() {
@@ -19,6 +21,7 @@ export function PageTitle() {
   const { data: areas } = useAreas();
   const { data: projects } = useAllProjects();
   const { data: routines } = useRoutines();
+  const notFound = useStore(notFoundStore);
 
   const name = path.startsWith("/plan/area/")
     ? areas?.find((a) => a.id === id)?.name
@@ -33,7 +36,7 @@ export function PageTitle() {
       ? ADMIN_TABS.find((t) => t.id === search.tab)?.label
       : undefined;
 
-  const title = pageTitle(path, { name, part });
+  const title = pageTitle(path, { name, part, notFound });
   useEffect(() => {
     document.title = title;
   }, [title]);

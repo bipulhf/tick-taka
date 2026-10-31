@@ -8,6 +8,8 @@ export interface TitleExtras {
   part?: string;
   /** The name of the area, project or routine the page is about. */
   name?: string;
+  /** The address isn't a page in the app. */
+  notFound?: boolean;
 }
 
 /**
@@ -19,7 +21,8 @@ export function pageTitle(path: string, extras: TitleExtras = {}): string {
   return [...parts, APP_TITLE].join(" · ");
 }
 
-function titleParts(path: string, { part, name }: TitleExtras): string[] {
+function titleParts(path: string, { part, name, notFound }: TitleExtras): string[] {
+  if (notFound) return ["Not found"];
   if (path === "/" || path === "") return ["Today"];
   if (path.startsWith("/plan/area/")) return [name ?? "Area", "Plan"];
   if (path.startsWith("/plan/project/")) return [name ?? "Project", "Plan"];

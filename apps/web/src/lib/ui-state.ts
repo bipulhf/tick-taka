@@ -4,6 +4,8 @@ import { createStore } from "./store";
 export const paletteOpenStore = createStore(false);
 export const shortcutsOpenStore = createStore(false);
 export const assistantOpenStore = createStore(false);
+/** The page showing is the "nothing here" page, for the window title. */
+export const notFoundStore = createStore(false);
 
 /** Asks the top bar's quick-add field to take focus (N or / anywhere). */
 export const quickAddFocusStore = createStore(0);

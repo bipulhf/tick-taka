@@ -35,7 +35,7 @@ Local test rig: demo API from source on `127.0.0.1:3000` (`/tmp/tt-demo/run-api.
 | 7   | **Quick-add**                            | R-05 pickers only when the parser is unsure                                                                                          | shared, web, phone                    | Medium                                  |
 | 8   | **Server fixes**                         | R-21 receipt cleanup, R-22 goal task in the job, R-25 "last used" per feature in Admin                                               | API, web admin                        | Low                                     |
 | 9   | **Reminders**                            | R-20 30-day horizon, background refresh, permission in context                                                                       | phone (native module)                 | Medium                                  |
-| 10  | **Docs and deploy**                      | README and privacy page, deploy API + web, live checks (no APK this round)                               | all                                   | Low                                     |
+| 10  | **Docs and deploy**                      | README and privacy page, deploy API + web, live checks (no APK this round)                                                           | all                                   | Low                                     |
 
 ### Phase 1 — Clear out
 
@@ -102,3 +102,13 @@ Local test rig: demo API from source on `127.0.0.1:3000` (`/tmp/tt-demo/run-api.
 - README (features, screenshots of changed web views), privacy page wording, `docs/product-audit/REPORT.md` status column.
 - Deploy: push `main`, `deploy/update-tick-bipulhf.sh` on the server (migrations run on first open), check `/`, `/app/`, API health, sign-in page.
 - No APK this round (owner, 1 Nov 2026). The phone changes wait for the next build, with the device checks each phase listed. The API keeps old 1.2.0 phones working (derived `daysOff`, monthly review fields, `users` in AI usage).
+
+## Status (1 Nov 2026)
+
+| Phase | State                                                                        |
+| ----- | ---------------------------------------------------------------------------- |
+| 1–8   | Done and committed; API and web deployed                                     |
+| 9     | Done in code (phone reminders); waits for the next APK and its device checks |
+| 10    | README screenshots refreshed; API and web deployed; no APK this round        |
+
+Every recommendation R-01 to R-25 is in code. Phone-side changes reach users with the next APK; the API keeps 1.2.0 phones working until then.

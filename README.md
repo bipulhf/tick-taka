@@ -431,7 +431,7 @@ typing its email), and make sign-ups invite-only with a list of invited emails.
 |                                      **Money**                                       |                                   **Reports**                                   |
 |       <img src="docs/screenshots/web-money.png" width="420" alt="Money overview" />        |    <img src="docs/screenshots/web-reports.png" width="420" alt="Reports" />     |
 |                                     **Settings**                                     |                                   **Sign in**                                   |
-|  <img src="docs/screenshots/web-settings.png" width="420" alt="Settings, one section at a time" />  |  <img src="docs/screenshots/web-login.png" width="420" alt="Sign-in page" />  |
+|  <img src="docs/screenshots/web-settings.png" width="420" alt="Settings, Tiki and AI with three switches" />  |  <img src="docs/screenshots/web-login.png" width="420" alt="Sign-in page" />  |
 
 <p align="center">
   <img src="docs/screenshots/web-home.png" width="640" alt="The public home page" />

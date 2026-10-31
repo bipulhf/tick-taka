@@ -5,6 +5,7 @@ import { Section } from "@/components/ui/section";
 import { ViewSkeleton } from "@/components/ui/skeleton";
 import { useThisMonth } from "@/lib/use-today";
 import { BarList } from "../review/charts/bar-list";
+import { FeedbackSection } from "./feedback-section";
 import { dollars, useAdminAi } from "./queries";
 import { Stat, StatRow } from "./stat";
 
@@ -94,6 +95,7 @@ export function AiTab() {
               </div>
             </Section>
           </div>
+          <FeedbackSection month={month} />
         </>
       )}
     </div>

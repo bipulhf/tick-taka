@@ -33,6 +33,12 @@ export const useAdminAi = (month: string) =>
     queryFn: () => unwrap(api.admin.ai.$get({ query: { month } })),
   });
 
+export const useAdminFeedback = (month: string) =>
+  useQuery({
+    queryKey: ["admin", "feedback", month],
+    queryFn: () => unwrap(api.admin.feedback.$get({ query: { month } })),
+  });
+
 export const useAdminHealth = () =>
   useQuery({
     queryKey: ["admin", "health"],

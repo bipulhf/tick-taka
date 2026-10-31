@@ -1,4 +1,8 @@
-import type { AssistantCard, AssistantRating } from "@tick-taka/shared/schemas/ai";
+import type {
+  AssistantCard,
+  AssistantQuestion,
+  AssistantRating,
+} from "@tick-taka/shared/schemas/ai";
 import type { ChatMessage } from "./chat-store";
 
 /**
@@ -16,6 +20,8 @@ export interface ServerMessage {
   cards: AssistantCard[];
   actions: { summary: string }[];
   rating: AssistantRating | null;
+  /** Tiki's question as a small form; older servers leave it out. */
+  question?: AssistantQuestion | null;
   createdAt: number;
 }
 
@@ -60,6 +66,7 @@ export function fromServer(messages: readonly ServerMessage[]): ChatMessage[] {
     ...(message.cards.length ? { cards: message.cards } : {}),
     ...(message.actions.length ? { actions: message.actions } : {}),
     ...(message.rating ? { rating: message.rating } : {}),
+    ...(message.question ? { question: message.question } : {}),
     at: message.createdAt,
   }));
 }

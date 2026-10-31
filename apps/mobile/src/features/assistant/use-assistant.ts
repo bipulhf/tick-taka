@@ -24,6 +24,7 @@ import {
   updateMessage,
 } from "./chat-store";
 import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
+import { parseQuestion } from "./question-form";
 import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
 
 const HISTORY = 20;
@@ -53,6 +54,8 @@ type StreamEvent =
       cards?: AssistantCard[];
       /** The stored reply, when the turn was sent with a threadId. */
       messageId?: string;
+      /** Tiki asked with a small form; older servers omit it. */
+      question?: unknown;
     }
   | { type: "error"; code: string; message: string };
 
@@ -142,6 +145,7 @@ export function useAssistant(screen?: AssistantScreen) {
           case "done": {
             finished = true;
             const drafts = parseDrafts(event.drafts);
+            const question = parseQuestion(event.question);
             appendMessage({
               role: "assistant",
               content: event.reply,
@@ -153,6 +157,7 @@ export function useAssistant(screen?: AssistantScreen) {
                 : {}),
               ...(drafts.length ? { drafts } : {}),
               ...(event.cards?.length ? { cards: event.cards } : {}),
+              ...(question ? { question } : {}),
               ...(event.messageId ? { serverId: event.messageId } : {}),
             });
             if (event.actions.length) {

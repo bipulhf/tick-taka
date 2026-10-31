@@ -1,5 +1,9 @@
 import { newId } from "@tick-taka/shared/ids";
-import type { AssistantCard, AssistantRating } from "@tick-taka/shared/schemas/ai";
+import type {
+  AssistantCard,
+  AssistantQuestion,
+  AssistantRating,
+} from "@tick-taka/shared/schemas/ai";
 import type { HttpMethod } from "@/lib/api";
 import { secureStorage } from "@/lib/secure-storage";
 import { createStore } from "@/lib/store";
@@ -42,6 +46,8 @@ export interface ChatMessage {
   drafts?: ChatDraft[];
   /** Records to open and totals, shown under the reply. */
   cards?: AssistantCard[];
+  /** Tiki asked with a small form; it can be answered until a later message exists. */
+  question?: AssistantQuestion;
   /** The message's id on the server, once it is stored there (a reply's is used for thumbs). */
   serverId?: string;
   rating?: AssistantRating;

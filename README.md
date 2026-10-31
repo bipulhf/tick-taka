@@ -409,6 +409,13 @@ in lists, `?` for the rest). It is light by default; the sun/moon button in the 
 (or `Shift D`) switches to dark, and the public pages share the choice. It also works in
 a phone browser, with the bottom tab bar.
 
+The owner (`OWNER_EMAIL`) also gets **Admin** in the sidebar: users with their activity,
+devices, storage and AI cost; record counts per person and overall (never what's in
+them); AI cost by month, person and feature; the server's uptime, memory, disk, request
+and error counts and nightly backups. From there the owner can sign a user out
+everywhere, block them, switch AI off or cap it for them, delete an account (after
+typing its email), and make sign-ups invite-only with a list of invited emails.
+
 |                                        Today                                         |                                    Today, dark                                     |
 | :----------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
 |       <img src="docs/screenshots/web-today.png" width="420" alt="Today on the web" />       | <img src="docs/screenshots/web-today-dark.png" width="420" alt="Today in dark mode" /> |

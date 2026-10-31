@@ -3,7 +3,7 @@
  * parsers: learned rules first, then the built-in keywords, then names.
  */
 
-import { DEFAULT_AREAS, DEFAULT_CATEGORIES } from "./defaults";
+import { KEYWORD_AREAS, KEYWORD_CATEGORIES } from "./defaults";
 import type { QuickAddContext } from "./quick-add";
 
 export const normalize = (value: string) => value.trim().toLowerCase();
@@ -46,7 +46,7 @@ export function guessCategory(note: string, context: QuickAddContext): CategoryG
     const category = context.categories.find((c) => c.id === rule.categoryId);
     return { categoryId: rule.categoryId, areaId: rule.areaId, kind: category?.kind ?? null };
   }
-  for (const parent of DEFAULT_CATEGORIES) {
+  for (const parent of KEYWORD_CATEGORIES) {
     for (const child of parent.children ?? []) {
       if (child.keywords.some((k) => containsWord(text, k))) {
         const id = categoryIdByName(child.name, context) ?? categoryIdByName(parent.name, context);
@@ -68,7 +68,7 @@ export function guessArea(text: string, context: QuickAddContext): string | null
   const lower = normalize(text);
   const named = context.areas.find((a) => containsWord(lower, a.name));
   if (named) return named.id;
-  for (const area of DEFAULT_AREAS) {
+  for (const area of KEYWORD_AREAS) {
     if (area.keywords.some((k) => containsWord(lower, k))) {
       const match = context.areas.find((a) => normalize(a.name) === normalize(area.name));
       if (match) return match.id;

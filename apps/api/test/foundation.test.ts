@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { NEUTRAL_DEFAULTS } from "@tick-taka/shared/defaults";
 import { sql } from "drizzle-orm";
 import { createTestContext, googleToken } from "./helpers";
 
@@ -142,8 +143,8 @@ describe("foundation", () => {
   test("seed runs once", async () => {
     const { deps } = await createTestContext();
     const { seedDefaults } = await import("../src/db/seed");
-    expect(seedDefaults(deps.db, deps.now())).toBe(false);
+    expect(seedDefaults(deps.db, deps.now(), NEUTRAL_DEFAULTS)).toBe(false);
     const areas = deps.sqlite.query("select count(*) as n from areas").get() as { n: number };
-    expect(areas.n).toBe(6);
+    expect(areas.n).toBe(4);
   });
 });

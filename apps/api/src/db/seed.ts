@@ -1,4 +1,4 @@
-import { DEFAULT_AREAS, DEFAULT_CATEGORIES, DEFAULT_ROUTINES } from "@tick-taka/shared/defaults";
+import { DEFAULT_ROUTINES, type DefaultSet } from "@tick-taka/shared/defaults";
 import { newId } from "@tick-taka/shared/ids";
 import { readFlag, readSettings, writeFlag, writeSettings } from "../modules/settings/service";
 import type { Db } from "./client";
@@ -37,12 +37,15 @@ function seedCashAccount(db: Db, now: number): void {
   );
 }
 
-/** First start only: areas, categories with buckets, the Morning routine and a Cash account. */
-export function seedDefaults(db: Db, now: number): boolean {
+/**
+ * First start only: areas, categories with buckets, the Morning routine and a Cash
+ * account. `defaults` is the owner's set or the neutral one (see shared/defaults.ts).
+ */
+export function seedDefaults(db: Db, now: number, defaults: DefaultSet): boolean {
   if (readFlag(db, "_seededAt")) return false;
   const stamp = { createdAt: now, updatedAt: now, deletedAt: null };
   db.transaction((tx) => {
-    DEFAULT_AREAS.forEach((area, sort) => {
+    defaults.areas.forEach((area, sort) => {
       tx.insert(areas)
         .values({
           id: newId(now),
@@ -54,7 +57,7 @@ export function seedDefaults(db: Db, now: number): boolean {
         })
         .run();
     });
-    DEFAULT_CATEGORIES.forEach((category, sort) => {
+    defaults.categories.forEach((category, sort) => {
       const parentId = newId(now);
       tx.insert(categories)
         .values({

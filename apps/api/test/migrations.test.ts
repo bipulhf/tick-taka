@@ -4,6 +4,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { OWNER_DEFAULTS } from "@tick-taka/shared/defaults";
 import { newId } from "@tick-taka/shared/ids";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
@@ -39,7 +40,7 @@ describe("0004_constraints on a populated database", () => {
     before.exec("PRAGMA foreign_keys = ON;");
     migrate(drizzle({ client: before }), { migrationsFolder: migrationsUpTo("0003_task_next_id") });
     const now = Date.UTC(2026, 9, 4, 4);
-    seedDefaults(drizzle({ client: before }), now);
+    seedDefaults(drizzle({ client: before }), now, OWNER_DEFAULTS);
 
     const stamp = `${now}, ${now}, NULL`;
     const area = (before.query("SELECT id FROM areas LIMIT 1").get() as { id: string }).id;
@@ -135,7 +136,7 @@ describe("0004_constraints on a populated database", () => {
     const before = new Database(path, { create: true });
     migrate(drizzle({ client: before }), { migrationsFolder: migrationsUpTo("0003_task_next_id") });
     const now = Date.UTC(2026, 9, 4, 4);
-    seedDefaults(drizzle({ client: before }), now);
+    seedDefaults(drizzle({ client: before }), now, OWNER_DEFAULTS);
     const stamp = `${now}, ${now}, NULL`;
     const [cash, zeroSpend, deletedZero, trip, debt, habit, log, budget] = Array.from(
       { length: 8 },
@@ -196,7 +197,7 @@ describe("0008_drop_removed_features on a populated database", () => {
       migrationsFolder: migrationsUpTo("0007_assistant_threads"),
     });
     const now = Date.UTC(2026, 9, 31, 4);
-    seedDefaults(drizzle({ client: before }), now);
+    seedDefaults(drizzle({ client: before }), now, OWNER_DEFAULTS);
     const stamp = `${now}, ${now}, NULL`;
     const [cash, tx, parent, child, entry] = Array.from({ length: 5 }, () => newId());
     before.exec(`

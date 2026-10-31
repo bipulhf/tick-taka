@@ -1,8 +1,10 @@
 /**
  * A demo account with a few weeks of believable data, for README screenshots.
  *
- *   DB_PATH=/tmp/tt-demo/app.db JWT_SECRET=… bun scripts/demo.ts
+ *   DB_PATH=/tmp/tt-demo/app.db JWT_SECRET=… OWNER_EMAIL=sadia.demo@example.com bun scripts/demo.ts
  *
+ * The demo user is the owner, so their database gets the owner's areas and
+ * categories (Job 1, Teaching, Research, "Teaching income"), which the data uses.
  * Point DB_PATH at a scratch folder, never at real data. The script creates (or
  * reuses) one demo user, fills their database through the API's own routes, and
  * prints a token. A screenshot build of the app (EXPO_PUBLIC_DEMO_SIGN_IN=1) signs
@@ -18,6 +20,9 @@ import { issueSession } from "../src/modules/auth/session-token";
 const env = loadEnv();
 if (env.DB_PATH === ":memory:" || !env.DB_PATH.includes("demo"))
   throw new Error("Point DB_PATH at a scratch folder whose path contains 'demo'");
+
+const DEMO_EMAIL = "sadia.demo@example.com";
+if (env.OWNER_EMAIL !== DEMO_EMAIL) throw new Error(`Set OWNER_EMAIL=${DEMO_EMAIL}`);
 
 const TZ = "Asia/Dhaka";
 const now = Date.now();
@@ -35,7 +40,7 @@ const app = createApp(deps);
 
 const { user } = users.signIn({
   sub: "readme-demo",
-  email: "sadia.demo@example.com",
+  email: DEMO_EMAIL,
   name: "Sadia Rahman",
   picture: null,
 });

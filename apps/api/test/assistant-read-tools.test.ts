@@ -28,7 +28,7 @@ async function askWith(ctx: TestContext, ai: FakeAi, calls: AiToolCall[]) {
 async function activity(ctx: TestContext) {
   const { cash, usd, category } = await setupMoney(ctx);
   const areas = (await ctx.request<Row[]>("GET", "/areas")).body;
-  const research = areas.find((a) => a.name === "Research");
+  const study = areas.find((a) => a.name === "Study");
   const spend = (accountId: string, amountMinor: number, extra: Record<string, unknown>) =>
     ctx.request("POST", "/transactions", {
       type: "expense",
@@ -37,10 +37,10 @@ async function activity(ctx: TestContext) {
       occurredAt: DEFAULT_NOW,
       ...extra,
     });
-  await spend(cash.id, 25_000, { categoryId: category("Food").id, areaId: research?.id });
+  await spend(cash.id, 25_000, { categoryId: category("Food").id, areaId: study?.id });
   await spend(cash.id, 6_000, { categoryId: category("Transport").id });
   // Dollars can't be added to taka: never in the totals.
-  await spend(usd.id, 999_00, { categoryId: category("Food").id, areaId: research?.id });
+  await spend(usd.id, 999_00, { categoryId: category("Food").id, areaId: study?.id });
   await ctx.request("POST", "/transactions", {
     type: "income",
     accountId: cash.id,
@@ -49,11 +49,11 @@ async function activity(ctx: TestContext) {
     occurredAt: DEFAULT_NOW,
   });
   await ctx.request("POST", "/time-entries", {
-    areaId: research?.id,
+    areaId: study?.id,
     startedAt: DEFAULT_NOW - 90 * 60_000,
     endedAt: DEFAULT_NOW,
   });
-  const task = await ctx.request<Row>("POST", "/tasks", { title: "Paper", areaId: research?.id });
+  const task = await ctx.request<Row>("POST", "/tasks", { title: "Paper", areaId: study?.id });
   await ctx.request("PATCH", `/tasks/${task.body.id}`, {
     status: "done",
     updatedAt: ctx.clock.now + 1,
@@ -87,7 +87,7 @@ describe("Tiki's read tools", () => {
       { name: "Transport", taka: 60 },
     ]);
     expect(byArea).toEqual([
-      { name: "Research", taka: 250 },
+      { name: "Study", taka: 250 },
       { name: "Unassigned", taka: 60 },
     ]);
     expect(income).toEqual([{ name: "Salary", taka: 45_000 }]);
@@ -117,8 +117,8 @@ describe("Tiki's read tools", () => {
       tool("habitStreaks"),
     ]);
     const [hours, done, streaks] = replies;
-    expect(hours).toEqual([{ area: "Research", hours: 1.5 }]);
-    expect(done).toEqual({ total: 1, byArea: [{ area: "Research", count: 1 }] });
+    expect(hours).toEqual([{ area: "Study", hours: 1.5 }]);
+    expect(done).toEqual({ total: 1, byArea: [{ area: "Study", count: 1 }] });
     expect(streaks).toEqual([
       expect.objectContaining({ habit: "Read", current: 1, best: 1 }) as unknown,
     ]);

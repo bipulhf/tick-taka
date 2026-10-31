@@ -16,14 +16,7 @@ describe("areas and projects", () => {
   test("seeded areas, CRUD with soft delete and undo", async () => {
     const { request } = await createTestContext();
     const areas = await request<Row[]>("GET", "/areas");
-    expect(areas.body.map((a) => a.name)).toEqual([
-      "Job 1",
-      "Job 2",
-      "Teaching",
-      "Research",
-      "Home",
-      "Personal",
-    ]);
+    expect(areas.body.map((a) => a.name)).toEqual(["Work", "Study", "Home", "Personal"]);
     const created = await request<Row>("POST", "/areas", {
       name: "Side gig",
       emoji: "🎸",
@@ -263,13 +256,13 @@ describe("timer and time entries", () => {
   test("only one timer runs; starting another stops the first", async () => {
     const ctx = await createTestContext();
     const areas = await ctx.request<Row[]>("GET", "/areas");
-    const research = areas.body.find((a) => a.name === "Research")!;
-    const task = await ctx.request<Row>("POST", "/tasks", { title: "Thesis", areaId: research.id });
+    const study = areas.body.find((a) => a.name === "Study")!;
+    const task = await ctx.request<Row>("POST", "/tasks", { title: "Thesis", areaId: study.id });
     const first = await ctx.request<{ started: Row }>("POST", "/timer/start", {
       taskId: task.body.id,
       source: "focus",
     });
-    expect(first.body.started.areaId).toBe(research.id);
+    expect(first.body.started.areaId).toBe(study.id);
     ctx.clock.advance(25 * MINUTE_MS);
     const second = await ctx.request<{ started: Row; stopped: Row }>("POST", "/timer/start", {});
     expect(second.body.stopped.endedAt).toBe(DEFAULT_NOW + 25 * MINUTE_MS);
@@ -290,7 +283,7 @@ describe("timer and time entries", () => {
       `/time-entries/focus-stats?${range}`,
     );
     expect(stats.body).toMatchObject({ totalMinutes: 25, sessions: 1 });
-    expect(stats.body.byArea.find((a) => a.areaId === research.id)?.minutes).toBe(25);
+    expect(stats.body.byArea.find((a) => a.areaId === study.id)?.minutes).toBe(25);
   });
 
   test("manual entries validate times", async () => {

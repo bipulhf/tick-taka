@@ -138,12 +138,12 @@ describe("insights", () => {
     const ctx = await createTestContext();
     const { cash, category } = await setupMoney(ctx);
     const areas = (await ctx.request<Row[]>("GET", "/areas")).body;
-    const job1 = areas.find((a) => a.name === "Job 1")!;
+    const work = areas.find((a) => a.name === "Work")!;
     await ctx.request("POST", "/transactions", {
       type: "income",
       accountId: cash.id,
       amountMinor: 4_500_000,
-      areaId: job1.id,
+      areaId: work.id,
       occurredAt: DEFAULT_NOW,
     });
     await ctx.request("POST", "/transactions", {
@@ -154,7 +154,7 @@ describe("insights", () => {
       occurredAt: DEFAULT_NOW,
     });
     await ctx.request("POST", "/time-entries", {
-      areaId: job1.id,
+      areaId: work.id,
       startedAt: DEFAULT_NOW - 90 * HOUR_MS,
       endedAt: DEFAULT_NOW,
     });
@@ -170,14 +170,14 @@ describe("insights", () => {
       netMinor: 4_475_000,
     });
     expect(res.body.byDay.find((d) => d.date === "2026-10-04")?.spentMinor).toBe(25_000);
-    expect(res.body.hourlyRates.find((r) => r.areaId === job1.id)?.rateMinor).toBe(50_000);
+    expect(res.body.hourlyRates.find((r) => r.areaId === work.id)?.rateMinor).toBe(50_000);
     const rate = await ctx.request<{ rateMinor: number }>("GET", "/insights/hourly-rate");
     expect(rate.body.rateMinor).toBe(50_000);
     const dashboard = await ctx.request<{ area: Row; monthIncomeMinor: number }[]>(
       "GET",
       "/insights/areas",
     );
-    expect(dashboard.body.find((d) => d.area.id === job1.id)?.monthIncomeMinor).toBe(4_500_000);
+    expect(dashboard.body.find((d) => d.area.id === work.id)?.monthIncomeMinor).toBe(4_500_000);
   });
 
   test("net worth over time", async () => {
@@ -300,7 +300,7 @@ describe("sync and export", () => {
       "GET",
       "/sync/changes?since=0",
     );
-    expect(initial.body.changes.areas).toHaveLength(6);
+    expect(initial.body.changes.areas).toHaveLength(4);
     expect(initial.body.changes.settings?.some((r) => String(r.key).startsWith("_"))).toBe(false);
     ctx.clock.advance(1000);
     const area = initial.body.changes.areas![0]!;

@@ -1,10 +1,12 @@
 import { Database } from "bun:sqlite";
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { NEUTRAL_DEFAULTS, OWNER_DEFAULTS } from "@tick-taka/shared/defaults";
 import { defined } from "@tick-taka/shared/defined";
 import { newId } from "@tick-taka/shared/ids";
 import type { Env } from "../env";
 import { errorFields, log, userTag } from "../lib/log";
+import { isOwner } from "../lib/owner";
 import { createAdminStore } from "./admin-store";
 import { type DbHandle, openDatabase } from "./client";
 import { createFeedbackStore } from "./feedback-store";
@@ -209,7 +211,8 @@ export function createUserRegistry(
         });
         throw error;
       }
-      if (options.seed !== false) seedDefaults(handle.db, now());
+      if (options.seed !== false)
+        seedDefaults(handle.db, now(), isOwner(env, user) ? OWNER_DEFAULTS : NEUTRAL_DEFAULTS);
       const data = { ...handle, uploadsDir: paths.uploads, backupsDir: paths.backups };
       open.set(user.id, data);
       open.sweep();

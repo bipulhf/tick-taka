@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } fro
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
+import { OWNER_DEFAULTS } from "@tick-taka/shared/defaults";
 import { sign } from "hono/jwt";
 import { openDatabase } from "../src/db/client";
 import { seedDefaults } from "../src/db/seed";
@@ -51,7 +52,7 @@ describe("separate users", () => {
     await ctx.request("PATCH", "/settings", { dailyTaskGoal: 9 });
     const fresh = await ctx.tokenFor("sub-new", "new@example.com");
     const areas = await ctx.request<unknown[]>("GET", "/areas", undefined, as(fresh));
-    expect(areas.body).toHaveLength(6);
+    expect(areas.body).toHaveLength(4);
     const settings = await ctx.request<{ dailyTaskGoal: number }>(
       "GET",
       "/settings",
@@ -141,7 +142,7 @@ describe("the owner's single-user data", () => {
       OWNER_EMAIL: "Owner@Example.com",
     });
     const legacy = openDatabase(env.DB_PATH);
-    seedDefaults(legacy.db, Date.now());
+    seedDefaults(legacy.db, Date.now(), OWNER_DEFAULTS);
     legacy.sqlite.exec("update areas set name = 'From before' where sort = 0");
     legacy.sqlite.close();
 

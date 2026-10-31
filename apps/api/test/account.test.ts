@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { OWNER_DEFAULTS } from "@tick-taka/shared/defaults";
 import { openDatabase } from "../src/db/client";
 import { seedDefaults } from "../src/db/seed";
 import { runBackup } from "../src/jobs/backup";
@@ -78,7 +79,7 @@ describe("deleting an account", () => {
   test("for the owner's inherited data, leaves other users' folders alone", async () => {
     const { dir, env } = dataDir();
     const legacy = openDatabase(env.DB_PATH);
-    seedDefaults(legacy.db, Date.now());
+    seedDefaults(legacy.db, Date.now(), OWNER_DEFAULTS);
     legacy.sqlite.close();
     mkdirSync(env.BACKUPS_DIR, { recursive: true });
     writeFileSync(join(env.BACKUPS_DIR, "app-2026-10-01.db"), "old");

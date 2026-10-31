@@ -1,6 +1,7 @@
 /**
- * Out-of-the-box data so day one needs no setup beyond adding accounts.
- * The server seeds these on first start; the quick-add parser uses the keywords.
+ * Out-of-the-box data so day one needs no setup. The server seeds one of two sets on
+ * first start: the owner's (his jobs, teaching and research) or a neutral one for
+ * everyone else. The quick-add parser uses the keywords of both.
  */
 
 export type BudgetType = "fixed" | "non_monthly" | "flexible";
@@ -15,7 +16,8 @@ export interface DefaultCategory {
   children?: Omit<DefaultCategory, "children" | "kind" | "budgetType">[];
 }
 
-export const DEFAULT_CATEGORIES: DefaultCategory[] = [
+/** Every expense category, and the income everyone has. */
+const SHARED_CATEGORIES: DefaultCategory[] = [
   {
     name: "Food",
     emoji: "🍛",
@@ -217,6 +219,18 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
     budgetType: "flexible",
     keywords: ["freelance", "client", "upwork", "fiverr", "invoice", "project"],
   },
+];
+
+const OTHER_INCOME: DefaultCategory = {
+  name: "Other income",
+  emoji: "✨",
+  kind: "income",
+  budgetType: "flexible",
+  keywords: ["refund", "bonus", "cashback", "interest", "received"],
+};
+
+const OWNER_CATEGORIES: DefaultCategory[] = [
+  ...SHARED_CATEGORIES,
   {
     name: "Teaching income",
     emoji: "🎓",
@@ -224,13 +238,19 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
     budgetType: "flexible",
     keywords: ["tuition fee", "teaching", "honorarium"],
   },
+  OTHER_INCOME,
+];
+
+const NEUTRAL_CATEGORIES: DefaultCategory[] = [
+  ...SHARED_CATEGORIES,
   {
-    name: "Other income",
-    emoji: "✨",
+    name: "Side income",
+    emoji: "🪙",
     kind: "income",
     budgetType: "flexible",
-    keywords: ["refund", "bonus", "cashback", "interest", "received"],
+    keywords: ["side income", "tuition fee", "honorarium", "commission"],
   },
+  OTHER_INCOME,
 ];
 
 export interface DefaultArea {
@@ -240,7 +260,21 @@ export interface DefaultArea {
   keywords: string[];
 }
 
-export const DEFAULT_AREAS: DefaultArea[] = [
+const HOME: DefaultArea = {
+  name: "Home",
+  emoji: "🏡",
+  color: "#FF7A6B",
+  keywords: ["home", "bazar", "cleaning", "laundry", "repair", "cook"],
+};
+
+const PERSONAL: DefaultArea = {
+  name: "Personal",
+  emoji: "🌱",
+  color: "#A57BFF",
+  keywords: ["gym", "workout", "read", "reading", "doctor", "call"],
+};
+
+const OWNER_AREAS: DefaultArea[] = [
   {
     name: "Job 1",
     emoji: "💼",
@@ -260,18 +294,25 @@ export const DEFAULT_AREAS: DefaultArea[] = [
     color: "#2EC4A0",
     keywords: ["thesis", "paper", "research", "experiment", "dataset", "literature", "revision"],
   },
+  HOME,
+  PERSONAL,
+];
+
+const NEUTRAL_AREAS: DefaultArea[] = [
   {
-    name: "Home",
-    emoji: "🏡",
-    color: "#FF7A6B",
-    keywords: ["home", "bazar", "cleaning", "laundry", "repair", "cook"],
+    name: "Work",
+    emoji: "💼",
+    color: "#5B8CFF",
+    keywords: ["work", "office", "meeting", "standup", "sprint", "deadline"],
   },
   {
-    name: "Personal",
-    emoji: "🌱",
-    color: "#A57BFF",
-    keywords: ["gym", "workout", "read", "reading", "doctor", "call"],
+    name: "Study",
+    emoji: "📚",
+    color: "#FFB547",
+    keywords: ["study", "class", "lecture", "exam", "assignment", "homework", "course", "quiz"],
   },
+  HOME,
+  PERSONAL,
 ];
 
 export interface DefaultRoutine {
@@ -295,3 +336,31 @@ export const DEFAULT_ROUTINES: DefaultRoutine[] = [
     ],
   },
 ];
+
+/** What a new database is seeded with. */
+export interface DefaultSet {
+  areas: DefaultArea[];
+  categories: DefaultCategory[];
+}
+
+/** The owner's (OWNER_EMAIL) seed: his two jobs, teaching and research. */
+export const OWNER_DEFAULTS: DefaultSet = { areas: OWNER_AREAS, categories: OWNER_CATEGORIES };
+
+/** Everyone else's: Work, Study, Home, Personal, and side income instead of teaching. */
+export const NEUTRAL_DEFAULTS: DefaultSet = {
+  areas: NEUTRAL_AREAS,
+  categories: NEUTRAL_CATEGORIES,
+};
+
+/** The lists joined, keeping the first of each name. */
+const byName = <T extends { name: string }>(...lists: T[][]): T[] => {
+  const all = lists.flat();
+  return all.filter((item, i) => all.findIndex((other) => other.name === item.name) === i);
+};
+
+/**
+ * Every default category and area, the owner's first, for keyword guessing: a guess
+ * only counts when the user has a category or area of that name.
+ */
+export const KEYWORD_CATEGORIES: DefaultCategory[] = byName(OWNER_CATEGORIES, NEUTRAL_CATEGORIES);
+export const KEYWORD_AREAS: DefaultArea[] = byName(OWNER_AREAS, NEUTRAL_AREAS);

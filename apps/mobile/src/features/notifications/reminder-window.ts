@@ -1,11 +1,13 @@
+import { HORIZON_MS } from "./plan-notifications";
+
 /**
  * Which tasks to fetch for phone-scheduled reminders: every open or inbox task
- * (subtasks too) whose reminder rings in the next eight days, picked by
- * reminderAt rather than doAt, so an undated inbox task with a reminder still
- * rings. One day more than planNotifications' seven-day horizon covers a slow
- * week between app opens. Pure, so it can be tested.
+ * (subtasks too) whose reminder rings in the next 31 days, picked by reminderAt
+ * rather than doAt, so an undated inbox task with a reminder still rings. One day
+ * more than planNotifications' 30-day horizon, so nothing at its edge is left
+ * out. Pure, so it can be tested.
  */
-export const REMINDER_LOOKAHEAD_MS = 8 * 86_400_000;
+export const REMINDER_LOOKAHEAD_MS = HORIZON_MS + 86_400_000;
 
 export function reminderQuery(now: number) {
   return {

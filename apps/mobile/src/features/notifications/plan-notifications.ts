@@ -11,6 +11,11 @@ export interface PlannedNotification {
   url: string;
 }
 
+/** A planned reminder before the cap; `filler` ones only use room the rest leave. */
+export interface Candidate extends PlannedNotification {
+  filler?: boolean;
+}
+
 export interface NotificationInputs {
   now: number;
   timeZone: string;
@@ -37,7 +42,19 @@ export interface NotificationInputs {
   debts: { id: string; person: string; remindAt: number | null; closedAt: number | null }[];
 }
 
-const HORIZON_MS = 7 * 86_400_000;
+/** How far ahead reminders are planned. */
+export const HORIZON_MS = 30 * 86_400_000;
+
+/**
+ * Most one-off reminders the phone holds at once. Each is an Android alarm, and Android
+ * stops an app at 500 (some phones sooner), so this stays well under it and keeps a
+ * reschedule quick. The daily shutdown and weekly review repeat on their own and sit
+ * outside the cap, as do the focus timer and pace alerts.
+ */
+export const MAX_SCHEDULED = 60;
+
+/** Habit nudges are planned this many days ahead (today included). */
+export const HABIT_DAYS = 7;
 
 function atClock(date: string, clock: string, timeZone: string): number {
   const [hour, minute] = clock.split(":").map(Number) as [number, number];
@@ -45,17 +62,37 @@ function atClock(date: string, clock: string, timeZone: string): number {
 }
 
 /**
- * Everything to schedule on the phone for the next week: task reminders, bills two
- * days before and at 9 am on the day, habit nudges not yet checked, debt reminders.
+ * Keeps at most `cap` reminders, nearest first. One-off reminders (tasks, bills, income,
+ * loans) and habit nudges for today and tomorrow come first; habit nudges for later
+ * days only fill the room left, so a week of habits can't push out a bill three weeks
+ * away. The result is in time order.
+ */
+export function capNotifications(planned: Candidate[], cap: number): PlannedNotification[] {
+  const byTime = (a: { at: number }, b: { at: number }) => a.at - b.at;
+  const first = planned.filter((n) => !n.filler).sort(byTime);
+  const fillers = planned.filter((n) => n.filler).sort(byTime);
+  return [...first, ...fillers]
+    .slice(0, Math.max(0, cap))
+    .sort(byTime)
+    .map(({ filler: _, ...n }) => n);
+}
+
+/**
+ * Everything to schedule on the phone for the next 30 days, at most `cap` of them (see
+ * capNotifications): task reminders, bills two days before and at 9 am on the day,
+ * habit nudges for the coming week (today's only if not yet checked), debt reminders.
  * Quiet hours push anything inside the window to the morning.
  */
-export function planNotifications(input: NotificationInputs): PlannedNotification[] {
+export function planNotifications(
+  input: NotificationInputs,
+  cap = MAX_SCHEDULED,
+): PlannedNotification[] {
   const { now, timeZone } = input;
   const today = toLocalDate(now, timeZone);
-  const planned: PlannedNotification[] = [];
-  const push = (n: PlannedNotification) => {
+  const planned: Candidate[] = [];
+  const push = (n: PlannedNotification, filler = false) => {
     const at = deferPastQuietHours(n.at, input.quietHours, timeZone);
-    if (at > now && at < now + HORIZON_MS) planned.push({ ...n, at });
+    if (at > now && at < now + HORIZON_MS) planned.push({ ...n, at, ...(filler && { filler }) });
   };
 
   for (const task of input.tasks) {
@@ -91,22 +128,19 @@ export function planNotifications(input: NotificationInputs): PlannedNotificatio
     });
   }
   for (const habit of input.habits) {
-    if (!habit.remindAt) continue;
-    if (!habit.doneToday)
-      push({
-        id: `tt-habit-${habit.id}-0`,
-        at: atClock(today, habit.remindAt, timeZone),
-        title: `${habit.emoji} ${habit.name}`,
-        body: "A small one for today",
-        url: "/plan/habits",
-      });
-    push({
-      id: `tt-habit-${habit.id}-1`,
-      at: atClock(addDays(today, 1), habit.remindAt, timeZone),
-      title: `${habit.emoji} ${habit.name}`,
-      body: "A small one for today",
-      url: "/plan/habits",
-    });
+    const remindAt = habit.remindAt;
+    if (!remindAt) continue;
+    for (let day = habit.doneToday ? 1 : 0; day < HABIT_DAYS; day++)
+      push(
+        {
+          id: `tt-habit-${habit.id}-${day}`,
+          at: atClock(addDays(today, day), remindAt, timeZone),
+          title: `${habit.emoji} ${habit.name}`,
+          body: "A small one for today",
+          url: "/plan/habits",
+        },
+        day > 1,
+      );
   }
   for (const debt of input.debts) {
     if (debt.remindAt === null || debt.closedAt !== null) continue;
@@ -118,5 +152,5 @@ export function planNotifications(input: NotificationInputs): PlannedNotificatio
       url: "/money/debts",
     });
   }
-  return planned.sort((a, b) => a.at - b.at);
+  return capNotifications(planned, cap);
 }

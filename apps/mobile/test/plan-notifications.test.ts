@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { zonedTimeToUtc } from "@tick-taka/shared/dates";
-import { planNotifications } from "../src/features/notifications/plan-notifications";
+import {
+  capNotifications,
+  HABIT_DAYS,
+  MAX_SCHEDULED,
+  planNotifications,
+} from "../src/features/notifications/plan-notifications";
 
 const TZ = "Asia/Dhaka";
 const at = (day: number, hour: number, minute = 0) =>
@@ -77,6 +82,78 @@ describe("planNotifications", () => {
       ...base,
       habits: [{ id: "h", name: "Water", emoji: "💧", remindAt: "18:00", doneToday: true }],
     });
-    expect(planned.map((p) => p.id)).toEqual(["tt-habit-h-1"]);
+    expect(planned.map((p) => p.id)).toEqual(
+      Array.from({ length: HABIT_DAYS - 1 }, (_, i) => `tt-habit-h-${i + 1}`),
+    );
+  });
+});
+
+describe("30 days ahead, within the cap", () => {
+  const bill = (id: string, dueDate: string) => ({
+    id,
+    kind: "bill",
+    name: id,
+    amountMinor: 50_000,
+    currency: "BDT",
+    dueDate,
+    remindDays: 0,
+  });
+
+  test("a bill 25 days out is planned; one past 30 days waits for a later refresh", () => {
+    const planned = planNotifications({
+      ...base,
+      recurring: [bill("rent", "2026-10-29"), bill("far", "2026-11-05")],
+    });
+    expect(planned.map((p) => p.id)).toEqual(["tt-bill-day-rent"]);
+  });
+
+  test("no more than the cap, keeping the nearest", () => {
+    const tasks = Array.from({ length: 80 }, (_, i) => ({
+      id: `t${i}`,
+      title: `Task ${i}`,
+      reminderAt: at(5, 9) + i * 3_600_000,
+      status: "open",
+    }));
+    const planned = planNotifications({ ...base, tasks });
+    expect(planned).toHaveLength(MAX_SCHEDULED);
+    expect(planned[0]!.id).toBe("tt-task-t0");
+    expect(planned.at(-1)!.id).toBe(`tt-task-t${MAX_SCHEDULED - 1}`);
+  });
+
+  test("later habit days only fill the room one-off reminders leave", () => {
+    const habits = Array.from({ length: 4 }, (_, i) => ({
+      id: `h${i}`,
+      name: `Habit ${i}`,
+      emoji: "💧",
+      remindAt: "18:00",
+      doneToday: false,
+    }));
+    // A bill three weeks out still makes it past a week of four habits.
+    const planned = planNotifications(
+      { ...base, habits, recurring: [bill("rent", "2026-10-25")] },
+      10,
+    );
+    expect(planned).toHaveLength(10);
+    expect(planned.map((p) => p.id)).toContain("tt-bill-day-rent");
+    // Today and tomorrow for every habit (8), then the nearest later day (one).
+    expect(planned.filter((p) => /-[01]$/.test(p.id))).toHaveLength(8);
+    expect(planned.filter((p) => p.id.endsWith("-2"))).toHaveLength(1);
+    expect(planned.map((p) => p.at)).toEqual([...planned.map((p) => p.at)].sort((a, b) => a - b));
+  });
+
+  test("capNotifications keeps time order and drops the filler flag", () => {
+    const n = (id: string, at: number, filler?: boolean) => ({
+      id,
+      at,
+      title: id,
+      body: "",
+      url: "/",
+      ...(filler && { filler }),
+    });
+    expect(capNotifications([n("c", 3), n("a", 1, true), n("b", 2)], 2)).toEqual([
+      n("b", 2),
+      n("c", 3),
+    ]);
+    expect(capNotifications([n("a", 1)], 0)).toEqual([]);
   });
 });

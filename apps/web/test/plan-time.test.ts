@@ -110,7 +110,7 @@ describe("day timeline", () => {
 
 describe("calendar", () => {
   test("whole weeks from the user's first weekday cover the month", () => {
-    const cells = calendarCells("month", "2026-10", "2026-10-30", 6);
+    const cells = calendarCells("2026-10", 6);
     expect(cells[0]).toBe("2026-09-26");
     expect(cells.length % 7).toBe(0);
     expect(cells).toContain("2026-10-31");
@@ -119,15 +119,7 @@ describe("calendar", () => {
         .map((d) => d.letter)
         .join(""),
     ).toBe("SSMTWTF");
-    expect(calendarCells("week", "2026-10", "2026-10-30", 0)).toEqual([
-      "2026-10-25",
-      "2026-10-26",
-      "2026-10-27",
-      "2026-10-28",
-      "2026-10-29",
-      "2026-10-30",
-      "2026-10-31",
-    ]);
+    expect(calendarCells("2026-10", 0)[0]).toBe("2026-09-27");
   });
 
   test("a monthly bill marks each due day shown", () => {

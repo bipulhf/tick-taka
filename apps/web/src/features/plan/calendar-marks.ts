@@ -21,17 +21,8 @@ export function weekdayHeaders(weekStartsOn: number): { letter: string; name: st
   }));
 }
 
-/** Every day on the grid: whole weeks covering the month, or the week holding `selected`. */
-export function calendarCells(
-  mode: "month" | "week",
-  month: string,
-  selected: string,
-  weekStartsOn: number,
-): string[] {
-  if (mode === "week") {
-    const start = startOfWeek(selected, weekStartsOn);
-    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  }
+/** Every day on the grid: whole weeks covering the month. */
+export function calendarCells(month: string, weekStartsOn: number): string[] {
   const first = firstDayOfMonth(month);
   const start = startOfWeek(first, weekStartsOn);
   const leading = (weekdayOf(first) - weekStartsOn + 7) % 7;

@@ -10,7 +10,10 @@ import { formatLocalDate } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import type { PlanTask, RecurringItem } from "./queries";
 
-/** The picked day under (or beside) the calendar: its bills and paydays, then its tasks. */
+/**
+ * The picked day under (or beside) the calendar: its bills and paydays, then its tasks.
+ * A bill or payday opens its panel.
+ */
 export function CalendarDay({
   date,
   tasks,
@@ -55,6 +58,8 @@ export function CalendarDay({
                   <Row
                     key={bill.id}
                     as="li"
+                    dataKey={`recurring:${bill.id}`}
+                    onClick={() => open(`recurring:${bill.id}`)}
                     leading={
                       <RowMark
                         icon={bill.kind === "bill" ? Receipt : Banknote}

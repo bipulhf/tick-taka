@@ -4,7 +4,6 @@ import { cx } from "@/components/ui/cx";
 import { ErrorState } from "@/components/ui/empty-state";
 import { MonthStepper } from "@/components/ui/month-stepper";
 import { PageHeader } from "@/components/ui/page-header";
-import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatLocalDate, formatMonth, plural } from "@/lib/format";
 import { useTodayDate, useUserTime } from "@/lib/use-today";
@@ -15,13 +14,12 @@ import { type PlanTask, useRecurring, useTasks } from "./queries";
 const WEEK_MS = 7 * 86_400_000;
 
 /**
- * Month and week views with tasks and bills together. The marks differ by shape
+ * The month with tasks and bills together (the Week planner does weeks). The marks differ by shape
  * as well as colour (DESIGN.md): tasks a dot, timed tasks a ring, bills a square.
  */
 export function CalendarView() {
   const { timeZone, weekStartsOn } = useUserTime();
   const today = useTodayDate();
-  const [mode, setMode] = useState<"month" | "week">("month");
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selected, setSelected] = useState(today);
   const range = localMonthRange(month, timeZone);
@@ -38,7 +36,7 @@ export function CalendarView() {
     const day = toLocalDate(task.doAt, timeZone);
     byDay.set(day, [...(byDay.get(day) ?? []), task]);
   }
-  const cells = calendarCells(mode, month, selected, weekStartsOn);
+  const cells = calendarCells(month, weekStartsOn);
 
   const select = (date: string) => {
     setSelected(date);
@@ -62,24 +60,13 @@ export function CalendarView() {
         title={formatMonth(month)}
         back={{ to: "/plan", label: "Plan" }}
         actions={
-          <>
-            <Segmented
-              label="Show"
-              value={mode}
-              onChange={setMode}
-              options={[
-                { value: "month", label: "Month" },
-                { value: "week", label: "Week" },
-              ]}
-            />
-            <MonthStepper
-              month={month}
-              onChange={(next) => {
-                setMonth(next);
-                setSelected(next === today.slice(0, 7) ? today : `${next}-01`);
-              }}
-            />
-          </>
+          <MonthStepper
+            month={month}
+            onChange={(next) => {
+              setMonth(next);
+              setSelected(next === today.slice(0, 7) ? today : `${next}-01`);
+            }}
+          />
         }
       />
       <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">

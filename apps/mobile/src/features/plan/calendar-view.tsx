@@ -9,6 +9,7 @@ import {
   weekdayOf,
 } from "@tick-taka/shared/dates";
 import { nextOccurrence } from "@tick-taka/shared/recurrence";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Amount } from "@/components/ui/amount";
@@ -20,7 +21,6 @@ import { Group } from "@/components/ui/group";
 import { Icon } from "@/components/ui/icon";
 import { MonthStepper } from "@/components/ui/month-stepper";
 import { Screen } from "@/components/ui/screen";
-import { Segmented } from "@/components/ui/segmented";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TASK_ROW_INSET, TaskRow } from "@/features/tasks/task-row";
@@ -32,13 +32,16 @@ import { useRecurring, useTasks } from "./queries";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
-/** Month and week views showing tasks, time blocks and bills together. */
+/**
+ * The month with tasks, time blocks and bills together (the Week planner does weeks).
+ * A bill or payday opens its sheet.
+ */
 export function CalendarView() {
+  const router = useRouter();
   const { data: settings } = useSettings();
   const timeZone = userTime(settings).timeZone;
   const weekStartsOn = userTime(settings).weekStartsOn;
   const today = useTodayDate();
-  const [mode, setMode] = useState<"month" | "week">("month");
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selected, setSelected] = useState(today);
   const range = localMonthRange(month, timeZone);
@@ -68,9 +71,7 @@ export function CalendarView() {
   const gridStart = startOfWeek(firstDayOfMonth(month), weekStartsOn);
   const leading = (weekdayOf(firstDayOfMonth(month)) - weekStartsOn + 7) % 7;
   const monthCells = Math.ceil((leading + daysInMonth(month)) / 7) * 7;
-  const cells = Array.from({ length: mode === "month" ? monthCells : 7 }, (_, i) =>
-    mode === "month" ? addDays(gridStart, i) : addDays(startOfWeek(selected, weekStartsOn), i),
-  );
+  const cells = Array.from({ length: monthCells }, (_, i) => addDays(gridStart, i));
   const headers = Array.from({ length: 7 }, (_, i) => WEEKDAYS[(weekStartsOn + i) % 7] ?? "");
   const dayTasks = tasksOn(selected);
   const dayBills = bills.get(selected) ?? [];
@@ -81,15 +82,6 @@ export function CalendarView() {
       tabBarPadding={false}
       right={<MonthStepper month={month} onChange={setMonth} />}
     >
-      <Segmented
-        kind="tabs"
-        value={mode}
-        onChange={setMode}
-        options={[
-          { value: "month", label: "Month" },
-          { value: "week", label: "Week" },
-        ]}
-      />
       <Card style={CALENDAR_GRID}>
         <View className="flex-row">
           {headers.map((label, i) => (
@@ -170,19 +162,26 @@ export function CalendarView() {
         {() => (
           <>
             {dayBills.map((bill) => (
-              <Card key={bill.id} className="flex-row items-center gap-3 py-3">
-                <Icon
-                  name={bill.kind === "bill" ? "receipt" : "cash-plus"}
-                  color={bill.kind === "bill" ? "coral" : "mint"}
-                />
-                <Text className="flex-1">{bill.name}</Text>
-                <Amount
-                  minor={bill.amountMinor}
-                  currency={bill.currency}
-                  variant="strong"
-                  animate={false}
-                />
-              </Card>
+              <Pressable
+                key={bill.id}
+                onPress={() => router.push(`/money/recurring/${bill.id}`)}
+                accessibilityRole="button"
+                accessibilityHint={bill.kind === "bill" ? "Opens the bill" : "Opens the payday"}
+              >
+                <Card className="flex-row items-center gap-3 py-3">
+                  <Icon
+                    name={bill.kind === "bill" ? "receipt" : "cash-plus"}
+                    color={bill.kind === "bill" ? "coral" : "mint"}
+                  />
+                  <Text className="flex-1">{bill.name}</Text>
+                  <Amount
+                    minor={bill.amountMinor}
+                    currency={bill.currency}
+                    variant="strong"
+                    animate={false}
+                  />
+                </Card>
+              </Pressable>
             ))}
             <Group inset={TASK_ROW_INSET}>
               {dayTasks.map((task) => (

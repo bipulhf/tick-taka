@@ -3,6 +3,7 @@ import { costInHours } from "@tick-taka/shared/finance";
 import { newId } from "@tick-taka/shared/ids";
 import {
   type AnyDraft,
+  isSureMoneyDraft,
   liveDefaultAccountId,
   parseQuickAdd,
   type QuickAddContext,
@@ -30,6 +31,7 @@ export function useQuickAdd(initialText = "", initialKind: QuickAddKind | null =
   const [overrides, setOverrides] = useState<Overrides>({});
   const [aiDraft, setAiDraft] = useState<AnyDraft | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
+  const [pickersOpen, setPickersOpen] = useState(false);
   const requestSeq = useRef(0);
 
   const timeZone = userTime(reference.settings).timeZone;
@@ -112,6 +114,11 @@ export function useQuickAdd(initialText = "", initialKind: QuickAddKind | null =
     return base ? applyOverrides(base, overrides, timeZone) : null;
   }, [aiDraft, localDraft, overrides, timeZone]);
 
+  // A sure read shows one summary line; "Change" (or any doubt) brings the pickers back.
+  const showPickers =
+    pickersOpen ||
+    !isSureMoneyDraft(draft, { accounts: reference.accounts, categories: reference.categories });
+
   const hoursOfWork = useMemo(() => {
     const settings = reference.settings;
     if (draft?.kind !== "expense" || draft.amountMinor === null || !settings?.costInHours)
@@ -138,6 +145,8 @@ export function useQuickAdd(initialText = "", initialKind: QuickAddKind | null =
     setOverrides,
     draft,
     aiBusy,
+    showPickers,
+    openPickers: () => setPickersOpen(true),
     aiUsed: aiDraft !== null,
     hoursOfWork,
     reference,

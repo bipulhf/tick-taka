@@ -1,3 +1,4 @@
+import { hiddenAmount } from "@tick-taka/shared/money";
 import type { QuickAddKind } from "@tick-taka/shared/quick-add";
 import { describeDraft } from "@tick-taka/shared/quick-add";
 import { useRouter } from "expo-router";
@@ -12,6 +13,7 @@ import { formatAmount, formatWhen, plural } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
+import { usePrivacy } from "@/lib/privacy";
 import { playSound } from "@/lib/sounds";
 import type { ColorName } from "@/theme/colors";
 import { useColors } from "@/theme/colors";
@@ -63,7 +65,10 @@ export function QuickAddSheet({
   const send = useOutbox();
   const qa = useQuickAdd(initialText, initialKind ?? null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const hidden = usePrivacy();
   const { draft, reference } = qa;
+  // Hide amounts covers the summary too; the field above still shows what was typed.
+  const money = (minor: number) => (hidden ? hiddenAmount() : formatAmount(minor));
 
   const names = {
     account:
@@ -79,14 +84,11 @@ export function QuickAddSheet({
   };
   const preview =
     draft && draft.kind !== "transfer"
-      ? describeDraft(
-          draft,
-          names,
-          (m) => formatAmount(m),
-          (ms, hasTime) => formatWhen(ms, hasTime, Date.now(), qa.timeZone),
+      ? describeDraft(draft, names, money, (ms, hasTime) =>
+          formatWhen(ms, hasTime, Date.now(), qa.timeZone),
         )
       : draft?.kind === "transfer"
-        ? `Transfer ${draft.amountMinor === null ? "—" : formatAmount(draft.amountMinor)}`
+        ? `Transfer ${draft.amountMinor === null ? "—" : money(draft.amountMinor)}`
         : null;
   const requests = qa.buildRequests();
 
@@ -108,6 +110,8 @@ export function QuickAddSheet({
   const look = draft ? KIND_LOOK[draft.kind] : null;
   const areaOptions = reference.areas.map((a) => ({ id: a.id, label: a.name, emoji: a.emoji }));
   const areaId = draft && "areaId" in draft ? draft.areaId : null;
+  // Sure of the kind, amount, category and account: the summary alone, tap it to change.
+  const sure = Boolean(draft && preview) && !qa.showPickers;
 
   return (
     <Sheet
@@ -129,9 +133,13 @@ export function QuickAddSheet({
         className="min-h-16 font-nunito-bold text-2xl leading-8 text-ink"
       />
 
-      <View
+      <Pressable
         className="min-h-16 flex-row items-center gap-3 rounded-2xl bg-card px-4 py-3"
         accessibilityLiveRegion="polite"
+        accessible={sure}
+        onPress={sure ? qa.openPickers : undefined}
+        accessibilityRole={sure ? "button" : undefined}
+        accessibilityLabel={sure ? `${preview}. Change kind, account or category` : undefined}
       >
         {qa.aiBusy ? (
           <ActivityIndicator color={colors.mango} />
@@ -149,37 +157,47 @@ export function QuickAddSheet({
             ? `${qa.aiUsed ? "✨ " : ""}${preview}`
             : "Type a task, an expense, “+45000 salary” or “2h thesis”."}
         </Text>
-      </View>
+        {sure ? (
+          <Text variant="callout" tone="sky">
+            Change
+          </Text>
+        ) : null}
+      </Pressable>
       {qa.hoursOfWork ? (
         <Text variant="callout" tone="muted" className="-mt-2 px-1">
           ≈ {plural(qa.hoursOfWork, "hour")} of work
         </Text>
       ) : null}
 
-      <View className="flex-row gap-3">
-        <PickerField
-          label="Kind"
-          span="half"
-          value={qa.kind}
-          noneLabel={draft ? `Auto · ${KIND_NAME[draft.kind] ?? "Auto"}` : "Auto"}
-          options={KINDS}
-          onChange={(kind) => qa.setKind(kind as QuickAddKind | null)}
-        />
-        {draft?.kind === "task" ? (
+      {sure ? null : (
+        <View className="flex-row gap-3">
           <PickerField
-            label="When"
+            label="Kind"
             span="half"
-            value={qa.overrides.day ?? null}
-            noneLabel="As typed"
-            options={DAYS}
-            onChange={(day) =>
-              qa.setOverrides({ ...qa.overrides, day: (day ?? undefined) as DayChoice | undefined })
-            }
+            value={qa.kind}
+            noneLabel={draft ? `Auto · ${KIND_NAME[draft.kind] ?? "Auto"}` : "Auto"}
+            options={KINDS}
+            onChange={(kind) => qa.setKind(kind as QuickAddKind | null)}
           />
-        ) : null}
-      </View>
+          {draft?.kind === "task" ? (
+            <PickerField
+              label="When"
+              span="half"
+              value={qa.overrides.day ?? null}
+              noneLabel="As typed"
+              options={DAYS}
+              onChange={(day) =>
+                qa.setOverrides({
+                  ...qa.overrides,
+                  day: (day ?? undefined) as DayChoice | undefined,
+                })
+              }
+            />
+          ) : null}
+        </View>
+      )}
 
-      {moneyKind ? (
+      {moneyKind && !sure ? (
         <View className="flex-row gap-3">
           <PickerField
             label="Account"
@@ -200,7 +218,7 @@ export function QuickAddSheet({
         </View>
       ) : null}
 
-      {draft && draft.kind !== "transfer" ? (
+      {draft && draft.kind !== "transfer" && !sure ? (
         moreOpen || draft.kind === "time_entry" ? (
           <PickerField
             label="Area"

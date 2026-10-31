@@ -78,11 +78,6 @@ export const ENTITIES = {
     canGet: true,
     fields: "name, emoji, budget (taka), startsOn (YYYY-MM-DD), endsOn (YYYY-MM-DD)",
   },
-  shopping_item: {
-    path: "/shopping",
-    canGet: false,
-    fields: "title, listName (default Bazar), est (estimated price in taka), checked (boolean)",
-  },
   routine: {
     path: "/routines",
     canGet: true,
@@ -115,7 +110,6 @@ export const KIND_ENTITY: Record<AssistantRecordKind, EntityName> = {
   event: "event",
   project: "project",
   recurring: "bill",
-  shopping_item: "shopping_item",
   time_entry: "time_entry",
   routine: "routine",
 };

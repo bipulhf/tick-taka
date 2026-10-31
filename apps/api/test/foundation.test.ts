@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { sql } from "drizzle-orm";
 import { createTestContext, googleToken } from "./helpers";
 
 describe("foundation", () => {
@@ -92,6 +93,25 @@ describe("foundation", () => {
       "/settings",
     );
     expect(after.body).toMatchObject({ vacationMode: true, dailyTaskGoal: 3 });
+  });
+
+  test("settings saved by an older build still read, keeping what still exists", async () => {
+    const { deps, request } = await createTestContext();
+    const old = {
+      ai: { enabled: false, features: { categorize: false, parse: false } },
+      advancedViews: { eisenhower: true, energy: false, shoppingList: true },
+    };
+    for (const [key, value] of Object.entries(old))
+      deps.db.run(
+        sql`INSERT INTO settings (key, value, created_at, updated_at) VALUES (${key}, ${JSON.stringify(value)}, 0, 0)`,
+      );
+    const read = await request<Record<string, unknown>>("GET", "/settings");
+    expect(read.body.ai).toEqual({ enabled: false, features: { parse: false } });
+    expect(read.body).not.toHaveProperty("advancedViews");
+    // An older phone sends back what it last read.
+    const patched = await request<Record<string, unknown>>("PATCH", "/settings", old);
+    expect(patched.status).toBe(200);
+    expect(patched.body.ai).toEqual({ enabled: false, features: { parse: false } });
   });
 
   test("the numbers setting accepts English or Bangla digits only", async () => {

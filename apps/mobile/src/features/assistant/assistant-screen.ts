@@ -25,7 +25,6 @@ const RECORD_ROUTES: { path: string[]; kind: AssistantRecordKind }[] = [
   { path: ["event"], kind: "event" },
   { path: ["project"], kind: "project" },
   { path: ["money", "recurring"], kind: "recurring" },
-  { path: ["shopping-item"], kind: "shopping_item" },
   { path: ["routine"], kind: "routine" },
 ];
 
@@ -107,8 +106,6 @@ export function recordHref(kind: AssistantRecordKind, id: string): Href {
       return `/project/${id}`;
     case "recurring":
       return `/money/recurring/${id}`;
-    case "shopping_item":
-      return `/shopping-item/${id}`;
     case "time_entry":
       return `/time-entry?id=${id}`;
     case "routine":

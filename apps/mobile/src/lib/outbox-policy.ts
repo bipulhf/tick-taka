@@ -62,7 +62,6 @@ function repeatOfDelivered(request: OutboxRequest, status: number): boolean {
   const { method, path } = request;
   if (method !== "POST") return false;
   if (status === 409 && path === "/timer/stop") return true;
-  if (status === 400 && path === "/shopping/checkout") return true;
   return false;
 }
 
@@ -106,7 +105,7 @@ const pathOf = (request: OutboxRequest): string => request.path.split("?", 1)[0]
 
 /**
  * The records a write brings into being: a POST's `id`, or its `transactionId` (a
- * bill's pay, a checkout). Until it lands the server has never heard of them.
+ * bill's pay). Until it lands the server has never heard of them.
  */
 export function createdIds(request: OutboxRequest): string[] {
   const body = request.body;

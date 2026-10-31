@@ -23,7 +23,6 @@ const NOUNS: Record<string, readonly [string, string]> = {
   reviews: ["review", "reviews"],
   routines: ["routine", "routines"],
   settings: ["setting", "settings"],
-  shopping: ["shopping item", "shopping items"],
   tasks: ["task", "tasks"],
   "time-entries": ["time entry", "time entries"],
   transactions: ["transaction", "transactions"],

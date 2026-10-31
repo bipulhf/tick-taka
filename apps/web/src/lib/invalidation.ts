@@ -26,8 +26,6 @@ const MONEY = [
   "debts",
   "debt-forecast",
   "events",
-  "shopping",
-  "shopping-lists",
   "categories",
   "category-rules",
   "net-worth",
@@ -56,7 +54,6 @@ const MONEY_ROUTES = new Set([
   "goals",
   "debts",
   "events",
-  "shopping",
   "categories",
   "category-rules",
 ]);

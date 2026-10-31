@@ -24,7 +24,7 @@ const MAX_PENDING_DELETES = 100;
 const MONEY_ENTITIES = new Set<EntityName>(["transaction", "account", "debt"]);
 /**
  * Whether a create or update changes money: a money entity, or any amount field of
- * another one (bill amount, goal target, event budget, shopping estimate), or the
+ * another one (bill amount, goal target, event budget), or the
  * budget type that moves a category in or out of safe-to-spend.
  */
 const movesMoney = (entity: EntityName, fields: Record<string, unknown>) =>
@@ -105,7 +105,6 @@ export const WRITE_TOOLS: AiToolDefinition[] = [
       "check_balance: id = account; fields {actual} (the real balance in taka; the app adds an adjustment).",
       "start_timer: id null; fields {task?: task id, area?, project?, note?}. stop_timer: id null; fields {}.",
       "set_budget: id null; fields {month: YYYY-MM, category, limit} (taka; 0 removes it).",
-      "checkout_shopping: id null; fields {listName, account, category?, amount?}.",
       'update_settings: id null; fields = settings to change, e.g. {dailyTaskGoal: 5, theme: "dark", vacationMode: true}. App lock, AI, currency, default accounts and time zone are only changed by the user in Settings.',
     ].join("\n"),
     parameters: {
@@ -188,7 +187,7 @@ export function createToolRunner(
     if (query && !("listQuery" in def && search.includes("q="))) {
       const needle = query.toLowerCase();
       items = items.filter((item) =>
-        ["title", "name", "note", "person", "listName"].some(
+        ["title", "name", "note", "person"].some(
           (key) =>
             typeof item[key] === "string" && (item[key] as string).toLowerCase().includes(needle),
         ),

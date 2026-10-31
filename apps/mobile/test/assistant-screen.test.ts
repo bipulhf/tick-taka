@@ -20,10 +20,6 @@ describe("screenFromRoute", () => {
     expect(screenFromRoute(`/task/${ID}`).record).toEqual({ kind: "task", id: ID });
     expect(screenFromRoute(`/transaction/${ID}`).record).toEqual({ kind: "transaction", id: ID });
     expect(screenFromRoute(`/money/recurring/${ID}`).record).toEqual({ kind: "recurring", id: ID });
-    expect(screenFromRoute(`/shopping-item/${ID}`).record).toEqual({
-      kind: "shopping_item",
-      id: ID,
-    });
     expect(screenFromRoute(`/routine/${ID}`).record).toEqual({ kind: "routine", id: ID });
     expect(screenFromRoute("/time-entry", { id: ID }).record).toEqual({
       kind: "time_entry",
@@ -73,6 +69,5 @@ describe("the chat's params", () => {
 test("record cards open the record's own sheet", () => {
   expect(recordHref("task", ID)).toBe(`/task/${ID}`);
   expect(recordHref("recurring", ID)).toBe(`/money/recurring/${ID}`);
-  expect(recordHref("shopping_item", ID)).toBe(`/shopping-item/${ID}`);
   expect(recordHref("time_entry", ID)).toBe(`/time-entry?id=${ID}`);
 });

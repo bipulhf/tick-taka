@@ -36,7 +36,7 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
-  // Inline fields (add money to a goal, shopping, payday, routines) stay above the keyboard:
+  // Inline fields (add money to a goal, payday, routines) stay above the keyboard:
   // the screen shrinks by its height and Android scrolls the focused field into view.
   const keyboard = useKeyboardHeight();
   const showBack = !tabBarPadding && router.canGoBack();

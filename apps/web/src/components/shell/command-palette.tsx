@@ -4,7 +4,6 @@ import { Eye, Keyboard, Moon, Settings, Sun } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { togglePrivacy } from "@/lib/prefs";
-import { useSettings } from "@/lib/queries";
 import { useStore } from "@/lib/store";
 import { toggleTheme, useTheme } from "@/lib/theme";
 import { paletteOpenStore, shortcutsOpenStore } from "@/lib/ui-state";
@@ -78,7 +77,6 @@ export function CommandPalette() {
     observer.observe(element, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [open, selected]);
-  const { data: settings } = useSettings();
   const theme = useTheme();
   const close = () => {
     paletteOpenStore.set(false);
@@ -184,7 +182,6 @@ export function CommandPalette() {
                   { ...section, parent: "" },
                   ...section.children
                     .filter((c) => c.to !== section.to)
-                    .filter((c) => !c.advanced || settings?.advancedViews?.[c.advanced])
                     .map((c) => ({ ...c, parent: section.label })),
                 ]).map((link) => (
                   <Command.Item

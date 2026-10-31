@@ -12,7 +12,6 @@ const MONEY: Record<string, string> = {
   target: "targetMinor",
   principal: "principalMinor",
   budget: "budgetMinor",
-  est: "estMinor",
   limit: "limitMinor",
   actual: "actualMinor",
   received: "receivedMinor",

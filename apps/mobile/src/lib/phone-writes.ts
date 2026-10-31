@@ -14,7 +14,7 @@ const RECORD_ID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 /** The record ids a write names: in its path (`/tasks/<id>`), its body and its reply. */
 export function idsOfWrite(path: string, body: unknown, response: unknown): string[] {
   const ids: string[] = [];
-  // Only a record id in the path, not an action word like /shopping/checkout.
+  // Only a record id in the path, not an action word like /tasks/rescue-overdue.
   const fromPath = path.split("?", 1)[0]?.split("/")[2];
   if (fromPath && RECORD_ID.test(fromPath)) ids.push(fromPath);
   for (const value of [body, response]) {

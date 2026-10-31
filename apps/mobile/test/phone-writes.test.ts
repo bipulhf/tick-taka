@@ -6,7 +6,7 @@ describe("ids the phone wrote", () => {
     expect(idsOfWrite("/transactions", { id: "t1" }, { id: "t1" })).toEqual(["t1", "t1"]);
     const task = "01K0000000000000000000000A";
     expect(idsOfWrite(`/tasks/${task}?x=1`, { title: "x" }, null)).toEqual([task]);
-    expect(idsOfWrite("/shopping/checkout", { transactionId: "t9" }, {})).toEqual(["t9"]);
+    expect(idsOfWrite("/tasks/rescue-overdue", { transactionId: "t9" }, {})).toEqual(["t9"]);
   });
 
   test("are remembered for an hour, then forgotten", () => {

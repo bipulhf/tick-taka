@@ -290,36 +290,6 @@ export const eventUpdateSchema = z
   .partial()
   .extend(editTimeShape);
 
-// Shopping lists ----------------------------------------------------------------
-export const shoppingItemCreateSchema = z.object({
-  id: idSchema.optional(),
-  listName: z.string().trim().min(1).max(60).default("Bazar"),
-  title: z.string().trim().min(1).max(200),
-  estMinor: z.number().int().nonnegative().nullable().optional(),
-  sort: z.number().int().optional(),
-});
-export const shoppingItemUpdateSchema = z
-  .object({
-    listName: z.string().trim().min(1).max(60),
-    title: z.string().trim().min(1).max(200),
-    estMinor: z.number().int().nonnegative().nullable(),
-    checked: z.boolean(),
-    sort: z.number().int(),
-  })
-  .partial()
-  .extend(editTimeShape);
-export const shoppingCheckoutSchema = z.object({
-  transactionId: idSchema.optional(),
-  listName: z.string().trim().min(1).max(60),
-  accountId: idSchema,
-  categoryId: idSchema.nullable().optional(),
-  eventId: idSchema.nullable().optional(),
-  /** Actual total paid; defaults to the sum of checked estimates. */
-  amountMinor: positiveMinorSchema.optional(),
-  occurredAt: epochMsSchema.optional(),
-  note: noteSchema.nullable().optional(),
-});
-
 // Category rules (learn from corrections) ---------------------------------------
 export const categoryRuleCreateSchema = z.object({
   id: idSchema.optional(),

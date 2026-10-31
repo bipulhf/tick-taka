@@ -47,20 +47,6 @@ export function useEvents() {
   return useQuery({ queryKey: ["events"], queryFn: () => unwrap(api.events.$get()) });
 }
 
-export function useShopping(list?: string) {
-  return useQuery({
-    queryKey: ["shopping", list ?? "all"],
-    queryFn: () => unwrap(api.shopping.$get({ query: list ? { list } : {} })),
-  });
-}
-
-export function useShoppingLists() {
-  return useQuery({
-    queryKey: ["shopping-lists"],
-    queryFn: () => unwrap(api.shopping.lists.$get()),
-  });
-}
-
 export function useInsights(from: number, to: number) {
   return useQuery({
     queryKey: ["insights", from, to],

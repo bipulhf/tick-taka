@@ -154,7 +154,6 @@ export default function RootLayout() {
                   <Stack.Screen name="area/[id]" options={sheet} />
                   <Stack.Screen name="category/[id]" options={sheet} />
                   <Stack.Screen name="event/[id]" options={sheet} />
-                  <Stack.Screen name="shopping-item/[id]" options={sheet} />
                   <Stack.Screen name="budget-edit" options={sheet} />
                   <Stack.Screen name="money/recurring/[id]" options={sheet} />
                   <Stack.Screen

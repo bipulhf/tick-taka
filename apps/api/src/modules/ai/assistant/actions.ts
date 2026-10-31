@@ -15,7 +15,6 @@ export const ACTIONS = [
   "start_timer",
   "stop_timer",
   "set_budget",
-  "checkout_shopping",
   "update_settings",
 ] as const;
 export type ActionName = (typeof ACTIONS)[number];
@@ -36,7 +35,6 @@ const ASSISTANT_SETTINGS = new Set<SettingsKey>([
   "dailyTaskGoal",
   "daysOff",
   "vacationMode",
-  "advancedViews",
   "focus",
   "quietHours",
   "shutdownTime",
@@ -249,20 +247,6 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
       summary: setting ? `Set a ${month} budget` : `Removed a ${month} budget`,
       undo,
     });
-    return { ok: true };
-  },
-  checkout_shopping: async (
-    { caller, convert, now, drafting, propose, fail, actions },
-    raw,
-    _needId,
-  ) => {
-    const body = { transactionId: newId(now), ...(await convert(raw)) };
-    const path = "/shopping/checkout";
-    if (drafting)
-      return propose({ summary: "Check out the shopping list", method: "POST", path, body });
-    const result = await caller.call("POST", path, body);
-    if (!result.ok) return fail(result.error);
-    actions.push({ summary: "Checked out the shopping list" });
     return { ok: true };
   },
   update_settings: async ({ caller, fail, actions }, raw, _needId) => {

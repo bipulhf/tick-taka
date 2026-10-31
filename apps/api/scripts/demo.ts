@@ -238,14 +238,6 @@ await call("POST", "/debts", {
   dueAt: at(day(12), 12),
 });
 
-for (const [title, est] of [
-  ["Eggs, 1 dozen", 160],
-  ["Rice, 5 kg", 420],
-  ["Hilsa", 1_100],
-  ["Dishwashing liquid", 140],
-] as const)
-  await call("POST", "/shopping", { title, estMinor: taka(est) });
-
 // Time: tasks, top three, habits, focus -----------------------------------------------
 const task = (body: Json) => call<Json>("POST", "/tasks", { status: "open", ...body });
 await task({

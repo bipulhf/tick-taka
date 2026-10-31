@@ -17,7 +17,6 @@ const PANEL_RECORDS: Record<string, AssistantRecordKind> = {
   event: "event",
   project: "project",
   recurring: "recurring",
-  "shopping-item": "shopping_item",
   "time-entry": "time_entry",
   routine: "routine",
 };
@@ -78,7 +77,6 @@ export function recordTarget(
   id: string,
 ): { panel: string } | { routineId: string } {
   if (kind === "routine") return { routineId: id };
-  const panelKind =
-    kind === "shopping_item" ? "shopping-item" : kind === "time_entry" ? "time-entry" : kind;
+  const panelKind = kind === "time_entry" ? "time-entry" : kind;
   return { panel: `${panelKind}:${id}` };
 }

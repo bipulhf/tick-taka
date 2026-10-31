@@ -199,24 +199,6 @@ export const budgets = sqliteTable(
   ],
 );
 
-export const shoppingItems = sqliteTable(
-  "shopping_items",
-  {
-    ...baseColumns(),
-    listName: text("list_name").notNull(),
-    title: text("title").notNull(),
-    estMinor: integer("est_minor"),
-    checkedAt: integer("checked_at"),
-    transactionId: text("transaction_id").references(() => transactions.id),
-    sort: integer("sort").notNull().default(0),
-  },
-  (t) => [
-    index("shopping_items_updated_at_idx").on(t.updatedAt),
-    index("shopping_items_list_idx").on(t.listName),
-    check("shopping_items_estimate_check", rule(`"est_minor" >= 0`)),
-  ],
-);
-
 export const categoryRules = sqliteTable(
   "category_rules",
   {

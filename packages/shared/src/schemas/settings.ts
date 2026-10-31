@@ -55,11 +55,6 @@ export const settingsSchema = z.object({
   vacations: z
     .array(z.object({ from: localDateSchema, to: localDateSchema.nullable() }))
     .default([]),
-  advancedViews: z
-    .object({
-      shoppingList: z.boolean().default(false),
-    })
-    .default({ shoppingList: false }),
   focus: z
     .object({
       workMinutes: z.number().int().min(5).max(120).default(25),

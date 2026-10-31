@@ -9,7 +9,6 @@ import {
   PiggyBank,
   Plane,
   Receipt,
-  ShoppingBasket,
 } from "lucide-react";
 import { Amount } from "@/components/ui/amount";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -17,7 +16,6 @@ import { Group, RowMark } from "@/components/ui/group";
 import { ProgressBar } from "@/components/ui/progress";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { useOpenPanel } from "@/lib/panel";
-import { useSettings } from "@/lib/queries";
 import { useThisMonth } from "@/lib/use-today";
 import { BUCKETS, bucketLines, bucketShown, noBudgets } from "./budget-lines";
 import { useBudgets } from "./queries";
@@ -73,7 +71,6 @@ function MoreRow({
 
 /** The phone's "More" group: the views without a shortcut. */
 export function MoneyMore() {
-  const { data: settings } = useSettings();
   return (
     <Group>
       <MoreRow to="/money/debts" icon={HandCoins} title="Debts" subtitle="Who owes whom" />
@@ -84,9 +81,6 @@ export function MoneyMore() {
         title="Calendar"
         subtitle="Spending by day"
       />
-      {settings?.advancedViews.shoppingList ? (
-        <MoreRow to="/money/shopping" icon={ShoppingBasket} title="Shopping" />
-      ) : null}
       <MoreRow
         to="/money/accounts"
         icon={Landmark}

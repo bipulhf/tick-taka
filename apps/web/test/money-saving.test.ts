@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { openDebtGroups, repaidShare, signedOutstanding } from "../src/features/money/debt-groups";
 import { contributionSource, isFutureDeadline } from "../src/features/money/goal-money";
-import { listNames, shoppingTotals } from "../src/features/money/shopping-totals";
 
 const accounts = [{ id: "cash" }, { id: "jar" }, { id: "bank" }];
 
@@ -50,24 +49,5 @@ describe("debts", () => {
     expect(repaidShare(500, 2000)).toBe(0.25);
     expect(repaidShare(3000, 2000)).toBe(1);
     expect(repaidShare(0, 0)).toBe(0);
-  });
-});
-
-describe("shopping", () => {
-  test("totals the list and the ticked items", () => {
-    expect(
-      shoppingTotals([
-        { estMinor: 16000, checkedAt: null },
-        { estMinor: 42000, checkedAt: 1 },
-        { estMinor: null, checkedAt: 2 },
-      ]),
-    ).toEqual({ estimateMinor: 58000, checkedCount: 2, checkedMinor: 42000 });
-  });
-  test("lists start with Bazar and keep the current one", () => {
-    expect(listNames([{ listName: "Bazar" }, { listName: "Eid" }], "Pharmacy")).toEqual([
-      "Bazar",
-      "Pharmacy",
-      "Eid",
-    ]);
   });
 });

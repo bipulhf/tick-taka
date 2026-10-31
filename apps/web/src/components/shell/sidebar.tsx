@@ -8,7 +8,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useIsAdmin } from "@/features/admin/queries";
 import { profileStore, signOut } from "@/lib/auth";
 import { railStore, toggleRail } from "@/lib/prefs";
-import { useAreas, useSettings } from "@/lib/queries";
+import { useAreas } from "@/lib/queries";
 import { useStore } from "@/lib/store";
 import { NAV, type NavLink, sectionOf, tourId } from "./nav";
 
@@ -80,11 +80,9 @@ export function Sidebar({ forceRail }: { forceRail: boolean }) {
   const chosenRail = useStore(railStore);
   const rail = forceRail || chosenRail;
   const section = sectionOf(path);
-  const { data: settings } = useSettings();
   const { data: areas } = useAreas();
   const profile = useStore(profileStore);
   const isAdmin = useIsAdmin();
-  const advanced = settings?.advancedViews;
 
   return (
     <nav
@@ -120,9 +118,7 @@ export function Sidebar({ forceRail }: { forceRail: boolean }) {
         {NAV.map((top) => {
           // Settings and Focus belong to no section; Today is only "/" itself.
           const open = top.to === section.to && (top.to !== "/" || path === "/");
-          const children = top.children.filter(
-            (child) => !child.advanced || advanced?.[child.advanced],
-          );
+          const children = top.children;
           return (
             <div key={top.to} className={cx("flex flex-col gap-0.5", rail && "items-center")}>
               <Item

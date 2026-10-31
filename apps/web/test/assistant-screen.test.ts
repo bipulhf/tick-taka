@@ -26,10 +26,6 @@ describe("viewOf", () => {
 describe("panelRecord", () => {
   test("maps panel kinds to the assistant's record kinds", () => {
     expect(panelRecord({ kind: "task", id: ID })).toEqual({ kind: "task", id: ID });
-    expect(panelRecord({ kind: "shopping-item", id: ID })).toEqual({
-      kind: "shopping_item",
-      id: ID,
-    });
     expect(panelRecord({ kind: "time-entry", id: ID })).toEqual({ kind: "time_entry", id: ID });
     expect(panelRecord({ kind: "recurring", id: ID })).toEqual({ kind: "recurring", id: ID });
   });
@@ -73,7 +69,6 @@ describe("screenFor", () => {
 });
 
 test("recordTarget opens panels by their web kind, and routines on their page", () => {
-  expect(recordTarget("shopping_item", ID)).toEqual({ panel: `shopping-item:${ID}` });
   expect(recordTarget("time_entry", ID)).toEqual({ panel: `time-entry:${ID}` });
   expect(recordTarget("recurring", ID)).toEqual({ panel: `recurring:${ID}` });
   expect(recordTarget("routine", ID)).toEqual({ routineId: ID });

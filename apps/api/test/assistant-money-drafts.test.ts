@@ -46,8 +46,8 @@ const line = async (ctx: TestContext, categoryId: string) =>
     (l) => l.categoryId === categoryId,
   )!;
 
-// QA-208: budgets and the money fields of bills, goals, events, shopping items and
-// categories are drafts too.
+// QA-208: budgets and the money fields of bills, goals, events and categories are
+// drafts too.
 describe("assistant budget changes are drafts", () => {
   test("set_budget proposes one line, keeps its rollover, and its undo puts the old value back", async () => {
     const { ai, ctx } = await setup();

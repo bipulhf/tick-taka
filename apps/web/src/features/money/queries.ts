@@ -52,20 +52,6 @@ export function useEvents() {
   return useQuery({ queryKey: ["events"], queryFn: () => unwrap(api.events.$get()) });
 }
 
-export function useShopping(list?: string) {
-  return useQuery({
-    queryKey: ["shopping", list ?? "all"],
-    queryFn: () => unwrap(api.shopping.$get({ query: list ? { list } : {} })),
-  });
-}
-
-export function useShoppingLists() {
-  return useQuery({
-    queryKey: ["shopping-lists"],
-    queryFn: () => unwrap(api.shopping.lists.$get()),
-  });
-}
-
 export function useInsights(from: number, to: number) {
   return useQuery({
     queryKey: ["insights", from, to],
@@ -86,4 +72,3 @@ export type Recurring = NonNullable<ReturnType<typeof useRecurring>["data"]>[num
 export type Goal = NonNullable<ReturnType<typeof useGoals>["data"]>[number];
 export type Debt = NonNullable<ReturnType<typeof useDebts>["data"]>[number];
 export type MoneyEvent = NonNullable<ReturnType<typeof useEvents>["data"]>[number];
-export type ShoppingItem = NonNullable<ReturnType<typeof useShopping>["data"]>[number];

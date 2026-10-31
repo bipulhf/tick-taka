@@ -24,7 +24,6 @@ import { Route as AuthShellMoneyCalendarRouteImport } from './routes/_auth/_shel
 import { Route as AuthShellMoneyDebtsRouteImport } from './routes/_auth/_shell/money/debts'
 import { Route as AuthShellMoneyEventsRouteImport } from './routes/_auth/_shell/money/events'
 import { Route as AuthShellMoneyGoalsRouteImport } from './routes/_auth/_shell/money/goals'
-import { Route as AuthShellMoneyShoppingRouteImport } from './routes/_auth/_shell/money/shopping'
 import { Route as AuthShellMoneyTransactionsRouteImport } from './routes/_auth/_shell/money/transactions'
 import { Route as AuthShellPlanIndexRouteImport } from './routes/_auth/_shell/plan/index'
 import { Route as AuthShellPlanCalendarRouteImport } from './routes/_auth/_shell/plan/calendar'
@@ -120,11 +119,6 @@ const AuthShellMoneyEventsRoute = AuthShellMoneyEventsRouteImport.update({
 const AuthShellMoneyGoalsRoute = AuthShellMoneyGoalsRouteImport.update({
   id: '/money/goals',
   path: '/money/goals',
-  getParentRoute: () => AuthShellRoute,
-} as any)
-const AuthShellMoneyShoppingRoute = AuthShellMoneyShoppingRouteImport.update({
-  id: '/money/shopping',
-  path: '/money/shopping',
   getParentRoute: () => AuthShellRoute,
 } as any)
 const AuthShellMoneyTransactionsRoute =
@@ -258,7 +252,6 @@ export interface FileRoutesByFullPath {
   '/money/debts': typeof AuthShellMoneyDebtsRoute
   '/money/events': typeof AuthShellMoneyEventsRoute
   '/money/goals': typeof AuthShellMoneyGoalsRoute
-  '/money/shopping': typeof AuthShellMoneyShoppingRoute
   '/money/transactions': typeof AuthShellMoneyTransactionsRoute
   '/plan/calendar': typeof AuthShellPlanCalendarRoute
   '/plan/day': typeof AuthShellPlanDayRoute
@@ -297,7 +290,6 @@ export interface FileRoutesByTo {
   '/money/debts': typeof AuthShellMoneyDebtsRoute
   '/money/events': typeof AuthShellMoneyEventsRoute
   '/money/goals': typeof AuthShellMoneyGoalsRoute
-  '/money/shopping': typeof AuthShellMoneyShoppingRoute
   '/money/transactions': typeof AuthShellMoneyTransactionsRoute
   '/plan/calendar': typeof AuthShellPlanCalendarRoute
   '/plan/day': typeof AuthShellPlanDayRoute
@@ -339,7 +331,6 @@ export interface FileRoutesById {
   '/_auth/_shell/money/debts': typeof AuthShellMoneyDebtsRoute
   '/_auth/_shell/money/events': typeof AuthShellMoneyEventsRoute
   '/_auth/_shell/money/goals': typeof AuthShellMoneyGoalsRoute
-  '/_auth/_shell/money/shopping': typeof AuthShellMoneyShoppingRoute
   '/_auth/_shell/money/transactions': typeof AuthShellMoneyTransactionsRoute
   '/_auth/_shell/plan/calendar': typeof AuthShellPlanCalendarRoute
   '/_auth/_shell/plan/day': typeof AuthShellPlanDayRoute
@@ -380,7 +371,6 @@ export interface FileRouteTypes {
     | '/money/debts'
     | '/money/events'
     | '/money/goals'
-    | '/money/shopping'
     | '/money/transactions'
     | '/plan/calendar'
     | '/plan/day'
@@ -419,7 +409,6 @@ export interface FileRouteTypes {
     | '/money/debts'
     | '/money/events'
     | '/money/goals'
-    | '/money/shopping'
     | '/money/transactions'
     | '/plan/calendar'
     | '/plan/day'
@@ -460,7 +449,6 @@ export interface FileRouteTypes {
     | '/_auth/_shell/money/debts'
     | '/_auth/_shell/money/events'
     | '/_auth/_shell/money/goals'
-    | '/_auth/_shell/money/shopping'
     | '/_auth/_shell/money/transactions'
     | '/_auth/_shell/plan/calendar'
     | '/_auth/_shell/plan/day'
@@ -597,13 +585,6 @@ declare module '@tanstack/react-router' {
       path: '/money/goals'
       fullPath: '/money/goals'
       preLoaderRoute: typeof AuthShellMoneyGoalsRouteImport
-      parentRoute: typeof AuthShellRoute
-    }
-    '/_auth/_shell/money/shopping': {
-      id: '/_auth/_shell/money/shopping'
-      path: '/money/shopping'
-      fullPath: '/money/shopping'
-      preLoaderRoute: typeof AuthShellMoneyShoppingRouteImport
       parentRoute: typeof AuthShellRoute
     }
     '/_auth/_shell/money/transactions': {
@@ -781,7 +762,6 @@ interface AuthShellRouteChildren {
   AuthShellMoneyDebtsRoute: typeof AuthShellMoneyDebtsRoute
   AuthShellMoneyEventsRoute: typeof AuthShellMoneyEventsRoute
   AuthShellMoneyGoalsRoute: typeof AuthShellMoneyGoalsRoute
-  AuthShellMoneyShoppingRoute: typeof AuthShellMoneyShoppingRoute
   AuthShellMoneyTransactionsRoute: typeof AuthShellMoneyTransactionsRoute
   AuthShellPlanCalendarRoute: typeof AuthShellPlanCalendarRoute
   AuthShellPlanDayRoute: typeof AuthShellPlanDayRoute
@@ -819,7 +799,6 @@ const AuthShellRouteChildren: AuthShellRouteChildren = {
   AuthShellMoneyDebtsRoute: AuthShellMoneyDebtsRoute,
   AuthShellMoneyEventsRoute: AuthShellMoneyEventsRoute,
   AuthShellMoneyGoalsRoute: AuthShellMoneyGoalsRoute,
-  AuthShellMoneyShoppingRoute: AuthShellMoneyShoppingRoute,
   AuthShellMoneyTransactionsRoute: AuthShellMoneyTransactionsRoute,
   AuthShellPlanCalendarRoute: AuthShellPlanCalendarRoute,
   AuthShellPlanDayRoute: AuthShellPlanDayRoute,

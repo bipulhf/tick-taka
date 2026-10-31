@@ -173,7 +173,7 @@ export function MoreOptions({ label, children }: { label: string; children: Reac
   );
 }
 
-/** A small label over a group inside a section ("Focus", "Advanced views"). */
+/** A small label over a group inside a section ("Time off"). */
 export function GroupLabel({ children }: { children: ReactNode }) {
   return <h3 className="mt-2 px-1 text-caption text-muted">{children}</h3>;
 }

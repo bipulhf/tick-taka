@@ -1,5 +1,6 @@
 import { newId } from "@tick-taka/shared/ids";
 import {
+  ASSISTANT_RECORD_KINDS,
   type AssistantCard,
   type AssistantMessage,
   type AssistantRating,
@@ -106,7 +107,10 @@ export function threadService(deps: Deps) {
         ...thread,
         messages: latest.reverse().map((message) => ({
           ...message,
-          cards: message.cards ?? [],
+          // A card for a kind of record the app no longer has (a shopping item) is left out.
+          cards: (message.cards ?? []).filter(
+            (card) => card.type !== "record" || ASSISTANT_RECORD_KINDS.includes(card.kind),
+          ),
           actions: message.actions ?? [],
         })),
       };

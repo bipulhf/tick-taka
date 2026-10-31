@@ -24,7 +24,6 @@ import {
   Receipt,
   RefreshCcw,
   Repeat2,
-  ShoppingBasket,
   Sprout,
   Sun,
   Timer,
@@ -35,8 +34,6 @@ export interface NavLink {
   to: string;
   label: string;
   icon: LucideIcon;
-  /** Only shown when Settings › Today and planning turns the view on. */
-  advanced?: "shoppingList";
   /** Keyboard shortcut after G (G T for Today). */
   key?: string;
 }
@@ -79,7 +76,6 @@ export const NAV: NavSection[] = [
       { to: "/money/goals", label: "Goals", icon: PiggyBank },
       { to: "/money/debts", label: "Debts", icon: HandCoins },
       { to: "/money/events", label: "Events", icon: Plane },
-      { to: "/money/shopping", label: "Shopping", icon: ShoppingBasket, advanced: "shoppingList" },
       { to: "/money/calendar", label: "Spending calendar", icon: CalendarDays },
       { to: "/money/accounts", label: "Accounts", icon: Landmark, key: "a" },
     ],

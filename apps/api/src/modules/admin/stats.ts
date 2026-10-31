@@ -131,7 +131,6 @@ const COUNTED = [
   ["goals", "Goals"],
   ["debts", "Debts"],
   ["events", "Events"],
-  ["shopping_items", "Shopping items"],
 ] as const;
 
 type Kind = (typeof COUNTED)[number][0];

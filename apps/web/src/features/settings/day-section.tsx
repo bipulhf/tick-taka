@@ -70,7 +70,7 @@ export function DaySection({ s, update }: SectionProps) {
         />
       </Group>
 
-      <MoreOptions label="More options: capacity, week, focus, extra views">
+      <MoreOptions label="More options: capacity, week, focus">
         <Group>
           <SelectRow
             label="Free time on a working day"
@@ -101,15 +101,6 @@ export function DaySection({ s, update }: SectionProps) {
               options: numberOptions([5, 10, 15], minutes),
               onChange: (m) => update({ focus: { ...s.focus, breakMinutes: Number(m) } }),
             }}
-          />
-        </Group>
-        <GroupLabel>Extra views</GroupLabel>
-        <Group>
-          <ToggleRow
-            label="Shopping list"
-            description="A list that checks out as one expense, under Money"
-            checked={s.advancedViews.shoppingList}
-            onChange={(on) => update({ advancedViews: { ...s.advancedViews, shoppingList: on } })}
           />
         </Group>
       </MoreOptions>

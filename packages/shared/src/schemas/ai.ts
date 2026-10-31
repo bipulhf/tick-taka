@@ -113,7 +113,6 @@ export const ASSISTANT_RECORD_KINDS = [
   "event",
   "project",
   "recurring",
-  "shopping_item",
   "time_entry",
   "routine",
 ] as const;
@@ -130,7 +129,7 @@ export const assistantRequestSchema = z.object({
   messages: z.array(assistantMessageSchema).min(1).max(30),
   /**
    * The phone can confirm drafts: money changes (transactions, balances, bills
-   * paid, goal contributions, debt repayments, shopping checkout) come back in
+   * paid, goal contributions, debt repayments) come back in
    * `done.drafts` for the user to confirm, instead of being saved.
    */
   draftMoney: z.boolean().optional(),

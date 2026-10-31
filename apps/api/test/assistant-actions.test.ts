@@ -66,26 +66,12 @@ describe("assistant money actions", () => {
     ["contribute_goal", "Add to a goal"],
     ["repay_debt", "Record a debt repayment"],
     ["check_balance", "Match an account balance"],
-    ["checkout_shopping", "Check out the shopping list"],
   ] as const)("%s only proposes a draft when drafting", async (name, summary) => {
     const { ctx, sent, drafts } = context({ drafting: true });
     const result = await ACTION_HANDLERS[name](ctx, { amountMinor: 1000 }, needId);
     expect(result).toMatchObject({ draft: true });
     expect(sent).toEqual([]);
     expect(drafts).toEqual([expect.objectContaining({ summary, method: "POST" })]);
-  });
-
-  test("checkout_shopping sends one transaction id", async () => {
-    const { ctx, sent, actions } = context();
-    await ACTION_HANDLERS.checkout_shopping(ctx, { accountId: ID }, needId);
-    expect(sent).toEqual([
-      {
-        method: "POST",
-        path: "/shopping/checkout",
-        body: { transactionId: expect.any(String), accountId: ID },
-      },
-    ]);
-    expect(actions[0]?.summary).toBe("Checked out the shopping list");
   });
 
   test("a refused request is reported, not recorded as done", async () => {

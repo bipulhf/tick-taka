@@ -23,7 +23,6 @@ const KINDS: Record<AssistantRecordKind, { icon: IconName; color: ColorName; nou
   event: { icon: "calendar-star", color: "muted", noun: "event" },
   project: { icon: "folder-outline", color: "sky", noun: "project" },
   recurring: { icon: "calendar-sync", color: "muted", noun: "bill" },
-  shopping_item: { icon: "cart-outline", color: "muted", noun: "shopping item" },
   time_entry: { icon: "timer-outline", color: "sky", noun: "time entry" },
   routine: { icon: "format-list-checks", color: "sky", noun: "routine" },
 };

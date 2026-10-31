@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { newId } from "@tick-taka/shared/ids";
+import { sql } from "drizzle-orm";
 import { threadTitle } from "../src/modules/ai/assistant/threads";
 import { call, chat, fields, setup } from "./assistant-helpers";
 
@@ -27,6 +28,22 @@ interface Thread extends Summary {
 const as = (token: string) => ({ authorization: `Bearer ${token}` });
 
 describe("chats kept on the server", () => {
+  test("a card for a kind of record the app no longer has is left out", async () => {
+    const { ai, ctx, say } = await setup();
+    const threadId = newId();
+    ai.queueChat({ content: "Hi." });
+    await say("hello", { threadId });
+    const stored = [
+      { type: "record", kind: "shopping_item", id: newId(), title: "Rice" },
+      { type: "record", kind: "task", id: newId(), title: "Call bank" },
+    ];
+    ctx.deps.db.run(
+      sql`UPDATE assistant_messages SET cards = ${JSON.stringify(stored)} WHERE role = 'assistant'`,
+    );
+    const thread = await ctx.request<Thread>("GET", `/ai/threads/${threadId}`);
+    expect(thread.body.messages[1]?.cards.map((card) => card.title)).toEqual(["Call bank"]);
+  });
+
   test("a turn with a threadId stores the message and the reply with what it did", async () => {
     const { ai, ctx, say } = await setup();
     const threadId = newId();

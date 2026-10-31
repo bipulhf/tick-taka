@@ -443,7 +443,7 @@ describe("debts", () => {
   });
 });
 
-describe("events and shopping", () => {
+describe("events", () => {
   test("event collects spending from every account", async () => {
     const ctx = await createTestContext();
     const { cash, bkash } = await setupMoney(ctx);
@@ -480,41 +480,6 @@ describe("events and shopping", () => {
         endsOn: "2026-10-01",
       }),
     ).toMatchObject({ status: 400 });
-  });
-
-  test("checkout turns ticked items into one expense", async () => {
-    const ctx = await createTestContext();
-    const { cash } = await setupMoney(ctx);
-    const rice = await ctx.request<Row>("POST", "/shopping", {
-      listName: "Bazar",
-      title: "Rice 5kg",
-      estMinor: 45_000,
-    });
-    const eggs = await ctx.request<Row>("POST", "/shopping", {
-      listName: "Bazar",
-      title: "Eggs",
-      estMinor: 15_000,
-    });
-    await ctx.request("POST", "/shopping", { listName: "Bazar", title: "Fish", estMinor: 60_000 });
-    const lists = await ctx.request<unknown[]>("GET", "/shopping/lists");
-    expect(lists.body).toEqual([
-      { listName: "Bazar", itemCount: 3, estTotalMinor: 120_000, checkedCount: 0 },
-    ]);
-    expect(
-      (await ctx.request("POST", "/shopping/checkout", { listName: "Bazar", accountId: cash.id }))
-        .status,
-    ).toBe(400);
-    await ctx.request("PATCH", `/shopping/${rice.body.id}`, { checked: true });
-    await ctx.request("PATCH", `/shopping/${eggs.body.id}`, { checked: true });
-    const res = await ctx.request<{ amountMinor: number; items: number }>(
-      "POST",
-      "/shopping/checkout",
-      { listName: "Bazar", accountId: cash.id },
-    );
-    expect(res.body).toMatchObject({ amountMinor: 60_000, items: 2 });
-    expect(
-      (await ctx.request<Row[]>("GET", "/shopping?list=Bazar")).body.map((i) => i.title),
-    ).toEqual(["Fish"]);
   });
 });
 

@@ -22,7 +22,6 @@ const TABLES: Record<string, { path: string; noun: string }> = {
   goals: { path: "/goals", noun: "goal" },
   debts: { path: "/debts", noun: "debt" },
   events: { path: "/events", noun: "event" },
-  shopping_items: { path: "/shopping", noun: "shopping item" },
 };
 
 const rowSchema = z.object({

@@ -38,12 +38,15 @@ describe("schemas", () => {
   });
 
   test("settings stored by older builds still parse, keeping what still exists", () => {
-    // "ask" and "categorize" were feature switches whose features are gone.
+    // "ask" and "categorize" were feature switches whose features are gone, and
+    // advancedViews held the switches for the Eisenhower grid, energy tags and shopping.
     const stored = {
       ai: { enabled: false, features: { ask: false, categorize: false, parse: false } },
+      advancedViews: { eisenhower: true, energy: true, shoppingList: true },
     };
     const parsed = settingsSchema.parse({ ...DEFAULT_SETTINGS, ...stored });
     expect(parsed.ai).toEqual({ enabled: false, features: { parse: false } });
+    expect(parsed).not.toHaveProperty("advancedViews");
     // An older phone sending the same back is accepted too.
     expect(settingsPatchSchema.parse(stored)).toEqual({
       ai: { enabled: false, features: { parse: false } },

@@ -207,15 +207,6 @@ export function MoneyHome() {
             chevron
             onPress={() => router.push("/money/calendar")}
           />
-          {settings?.advancedViews.shoppingList ? (
-            <ListRow
-              icon="cart-outline"
-              iconColor="coral"
-              title="Shopping"
-              chevron
-              onPress={() => router.push("/money/shopping")}
-            />
-          ) : null}
           <ListRow
             icon="wallet-outline"
             iconColor="mint"

@@ -62,13 +62,10 @@ describe("repeats of writes that already landed", () => {
     );
   });
 
-  test("stop and checkout count as done only when an earlier attempt may have got through", () => {
+  test("a timer stop counts as done only when an earlier attempt may have got through", () => {
     const stop = { method: "POST", path: "/timer/stop" } as const;
-    const checkout = { method: "POST", path: "/shopping/checkout" } as const;
     expect(classifyFailure(entry(stop, true), { status: 409 })).toBe("applied");
-    expect(classifyFailure(entry(checkout, true), { status: 400 })).toBe("applied");
     expect(classifyFailure(entry(stop, false), { status: 409 })).toBe("reject");
-    expect(classifyFailure(entry(checkout, false), { status: 400 })).toBe("reject");
   });
 });
 

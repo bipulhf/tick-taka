@@ -25,7 +25,6 @@ import { recurringRoutes } from "./modules/recurring/routes";
 import { reviewsRoutes } from "./modules/reviews/routes";
 import { routinesRoutes } from "./modules/routines/routes";
 import { settingsRoutes } from "./modules/settings/routes";
-import { shoppingRoutes } from "./modules/shopping/routes";
 import { siteRoutes } from "./modules/site/routes";
 import { exportRoutes, syncRoutes } from "./modules/sync/routes";
 import { tasksRoutes } from "./modules/tasks/routes";
@@ -57,7 +56,6 @@ export function createApp(deps: Deps) {
     .route("/goals", goalsRoutes(deps))
     .route("/debts", debtsRoutes(deps))
     .route("/events", eventsRoutes(deps))
-    .route("/shopping", shoppingRoutes(deps))
     .route("/uploads", uploadsRoutes(deps))
     .route("/today", todayRoutes(deps))
     .route("/insights", insightsRoutes(deps))

@@ -8,7 +8,6 @@ import {
   events,
   goals,
   recurring,
-  shoppingItems,
   smsImports,
   transactions,
 } from "./schema/money";
@@ -43,7 +42,6 @@ export const SYNC_TABLES = {
   goals,
   debts,
   events,
-  shopping_items: shoppingItems,
   category_rules: categoryRules,
   sms_imports: smsImports,
 } as const;

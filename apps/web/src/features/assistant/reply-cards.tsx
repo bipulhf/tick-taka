@@ -11,7 +11,6 @@ import {
   type LucideIcon,
   Receipt,
   Repeat,
-  ShoppingCart,
   Target,
   Timer,
   Wallet,
@@ -37,7 +36,6 @@ const KIND: Record<AssistantRecordKind, { icon: LucideIcon; noun: string }> = {
   event: { icon: CalendarDays, noun: "event" },
   project: { icon: FolderKanban, noun: "project" },
   recurring: { icon: Receipt, noun: "bill" },
-  shopping_item: { icon: ShoppingCart, noun: "shopping item" },
   time_entry: { icon: Timer, noun: "time entry" },
   routine: { icon: ListChecks, noun: "routine" },
 };

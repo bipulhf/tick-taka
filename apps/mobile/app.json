@@ -86,7 +86,8 @@
           "microphonePermission": "Tick & Taka uses the microphone so you can talk to Tiki."
         }
       ],
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true,

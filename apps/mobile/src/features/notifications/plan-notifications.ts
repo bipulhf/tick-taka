@@ -154,3 +154,12 @@ export function planNotifications(
   }
   return capNotifications(planned, cap);
 }
+
+/**
+ * Scheduled reminders of ours (by id prefix) that the new plan no longer has, to
+ * cancel once the new ones are in. Other notifications, like the focus timer, stay.
+ */
+export function staleReminderIds(scheduled: string[], keep: string[], prefix: string): string[] {
+  const kept = new Set(keep);
+  return scheduled.filter((id) => id.startsWith(prefix) && !kept.has(id));
+}

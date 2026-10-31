@@ -5,6 +5,7 @@ import {
   HABIT_DAYS,
   MAX_SCHEDULED,
   planNotifications,
+  staleReminderIds,
 } from "../src/features/notifications/plan-notifications";
 
 const TZ = "Asia/Dhaka";
@@ -155,5 +156,17 @@ describe("30 days ahead, within the cap", () => {
       n("c", 3),
     ]);
     expect(capNotifications([n("a", 1)], 0)).toEqual([]);
+  });
+});
+
+describe("staleReminderIds", () => {
+  test("cancels only our reminders the new plan dropped", () => {
+    expect(
+      staleReminderIds(
+        ["tt-task-a", "tt-task-b", "tt-shutdown", "focus-period-end", "random"],
+        ["tt-task-a", "tt-shutdown", "tt-task-c"],
+        "tt-",
+      ),
+    ).toEqual(["tt-task-b"]);
   });
 });

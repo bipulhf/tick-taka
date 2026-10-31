@@ -2,85 +2,25 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
-import { api, unwrap } from "@/lib/api";
 import { ensureNotificationPermission, reminderSyncError } from "@/lib/notifications";
 import { privacyStore, usePrivacy } from "@/lib/privacy";
 import { useSettings } from "@/lib/queries";
 import { useToday } from "@/lib/use-today";
-import { planNotifications } from "./plan-notifications";
-import { reminderQuery, rescheduleDue } from "./reminder-window";
+import { resetOnSignOut } from "@/lib/user-data";
+import { startReminderRefresh, stopReminderRefresh } from "./background-reminders";
+import { rescheduleDue } from "./reminder-window";
+import { type ReminderSettings, scheduleReminders } from "./schedule-reminders";
 
-const PREFIX = "tt-";
 const PACE_KEY = "tt.pace-alerts";
 
-async function reschedule(settings: NonNullable<ReturnType<typeof useSettings>["data"]>) {
+// Signed out: the background refresh has nothing left to do.
+resetOnSignOut(() => {
+  void stopReminderRefresh().catch(() => {});
+});
+
+async function reschedule(settings: ReminderSettings) {
   if (!(await ensureNotificationPermission())) return;
-  const now = Date.now();
-  const [tasks, recurring, habits, debts] = await Promise.all([
-    // By when the reminder rings, not the day the task is planned for.
-    unwrap(api.tasks.$get({ query: reminderQuery(now) })),
-    unwrap(api.recurring.$get()),
-    unwrap(api.habits.$get({ query: {} })),
-    unwrap(api.debts.$get()),
-  ]);
-  const planned = planNotifications({
-    now,
-    timeZone: settings.timeZone,
-    quietHours: settings.quietHours,
-    hidden: privacyStore.get(),
-    tasks,
-    recurring,
-    habits,
-    debts,
-  });
-  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-  await Promise.all(
-    scheduled
-      .filter((n) => n.identifier.startsWith(PREFIX))
-      .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
-  );
-  for (const n of planned) {
-    await Notifications.scheduleNotificationAsync({
-      identifier: n.id,
-      content: { title: n.title, body: n.body, data: { url: n.url } },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(n.at) },
-    });
-  }
-  const [shutdownHour, shutdownMinute] = settings.shutdownTime.split(":").map(Number) as [
-    number,
-    number,
-  ];
-  await Notifications.scheduleNotificationAsync({
-    identifier: `${PREFIX}shutdown`,
-    content: {
-      title: "Daily shutdown 🌙",
-      body: "Two minutes to close the day.",
-      data: { url: "/review/shutdown" },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: shutdownHour,
-      minute: shutdownMinute,
-    },
-  });
-  const [reviewHour, reviewMinute] = settings.weeklyReviewTime.split(":").map(Number) as [
-    number,
-    number,
-  ];
-  await Notifications.scheduleNotificationAsync({
-    identifier: `${PREFIX}weekly-review`,
-    content: {
-      title: "Weekly review",
-      body: "Five minutes to look back and pick next week's focus.",
-      data: { url: "/review/weekly" },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-      weekday: settings.weeklyReviewDay + 1,
-      hour: reviewHour,
-      minute: reviewMinute,
-    },
-  });
+  await scheduleReminders(settings, privacyStore.get());
 }
 
 /** Runs a reschedule; a failure is logged and shown quietly in Settings, never swallowed. */
@@ -96,7 +36,8 @@ async function rescheduleSafely(settings: Parameters<typeof reschedule>[0]): Pro
 
 /**
  * Re-schedules local notifications on start, whenever fresh data arrives and when
- * the app comes back to the front; no push service needed.
+ * the app comes back to the front, and keeps the background refresh registered for
+ * the days the app stays closed; no push service needed.
  */
 export function useNotificationScheduler() {
   const { data: settings } = useSettings();
@@ -108,6 +49,12 @@ export function useNotificationScheduler() {
   useEffect(() => {
     latest.current = settings;
   }, [settings]);
+
+  useEffect(() => {
+    startReminderRefresh().catch((error: unknown) =>
+      console.warn("notifications: couldn't start the background refresh", error),
+    );
+  }, []);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs on start and again each time Today's data refreshes (dataUpdatedAt) or Hide amounts flips, not only when settings change.
   useEffect(() => {

@@ -17,6 +17,7 @@ import { RowMenu } from "./money-ui";
 import { type Recurring, useRecurring } from "./queries";
 import { payRecurring } from "./recurring-pay";
 import { useSplitOffer } from "./split-offer";
+import { SubscriptionSuggestions } from "./subscription-suggestions";
 
 /** "Due soon · Sat 31 Oct · Every month on the 10th"; a late bill names its date once. */
 export function recurringSubtitle(item: Recurring): string {
@@ -103,6 +104,7 @@ export function BillsView() {
           </Button>
         }
       />
+      <SubscriptionSuggestions />
       {!recurring.data ? (
         recurring.isError ? (
           <ErrorState onRetry={() => void recurring.refetch()} />

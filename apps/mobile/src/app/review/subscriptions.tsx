@@ -1,5 +1,6 @@
-import { SubscriptionsScreen } from "@/features/review/subscriptions-screen";
+import { Redirect } from "expo-router";
 
+/** Subscription suggestions moved onto Bills; old links still land there. */
 export default function Route() {
-  return <SubscriptionsScreen />;
+  return <Redirect href="/money/bills" />;
 }

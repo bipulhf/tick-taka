@@ -11,7 +11,6 @@ import {
   MessagesSquare,
   Moon,
   NotebookPen,
-  RefreshCcw,
   Settings,
 } from "lucide-react";
 import { cx } from "@/components/ui/cx";
@@ -53,12 +52,6 @@ const ENTRIES: Entry[] = [
     title: "Areas",
     hint: "Each part of life at a glance",
     icon: LayoutGrid,
-  },
-  {
-    to: "/review/subscriptions",
-    title: "Subscriptions",
-    hint: "Monthly charges you aren't tracking yet",
-    icon: RefreshCcw,
   },
   {
     // The chat opens beside the content rather than on a page of its own.

@@ -95,7 +95,7 @@ export function MonthlyReview() {
           label={`${plural(data.subscriptions.length, "repeating charge")} spotted`}
           variant="secondary"
           icon="repeat-variant"
-          onPress={() => router.push("/review/subscriptions")}
+          onPress={() => router.push("/money/bills")}
         />
       ) : null}
       <Section title={`Budgets for ${formatMonth(next)}`}>

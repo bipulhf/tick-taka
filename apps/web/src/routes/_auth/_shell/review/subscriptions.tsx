@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { SubscriptionsScreen } from "@/features/review/subscriptions-screen";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+/** Subscription suggestions moved onto Bills; old links still land there. */
 export const Route = createFileRoute("/_auth/_shell/review/subscriptions")({
-  component: SubscriptionsScreen,
+  beforeLoad: () => {
+    throw redirect({ to: "/money/bills", replace: true });
+  },
 });

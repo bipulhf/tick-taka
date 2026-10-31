@@ -39,12 +39,6 @@ export const useAreaDashboard = () =>
     queryFn: () => unwrap(api.insights.areas.$get({ query: {} })),
   });
 
-export const useSubscriptions = () =>
-  useQuery({
-    queryKey: ["subscriptions"],
-    queryFn: () => unwrap(api.insights.subscriptions.$get()),
-  });
-
 export const useGamification = () =>
   useQuery({ queryKey: ["gamification"], queryFn: () => unwrap(api.gamification.$get()) });
 

@@ -49,6 +49,14 @@ export function useRecurring() {
   return useQuery({ queryKey: ["recurring"], queryFn: () => unwrap(api.recurring.$get()) });
 }
 
+/** Charges that look like subscriptions and aren't tracked as a bill yet. */
+export function useSubscriptions() {
+  return useQuery({
+    queryKey: ["subscriptions"],
+    queryFn: () => unwrap(api.insights.subscriptions.$get()),
+  });
+}
+
 export function useGoals() {
   return useQuery({ queryKey: ["goals"], queryFn: () => unwrap(api.goals.$get()) });
 }

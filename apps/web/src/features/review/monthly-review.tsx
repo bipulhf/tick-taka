@@ -124,7 +124,7 @@ export function MonthlyReview() {
             <Button
               icon={RefreshCcw}
               className="self-start"
-              onClick={() => void navigate({ to: "/review/subscriptions" })}
+              onClick={() => void navigate({ to: "/money/bills" })}
             >
               {`${plural(data.subscriptions.length, "repeating charge")} spotted`}
             </Button>

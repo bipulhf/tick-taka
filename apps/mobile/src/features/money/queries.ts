@@ -35,6 +35,14 @@ export function useBudgets(month: string) {
   });
 }
 
+/** Charges that look like subscriptions and aren't tracked as a bill yet. */
+export function useSubscriptions() {
+  return useQuery({
+    queryKey: ["subscriptions"],
+    queryFn: () => unwrap(api.insights.subscriptions.$get()),
+  });
+}
+
 /** "Plan next month": the month's limits from the three months before it (nothing saved). */
 export function useBudgetSuggestion(month: string, options: { enabled?: boolean } = {}) {
   return useQuery({

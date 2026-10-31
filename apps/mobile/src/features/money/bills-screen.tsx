@@ -15,6 +15,7 @@ import { useRecurring } from "@/features/plan/queries";
 import { formatLocalDate } from "@/lib/format";
 import { useRemove } from "@/lib/use-remove";
 import { billStatusText } from "./bill-status";
+import { SubscriptionSuggestions } from "./subscription-suggestions";
 
 /** Bills and subscriptions, plus salaries and other expected income. */
 export function BillsScreen() {
@@ -39,6 +40,7 @@ export function BillsScreen() {
         />
       }
     >
+      <SubscriptionSuggestions />
       <AsyncContent
         query={recurring}
         skeleton={<SkeletonList rows={4} leading="none" trailing />}

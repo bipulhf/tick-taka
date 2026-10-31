@@ -43,12 +43,6 @@ const ENTRIES: Entry[] = [
     icon: "view-dashboard-outline",
   },
   {
-    href: "/review/subscriptions",
-    title: "Subscriptions",
-    hint: "Monthly charges you aren't tracking yet",
-    icon: "repeat-variant",
-  },
-  {
     href: "/assistant?view=/review",
     title: "Chat with Tiki",
     hint: "Ask, add or change anything, by voice too",

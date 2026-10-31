@@ -26,6 +26,7 @@ interface Window {
             shape?: "pill" | "rectangular";
             width?: number;
             logo_alignment?: "left" | "center";
+            locale?: string;
           },
         ): void;
         disableAutoSelect(): void;

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { GOOGLE_CLIENT_ID } from "@/lib/config";
 
-const SCRIPT_URL = "https://accounts.google.com/gsi/client";
+// hl=en: the page is in English; otherwise Google follows the browser's language.
+const SCRIPT_URL = "https://accounts.google.com/gsi/client?hl=en";
 let scriptLoad: Promise<void> | null = null;
 
 function loadGoogleScript(): Promise<void> {
@@ -59,6 +60,8 @@ export function GoogleButton({
           shape: "pill",
           width: 280,
           logo_alignment: "left",
+          // The page is in English; without this Google follows the browser's language.
+          locale: "en",
         });
         setReady(true);
       })

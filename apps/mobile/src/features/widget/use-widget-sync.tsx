@@ -1,9 +1,10 @@
+import { liveDefaultAccountId } from "@tick-taka/shared/quick-add";
 import { useEffect } from "react";
 import { requestWidgetUpdate } from "react-native-android-widget";
 import { useTransactions } from "@/features/money/queries";
 import { outbox, startOutbox, useOutbox } from "@/lib/outbox";
 import { usePrivacy } from "@/lib/privacy";
-import { useAiStatus, useSettings } from "@/lib/queries";
+import { useAccounts, useAiStatus, useSettings } from "@/lib/queries";
 import { editTime } from "@/lib/server-clock";
 import { useToday } from "@/lib/use-today";
 import { resetOnSignOut } from "@/lib/user-data";
@@ -57,6 +58,7 @@ export function useWidgetSync() {
   const { timeZone } = userTime(settings);
   const recent = useTransactions({ type: "expense", limit: "200" });
   const { data: ai } = useAiStatus();
+  const { data: accounts } = useAccounts();
   const hidden = usePrivacy();
 
   useEffect(() => {
@@ -80,7 +82,10 @@ export function useWidgetSync() {
       const cache: WidgetCache = {
         signedIn: true,
         ...widgetSnapshot(data, Date.now(), timeZone),
-        accountId: settings?.defaultAccountId ?? null,
+        // As in quick-add: a deleted default falls back to the first account left, or none.
+        accountId: accounts
+          ? liveDefaultAccountId(settings?.defaultAccountId, accounts)
+          : previous.accountId,
         quick: transactions.length ? pickQuickEntries(transactions) : previous.quick,
         status: null,
         // The widget keeps offering Undo for its last quick-log while the app refreshes.
@@ -117,6 +122,7 @@ export function useWidgetSync() {
     today.data,
     recent.data,
     settings?.defaultAccountId,
+    accounts,
     settings?.numerals,
     timeZone,
     ai,

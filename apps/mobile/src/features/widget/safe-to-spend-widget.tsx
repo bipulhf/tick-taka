@@ -12,7 +12,7 @@ import {
   type WidgetSlot,
   widgetLayout,
 } from "./widget-layout";
-import { canUndo, lastLogText } from "./widget-quick-log";
+import { canUndo, lastLogText, quickLogLink } from "./widget-quick-log";
 import { widgetMoney } from "./widget-snapshot";
 
 /** The widget library only takes hex colours. */
@@ -194,6 +194,22 @@ export function SafeToSpendWidget({
   const undo = canUndo(cache, now) && cache.lastLog ? cache.lastLog : null;
   const quickLabel = (entry: WidgetCache["quick"][number]) =>
     `${entry.label} ${money(entry.amountMinor)}`;
+  // With no account left to log to, the button opens quick-add with the entry typed in.
+  const logAction = (entry: WidgetCache["quick"][number], index: number) => {
+    const uri = quickLogLink(entry, cache.accountId);
+    const amount = money(entry.amountMinor);
+    return uri
+      ? {
+          clickAction: "OPEN_URI",
+          clickActionData: { uri },
+          accessibilityLabel: `Add ${entry.label}, ${amount}, in the app`,
+        }
+      : {
+          clickAction: "LOG",
+          clickActionData: { index },
+          accessibilityLabel: `Log ${entry.label}, ${amount}, as an expense`,
+        };
+  };
   const layout = widgetLayout({
     width,
     height,
@@ -338,9 +354,7 @@ export function SafeToSpendWidget({
                 label={quickLabel(entry)}
                 tint={c.card}
                 tone={c.ink}
-                clickAction="LOG"
-                clickActionData={{ index }}
-                accessibilityLabel={`Log ${entry.label}, ${money(entry.amountMinor)}, as an expense`}
+                {...logAction(entry, index)}
               />
             ) : null;
           })}
@@ -382,9 +396,7 @@ export function SafeToSpendWidget({
               label={quickLabel(entry)}
               tint={c.card}
               tone={c.ink}
-              clickAction="LOG"
-              clickActionData={{ index: slot.index }}
-              accessibilityLabel={`Log ${entry.label}, ${money(entry.amountMinor)}, as an expense`}
+              {...logAction(entry, slot.index)}
             />
           ) : null;
         })}

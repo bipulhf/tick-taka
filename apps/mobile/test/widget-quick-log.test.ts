@@ -5,6 +5,7 @@ import {
   afterUndo,
   canUndo,
   lastLogText,
+  quickLogLink,
   UNDO_WINDOW_MS,
 } from "../src/features/widget/widget-quick-log";
 
@@ -61,5 +62,17 @@ describe("widget quick-log undo", () => {
     const log = { id: "t1", label: "Cha", amountMinor: 2_000, at: 0, queued: false };
     expect(lastLogText(log, "৳20")).toBe("Logged Cha ৳20");
     expect(lastLogText({ ...log, queued: true }, "৳20")).toBe("Saved Cha ৳20, syncs later");
+  });
+});
+
+describe("widget quick-log with no account to log to", () => {
+  test("logs in place while there is an account", () => {
+    expect(quickLogLink(cha, "cash")).toBeNull();
+  });
+
+  test("opens quick-add with the entry typed in instead", () => {
+    const link = quickLogLink(cha, null);
+    expect(link).toBe("ticktaka://add?kind=expense&text=cha%2020");
+    expect(decodeURIComponent(link?.split("text=")[1] ?? "")).toBe("cha 20");
   });
 });

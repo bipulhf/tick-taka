@@ -1,3 +1,4 @@
+import { toMajor } from "@tick-taka/shared/money";
 import type { QuickEntry, WidgetCache } from "./widget-cache";
 
 /** How long the widget offers "Undo" after a quick-log. */
@@ -6,6 +7,17 @@ export const UNDO_WINDOW_MS = 10 * 60_000;
 /** True while the widget's last quick-log can still be undone from the widget. */
 export function canUndo(cache: WidgetCache, now: number): boolean {
   return cache.lastLog !== null && now - cache.lastLog.at < UNDO_WINDOW_MS;
+}
+
+/**
+ * Where a quick-log button goes when there is no account to log to (the last one
+ * was deleted): the app's quick-add with the entry typed in, instead of a write
+ * that can't succeed. Null while the widget can log in place.
+ */
+export function quickLogLink(entry: QuickEntry, accountId: string | null): string | null {
+  if (accountId) return null;
+  const text = `${entry.note} ${toMajor(entry.amountMinor)}`;
+  return `ticktaka://add?kind=expense&text=${encodeURIComponent(text)}`;
 }
 
 /** The cache after a quick-log: today's numbers move and the log becomes undoable. */

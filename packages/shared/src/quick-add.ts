@@ -24,6 +24,18 @@ export interface QuickAddContext {
   workdays?: number[];
 }
 
+/**
+ * The account a money draft starts on: Settings' default while that account still
+ * exists, else the first account, else none (a deleted default never shows as an id).
+ */
+export function liveDefaultAccountId(
+  defaultAccountId: string | null | undefined,
+  accounts: { id: string }[],
+): string | null {
+  if (defaultAccountId && accounts.some((a) => a.id === defaultAccountId)) return defaultAccountId;
+  return accounts[0]?.id ?? null;
+}
+
 export interface MoneyDraft {
   kind: "expense" | "income";
   amountMinor: number | null;

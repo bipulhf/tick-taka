@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { startOfLocalDay, toLocalDate, zonedTimeToUtc } from "../src/dates";
-import { parseQuickAdd, type QuickAddContext } from "../src/quick-add";
+import { liveDefaultAccountId, parseQuickAdd, type QuickAddContext } from "../src/quick-add";
 
 const TZ = "Asia/Dhaka";
 // Sunday 4 October 2026, 10:00 in Dhaka
@@ -396,5 +396,19 @@ describe("quick-add parser (several amounts and punctuation)", () => {
       categoryId: "cat_food",
     });
     expect(parseQuickAdd("lunch 2×150", context)).toMatchObject({ amountMinor: 30_000 });
+  });
+});
+
+describe("the account a money draft starts on", () => {
+  const accounts = [{ id: "bkash" }, { id: "cash" }];
+
+  test("the default from Settings while it exists", () => {
+    expect(liveDefaultAccountId("cash", accounts)).toBe("cash");
+  });
+
+  test("a deleted default falls back to the first account, or none", () => {
+    expect(liveDefaultAccountId("gone", accounts)).toBe("bkash");
+    expect(liveDefaultAccountId(null, accounts)).toBe("bkash");
+    expect(liveDefaultAccountId("gone", [])).toBeNull();
   });
 });

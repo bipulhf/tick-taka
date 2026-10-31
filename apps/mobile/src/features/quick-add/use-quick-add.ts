@@ -3,6 +3,7 @@ import { costInHours } from "@tick-taka/shared/finance";
 import { newId } from "@tick-taka/shared/ids";
 import {
   type AnyDraft,
+  liveDefaultAccountId,
   parseQuickAdd,
   type QuickAddContext,
   type QuickAddKind,
@@ -42,7 +43,10 @@ export function useQuickAdd(initialText = "", initialKind: QuickAddKind | null =
         type: a.type,
         currency: a.currency,
       })),
-      defaultAccountId: reference.settings?.defaultAccountId ?? reference.accounts[0]?.id ?? null,
+      defaultAccountId: liveDefaultAccountId(
+        reference.settings?.defaultAccountId,
+        reference.accounts,
+      ),
       categories: reference.categories.map((c) => ({
         id: c.id,
         name: c.name,

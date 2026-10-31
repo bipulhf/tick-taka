@@ -1,11 +1,43 @@
 import { DEFAULT_AREAS, DEFAULT_CATEGORIES, DEFAULT_ROUTINES } from "@tick-taka/shared/defaults";
 import { newId } from "@tick-taka/shared/ids";
-import { readFlag, writeFlag } from "../modules/settings/service";
+import { readFlag, readSettings, writeFlag, writeSettings } from "../modules/settings/service";
 import type { Db } from "./client";
-import { categories } from "./schema/money";
+import { accounts, categories } from "./schema/money";
 import { areas, routineSteps, routines } from "./schema/time";
 
-/** First start only: areas, categories with buckets, and the two routines. */
+/**
+ * A "Cash" account at ৳0, set as the default and cash account, so the first
+ * expense typed has somewhere to go. Skipped when the database already has an
+ * account (the owner's inherited data), and settings already set are kept.
+ */
+function seedCashAccount(db: Db, now: number): void {
+  if (db.select({ id: accounts.id }).from(accounts).get()) return;
+  const current = readSettings(db);
+  const id = newId(now);
+  db.insert(accounts)
+    .values({
+      id,
+      name: "Cash",
+      type: "cash",
+      currency: current.defaultCurrency,
+      openingMinor: 0,
+      sort: 0,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    })
+    .run();
+  writeSettings(
+    db,
+    {
+      ...(current.defaultAccountId ? {} : { defaultAccountId: id }),
+      ...(current.cashAccountId ? {} : { cashAccountId: id }),
+    },
+    now,
+  );
+}
+
+/** First start only: areas, categories with buckets, the routines and a Cash account. */
 export function seedDefaults(db: Db, now: number): boolean {
   if (readFlag(db, "_seededAt")) return false;
   const stamp = { createdAt: now, updatedAt: now, deletedAt: null };
@@ -70,6 +102,7 @@ export function seedDefaults(db: Db, now: number): boolean {
       });
     });
   });
+  seedCashAccount(db, now);
   writeFlag(db, "_seededAt", now, now);
   return true;
 }

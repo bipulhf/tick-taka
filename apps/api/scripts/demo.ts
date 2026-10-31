@@ -64,16 +64,18 @@ const at = (date: LocalDate, hour: number, minute = 0) => {
 };
 const taka = (amount: number) => Math.round(amount * 100);
 
-const existing = await call<Json[]>("GET", "/accounts");
-if (existing.length > 0) {
+const existing = await call<{ items: Json[] }>("GET", "/transactions?limit=1");
+if (existing.items.length > 0) {
   console.log(token);
   process.exit(0);
 }
 
-// Accounts -----------------------------------------------------------------------
+// Accounts: the seeded Cash account gets a balance, the rest are added -------------
 const account = async (name: string, type: string, opening: number) =>
   (await call<Json>("POST", "/accounts", { name, type, openingMinor: taka(opening) })).id as string;
-const cash = await account("Cash", "cash", 3_450);
+const seeded = await call<{ cashAccountId: string | null }>("GET", "/settings");
+const cash = seeded.cashAccountId ?? (await account("Cash", "cash", 0));
+await call("PATCH", `/accounts/${cash}`, { openingMinor: taka(3_450) });
 const bkash = await account("bKash", "mobile_wallet", 6_200);
 const bank = await account("City Bank", "bank", 84_200);
 const savings = await account("Savings", "savings", 52_000);

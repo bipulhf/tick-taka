@@ -84,8 +84,9 @@ describe("accounts and balances", () => {
     const ctx = await createTestContext();
     const { usd } = await setupMoney(ctx);
     await ctx.request("PATCH", `/accounts/${usd.id}`, { archived: true });
-    expect((await ctx.request<Row[]>("GET", "/accounts")).body).toHaveLength(2);
-    expect((await ctx.request<Row[]>("GET", "/accounts?archived=true")).body).toHaveLength(3);
+    // The seeded Cash account plus the three made above.
+    expect((await ctx.request<Row[]>("GET", "/accounts")).body).toHaveLength(3);
+    expect((await ctx.request<Row[]>("GET", "/accounts?archived=true")).body).toHaveLength(4);
   });
 });
 

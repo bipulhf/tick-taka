@@ -13,5 +13,6 @@ bun install --frozen-lockfile
 sudo rsync -a --delete apps/web/dist/ /var/www/tick-taka/app/
 pm2 restart tick-taka-api --update-env
 pm2 save
+sudo cp deploy/nginx-tick-bipulhf.conf /etc/nginx/sites-available/tick-bipulhf
 sudo nginx -t && sudo systemctl reload nginx
 echo "Deployed $(git rev-parse --short HEAD)"

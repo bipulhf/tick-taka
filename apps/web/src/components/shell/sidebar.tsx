@@ -1,10 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LogOut, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck } from "lucide-react";
 import { Tiki } from "@/components/tiki/tiki";
 import { cx } from "@/components/ui/cx";
 import { IconButton } from "@/components/ui/icon-button";
 import { Menu } from "@/components/ui/menu";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useIsAdmin } from "@/features/admin/queries";
 import { profileStore, signOut } from "@/lib/auth";
 import { railStore, toggleRail } from "@/lib/prefs";
 import { useAreas, useSettings } from "@/lib/queries";
@@ -81,6 +82,7 @@ export function Sidebar({ forceRail }: { forceRail: boolean }) {
   const { data: settings } = useSettings();
   const { data: areas } = useAreas();
   const profile = useStore(profileStore);
+  const isAdmin = useIsAdmin();
   const advanced = settings?.advancedViews;
 
   return (
@@ -178,6 +180,13 @@ export function Sidebar({ forceRail }: { forceRail: boolean }) {
           rail && "items-center",
         )}
       >
+        {isAdmin ? (
+          <Item
+            link={{ to: "/admin", label: "Admin", icon: ShieldCheck }}
+            active={path.startsWith("/admin")}
+            rail={rail}
+          />
+        ) : null}
         <Item
           link={{ to: "/settings", label: "Settings", icon: Settings }}
           active={path.startsWith("/settings")}

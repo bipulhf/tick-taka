@@ -1,6 +1,8 @@
-import { Download, LogOut, Trash2, UserRound } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Download, LogOut, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useIsAdmin } from "@/features/admin/queries";
 import { profileStore, signOut } from "@/lib/auth";
 import { useStore } from "@/lib/store";
 import { DeleteAccount } from "./delete-account";
@@ -13,6 +15,7 @@ import { useExportData } from "./use-export-data";
  */
 export function AccountSection() {
   const profile = useStore(profileStore);
+  const isAdmin = useIsAdmin();
   const { busy, exportData } = useExportData();
   const [deleting, setDeleting] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -46,6 +49,21 @@ export function AccountSection() {
           Sign out
         </Button>
       </div>
+
+      {isAdmin ? (
+        <Link
+          to="/admin"
+          className="flex items-center gap-3 rounded-2xl bg-card p-4 hover:bg-line/30"
+        >
+          <ShieldCheck aria-hidden className="size-5 text-sky-text" />
+          <span className="flex-1">
+            <span className="block text-body font-semibold">Admin dashboard</span>
+            <span className="block text-callout text-muted">
+              Users, usage, AI cost and the server. You're the owner.
+            </span>
+          </span>
+        </Link>
+      ) : null}
 
       <GroupLabel>Your data</GroupLabel>
       <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-card p-4">

@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import { parsePanel, useOpenPanel, usePanelSearch } from "@/lib/panel";
+import { adminPanels } from "./admin/panels";
 import { moneyPanels } from "./money/panels";
 import { planPanels } from "./plan/panels";
 import { reviewPanels } from "./review/panels";
 import { todayPanels } from "./today/panels";
 
-const PANELS = { ...todayPanels, ...planPanels, ...moneyPanels, ...reviewPanels };
+const PANELS = { ...todayPanels, ...planPanels, ...moneyPanels, ...reviewPanels, ...adminPanels };
 
 /** Shows the panel the URL names, over whichever view is open. */
 export function PanelHost() {

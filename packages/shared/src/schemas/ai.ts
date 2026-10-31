@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import { idSchema, localDateSchema, localMonthSchema } from "./common";
+import { clockSchema, idSchema, localDateSchema, localMonthSchema, minorSchema } from "./common";
 
 // Requests --------------------------------------------------------------------
 export const aiParseRequestSchema = z.object({
@@ -150,6 +150,101 @@ export type AssistantCard =
       subtitle?: string;
     }
   | { type: "total"; label: string; amountMinor?: number; minutes?: number; count?: number };
+
+// Questions as small forms (`done.question`) ---------------------------------------
+/** What one field of Tiki's form asks for. account, category and area pick the user's own records. */
+export const ASSISTANT_FIELD_TYPES = [
+  "choice",
+  "text",
+  "amount",
+  "date",
+  "time",
+  "account",
+  "category",
+  "area",
+] as const;
+export type AssistantFieldType = (typeof ASSISTANT_FIELD_TYPES)[number];
+
+const fieldLabel = z.string().trim().min(1).max(40);
+export const assistantChoiceOptionSchema = z.object({
+  value: z.string().trim().min(1).max(40),
+  label: fieldLabel,
+});
+export type AssistantChoiceOption = z.infer<typeof assistantChoiceOptionSchema>;
+
+/**
+ * Shared by every field type. `required` absent means optional (the user may skip
+ * it). `key` names the field in the app's answer values; it is never shown.
+ */
+const fieldBase = {
+  key: z
+    .string()
+    .regex(/^[A-Za-z][A-Za-z0-9_]{0,39}$/, "key must be a short word like openingBalance"),
+  label: fieldLabel,
+  required: z.boolean().optional(),
+  placeholder: z.string().trim().min(1).max(80).optional(),
+};
+
+/**
+ * One field of the form. `default` prefills it: an option's value (choice), text of
+ * at most 80 characters, minor units (amount), YYYY-MM-DD (date), HH:MM (time), or a
+ * record id (account, category, area). A category's `options` may narrow the picker
+ * to one kind: a single option whose value is "expense" or "income".
+ */
+export const assistantQuestionFieldSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      ...fieldBase,
+      type: z.literal("choice"),
+      options: z.array(assistantChoiceOptionSchema).min(2).max(8),
+      default: z.string().optional(),
+    })
+    .superRefine((field, ctx) => {
+      const values = field.options.map((option) => option.value);
+      if (new Set(values).size !== values.length)
+        ctx.addIssue({ code: "custom", path: ["options"], message: "option values must differ" });
+      if (field.default !== undefined && !values.includes(field.default))
+        ctx.addIssue({
+          code: "custom",
+          path: ["default"],
+          message: "default must be one of the option values",
+        });
+    }),
+  z.object({ ...fieldBase, type: z.literal("text"), default: z.string().max(80).optional() }),
+  z.object({ ...fieldBase, type: z.literal("amount"), default: minorSchema.optional() }),
+  z.object({ ...fieldBase, type: z.literal("date"), default: localDateSchema.optional() }),
+  z.object({ ...fieldBase, type: z.literal("time"), default: clockSchema.optional() }),
+  z.object({ ...fieldBase, type: z.literal("account"), default: idSchema.optional() }),
+  z.object({
+    ...fieldBase,
+    type: z.literal("category"),
+    default: idSchema.optional(),
+    options: z
+      .array(z.object({ value: z.enum(["expense", "income"]), label: fieldLabel }))
+      .length(1)
+      .optional(),
+  }),
+  z.object({ ...fieldBase, type: z.literal("area"), default: idSchema.optional() }),
+]);
+export type AssistantQuestionField = z.infer<typeof assistantQuestionFieldSchema>;
+
+/**
+ * Tiki's question as a small form (`done.question`, stored with the reply). A form
+ * that is a single choice field is a quick reply: tapping an option sends it.
+ */
+export const assistantQuestionSchema = z
+  .object({
+    question: z.string().trim().min(1).max(160),
+    fields: z.array(assistantQuestionFieldSchema).min(1).max(6),
+    /** The Send button's text; the apps use their own when absent. */
+    submitLabel: z.string().trim().min(1).max(24).optional(),
+  })
+  .superRefine((question, ctx) => {
+    const keys = question.fields.map((field) => field.key);
+    if (new Set(keys).size !== keys.length)
+      ctx.addIssue({ code: "custom", path: ["fields"], message: "field keys must differ" });
+  });
+export type AssistantQuestion = z.infer<typeof assistantQuestionSchema>;
 
 export const ASSISTANT_RATINGS = ["up", "down"] as const;
 export type AssistantRating = (typeof ASSISTANT_RATINGS)[number];

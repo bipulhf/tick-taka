@@ -40,6 +40,7 @@ function context(options: { drafting?: boolean; reply?: (sent: Sent) => unknown 
     },
     fail: (error) => ({ error: error ?? "That didn't work" }),
     actions,
+    touch: () => {},
   };
   return { ctx, sent, actions, drafts };
 }

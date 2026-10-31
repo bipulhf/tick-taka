@@ -19,6 +19,9 @@ export interface Reply {
   }[];
   deletions: { summary: string; path: string }[];
   memo: string;
+  cards: Record<string, unknown>[];
+  threadId?: string;
+  messageId?: string;
 }
 
 export type Event = { type: string; text?: string; ok?: boolean } & Partial<Reply>;
@@ -28,11 +31,13 @@ export async function chat(
   ctx: TestContext,
   messages: { role: "user" | "assistant"; content: string; memo?: string }[],
   token = ctx.token,
+  /** More of the request body: screen, threadId, draftMoney. */
+  extra: Record<string, unknown> = {},
 ) {
   const response = await ctx.app.request("/ai/assistant", {
     method: "POST",
     headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, ...extra }),
   });
   const text = await response.text();
   if (!response.headers.get("content-type")?.includes("text/event-stream"))
@@ -52,7 +57,8 @@ export async function chat(
 export async function setup(options: { env?: Record<string, string> } = {}) {
   const ai = new FakeAi();
   const ctx = await createTestContext({ ai, ...options });
-  const say = (content: string) => chat(ctx, [{ role: "user", content }]);
+  const say = (content: string, extra: Record<string, unknown> = {}) =>
+    chat(ctx, [{ role: "user", content }], ctx.token, extra);
   const undo = (action: Reply["actions"][number]) =>
     ctx.request(
       action.undo!.method,
@@ -64,5 +70,7 @@ export async function setup(options: { env?: Record<string, string> } = {}) {
     const tool = messages.filter((m) => m.role === "tool").at(-1) as { content: string };
     return JSON.parse(tool.content) as Record<string, unknown>;
   };
-  return { ai, ctx, say, undo, lastTool };
+  /** The system prompt of the latest model call. */
+  const system = () => (ai.chatRequests.at(-1)!.messages[0] as { content: string }).content;
+  return { ai, ctx, say, undo, lastTool, system };
 }

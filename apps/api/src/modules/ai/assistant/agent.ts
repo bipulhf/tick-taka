@@ -1,5 +1,9 @@
 import { defined } from "@tick-taka/shared/defined";
-import type { AssistantMessage } from "@tick-taka/shared/schemas/ai";
+import type {
+  AssistantCard,
+  AssistantMessage,
+  AssistantScreen,
+} from "@tick-taka/shared/schemas/ai";
 import type { AiChatMessage, AiClient, AiToolCall } from "../../../ai/client";
 import { callAi, logUsage } from "../../../ai/usage";
 import type { Deps } from "../../../lib/deps";
@@ -9,14 +13,22 @@ import { ASK_TOOLS, runAskTool } from "../ask";
 import { describeVocabulary, vocabulary } from "../context";
 import { ASSISTANT_DRAFT_MONEY_NOTE, ASSISTANT_PROMPT } from "../prompts";
 import { createCaller, type Dispatch } from "./dispatch";
+import { NOTE_TOOLS } from "./notes";
 import type { Action, Draft, PendingDelete } from "./records";
+import { describeScreen } from "./screen";
 import { createToolRunner, WRITE_TOOLS } from "./tools";
 
 /** Model calls per message: enough to look things up, act on several records and check. */
 const MAX_ROUNDS = 12;
 const MAX_WRITES = 40;
 const ASK_NAMES = new Set(ASK_TOOLS.map((tool) => tool.name));
-const WRITE_NAMES = new Set(["create", "update", "act"]);
+const WRITE_NAMES = new Set(["create", "update", "act", "remember", "forget"]);
+/** Longest message that may start on the fast model: a short command, not a question. */
+const FAST_MAX_LENGTH = 80;
+/** Calls the fast model may make before a turn moves to the smart one. */
+const FAST_ROUNDS = 2;
+/** Left in the memo when a step failed, so the next message starts on the smart model. */
+const STEP_FAILED = "a step failed";
 const CAP_REACHED_PART_WAY =
   "This month's AI budget ran out part way through. Here is what I did before it stopped; ask again next month or use the app's forms for the rest.";
 const WRAP_UP =
@@ -39,9 +51,14 @@ export type AssistantEvent =
       /** Money changes waiting for the user's tap (only when the phone asked for drafts). */
       drafts: Draft[];
       memo: string;
+      /** Records to open and totals to show under the reply. */
+      cards: AssistantCard[];
+      /** With a threadId in the request: the chat, and the stored reply's id (for feedback). */
+      threadId?: string;
+      messageId?: string;
     };
 
-function context(deps: Deps): string {
+function context(deps: Deps, screen: string | null): string {
   const { today, timeZone, settings, now } = userTime(deps);
   const vocab = vocabulary(deps);
   const clock = new Intl.DateTimeFormat("en-GB", {
@@ -55,11 +72,33 @@ function context(deps: Deps): string {
     vocab.accounts.find((a) => a.id === settings.defaultAccountId)?.name ??
     vocab.accounts[0]?.name ??
     "none";
+  const notes = settings.tikiNotes.length
+    ? `What the user asked you to remember:\n${settings.tikiNotes.map((note) => `- ${note}`).join("\n")}`
+    : null;
   return [
     `Today is ${today} (${clock}), time zone ${timeZone}.`,
     `Default account: ${defaultAccount}.`,
     describeVocabulary(vocab),
-  ].join("\n");
+    notes,
+    screen,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+}
+
+/**
+ * Short commands without a question start on the fast model ("spent 120 on
+ * rickshaw"); questions, long requests and chats where a step failed before use
+ * the smart one.
+ */
+function startsFast(history: AssistantMessage[]): boolean {
+  const last = history.at(-1);
+  return (
+    last?.role === "user" &&
+    last.content.trim().length <= FAST_MAX_LENGTH &&
+    !/[?？]/.test(last.content) &&
+    !history.some((message) => message.memo?.includes(STEP_FAILED))
+  );
 }
 
 const REPORTS: Record<string, string> = {
@@ -102,6 +141,10 @@ function describe(call: AiToolCall): string {
       const count = Array.isArray(args.ids) ? args.ids.length : 0;
       return `Listing ${count === 1 ? `a ${entity}` : `${count} ${entity}s`} for you to confirm`;
     }
+    case "remember":
+      return "Remembering that";
+    case "forget":
+      return "Forgetting a note";
     case "act":
       return typeof args.action === "string"
         ? `${args.action.charAt(0).toUpperCase()}${args.action.slice(1).replaceAll("_", " ")}`
@@ -119,6 +162,7 @@ function describe(call: AiToolCall): string {
  * `draftMoney`, money changes are only proposed too (`done.drafts`).
  * When `signal` aborts (the phone went away), it stops before the next model
  * call or change, so nothing more is spent or written that nobody will see.
+ * `screen` is what the user is looking at; "this" and "it" mean its record.
  */
 export async function aiAssistant(
   deps: Deps,
@@ -127,12 +171,14 @@ export async function aiAssistant(
   authorization: string,
   history: AssistantMessage[],
   emit: (event: AssistantEvent) => void,
-  options: { signal?: AbortSignal; draftMoney?: boolean } = {},
+  options: { signal?: AbortSignal; draftMoney?: boolean; screen?: AssistantScreen } = {},
 ): Promise<void> {
   const { signal, draftMoney = false } = options;
   const stopped = () => signal?.aborted === true;
   const { today, timeZone } = userTime(deps);
-  const runner = createToolRunner(createCaller(dispatch, authorization), {
+  const caller = createCaller(dispatch, authorization);
+  const screen = await describeScreen(caller, options.screen);
+  const runner = createToolRunner(caller, {
     timeZone,
     now: deps.now(),
     today,
@@ -142,7 +188,7 @@ export async function aiAssistant(
     ? `${ASSISTANT_PROMPT}\n${ASSISTANT_DRAFT_MONEY_NOTE}`
     : ASSISTANT_PROMPT;
   const messages: AiChatMessage[] = [
-    { role: "system", content: `${prompt}\n\n${context(deps)}` },
+    { role: "system", content: `${prompt}\n\n${context(deps, screen)}` },
     ...history.map(
       (message): AiChatMessage =>
         message.role === "user"
@@ -155,17 +201,21 @@ export async function aiAssistant(
             },
     ),
   ];
-  const tools = [...WRITE_TOOLS, ...ASK_TOOLS];
+  const tools = [...WRITE_TOOLS, ...NOTE_TOOLS, ...ASK_TOOLS];
   let writes = 0;
   let reported = 0;
+  let failed = 0;
   const notes: string[] = [];
   const onText = (text: string) => emit({ type: "delta", text });
+  // Moves to smart for the rest of the turn after a failed step or the fast rounds.
+  let tier: "fast" | "smart" = startsFast(history) ? "fast" : "smart";
   const chat = async (withTools: typeof tools) => {
+    const model = tier;
     const result = await callAi(
-      () => ai.chat({ model: "smart", messages, tools: withTools, onText, signal }),
+      () => ai.chat({ model, messages, tools: withTools, onText, signal }),
       signal,
     );
-    logUsage(deps, "assistant", "smart", result.model, result.usage);
+    logUsage(deps, "assistant", model, result.model, result.usage);
     return result;
   };
 
@@ -174,19 +224,23 @@ export async function aiAssistant(
     if (asked) notes.push(`asked to delete ${runner.pending.map((p) => p.path).join(", ")}`);
     if (runner.drafts.length)
       notes.push(`proposed for confirmation: ${runner.drafts.map((d) => d.summary).join(", ")}`);
+    // The failure note goes last and survives a long memo being cut.
+    const done = notes.join("; ").slice(0, failed ? 3900 - STEP_FAILED.length - 2 : 3900);
+    const reply =
+      content?.trim() ||
+      (asked || runner.drafts.length
+        ? "Please confirm on screen."
+        : runner.actions.length
+          ? "Done."
+          : "I'm not sure how to help with that.");
     emit({
       type: "done",
-      reply:
-        content?.trim() ||
-        (asked || runner.drafts.length
-          ? "Please confirm on screen."
-          : runner.actions.length
-            ? "Done."
-            : "I'm not sure how to help with that."),
+      reply,
       actions: runner.actions,
       deletions: runner.pending,
       drafts: runner.drafts,
-      memo: notes.join("; ").slice(0, 3900),
+      memo: failed ? [done, STEP_FAILED].filter(Boolean).join("; ") : done,
+      cards: runner.cards.list(reply),
     });
   };
   const didSomething = () =>
@@ -220,16 +274,16 @@ export async function aiAssistant(
       } else if (ASK_NAMES.has(call.name)) {
         try {
           output = runAskTool(deps, call.name, call.arguments);
+          runner.cards.report(call.name, call.arguments, output);
         } catch (error) {
           output = { error: (error as Error).message };
         }
       } else {
         output = await runner.run(call.name, call.arguments);
       }
-      emit({
-        type: "result",
-        ok: !(output as { error?: unknown } | null)?.error && output != null,
-      });
+      const ok = !(output as { error?: unknown } | null)?.error && output != null;
+      if (!ok) failed++;
+      emit({ type: "result", ok });
       if (WRITE_NAMES.has(call.name)) {
         const id = (output as { id?: string } | null)?.id;
         notes.push(`${call.name} ${call.arguments.slice(0, 200)}${id ? ` -> id ${id}` : ""}`);
@@ -242,6 +296,7 @@ export async function aiAssistant(
         content: JSON.stringify(output ?? { error: "Unknown function" }),
       });
     }
+    if (failed || round + 1 >= FAST_ROUNDS) tier = "smart";
   }
 
   // Out of steps: one last call without tools, so the user hears what got done.

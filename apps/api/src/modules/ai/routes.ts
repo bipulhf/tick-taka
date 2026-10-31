@@ -117,7 +117,7 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
       // Off switch, missing key and cap answer as plain JSON errors, before streaming.
       const ai = requireAi(deps, "assistant");
       const authorization = c.req.header("authorization") ?? "";
-      const { messages, draftMoney } = c.req.valid("json");
+      const { messages, draftMoney, screen } = c.req.valid("json");
       // When the phone goes away, stop: no more model calls (or cost) and no more writes.
       const controller = new AbortController();
       const stop = () => controller.abort();
@@ -148,6 +148,7 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
           await aiAssistant(deps, ai, dispatch, authorization, messages, emit, {
             signal: controller.signal,
             draftMoney: draftMoney === true,
+            screen,
           });
         } catch (error) {
           if (!controller.signal.aborted) {

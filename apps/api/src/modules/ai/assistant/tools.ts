@@ -2,9 +2,11 @@ import { addDays, isLocalDate, type LocalDate, startOfLocalDay } from "@tick-tak
 import { newId } from "@tick-taka/shared/ids";
 import type { AiToolDefinition } from "../../../ai/client";
 import { ACTION_HANDLERS, ACTIONS, type ActionName } from "./actions";
+import { createCardCollector } from "./cards";
 import type { Caller } from "./dispatch";
 import { describeEntities, ENTITIES, ENTITY_NAMES, type EntityName } from "./entities";
 import { createFieldConverter, FieldError, project } from "./fields";
+import { runNoteTool } from "./notes";
 import {
   type Action,
   DRAFTED,
@@ -157,6 +159,7 @@ export function createToolRunner(
   const actions: Action[] = [];
   const pending: PendingDelete[] = [];
   const drafts: Draft[] = [];
+  const cards = createCardCollector(timeZone);
   const fail = (error: string | undefined) => ({ error: error ?? "That didn't work" });
   /** With drafts on, a money change is queued for the user's tap instead of sent. */
   const propose = (draft: Draft) => {
@@ -191,6 +194,7 @@ export function createToolRunner(
         ),
       );
     }
+    cards.found(entity, items.slice(0, 25));
     if (entity === "debt") {
       // Names in debts stay on the server unless the user typed them.
       items = items.map((item, index) =>
@@ -223,6 +227,7 @@ export function createToolRunner(
     if (!result.ok) return fail(result.error);
     const record = result.data as Record<string, unknown>;
     const recordId = typeof record?.id === "string" ? record.id : id;
+    cards.touched(entity, record);
     actions.push({
       summary: `Added ${entity.replace("_", " ")} ${label(record, "")}`.trim(),
       undo: { method: "DELETE", path: `${def.path}/${recordId}` },
@@ -261,6 +266,7 @@ export function createToolRunner(
     if (!result.ok) return fail(result.error);
     const record = result.data as Record<string, unknown>;
     const done = entity === "task" && fields.status === "done";
+    cards.touched(entity, record ?? (previous && { ...previous, ...fields }));
     actions.push({
       summary:
         `${done ? "Completed" : "Updated"} ${entity.replace("_", " ")} ${label(record ?? previous, "")}`.trim(),
@@ -324,7 +330,18 @@ export function createToolRunner(
     const handler = ACTION_HANDLERS[action];
     if (!handler) throw new FieldError(`Unknown action ${String(action)}`);
     return handler(
-      { caller, convert, timeZone, now, today, drafting, propose, fail, actions },
+      {
+        caller,
+        convert,
+        timeZone,
+        now,
+        today,
+        drafting,
+        propose,
+        fail,
+        actions,
+        touch: cards.touched,
+      },
       raw,
       needId,
     );
@@ -333,6 +350,7 @@ export function createToolRunner(
     actions,
     pending,
     drafts,
+    cards,
     async run(name: string, rawArgs: string): Promise<unknown> {
       try {
         const args = JSON.parse(rawArgs || "{}") as Record<string, unknown>;
@@ -347,6 +365,9 @@ export function createToolRunner(
             return await remove(args);
           case "act":
             return await act(args);
+          case "remember":
+          case "forget":
+            return await runNoteTool(caller, actions, name, args);
           default:
             return null;
         }

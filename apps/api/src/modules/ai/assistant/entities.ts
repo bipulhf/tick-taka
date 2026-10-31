@@ -1,3 +1,5 @@
+import type { AssistantRecordKind } from "@tick-taka/shared/schemas/ai";
+
 /** Everything the assistant can create, change, delete or look up, mapped onto the REST routes. */
 export interface EntityDef {
   path: string;
@@ -101,3 +103,24 @@ export const ENTITY_NAMES = Object.keys(ENTITIES) as EntityName[];
 export function describeEntities(): string {
   return ENTITY_NAMES.map((name) => `- ${name}: ${ENTITIES[name].fields}`).join("\n");
 }
+
+/** The entity behind each record kind the apps name (`screen.record`, cards). */
+export const KIND_ENTITY: Record<AssistantRecordKind, EntityName> = {
+  task: "task",
+  transaction: "transaction",
+  habit: "habit",
+  goal: "goal",
+  debt: "debt",
+  account: "account",
+  event: "event",
+  project: "project",
+  recurring: "bill",
+  shopping_item: "shopping_item",
+  time_entry: "time_entry",
+  routine: "routine",
+};
+
+/** The record kind the apps know an entity by; areas and categories have none. */
+export const ENTITY_KIND = Object.fromEntries(
+  Object.entries(KIND_ENTITY).map(([kind, entity]) => [entity, kind]),
+) as Partial<Record<EntityName, AssistantRecordKind>>;

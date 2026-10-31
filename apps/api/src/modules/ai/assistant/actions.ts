@@ -2,6 +2,7 @@ import { isLocalDate, isLocalMonth, type LocalDate } from "@tick-taka/shared/dat
 import { newId } from "@tick-taka/shared/ids";
 import type { SettingsKey } from "@tick-taka/shared/schemas/settings";
 import type { Caller } from "./dispatch";
+import type { EntityName } from "./entities";
 import { type createFieldConverter, project } from "./fields";
 import { type Action, type DRAFTED, type Draft, isId, label, listOf, type Undo } from "./records";
 
@@ -60,6 +61,8 @@ export interface ActionContext {
   fail: (error: string | undefined) => { error: string };
   /** Changes made this turn, each with its Undo. */
   actions: Action[];
+  /** Notes a record this action changed, for the answer's cards. */
+  touch: (entity: EntityName, record: unknown) => void;
 }
 
 type ActionHandler = (
@@ -70,7 +73,7 @@ type ActionHandler = (
 
 /** The `act` tool's actions, one handler each. */
 export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
-  log_habit: async ({ caller, today, fail, actions }, raw, needId) => {
+  log_habit: async ({ caller, today, fail, actions, touch }, raw, needId) => {
     const habitId = needId();
     const date = typeof raw.date === "string" && isLocalDate(raw.date) ? raw.date : today;
     const habits = listOf((await caller.call("GET", `/habits?date=${date}`)).data);
@@ -79,6 +82,7 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
     const count = typeof raw.count === "number" ? raw.count : previous + 1;
     const result = await caller.call("PUT", `/habits/${habitId}/logs/${date}`, { count });
     if (!result.ok) return fail(result.error);
+    touch("habit", habit);
     actions.push({
       summary: `Logged ${label(habit, "habit")} (${count}${typeof habit?.targetCount === "number" ? `/${habit.targetCount}` : ""})`,
       undo: {
@@ -89,7 +93,11 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
     });
     return { ok: true, count };
   },
-  pay_bill: async ({ caller, convert, now, drafting, propose, fail, actions }, raw, needId) => {
+  pay_bill: async (
+    { caller, convert, now, drafting, propose, fail, actions, touch },
+    raw,
+    needId,
+  ) => {
     const billPath = `/recurring/${needId()}`;
     const found = await caller.call("GET", billPath);
     if (!found.ok) return fail(found.error);
@@ -125,6 +133,7 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
       });
     const result = await caller.call("POST", path, body);
     if (!result.ok) return fail(result.error);
+    touch("bill", (result.data as { recurring?: unknown } | null)?.recurring ?? bill);
     actions.push({
       summary: raw.skip
         ? "Skipped this bill"
@@ -134,7 +143,7 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
     return { ok: true };
   },
   contribute_goal: async (
-    { caller, convert, now, drafting, propose, fail, actions },
+    { caller, convert, now, drafting, propose, fail, actions, touch },
     raw,
     needId,
   ) => {
@@ -143,6 +152,7 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
     if (drafting) return propose({ summary: "Add to a goal", method: "POST", path, body });
     const result = await caller.call("POST", path, body);
     if (!result.ok) return fail(result.error);
+    touch("goal", (result.data as { goal?: unknown } | null)?.goal);
     actions.push({
       summary: `Added to goal ${label(result.data as Record<string, unknown>, "")}`.trim(),
     });

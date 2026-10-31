@@ -7,6 +7,7 @@ import { ToggleRow } from "@/components/ui/toggle";
 import { useAiStatus } from "@/lib/queries";
 import { MoreOptions } from "./setting-row";
 import type { SectionProps } from "./settings-types";
+import { TikiNotes } from "./tiki-notes";
 
 /** What each feature is called; "ask" has no screen of its own, so it isn't offered. */
 const AI_LABELS: Partial<Record<AiFeature, string>> = {
@@ -61,6 +62,7 @@ export function AiSection({ s, update }: SectionProps) {
           </Group>
         </MoreOptions>
       ) : null}
+      {s.ai.enabled ? <TikiNotes s={s} update={update} /> : null}
       {ai.data ? (
         <Group>
           <Row

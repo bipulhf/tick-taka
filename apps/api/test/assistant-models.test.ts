@@ -62,3 +62,14 @@ describe("assistant model routing", () => {
     expect(models(ai)).toEqual(["smart", "smart", "smart", "smart"]);
   });
 });
+
+describe("status lines", () => {
+  test("name several records in proper plurals", async () => {
+    const { plural } = await import("../src/modules/ai/assistant/agent");
+    expect(plural("category")).toBe("categories");
+    expect(plural("time entry")).toBe("time entries");
+    expect(plural("day")).toBe("days");
+    expect(plural("task")).toBe("tasks");
+    expect(plural("recurring")).toBe("bills and income");
+  });
+});

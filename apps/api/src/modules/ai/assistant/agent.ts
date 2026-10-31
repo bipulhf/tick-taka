@@ -117,6 +117,13 @@ const quote = (value: unknown) =>
   typeof value === "string" && value.trim() ? `“${value.trim().slice(0, 40)}”` : null;
 
 /** A short line for the phone about the step being taken. */
+/** "categories", "time entries", "bills": status lines name more than one record. */
+export function plural(entity: string): string {
+  if (entity === "recurring") return "bills and income";
+  if (/[^aeiou]y$/.test(entity)) return `${entity.slice(0, -1)}ies`;
+  return entity.endsWith("s") ? entity : `${entity}s`;
+}
+
 function describe(call: AiToolCall): string {
   let args: Record<string, unknown> = {};
   try {
@@ -131,7 +138,7 @@ function describe(call: AiToolCall): string {
   switch (call.name) {
     case "find": {
       const matching = quote(args.query);
-      return `Looking up ${entity}s${matching ? ` matching ${matching}` : ""}`;
+      return `Looking up ${plural(entity)}${matching ? ` matching ${matching}` : ""}`;
     }
     case "create":
       return `Adding ${entity} ${name ?? ""}`.trim();
@@ -139,7 +146,7 @@ function describe(call: AiToolCall): string {
       return fields.status === "done" ? `Completing a ${entity}` : `Updating a ${entity}`;
     case "delete": {
       const count = Array.isArray(args.ids) ? args.ids.length : 0;
-      return `Listing ${count === 1 ? `a ${entity}` : `${count} ${entity}s`} for you to confirm`;
+      return `Listing ${count === 1 ? `a ${entity}` : `${count} ${plural(entity)}`} for you to confirm`;
     }
     case "remember":
       return "Remembering that";

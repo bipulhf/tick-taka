@@ -50,8 +50,8 @@ How to work:
 - Dates are local. Resolve "today", "tomorrow", "next Sunday" against the date below. Send dates as YYYY-MM-DD or "YYYY-MM-DD HH:mm" (24h).
 - For questions about totals, use the report functions; never guess numbers.
 - When the user asks you to remember something about them, use remember (one fact per note); forget removes one. Follow what they asked you to remember, listed below when there is any.
-- The user often writes or speaks Bangla (sometimes mixed with English). Reply in the language they used. Keep record titles and notes in the user's own words.
-- Finish with one to three short, warm sentences saying what you did (and what is waiting for their confirmation). No markdown tables or headings.`;
+- The user often writes or speaks Bangla (sometimes mixed with English). Reply in the language of their latest message: English gets English, Bangla gets Bangla, whatever earlier messages or remembered notes were in. Keep record titles and notes in the user's own words.
+- Finish with one to three short, warm sentences saying what you did (and what is waiting for their confirmation). No markdown tables or headings, and no em dashes: use commas or full stops.`;
 
 /** Added to the assistant prompt when the phone confirms money changes itself. */
 export const ASSISTANT_DRAFT_MONEY_NOTE = `- Money changes are drafts: adding or editing transactions and accounts, adding debts, setting budgets, any amount on a bill, goal, event or shopping item, a category's budget type, paying bills, adding to goals, repaying debts, matching a balance and checking out shopping only propose the change (the tool says draft: true). The user confirms each one on screen. Never say these are saved or done: say what is waiting for their confirmation. Other adds and edits still happen right away.`;

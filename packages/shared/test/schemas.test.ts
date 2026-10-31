@@ -38,8 +38,10 @@ describe("schemas", () => {
   });
 
   test("settings stored by older builds still parse, keeping what still exists", () => {
-    // "ask" was a feature switch with no screen.
-    const stored = { ai: { enabled: false, features: { ask: false, parse: false } } };
+    // "ask" and "categorize" were feature switches whose features are gone.
+    const stored = {
+      ai: { enabled: false, features: { ask: false, categorize: false, parse: false } },
+    };
     const parsed = settingsSchema.parse({ ...DEFAULT_SETTINGS, ...stored });
     expect(parsed.ai).toEqual({ enabled: false, features: { parse: false } });
     // An older phone sending the same back is accepted too.

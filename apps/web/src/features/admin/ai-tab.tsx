@@ -13,6 +13,7 @@ const FEATURE_LABELS: Record<string, string> = {
   assistant: "Chat with Tiki",
   parse: "Smart quick-add",
   receipt: "Receipt scan",
+  // Removed features keep a label so older usage rows still read well.
   categorize: "Auto-categorise",
   planDay: "Plan my day",
   breakdown: "Break it down",

@@ -6,7 +6,6 @@ import { clockSchema, currencySchema, idSchema, localDateSchema } from "./common
 export const AI_FEATURES = [
   "parse",
   "receipt",
-  "categorize",
   "planDay",
   "breakdown",
   "weeklyReview",

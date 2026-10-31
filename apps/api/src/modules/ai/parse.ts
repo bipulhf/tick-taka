@@ -13,25 +13,15 @@ import { parseClock, parseRecurrence } from "@tick-taka/shared/recurrence";
 import {
   type AiParseOutput,
   type AiReceiptOutput,
-  aiCategorizeOutputSchema,
   aiParseOutputSchema,
   aiReceiptOutputSchema,
 } from "@tick-taka/shared/schemas/ai";
-import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { toStrictJsonSchema } from "../../ai/json-schema";
 import { callAi, logUsage, parseAiOutput, requireAi } from "../../ai/usage";
-import { categoryRules, transactions } from "../../db/schema/money";
 import type { Deps } from "../../lib/deps";
 import { userTime } from "../../lib/user-time";
-import { ruleText } from "../category-rules/service";
-import {
-  describeVocabulary,
-  findByName,
-  recentCorrections,
-  type Vocabulary,
-  vocabulary,
-} from "./context";
-import { CATEGORIZE_PROMPT, PARSE_PROMPT, RECEIPT_PROMPT } from "./prompts";
+import { describeVocabulary, findByName, type Vocabulary, vocabulary } from "./context";
+import { PARSE_PROMPT, RECEIPT_PROMPT } from "./prompts";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -211,72 +201,4 @@ export async function aiReceipt(deps: Deps, input: { imageBase64: string; mimeTy
     deps,
   );
   return { draft, items: output.items };
-}
-
-/**
- * Auto-categorise: learned rules first, then the last category used for the same
- * note, and only then an AI call.
- */
-export async function aiCategorize(
-  deps: Deps,
-  input: { note: string; type: "expense" | "income" },
-) {
-  const text = ruleText(input.note);
-  if (text) {
-    const rule = deps.db
-      .select()
-      .from(categoryRules)
-      .where(and(isNull(categoryRules.deletedAt), eq(categoryRules.matchText, text)))
-      .get();
-    if (rule) return { categoryId: rule.categoryId, areaId: rule.areaId, source: "rule" as const };
-    const previous = deps.db
-      .select({
-        categoryId: transactions.categoryId,
-        areaId: transactions.areaId,
-        note: transactions.note,
-      })
-      .from(transactions)
-      .where(
-        and(
-          isNull(transactions.deletedAt),
-          eq(transactions.type, input.type),
-          isNotNull(transactions.categoryId),
-        ),
-      )
-      .orderBy(desc(transactions.occurredAt))
-      .limit(500)
-      .all()
-      .find((row) => row.note && ruleText(row.note) === text);
-    if (previous)
-      return {
-        categoryId: previous.categoryId,
-        areaId: previous.areaId,
-        source: "history" as const,
-      };
-  }
-  const ai = requireAi(deps, "categorize");
-  const vocab = vocabulary(deps);
-  const corrections = recentCorrections(deps)
-    .map((c) => `"${c.matchText}" → ${c.category ?? "none"}`)
-    .join("; ");
-  const result = await callAi(() =>
-    ai.json({
-      model: "fast",
-      system: CATEGORIZE_PROMPT,
-      user: `${describeVocabulary(vocab, [input.type])}\nPast corrections: ${corrections || "none"}\nType: ${input.type}\nNote: ${JSON.stringify(input.note)}`,
-      schemaName: "category",
-      jsonSchema: toStrictJsonSchema(aiCategorizeOutputSchema),
-    }),
-  );
-  logUsage(deps, "categorize", "fast", result.model, result.usage);
-  const output = parseAiOutput(aiCategorizeOutputSchema, result.data);
-  return {
-    categoryId:
-      findByName(
-        vocab.categories.filter((c) => c.kind === input.type),
-        output.categoryName,
-      )?.id ?? null,
-    areaId: findByName(vocab.areas, output.areaName)?.id ?? null,
-    source: "ai" as const,
-  };
 }

@@ -1,5 +1,5 @@
-import { and, eq, isNull } from "drizzle-orm";
-import { accounts, categories, categoryRules } from "../../db/schema/money";
+import { and, isNull } from "drizzle-orm";
+import { accounts, categories } from "../../db/schema/money";
 import { areas } from "../../db/schema/time";
 import type { Deps } from "../../lib/deps";
 
@@ -66,17 +66,4 @@ export function findByName<T extends { name: string }>(
     items.find((item) => norm(item.name) === norm(name)) ??
     items.find((item) => norm(item.name).includes(norm(name)))
   );
-}
-
-export function recentCorrections(
-  deps: Deps,
-  limit = 20,
-): { matchText: string; category: string | null }[] {
-  return deps.db
-    .select({ matchText: categoryRules.matchText, category: categories.name })
-    .from(categoryRules)
-    .leftJoin(categories, eq(categories.id, categoryRules.categoryId))
-    .where(isNull(categoryRules.deletedAt))
-    .limit(limit)
-    .all();
 }

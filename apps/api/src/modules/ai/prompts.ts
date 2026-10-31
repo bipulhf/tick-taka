@@ -12,9 +12,6 @@ export const RECEIPT_PROMPT = `You read a photo of a shop receipt and return the
 the date (YYYY-MM-DD) if printed, line items, and the best matching category from the provided list.
 If a value is unreadable, return null rather than guessing.`;
 
-export const CATEGORIZE_PROMPT = `Pick the best category and area for a transaction note from the provided lists.
-Prefer the user's own past corrections when a note resembles one. Return null when nothing fits.`;
-
 export const PLAN_DAY_PROMPT = `You plan one day as a timeline the user will drag around.
 Keep fixed blocks at their times. Put high-energy and high-priority work in the morning and low-energy chores late.
 Add short breaks between long blocks. Never exceed the free minutes; leave out what doesn't fit (lowest priority first).

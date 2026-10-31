@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { startOfLocalDay, zonedTimeToUtc } from "@tick-taka/shared/dates";
 import { FakeAi } from "./fake-ai";
-import { createTestContext, DEFAULT_NOW } from "./helpers";
+import { createTestContext } from "./helpers";
 import { type Row, setupMoney } from "./money-helpers";
 
 const TZ = "Asia/Dhaka";
@@ -190,32 +190,6 @@ describe("receipt and categorise", () => {
     expect(ai.jsonRequests[0]!.user).toEqual(
       expect.arrayContaining([expect.objectContaining({ type: "image" })]),
     );
-  });
-
-  test("rules and history answer before any AI call", async () => {
-    const ai = new FakeAi();
-    const ctx = await createTestContext({ ai });
-    const { cash, category } = await setupMoney(ctx);
-    await ctx.request("POST", "/category-rules", {
-      matchText: "Foodpanda",
-      categoryId: category("Food").id,
-    });
-    const rule = await ctx.request<Row>("POST", "/ai/categorize", { note: "foodpanda" });
-    expect(rule.body).toMatchObject({ categoryId: category("Food").id, source: "rule" });
-    await ctx.request("POST", "/transactions", {
-      type: "expense",
-      accountId: cash.id,
-      amountMinor: 100,
-      note: "Pathao ride",
-      categoryId: category("Transport").id,
-      occurredAt: DEFAULT_NOW,
-    });
-    const history = await ctx.request<Row>("POST", "/ai/categorize", { note: "pathao ride" });
-    expect(history.body).toMatchObject({ categoryId: category("Transport").id, source: "history" });
-    expect(ai.jsonRequests).toHaveLength(0);
-    ai.queueJson({ categoryName: "Health", areaName: null });
-    const viaAi = await ctx.request<Row>("POST", "/ai/categorize", { note: "napa extra" });
-    expect(viaAi.body).toMatchObject({ categoryId: category("Health").id, source: "ai" });
   });
 });
 

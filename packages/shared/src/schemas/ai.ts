@@ -16,10 +16,6 @@ export const aiReceiptRequestSchema = z.object({
   imageBase64: z.string().min(100).max(8_000_000),
   mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
 });
-export const aiCategorizeRequestSchema = z.object({
-  note: z.string().trim().min(1).max(300),
-  type: z.enum(["expense", "income"]).default("expense"),
-});
 export const aiPlanDayRequestSchema = z.object({ date: localDateSchema });
 export const aiBreakdownRequestSchema = z.object({
   taskId: idSchema.optional(),
@@ -62,11 +58,6 @@ export const aiReceiptOutputSchema = z.object({
   items: z.array(z.object({ name: z.string(), price: z.number().nullable() })),
 });
 export type AiReceiptOutput = z.infer<typeof aiReceiptOutputSchema>;
-
-export const aiCategorizeOutputSchema = z.object({
-  categoryName: nullableString,
-  areaName: nullableString,
-});
 
 export const aiPlanDayOutputSchema = z.object({
   blocks: z.array(

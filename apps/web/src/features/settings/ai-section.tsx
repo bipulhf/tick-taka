@@ -14,7 +14,6 @@ const AI_LABELS: Partial<Record<AiFeature, string>> = {
   assistant: "Chat with Tiki (and voice)",
   parse: "Smart quick-add",
   receipt: "Receipt scan",
-  categorize: "Auto-categorise",
   planDay: "Plan my day",
   breakdown: "Break it down",
   weeklyReview: "Weekly coach",

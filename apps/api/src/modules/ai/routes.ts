@@ -1,7 +1,6 @@
 import {
   aiBreakdownRequestSchema,
   aiBudgetSuggestionsRequestSchema,
-  aiCategorizeRequestSchema,
   aiParseRequestSchema,
   aiPlanDayRequestSchema,
   aiReceiptRequestSchema,
@@ -28,7 +27,7 @@ import { type AssistantEvent, aiAssistant } from "./assistant/agent";
 import type { Dispatch } from "./assistant/dispatch";
 import { threadRoutes, threadService } from "./assistant/threads";
 import { aiBudgetSuggestions, aiWeeklyCoach } from "./coach";
-import { aiCategorize, aiParse, aiReceipt } from "./parse";
+import { aiParse, aiReceipt } from "./parse";
 import { aiBreakdown, aiPlanDay } from "./planning";
 import { aiUsageReport } from "./usage-report";
 import { aiTranscribe } from "./voice";
@@ -75,7 +74,6 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
         features: {
           parse: isAiFeatureEnabled(settings, "parse"),
           receipt: isAiFeatureEnabled(settings, "receipt"),
-          categorize: isAiFeatureEnabled(settings, "categorize"),
           planDay: isAiFeatureEnabled(settings, "planDay"),
           breakdown: isAiFeatureEnabled(settings, "breakdown"),
           weeklyReview: isAiFeatureEnabled(settings, "weeklyReview"),
@@ -92,9 +90,6 @@ export const aiRoutes = (deps: Deps, dispatch: Dispatch) =>
     )
     .post("/receipt", validate("json", aiReceiptRequestSchema), async (c) =>
       c.json(await aiReceipt(deps, c.req.valid("json"))),
-    )
-    .post("/categorize", validate("json", aiCategorizeRequestSchema), async (c) =>
-      c.json(await aiCategorize(deps, c.req.valid("json"))),
     )
     .post("/plan-day", validate("json", aiPlanDayRequestSchema), async (c) =>
       c.json(await aiPlanDay(deps, c.req.valid("json").date)),

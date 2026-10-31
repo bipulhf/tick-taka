@@ -17,6 +17,7 @@ import { ChatWelcome } from "./chat-welcome";
 import { clearChatWarning } from "./clear-chat-warning";
 import { threadIdStore } from "./current-thread";
 import { LiveBubble, MessageBubble } from "./message-bubble";
+import { openQuestionId } from "./question-form";
 import { screenFor } from "./screen";
 import { ThreadList } from "./thread-list";
 import { openThread, refreshCurrentThread } from "./threads";
@@ -105,6 +106,13 @@ function Chat() {
     list.current?.scrollTo({ top: list.current.scrollHeight });
   }, [messages, live, showThreads]);
   const lastReply = [...messages].reverse().find((m) => m.role === "assistant");
+  // Only the newest reply's question can be answered; any later message answers it.
+  const openQuestion = openQuestionId(messages);
+  const answer = (text: string) => {
+    send(text);
+    // The form goes away with the answer; the composer takes the focus it had.
+    requestAnimationFrame(() => composer.current?.focus());
+  };
 
   /** Leaves the chat on screen, asking first when Undo or an answer would be lost. */
   const leave = (label: string, go: () => void) => {
@@ -179,6 +187,9 @@ function Chat() {
                 onSaveDraft={(index) => saveDraft(message.id, index)}
                 onDiscardDraft={(index) => discardDraft(message.id, index)}
                 onRate={(rating, comment) => rate(message.id, rating, comment)}
+                answering={
+                  message.id === openQuestion ? { busy: thinking, onAnswer: answer } : undefined
+                }
               />
             ))}
             {live ? <LiveBubble turn={live} /> : null}

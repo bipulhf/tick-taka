@@ -20,6 +20,7 @@ import { threadIdForSend } from "./current-thread";
 import { postEventStream } from "./event-stream";
 import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
 import { ownWrites } from "./own-writes";
+import { parseQuestion } from "./question-form";
 import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
 import { serverNow } from "./server-clock";
 import { refreshThreads, startNewChat } from "./threads";
@@ -51,6 +52,8 @@ type StreamEvent =
       cards?: AssistantCard[];
       /** The stored reply, when the chat is kept on the server. */
       messageId?: string;
+      /** Tiki asked with a small form; older servers omit it. */
+      question?: unknown;
     }
   | { type: "error"; code: string; message: string };
 
@@ -142,6 +145,7 @@ export function useAssistant() {
           case "done": {
             finished = true;
             const drafts = parseDrafts(event.drafts);
+            const question = parseQuestion(event.question);
             appendMessage({
               role: "assistant",
               content: event.reply,
@@ -153,6 +157,7 @@ export function useAssistant() {
                 : {}),
               ...(drafts.length ? { drafts } : {}),
               ...(event.cards?.length ? { cards: event.cards } : {}),
+              ...(question ? { question } : {}),
               ...(event.messageId ? { messageId: event.messageId, rating: null } : {}),
             });
             if (event.actions.length) void queryClient.invalidateQueries();

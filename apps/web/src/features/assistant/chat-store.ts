@@ -1,4 +1,8 @@
-import type { AssistantCard, AssistantRating } from "@tick-taka/shared/schemas/ai";
+import type {
+  AssistantCard,
+  AssistantQuestion,
+  AssistantRating,
+} from "@tick-taka/shared/schemas/ai";
 import type { HttpMethod } from "@/lib/api";
 import { tokenStore } from "@/lib/auth";
 import { createStore } from "@/lib/store";
@@ -48,6 +52,8 @@ export interface ChatMessage {
   messageId?: string;
   /** Records and totals in the reply, to click or glance at. */
   cards?: AssistantCard[];
+  /** Tiki asked with a small form; it can be answered until a later message exists. */
+  question?: AssistantQuestion;
   rating?: AssistantRating | null;
   at: number;
 }

@@ -1,5 +1,10 @@
-import type { AssistantCard, AssistantRating } from "@tick-taka/shared/schemas/ai";
+import type {
+  AssistantCard,
+  AssistantQuestion,
+  AssistantRating,
+} from "@tick-taka/shared/schemas/ai";
 import type { ChatMessage } from "./chat-store";
+import { parseQuestion } from "./question-form";
 
 /**
  * Chats kept on the server (GET /ai/threads/:id) turned into the browser's chat, and
@@ -14,11 +19,14 @@ export interface StoredMessage {
   cards: AssistantCard[];
   actions: { summary: string }[];
   rating: AssistantRating | null;
+  /** Tiki's small form, when it asked with one; older servers leave it out. */
+  question?: AssistantQuestion | null;
   createdAt: number;
 }
 
 /** One stored message as the chat shows it. Undo isn't kept on the server, so none here. */
 export function fromStored(message: StoredMessage): ChatMessage {
+  const question = message.role === "assistant" ? parseQuestion(message.question) : undefined;
   return {
     id: `stored-${message.id}`,
     role: message.role,
@@ -30,6 +38,7 @@ export function fromStored(message: StoredMessage): ChatMessage {
     ...(message.role === "assistant"
       ? { messageId: message.id, cards: message.cards, rating: message.rating }
       : {}),
+    ...(question ? { question } : {}),
     at: message.createdAt,
   };
 }

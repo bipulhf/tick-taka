@@ -15,6 +15,7 @@ import { cx } from "@/components/ui/cx";
 import { plural } from "@/lib/format";
 import type { ChatAction, ChatMessage, ChatStep } from "./chat-store";
 import { DraftCard } from "./draft-card";
+import { QuestionCard } from "./question-card";
 import { ReplyCards } from "./reply-cards";
 import { ReplyFeedback } from "./reply-feedback";
 import { StreamingCaret, ThinkingIndicator } from "./thinking-indicator";
@@ -176,6 +177,7 @@ export function MessageBubble({
   onSaveDraft,
   onDiscardDraft,
   onRate,
+  answering,
 }: {
   message: ChatMessage;
   onUndo: (index: number) => void;
@@ -184,6 +186,8 @@ export function MessageBubble({
   onSaveDraft: (index: number) => void;
   onDiscardDraft: (index: number) => void;
   onRate: (rating: AssistantRating, comment?: string) => void;
+  /** Set on the one reply whose question can still be answered. */
+  answering?: { busy: boolean; onAnswer: (text: string) => void };
 }) {
   if (message.role === "user") {
     return (
@@ -205,6 +209,13 @@ export function MessageBubble({
         <span className="sr-only">Tiki: </span>
         {message.content}
       </div>
+      {message.question && answering ? (
+        <QuestionCard
+          question={message.question}
+          busy={answering.busy}
+          onAnswer={answering.onAnswer}
+        />
+      ) : null}
       {message.actions?.length ? <ActionList actions={message.actions} onUndo={onUndo} /> : null}
       {message.drafts?.map((draft, index) => (
         <DraftCard

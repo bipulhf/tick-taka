@@ -3,6 +3,16 @@ import { formatLocalDate } from "@/lib/format";
 
 /** Tasks grouped by local day, and the timesheet the logbook shares. Pure, so it can be tested. */
 
+/** What a task with no estimate counts for, as in Today's "does my day fit?". */
+export const DEFAULT_TASK_MINUTES = 30;
+
+/** Minutes the open tasks of a list ask for; finished ones count for nothing. */
+export function plannedMinutes(tasks: { estimateMin: number | null; status: string }[]): number {
+  return tasks
+    .filter((task) => task.status !== "done")
+    .reduce((sum, task) => sum + (task.estimateMin ?? DEFAULT_TASK_MINUTES), 0);
+}
+
 /** Upcoming tasks by the local day they are planned for, in date order. */
 export function groupByDay<T extends { doAt: number | null }>(
   tasks: T[],

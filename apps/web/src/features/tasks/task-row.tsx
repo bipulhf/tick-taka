@@ -1,5 +1,6 @@
 import { AlarmClock, Flag, MoreHorizontal, Sparkles, Star, StarOff, Trash2 } from "lucide-react";
 import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Row } from "@/components/ui/group";
 import { IconButton } from "@/components/ui/icon-button";
@@ -12,6 +13,12 @@ import type { TaskRow as Task } from "@/lib/queries";
 import { useTodayDate, useUserTime } from "@/lib/use-today";
 import { useTaskActions } from "./use-task-actions";
 
+/** A quick move offered on the row itself ("Today", "Tomorrow", "Someday"). */
+export interface TriageAction {
+  label: string;
+  onSelect: () => void;
+}
+
 export interface TaskRowProps {
   task: Task;
   size?: "md" | "lg";
@@ -19,6 +26,11 @@ export interface TaskRowProps {
   showWhen?: boolean;
   areaEmoji?: string;
   as?: "div" | "li";
+  /**
+   * Quick moves for a task that has no day yet: small buttons over the row's end on
+   * hover or focus at desk width, and the menu's first items everywhere.
+   */
+  triage?: TriageAction[];
 }
 
 const DEADLINE_WARN_MS = 3 * 86_400_000;
@@ -28,7 +40,14 @@ const DEADLINE_WARN_MS = 3 * 86_400_000;
  * high priority. The row opens the task panel; Snooze, Top three and Delete sit in
  * a menu at its end, and on keys while it has focus: X completes, T stars, Delete removes.
  */
-export function TaskRow({ task, size = "md", showWhen = false, areaEmoji, as }: TaskRowProps) {
+export function TaskRow({
+  task,
+  size = "md",
+  showWhen = false,
+  areaEmoji,
+  as,
+  triage,
+}: TaskRowProps) {
   const { timeZone } = useUserTime();
   const today = useTodayDate();
   const open = useOpenPanel();
@@ -90,6 +109,22 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji, as }: 
       }
       trailing={
         <>
+          {triage?.length ? (
+            <span className="absolute top-1/2 right-full mr-1 hidden -translate-y-1/2 items-center gap-0.5 rounded-xl bg-card p-0.5 ring-1 ring-line sm:group-focus-within/row:flex sm:group-hover/row:flex">
+              {triage.map((move) => (
+                <Button
+                  key={move.label}
+                  size="sm"
+                  variant="ghost"
+                  onClick={move.onSelect}
+                  aria-label={`${move.label}: “${task.title}”`}
+                  className="h-7 px-2.5"
+                >
+                  {move.label}
+                </Button>
+              ))}
+            </span>
+          ) : null}
           {task.priority === "high" ? (
             <span className="inline-flex items-center text-ink">
               <Flag aria-hidden className="size-4" strokeWidth={2.4} />
@@ -98,6 +133,14 @@ export function TaskRow({ task, size = "md", showWhen = false, areaEmoji, as }: 
           ) : null}
           <Menu
             items={[
+              ...(triage?.length
+                ? [
+                    ...triage.map(
+                      (move) => ({ label: move.label, onSelect: move.onSelect }) satisfies MenuItem,
+                    ),
+                    "separator" as const,
+                  ]
+                : []),
               {
                 label: "Snooze",
                 icon: AlarmClock,

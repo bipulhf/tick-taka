@@ -61,3 +61,11 @@ export function minuteOf(time: string): number | null {
   const minute = Number(match[1]) * 60 + Number(match[2]);
   return minute >= 0 && minute < 24 * 60 ? minute : null;
 }
+
+/** Parked for later: no day, time or reminder, and off Today. */
+export const SOMEDAY = {
+  doAt: null,
+  hasTime: false,
+  reminderAt: null,
+  status: "someday" as const,
+};

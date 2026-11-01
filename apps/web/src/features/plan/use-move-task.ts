@@ -5,7 +5,7 @@ import { formatClock, formatLocalDate } from "@/lib/format";
 import type { TaskRow } from "@/lib/queries";
 import { notify } from "@/lib/toast";
 import { fire } from "@/lib/write";
-import { dayMove, type Movable, timeMove, UNSCHEDULE } from "./move-task";
+import { dayMove, type Movable, SOMEDAY, timeMove, UNSCHEDULE } from "./move-task";
 import { previousFields } from "./move-undo";
 
 type Task = Movable & { id: string };
@@ -44,6 +44,12 @@ export function useMoveTask(timeZone: string) {
       },
       unschedule(task: Task) {
         patch(task, { ...UNSCHEDULE }, "Unscheduled");
+      },
+      toInbox(task: Task) {
+        patch(task, { ...UNSCHEDULE }, "Moved to the inbox");
+      },
+      toSomeday(task: Task) {
+        patch(task, { ...SOMEDAY }, "Parked in Someday");
       },
     };
   }, [client, timeZone]);

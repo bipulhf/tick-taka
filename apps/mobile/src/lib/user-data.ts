@@ -8,7 +8,14 @@ import { persister, queryClient } from "./query-client";
  * Phone preferences, not anyone's data: they stay when someone signs out. So does
  * whether this install already asked for notifications (lib/notifications.ts).
  */
-const DEVICE_KEYS = new Set(["tt.theme", "tt.privacy", "tt.feedback", "tt.notify-asked"]);
+const DEVICE_KEYS = new Set([
+  "tt.theme",
+  "tt.privacy",
+  "tt.feedback",
+  "tt.notify-asked",
+  // Each home-screen widget's look (features/widget/widget-looks.ts).
+  "tt.widget-looks",
+]);
 
 const resets = new Set<() => void>();
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { blend, widgetColors } from "../src/features/widget/widget-colors";
+import { blend, type Face, flatten, lookColors } from "../src/features/widget/widget-colors";
 import {
   ON_ACCENT,
   type Palette,
@@ -239,41 +239,67 @@ describe("buttons", () => {
   }
 });
 
-describe("home-screen widget reaches WCAG AA", () => {
-  for (const scheme of SCHEMES) {
-    const c = widgetColors(scheme);
-    const check = (pairs: [string, string, string][]) => {
-      for (const [pair, fg, bg] of pairs) {
-        expect({ pair, ok: contrast(fg, bg) >= TEXT_AA }).toEqual({ pair, ok: true });
-      }
-    };
-    test(`${scheme}: labels and amounts on both ends of the gradient`, () => {
+describe("home-screen widget looks reach WCAG AA", () => {
+  /** Glass shows the wallpaper through; these are the two extremes it can be. */
+  const WALLPAPERS = ["#FFFFFF", "#000000"];
+  const FACES: Face[] = ["paper", "night", "glass", "mango"];
+  const WORDS = ["ink", "muted", "inText", "outText", "timeText", "habitText"] as const;
+  /** Marks that are the only cue: a task's circle, a habit's arc, a button's edge. */
+  const SOLE_CUES = ["check", "habitArc", "secondaryEdge"] as const;
+
+  for (const face of FACES) {
+    const c = lookColors(face);
+    const pairs: { pair: string; ratio: number; min: number }[] = [];
+    for (const wallpaper of WALLPAPERS) {
       for (const end of ["from", "to"] as const) {
-        check([
-          [`muted on ${end}`, c.muted, c[end]],
-          [`mint-text hero on ${end}`, c.mintText, c[end]],
-          [`coral-text hero on ${end}`, c.coralText, c[end]],
-        ]);
+        const bg = flatten(c[end], wallpaper);
+        const card = flatten(c.card, bg);
+        const surfaces = [
+          [`${end} over ${wallpaper}`, bg],
+          [`card on ${end} over ${wallpaper}`, card],
+        ] as const;
+        for (const [where, surface] of surfaces) {
+          for (const token of WORDS)
+            pairs.push({
+              pair: `${token} on ${where}`,
+              ratio: contrast(c[token], surface),
+              min: TEXT_AA,
+            });
+          for (const token of SOLE_CUES)
+            pairs.push({
+              pair: `${token} on ${where}`,
+              ratio: contrast(flatten(c[token], surface), surface),
+              min: UI_AA,
+            });
+        }
+        pairs.push({
+          pair: `secondary label over ${wallpaper}`,
+          ratio: contrast(c.onSecondary, flatten(c.secondary, bg)),
+          min: TEXT_AA,
+        });
       }
-    });
-    test(`${scheme}: next-up card, quick-log and Undo buttons`, () => {
-      check([
-        ["ink on card", c.ink, c.card],
-        ["muted on card", c.muted, c.card],
-        ["sky-text on card", c.skyText, c.card],
-      ]);
-    });
-    test(`${scheme}: action pill labels on their tints`, () => {
-      check([
-        ["sky-text on sky tint", c.skyText, c.skyTint],
-        ["coral-text on coral tint", c.coralText, c.coralTint],
-      ]);
+    }
+    pairs.push({ pair: "primary label", ratio: contrast(c.onPrimary, c.primary), min: TEXT_AA });
+    pairs.push({ pair: "Undo strip words", ratio: contrast(c.onStrip, c.strip), min: TEXT_AA });
+    pairs.push({ pair: "Undo action", ratio: contrast(c.stripAction, c.strip), min: TEXT_AA });
+
+    test(`${face}: words reach 4.5:1 and sole-cue marks 3:1 on the widget and its cards`, () => {
+      for (const { pair, ratio, min } of pairs)
+        expect({ pair, ok: ratio >= min }).toEqual({ pair, ok: true });
     });
   }
+
+  test("Glass keeps a scrim under its words: white text holds on a white wallpaper", () => {
+    const c = lookColors("glass");
+    expect(c.from.length).toBe(9);
+    expect(contrast(c.ink, flatten(c.from, "#FFFFFF"))).toBeGreaterThanOrEqual(TEXT_AA);
+  });
 
   test("blend() flattens like the in-app tints", () => {
     const expected: string = over("#5B8CFF", "#FFFFFF", 0.15).toUpperCase();
     expect<string>(blend("#5B8CFF", "#FFFFFF", 0.15)).toBe(expected);
+    expect<string>(flatten("#5B8CFF26", "#FFFFFF")).toBe(blend("#5B8CFF", "#FFFFFF", 0x26 / 255));
+    expect<string>(flatten("#5b8cff", "#000000")).toBe("#5B8CFF");
   });
 });
 

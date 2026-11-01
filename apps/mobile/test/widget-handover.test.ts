@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { handOverWidgetWrites, withdrawLog } from "../src/features/widget/widget-pending";
+import {
+  handOverWidgetWrites,
+  outcomeOf,
+  withdrawLog,
+  withdrawRequests,
+} from "../src/features/widget/widget-pending";
 import type { OutboxRequest, PersistedOutbox } from "../src/lib/outbox-policy";
 import { type OutboxDeps, OutboxQueue } from "../src/lib/outbox-queue";
 
@@ -16,6 +21,12 @@ function setup(options: { keyReadable?: boolean } = {}) {
       { id: "w2", amountMinor: 6000 },
     ] as Log[],
     deletes: ["d1"],
+    requests: [
+      {
+        id: "r1",
+        request: { method: "PATCH", path: "/tasks/t1", body: { status: "done" } },
+      },
+    ] as { id: string; request: OutboxRequest }[],
   };
   const disk: { main: unknown; early: unknown } = { main: null, early: null };
   let release = () => {};
@@ -63,6 +74,10 @@ function setup(options: { keyReadable?: boolean } = {}) {
       removeDeletes: async (sent) => {
         widget.deletes = widget.deletes.filter((id) => !sent.includes(id));
       },
+      readRequests: async () => [...widget.requests],
+      removeRequests: async (sent) => {
+        widget.requests = widget.requests.filter((item) => !sent.includes(item));
+      },
       send: (request: OutboxRequest) => {
         queue.enqueue(request).catch(() => {});
       },
@@ -87,6 +102,7 @@ describe("handing the widget's offline taps to the outbox (QA-304, CQ-039)", () 
       "POST /transactions",
       "POST /transactions",
       "DELETE /transactions/d1",
+      "PATCH /tasks/t1",
     ]);
     expect((disk.main as PersistedOutbox).entries[0]?.request.body).toMatchObject({
       id: "w1",
@@ -94,6 +110,7 @@ describe("handing the widget's offline taps to the outbox (QA-304, CQ-039)", () 
     });
     expect(widget.logs).toEqual([]);
     expect(widget.deletes).toEqual([]);
+    expect(widget.requests).toEqual([]);
   });
 
   test("while the outbox can't read its saved queue, the widget's copies stay", async () => {
@@ -101,8 +118,9 @@ describe("handing the widget's offline taps to the outbox (QA-304, CQ-039)", () 
     release();
     expect(await handOver()).toBe(false);
     // Queued (and on the side key), but the widget's lists are the copy that's sure.
-    expect(paths(disk.early)).toHaveLength(3);
+    expect(paths(disk.early)).toHaveLength(4);
     expect(widget.logs).toHaveLength(2);
+    expect(widget.requests).toHaveLength(1);
     expect(widget.deletes).toEqual(["d1"]);
   });
 
@@ -146,5 +164,43 @@ describe("withdrawing a widget log on Undo", () => {
 
   test("a log no longer waiting (sent by the widget or the app) isn't withdrawn here", () => {
     expect(withdrawLog([{ id: "b" }], [], "a")).toBeNull();
+  });
+});
+
+describe("withdrawing a widget tap's writes on Undo", () => {
+  const patch = (id: string) => ({
+    id,
+    request: { method: "PATCH" as const, path: `/tasks/${id}`, body: {} },
+  });
+
+  test("drops them from the waiting list and queues their reversal behind", () => {
+    const reverse = [patch("undo-a")];
+    expect(withdrawRequests([patch("a"), patch("b")], ["a"], reverse)?.map((p) => p.id)).toEqual([
+      "b",
+      "undo-a",
+    ]);
+  });
+
+  test("writes no longer waiting aren't withdrawn here: the caller reverses them", () => {
+    expect(withdrawRequests([patch("b")], ["a"], [patch("undo-a")])).toBeNull();
+  });
+});
+
+describe("what a widget write's answer means", () => {
+  const post = { method: "POST" as const, path: "/transactions" };
+  test("offline, a server fault or an expired sign-in waits for the app", () => {
+    for (const status of ["unreachable", 401, 429, 500, 503] as const)
+      expect(outcomeOf(post, status)).toBe("queue");
+  });
+
+  test("a delete of something gone, or a stop of a stopped timer, is done", () => {
+    expect(outcomeOf({ method: "DELETE", path: "/transactions/x" }, 404)).toBe("sent");
+    expect(outcomeOf({ method: "POST", path: "/timer/stop" }, 409)).toBe("sent");
+    expect(outcomeOf(post, 201)).toBe("sent");
+  });
+
+  test("a refusal for good isn't kept", () => {
+    expect(outcomeOf(post, 400)).toBe("refused");
+    expect(outcomeOf({ method: "PATCH", path: "/tasks/x" }, 404)).toBe("refused");
   });
 });

@@ -1,112 +1,58 @@
 import "@/lib/polyfills";
-import { newId } from "@tick-taka/shared/ids";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { WidgetTaskHandlerProps } from "react-native-android-widget";
-import { apiUrl, request } from "@/lib/http";
-import { SafeToSpendWidget } from "./safe-to-spend-widget";
-import {
-  readPendingDeletes,
-  readPendingLogs,
-  readWidgetCache,
-  type WidgetCache,
-  writePendingDeletes,
-  writePendingLogs,
-  writeWidgetCache,
-} from "./widget-cache";
-import { withdrawLog } from "./widget-pending";
-import { afterLog, afterUndo, canUndo } from "./widget-quick-log";
+import { restoreServerClock } from "@/lib/server-clock";
+import { focusStop, runAction } from "./widget-actions";
+import { readWidgetCache, type WidgetCache, writeWidgetCache } from "./widget-cache";
+import { forgetLook, lookOf, readLooks } from "./widget-looks";
+import { UNDO_WINDOW_MS } from "./widget-optimistic";
+import { drawWidget, refreshWidgets, WIDGETS } from "./widget-registry";
 
-export const WIDGET_NAME = "SafeToSpend";
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function authHeader() {
-  return { authorization: `Bearer ${(await SecureStore.getItemAsync("tt.token")) ?? ""}` };
-}
-
-/** Logs "cha 20" without opening the app; offline taps wait for the app to send them. */
-async function logQuickEntry(index: number): Promise<WidgetCache> {
-  const cache = await readWidgetCache();
-  const entry = cache.quick[index];
-  if (!entry || !cache.accountId)
-    return { ...cache, status: "Open the app once to set up quick logging" };
-  const log = {
-    id: newId(),
-    note: entry.note,
-    amountMinor: entry.amountMinor,
-    categoryId: entry.categoryId,
-    accountId: cache.accountId,
-    occurredAt: Date.now(),
+/**
+ * After a tap, the Undo strip (or a note like "Too late to undo") goes after a few
+ * seconds. Android gives this task 30 s, so it waits here and redraws, unless another
+ * tap has replaced it meanwhile. If Android stops the task first, the next redraw
+ * leaves the strip out anyway, and a late Undo says so.
+ */
+async function clearAfterAWhile(shown: WidgetCache): Promise<void> {
+  if (!shown.undo && !shown.status) return;
+  await wait(UNDO_WINDOW_MS);
+  const now = await readWidgetCache();
+  const sameUndo = shown.undo !== null && now.undo?.id === shown.undo.id;
+  const sameStatus = shown.status !== null && now.status === shown.status;
+  if (!sameUndo && !sameStatus) return;
+  const cleared: WidgetCache = {
+    ...now,
+    undo: sameUndo ? null : now.undo,
+    status: sameStatus ? null : now.status,
   };
-  let queued = false;
-  try {
-    const response = await request(apiUrl("/transactions"), {
-      method: "POST",
-      headers: await authHeader(),
-      json: { ...log, type: "expense" },
-    });
-    if (!response.ok) throw new Error(String(response.status));
-  } catch {
-    await writePendingLogs([...(await readPendingLogs()), log]);
-    queued = true;
-  }
-  const next = afterLog(cache, entry, { id: log.id, queued }, Date.now());
-  await writeWidgetCache(next);
-  return next;
+  await writeWidgetCache(cleared);
+  await refreshWidgets(cleared);
 }
 
-/** Takes back the last quick-log: drops it from the waiting list, or deletes it on the server. */
-async function undoQuickLog(): Promise<WidgetCache> {
-  const cache = await readWidgetCache();
-  const log = cache.lastLog;
-  if (!log || !canUndo(cache, Date.now())) {
-    const next = { ...cache, lastLog: null, status: "Too late to undo here. Delete it in Money." };
-    await writeWidgetCache(next);
-    return next;
-  }
-  const withdrawn = withdrawLog(await readPendingLogs(), await readPendingDeletes(), log.id);
-  if (withdrawn) {
-    // Delete first: if the app holds the log already, losing the delete would keep it.
-    await writePendingDeletes(withdrawn.deletes);
-    await writePendingLogs(withdrawn.logs);
-  } else {
-    try {
-      const response = await request(apiUrl(`/transactions/${log.id}`), {
-        method: "DELETE",
-        headers: await authHeader(),
-      });
-      // 404: already gone, which is what Undo wants.
-      if (!response.ok && response.status !== 404) throw new Error(String(response.status));
-    } catch {
-      await writePendingDeletes([...(await readPendingDeletes()), log.id]);
-    }
-  }
-  const next = afterUndo(cache);
-  await writeWidgetCache(next);
-  return next;
-}
-
-/** "Keep": hides the Undo row so the quick-log buttons come back. */
-async function keepLastLog(): Promise<WidgetCache> {
-  const next = { ...(await readWidgetCache()), lastLog: null };
-  await writeWidgetCache(next);
-  return next;
-}
-
+/** Draws the widgets from the cache and runs what a tap on one asks for. */
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
-  if (props.widgetInfo.widgetName !== WIDGET_NAME || props.widgetAction === "WIDGET_DELETED")
+  const { widgetName, widgetId } = props.widgetInfo;
+  if (!(widgetName in WIDGETS)) return;
+  if (props.widgetAction === "WIDGET_DELETED") {
+    await forgetLook(widgetId);
     return;
-  let cache = await readWidgetCache();
-  if (props.widgetAction === "WIDGET_CLICK") {
-    if (props.clickAction === "LOG")
-      cache = await logQuickEntry(Number(props.clickActionData?.index ?? -1));
-    else if (props.clickAction === "UNDO_LOG") cache = await undoQuickLog();
-    else if (props.clickAction === "KEEP_LOG") cache = await keepLastLog();
   }
-  const { width, height } = props.widgetInfo;
+  // Edits are stamped in server time; this headless task may run without the app.
+  await restoreServerClock(AsyncStorage);
   const now = Date.now();
-  props.renderWidget({
-    light: (
-      <SafeToSpendWidget cache={cache} scheme="light" width={width} height={height} now={now} />
-    ),
-    dark: <SafeToSpendWidget cache={cache} scheme="dark" width={width} height={height} now={now} />,
-  });
+  let cache = await readWidgetCache();
+  // A focus period that ran out while no one looked stops at its end, as in the app.
+  if (cache.signedIn && cache.focus && now >= cache.focus.endsAt)
+    cache = await focusStop(cache, cache.focus.endsAt);
+  const tapped = props.widgetAction === "WIDGET_CLICK" && props.clickAction;
+  if (tapped) cache = await runAction(widgetName, tapped, props.clickActionData, now);
+  const looks = await readLooks();
+  props.renderWidget(drawWidget(widgetName, cache, lookOf(looks, widgetId), props.widgetInfo, now));
+  if (!tapped) return;
+  // A tick on Today also ticks it on the Tasks list, and so on.
+  await refreshWidgets(cache, now);
+  await clearAfterAWhile(cache);
 }

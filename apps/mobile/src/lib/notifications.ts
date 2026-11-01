@@ -109,6 +109,24 @@ export async function scheduleFocusEnd(endsAt: number, title: string, body: stri
   });
 }
 
+/**
+ * The same, from a home-screen widget: it can't ask for permission there, so the
+ * end only rings if notifications are already allowed.
+ */
+export async function scheduleFocusEndQuietly(
+  endsAt: number,
+  title: string,
+  body: string,
+): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(FOCUS_ID).catch(() => {});
+  if (!(await Notifications.getPermissionsAsync()).granted) return;
+  await Notifications.scheduleNotificationAsync({
+    identifier: FOCUS_ID,
+    content: { title, body, data: { url: "/focus" } },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(endsAt) },
+  });
+}
+
 export async function cancelFocusEnd(): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(FOCUS_ID).catch(() => {});
 }

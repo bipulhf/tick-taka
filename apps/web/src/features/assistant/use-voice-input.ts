@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, unwrap } from "@/lib/api";
+import { ApiError, api, unwrap } from "@/lib/api";
+import { friendlyError } from "@/lib/error-copy";
 import { notify } from "@/lib/toast";
 import { pickVoiceMime, sendMimeOf } from "./voice-mime";
 
@@ -7,6 +8,16 @@ const MAX_MS = 120_000;
 /** Shorter than this, or never louder than SILENCE_DB, is treated as nothing said. */
 const MIN_MS = 700;
 const SILENCE_DB = -45;
+
+/** Why a note didn't become text: the limit used up, AI off, or the connection. */
+function transcribeError(error: unknown): string {
+  const failed = "Couldn't turn that into text.";
+  // The app-wide copy for ai_error points to a form; there is none here.
+  if (error instanceof ApiError && error.code === "ai_error")
+    return `${failed} Try again in a moment.`;
+  if (error instanceof ApiError) return `${failed} ${friendlyError(error)}`;
+  return `${failed} Check the connection and try again.`;
+}
 
 export type VoiceState = "idle" | "recording" | "transcribing";
 
@@ -66,8 +77,8 @@ export function useVoiceInput(onText: (text: string) => void) {
       );
       if (text) onTextRef.current(text);
       else notify("I didn't catch that. Try again a little closer.");
-    } catch {
-      notify("Couldn't turn that into text. Check the connection and try again.");
+    } catch (error) {
+      notify(transcribeError(error));
     } finally {
       setState("idle");
     }

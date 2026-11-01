@@ -58,3 +58,44 @@ export function historyWeeks(
     }),
   );
 }
+
+/** The last `days` days ending today, oldest first, each with its count (0 when not logged). */
+export function lastDays(logs: HistoryDay[], today: string, days: number): HistoryDay[] {
+  const counts = new Map(logs.map((log) => [log.date, log.count]));
+  return Array.from({ length: days }, (_, i) => {
+    const date = addDays(today, i - days + 1);
+    return { date, count: counts.get(date) ?? 0 };
+  });
+}
+
+interface HabitSummary {
+  name: string;
+  schedule: Schedule;
+  perWeek: number | null;
+  doneToday: boolean;
+  weekDoneDays: number;
+  streak: { current: number; unit: string };
+}
+
+/**
+ * The habits page's strip: done today (x of y), this week's days done against the
+ * days asked for (each habit counted up to its own target), and the longest run going.
+ */
+export function habitTotals(habits: HabitSummary[]) {
+  const weekGoal = habits.reduce((sum, h) => sum + weekTarget(h.schedule, h.perWeek), 0);
+  const weekDone = habits.reduce(
+    (sum, h) => sum + Math.min(h.weekDoneDays, weekTarget(h.schedule, h.perWeek)),
+    0,
+  );
+  const best = habits.reduce<HabitSummary | null>(
+    (top, h) => (h.streak.current > (top?.streak.current ?? 0) ? h : top),
+    null,
+  );
+  return {
+    doneToday: habits.filter((h) => h.doneToday).length,
+    total: habits.length,
+    weekDone,
+    weekTarget: weekGoal,
+    best,
+  };
+}

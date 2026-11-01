@@ -22,6 +22,7 @@ import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
 import { ownWrites } from "./own-writes";
 import { parseQuestion } from "./question-form";
 import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
+import { deletedMemo, deletionsRefused, undoRefused } from "./refused-writes";
 import { serverNow } from "./server-clock";
 import { refreshThreads, startNewChat } from "./threads";
 
@@ -67,6 +68,10 @@ export interface LiveTurn {
 const liveStore = createStore<LiveTurn | null>(null);
 
 const lowerFirst = (text: string) => `${text[0]?.toLowerCase() ?? ""}${text.slice(1)}`;
+
+/** A DELETE answered 404: the record is gone already, which is what was asked. */
+const alreadyGone = (method: string, error: unknown) =>
+  method === "DELETE" && error instanceof ApiError && error.status === 404;
 
 /** A write from the chat itself, remembered so a dropped turn never claims it as Tiki's. */
 async function chatWrite(request: WriteRequest): Promise<unknown> {
@@ -207,7 +212,10 @@ export function useAssistant() {
     if (!action?.undo || action.undone) return;
     const { method, path, body } = action.undo;
     // The server stamps the edit time; nothing to add to a PATCH here.
-    void chatWrite({ method, path, body, label: "Couldn't undo that" }).catch(() => {});
+    // A refusal is said in the toast, with Retry; the row offers Undo again.
+    chatWrite({ method, path, body, label: "Couldn't undo that" }).catch((error: unknown) => {
+      if (!alreadyGone(method, error)) updateMessage(messageId, (m) => undoRefused(m, index));
+    });
     markUndone(messageId, index);
   };
 
@@ -220,7 +228,15 @@ export function useAssistant() {
       deletions.map((item) =>
         chatWrite({ method: "DELETE", path: item.path, label: "Couldn't delete that" }),
       ),
-    ).then(() => queryClient.invalidateQueries());
+    ).then((results) => {
+      // Refusals are said in their toasts; the card asks again about those.
+      const refused = deletions.filter((_, i) => {
+        const result = results[i];
+        return result?.status === "rejected" && !alreadyGone("DELETE", result.reason);
+      });
+      if (refused.length) updateMessage(messageId, (m) => deletionsRefused(m, deletions, refused));
+      void queryClient.invalidateQueries();
+    });
     updateMessage(messageId, (m) => ({
       ...m,
       deletionChoice: "deleted",
@@ -233,9 +249,7 @@ export function useAssistant() {
           }),
         ),
       ],
-      memo: [m.memo, `the user confirmed and deleted ${deletions.map((d) => d.path).join(", ")}`]
-        .filter(Boolean)
-        .join("; "),
+      memo: [m.memo, deletedMemo(deletions)].filter(Boolean).join("; "),
     }));
   };
 

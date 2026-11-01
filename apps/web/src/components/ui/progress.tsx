@@ -17,14 +17,31 @@ export function ProgressBar({
   tone = "mint",
   label,
   className,
+  marker,
 }: {
   value: number;
   tone?: ProgressTone;
   /** What the bar measures, for screen readers. */
   label?: string;
   className?: string;
+  /**
+   * A thin pace mark across the bar, 0 to 1 (where today falls in the month). Ink with
+   * a ring in the card colour, so it reads on the track and on every fill.
+   */
+  marker?: number;
 }) {
   const pct = Math.max(0, Math.min(1, value)) * 100;
+  if (marker !== undefined)
+    return (
+      <div className={cx("relative", className)}>
+        <ProgressBar value={value} tone={tone} label={label} />
+        <span
+          aria-hidden
+          className="absolute -top-0.5 -bottom-0.5 w-0.5 -translate-x-1/2 rounded-full bg-ink ring-2 ring-card"
+          style={{ left: `${Math.max(0, Math.min(1, marker)) * 100}%` }}
+        />
+      </div>
+    );
   return (
     <div
       role="progressbar"

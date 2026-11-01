@@ -70,7 +70,7 @@ export function WidgetConfigScreen({
 
   const done = async () => {
     await writeLook(widgetId, look);
-    renderWidget(drawWidget(widgetName, await readWidgetCache(), look, size));
+    renderWidget(drawWidget(widgetName, await readWidgetCache(), look, widgetInfo));
     setResult("ok");
   };
 

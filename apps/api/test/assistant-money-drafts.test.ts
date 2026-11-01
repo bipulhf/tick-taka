@@ -282,7 +282,12 @@ describe("assistant edits of money fields are drafts", () => {
           call("update", { entity: "goal", id: goal.id, fields: fields({ target: 90000 }) }),
           call("create", {
             entity: "event",
-            fields: fields({ name: "Eid", budget: 20000, startsOn: "2026-10-10" }),
+            fields: fields({
+              name: "Eid",
+              budget: 20000,
+              startsOn: "2026-10-10",
+              endsOn: "2026-10-12",
+            }),
           }),
           call("update", { entity: "bill", id: bill.id, fields: fields({ name: "Fiber" }) }),
         ],
@@ -404,5 +409,40 @@ describe("a bill paid by the assistant directly", () => {
     expect((await ctx.request<Row>("GET", `/recurring/${bill.id}`)).body.nextDueAt).toBe(due(11));
     expect((await undo(action)).status).toBe(200);
     expect((await ctx.request<Row>("GET", `/recurring/${bill.id}`)).body.nextDueAt).toBe(due(10));
+  });
+});
+
+describe("assistant drafts are complete", () => {
+  test("an account with no name or type is not drafted; the model is told to ask", async () => {
+    const { ai, ctx } = await setup();
+    ai.queueChat(
+      { toolCalls: [call("create", { entity: "account", fields: fields({}) })] },
+      { content: "What should the account be called?" },
+    );
+    const done = await ask(ctx, "Help me set up my accounts");
+    expect(done.drafts).toHaveLength(0);
+    expect(done.actions).toHaveLength(0);
+    const toolResult = JSON.stringify(ai.chatRequests[1]);
+    expect(toolResult).toContain("Not drafted: missing or invalid");
+    expect(toolResult).toContain("name");
+    expect(toolResult).toContain("the ask tool");
+  });
+
+  test("a complete account is still drafted", async () => {
+    const { ai, ctx } = await setup();
+    ai.queueChat(
+      {
+        toolCalls: [
+          call("create", {
+            entity: "account",
+            fields: fields({ name: "Nagad", type: "mobile_wallet", opening: 1500 }),
+          }),
+        ],
+      },
+      { content: "It's waiting for your tap." },
+    );
+    const done = await ask(ctx, "add my Nagad wallet with 1500");
+    expect(done.drafts.map((d) => `${d.method} ${d.path}`)).toEqual(["POST /accounts"]);
+    expect((await send(ctx, done.drafts[0]!)).status).toBe(201);
   });
 });

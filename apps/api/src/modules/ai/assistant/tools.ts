@@ -4,6 +4,7 @@ import type { AiToolDefinition } from "../../../ai/client";
 import { ACTION_HANDLERS, ACTIONS, type ActionName } from "./actions";
 import { createCardCollector } from "./cards";
 import type { Caller } from "./dispatch";
+import { draftProblem } from "./draft-check";
 import { describeEntities, ENTITIES, ENTITY_NAMES, type EntityName } from "./entities";
 import { createFieldConverter, FieldError, project } from "./fields";
 import { runNoteTool } from "./notes";
@@ -214,7 +215,9 @@ export function createToolRunner(
     if (entity === "transaction" && fields.occurredAt === undefined) fields.occurredAt = now;
     if (entity === "time_entry" && fields.source === undefined) fields.source = "manual";
     const id = newId(now);
-    if (drafting && movesMoney(entity, fields))
+    if (drafting && movesMoney(entity, fields)) {
+      const problem = draftProblem(entity, { id, ...fields });
+      if (problem) return fail(problem);
       return propose({
         summary: `Add ${entity.replace("_", " ")} ${label(fields, "")}`.trim(),
         method: "POST",
@@ -222,6 +225,7 @@ export function createToolRunner(
         body: { id, ...fields },
         undo: { method: "DELETE", path: `${def.path}/${id}` },
       });
+    }
     const result = await caller.call("POST", def.path, { id, ...fields });
     if (!result.ok) return fail(result.error);
     const record = result.data as Record<string, unknown>;

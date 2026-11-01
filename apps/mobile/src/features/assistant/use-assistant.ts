@@ -34,6 +34,11 @@ const HISTORY = 20;
 function errorText(error: unknown): string {
   if (error instanceof ApiError && error.code === "ai_disabled")
     return "The assistant is switched off in Settings › AI.";
+  // The app-wide copy points to a form; the chat has none.
+  if (error instanceof ApiError && error.code === "ai_error")
+    return "Tiki couldn't answer just now. Try again in a moment.";
+  if (error instanceof ApiError && error.code === "ai_unavailable")
+    return "AI isn't set up on this server, so Tiki can't answer here.";
   if (error instanceof ApiError) return friendlyError(error);
   return "I couldn't connect just now. Check your internet and try again.";
 }

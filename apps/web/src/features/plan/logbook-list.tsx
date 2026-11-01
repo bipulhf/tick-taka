@@ -1,14 +1,16 @@
-import { addDays, startOfLocalDay, startOfWeek } from "@tick-taka/shared/dates";
+import { addDays, startOfLocalDay, startOfWeek, toLocalDate } from "@tick-taka/shared/dates";
 import { Check, ChevronLeft, ChevronRight, Copy, Search } from "lucide-react";
 import { useDeferredValue, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { Group, Row, RowMark } from "@/components/ui/group";
+import { ListSection } from "@/components/ui/list-section";
 import { PageHeader } from "@/components/ui/page-header";
 import { NONE, Select } from "@/components/ui/select";
 import { SkeletonRows } from "@/components/ui/skeleton";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
 import { TextField } from "@/components/ui/text-field";
-import { formatClock, formatLocalDate, plural } from "@/lib/format";
+import { formatClock, formatLocalDate, formatMonth, plural } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import { useAreas } from "@/lib/queries";
 import { notify, notifyError } from "@/lib/toast";
@@ -16,7 +18,10 @@ import { useTodayDate, useUserTime } from "@/lib/use-today";
 import { doneByDay, timesheetText } from "./day-groups";
 import { useTasks } from "./queries";
 
-/** Everything I finished; doubles as a timesheet when a job asks what I did. */
+/**
+ * Everything I finished: today, this week and this month at a glance, then a week of
+ * finished tasks by day. Doubles as a timesheet when a job asks what I did.
+ */
 export function LogbookList() {
   const open = useOpenPanel();
   const { timeZone, weekStartsOn } = useUserTime();
@@ -36,6 +41,19 @@ export function LogbookList() {
     ...(areaId ? { areaId } : {}),
   });
   const days = doneByDay(done.data ?? [], timeZone);
+  // The strip is about now, whichever week the list shows.
+  const thisWeek = startOfWeek(today, weekStartsOn);
+  const monthStart = `${today.slice(0, 7)}-01`;
+  const recent = useTasks({
+    status: "done",
+    includeSubtasks: "true",
+    doneFrom: String(startOfLocalDay(thisWeek < monthStart ? thisWeek : monthStart, timeZone)),
+    limit: "500",
+  });
+  const doneOn = (recent.data ?? []).flatMap((t) =>
+    t.doneAt === null ? [] : [toLocalDate(t.doneAt, timeZone)],
+  );
+  const countFrom = (from: string) => doneOn.filter((d) => d >= from).length;
   const count = days.reduce((sum, [, tasks]) => sum + tasks.length, 0);
   const area = areas.find((a) => a.id === areaId);
 
@@ -50,7 +68,32 @@ export function LogbookList() {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader title="Logbook" subtitle={`Week of ${formatLocalDate(weekStart)}`} />
+      <PageHeader
+        title="Logbook"
+        subtitle={`Week of ${formatLocalDate(weekStart)}`}
+        summary={
+          <SummaryStrip label="Finished lately">
+            <StatTile
+              label="Done today"
+              value={countFrom(today)}
+              caption={countFrom(today) ? "Nicely done" : "Nothing yet, no rush"}
+              loading={!recent.data}
+            />
+            <StatTile
+              label="This week"
+              value={countFrom(thisWeek)}
+              caption={`Since ${formatLocalDate(thisWeek)}`}
+              loading={!recent.data}
+            />
+            <StatTile
+              label="This month"
+              value={countFrom(monthStart)}
+              caption={formatMonth(today.slice(0, 7))}
+              loading={!recent.data}
+            />
+          </SummaryStrip>
+        }
+      />
       <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_300px]">
         <aside aria-label="Filters" className="flex flex-col gap-3 lg:sticky lg:top-0 lg:order-2">
           <div className="relative">
@@ -119,10 +162,17 @@ export function LogbookList() {
             />
           ) : (
             days.map(([day, tasks]) => (
-              <section key={day} aria-labelledby={`log-${day}`} className="flex flex-col gap-1.5">
-                <h2 id={`log-${day}`} className="px-1 text-callout font-bold text-muted">
-                  {formatLocalDate(day, "long")}
-                </h2>
+              <ListSection
+                key={day}
+                id={`log-${day}`}
+                title={
+                  day === today
+                    ? `Today · ${formatLocalDate(day, "long")}`
+                    : formatLocalDate(day, "long")
+                }
+                total={plural(tasks.length, "task")}
+                align="edge"
+              >
                 <Group as="ul" label={formatLocalDate(day, "long")}>
                   {tasks.map((task) => (
                     <Row
@@ -141,7 +191,7 @@ export function LogbookList() {
                     />
                   ))}
                 </Group>
-              </section>
+              </ListSection>
             ))
           )}
         </div>

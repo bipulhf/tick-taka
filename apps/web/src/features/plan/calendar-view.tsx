@@ -14,8 +14,10 @@ import { type PlanTask, useRecurring, useTasks } from "./queries";
 const WEEK_MS = 7 * 86_400_000;
 
 /**
- * The month with tasks and bills together (the Week planner does weeks). The marks differ by shape
- * as well as colour (DESIGN.md): tasks a dot, timed tasks a ring, bills a square.
+ * The month with tasks and bills together (the Week planner does weeks): each day says
+ * how many tasks are open, today is ringed, and the picked day's list sits beside the
+ * grid at desk width. The marks differ by shape as well as colour (DESIGN.md): tasks a
+ * dot with their count, a ring when some are at a set time, bills a square.
  */
 export function CalendarView() {
   const { timeZone, weekStartsOn } = useUserTime();
@@ -101,11 +103,11 @@ export function CalendarView() {
                       aria-current={date === today ? "date" : undefined}
                       aria-label={`${formatLocalDate(date, "long")}, ${plural(open, "task")}${timed ? ", some at a set time" : ""}${hasBills ? ", bills due" : ""}`}
                       className={cx(
-                        "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl py-1.5 transition-colors duration-150 sm:min-h-16",
+                        "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 transition-colors duration-150 sm:min-h-16",
                         isSelected
                           ? "bg-ink text-background"
                           : date === today
-                            ? "bg-sky/15 hover:bg-sky/25"
+                            ? "ring-2 ring-sky-text ring-inset hover:bg-line/50"
                             : "hover:bg-line/50",
                       )}
                     >
@@ -116,27 +118,35 @@ export function CalendarView() {
                           className={cx(
                             "text-body font-bold tabular",
                             !isSelected && !inMonth && "text-muted",
+                            !isSelected && date === today && "text-sky-text",
                           )}
                         >
                           {Number(date.slice(8))}
                         </span>
                       )}
-                      <span aria-hidden className="flex h-1.5 gap-0.5">
+                      <span aria-hidden className="flex h-4 items-center gap-1">
                         {open > 0 ? (
                           <span
                             className={cx(
-                              "size-1.5 rounded-full",
-                              isSelected ? "bg-background" : "bg-sky-text",
+                              "inline-flex items-center gap-0.5 text-caption leading-none font-bold tabular",
+                              isSelected ? "text-background" : "text-sky-text",
                             )}
-                          />
-                        ) : null}
-                        {timed ? (
-                          <span
-                            className={cx(
-                              "size-1.5 rounded-full border",
-                              isSelected ? "border-background" : "border-sky-text",
-                            )}
-                          />
+                          >
+                            <span
+                              className={cx(
+                                "size-1.5 rounded-full",
+                                timed ? "border" : "",
+                                timed
+                                  ? isSelected
+                                    ? "border-background"
+                                    : "border-sky-text"
+                                  : isSelected
+                                    ? "bg-background"
+                                    : "bg-sky-text",
+                              )}
+                            />
+                            {open}
+                          </span>
                         ) : null}
                         {hasBills ? (
                           <span
@@ -155,10 +165,13 @@ export function CalendarView() {
           )}
           <p aria-hidden className="flex flex-wrap gap-x-4 gap-y-1 px-1 text-caption text-muted">
             <span className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-sky-text" /> Tasks
+              <span className="size-1.5 rounded-full bg-sky-text" /> Open tasks, with their count
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full border border-sky-text" /> At a set time
+              <span className="size-1.5 rounded-full border border-sky-text" /> Some at a set time
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-3 rounded-[4px] ring-2 ring-sky-text ring-inset" /> Today
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="size-1.5 rounded-[1px] bg-coral-text" /> Bills and paydays

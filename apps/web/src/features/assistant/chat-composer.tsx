@@ -3,7 +3,11 @@ import { forwardRef, type ReactNode, useImperativeHandle, useRef, useState } fro
 import { cx } from "@/components/ui/cx";
 import { inputClass } from "@/components/ui/text-field";
 import { Tooltip } from "@/components/ui/tooltip";
+import { notify } from "@/lib/toast";
 import { useVoiceInput } from "./use-voice-input";
+
+/** The longest message the server takes (assistantMessageSchema in @tick-taka/shared). */
+const MAX_LENGTH = 4000;
 
 function RoundButton({
   icon,
@@ -60,6 +64,11 @@ export const ChatComposer = forwardRef<
 
   const send = () => {
     if (!text.trim() || busy) return;
+    // Longer would reach Tiki cut short; the text stays to trim.
+    if (text.trim().length > MAX_LENGTH) {
+      notify("That's too long to send. Tiki reads up to 4,000 characters at a time.");
+      return;
+    }
     onSend(text);
     setText("");
   };

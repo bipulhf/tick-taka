@@ -9,6 +9,7 @@ import type { AiChatMessage, AiClient, AiToolCall } from "../../../ai/client";
 import { callAi, logUsage } from "../../../ai/usage";
 import type { Deps } from "../../../lib/deps";
 import { AppError } from "../../../lib/errors";
+import { log } from "../../../lib/log";
 import { userTime } from "../../../lib/user-time";
 import { describeVocabulary, vocabulary } from "../context";
 import { ASSISTANT_DRAFT_MONEY_NOTE, ASSISTANT_PROMPT } from "../prompts";
@@ -29,12 +30,27 @@ const WRITE_NAMES = new Set(["create", "update", "act", "remember", "forget"]);
 const FAST_MAX_LENGTH = 80;
 /** Calls the fast model may make before a turn moves to the smart one. */
 const FAST_ROUNDS = 2;
+/**
+ * Longest one message may take, every model call included: past one call's 40 s
+ * deadline, and well inside the apps' 180 s wait (keepalives keep Nginx open).
+ */
+export const TURN_DEADLINE_MS = 100_000;
+/** The same tool call failing this many times in one message ends the tool loop. */
+const MAX_SAME_FAILURES = 3;
 /** Left in the memo when a step failed, so the next message starts on the smart model. */
 const STEP_FAILED = "a step failed";
 const CAP_REACHED_PART_WAY =
   "This month's AI budget ran out part way through. Here is what I did before it stopped; ask again next month or use the app's forms for the rest.";
+const STOPPED_PART_WAY =
+  "I couldn't finish: the AI stopped answering part way through. Here is what I did; ask again for the rest.";
 const WRAP_UP =
   "You have used every step for this message. Do not call tools. Tell the user, briefly, what you finished and what is still left for them to ask again.";
+const STUCK =
+  "A step kept failing the same way. Do not call tools. Tell the user, briefly, what you finished, what didn't work and why, in plain words.";
+const CUT_OFF =
+  "Your last reply was cut off because it was too long, so none of its tool calls ran. Call again with short arguments: a task title is at most 300 characters and a name at most 120. Shorten long text the user gave, keeping their words, or ask them for a shorter one.";
+const REPEATED =
+  "This exact call already failed. Change the input, or tell the user what went wrong; do not send it again.";
 
 /** What the phone sees while Tiki works, in order. `done` is the whole answer. */
 export type AssistantEvent =
@@ -189,10 +205,28 @@ export async function aiAssistant(
   authorization: string,
   history: AssistantMessage[],
   emit: (event: AssistantEvent) => void,
-  options: { signal?: AbortSignal; draftMoney?: boolean; screen?: AssistantScreen } = {},
+  options: {
+    signal?: AbortSignal;
+    draftMoney?: boolean;
+    screen?: AssistantScreen;
+    /** Longest the whole message may take (TURN_DEADLINE_MS); shorter in tests. */
+    deadlineMs?: number;
+  } = {},
 ): Promise<void> {
   const { signal, draftMoney = false } = options;
   const stopped = () => signal?.aborted === true;
+  // The turn's deadline also cancels a model call in flight; the phone leaving still
+  // counts as stopped (nothing more is sent), the deadline as a failure to report.
+  const deadlineMs = options.deadlineMs ?? TURN_DEADLINE_MS;
+  const deadline = AbortSignal.timeout(deadlineMs);
+  const callSignal = signal ? AbortSignal.any([signal, deadline]) : deadline;
+  let late = false;
+  const outOfTime = () => {
+    if (!deadline.aborted) return false;
+    if (!late) log("warn", "assistant turn deadline reached", { ms: deadlineMs });
+    late = true;
+    return true;
+  };
   const { today, timeZone } = userTime(deps);
   const caller = createCaller(dispatch, authorization);
   const screen = await describeScreen(caller, options.screen);
@@ -230,7 +264,7 @@ export async function aiAssistant(
   const chat = async (withTools: typeof tools) => {
     const model = tier;
     const result = await callAi(
-      () => ai.chat({ model, messages, tools: withTools, onText, signal }),
+      () => ai.chat({ model, messages, tools: withTools, onText, signal: callSignal }),
       signal,
     );
     logUsage(deps, "assistant", model, result.model, result.usage);
@@ -267,17 +301,39 @@ export async function aiAssistant(
   };
   const didSomething = () =>
     runner.actions.length > 0 || runner.pending.length > 0 || runner.drafts.length > 0;
-  /** The cap is checked before every call; hitting it part way still reports what was done. */
+  /**
+   * The cap is checked before every call. Hitting it, the AI failing or the turn's
+   * deadline part way still ends with done, so what was changed, drafted or listed
+   * for deleting reaches the app; with nothing done yet it is the error event.
+   */
   const chatOrStop = async (withTools: typeof tools) => {
+    if (outOfTime()) return stopPartWay(tooLong());
     try {
       return await chat(withTools);
     } catch (error) {
-      if (error instanceof AppError && error.code === "ai_cap_reached" && didSomething()) {
-        finish(CAP_REACHED_PART_WAY);
-        return null;
-      }
-      throw error;
+      if (stopped()) throw error;
+      outOfTime();
+      return stopPartWay(error);
     }
+  };
+  const tooLong = () =>
+    new AppError(502, "ai_error", "AI took too long to answer. Use the form instead.");
+  const stopPartWay = (error: unknown): null => {
+    if (!(error instanceof AppError) || !didSomething()) throw error;
+    // Text streamed before the failure was the start of an answer that won't come.
+    emit({ type: "reset" });
+    finish(error.code === "ai_cap_reached" ? CAP_REACHED_PART_WAY : STOPPED_PART_WAY);
+    return null;
+  };
+  /** How often each exact call failed this turn, so a loop on one bad call ends. */
+  const failures = new Map<string, number>();
+  let stuck = false;
+  const failedAgain = (call: AiToolCall) => {
+    const key = `${call.name} ${call.arguments}`;
+    const count = (failures.get(key) ?? 0) + 1;
+    failures.set(key, count);
+    if (count >= MAX_SAME_FAILURES) stuck = true;
+    return count > 1;
   };
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
@@ -286,6 +342,16 @@ export async function aiAssistant(
     if (!result || stopped()) return;
     if (result.toolCalls.length === 0) return finish(result.content);
     if (result.content) emit({ type: "reset" });
+    // Arguments cut off at the token cap are half a JSON object: run none of them.
+    if (result.truncated) {
+      failed++;
+      tier = "smart";
+      if (result.content) messages.push({ role: "assistant", content: result.content });
+      messages.push({ role: "system", content: CUT_OFF });
+      failedAgain({ id: "", name: "cut off", arguments: "" });
+      if (stuck) break;
+      continue;
+    }
     messages.push({ role: "assistant", content: result.content, toolCalls: result.toolCalls });
     let question: AssistantQuestion | undefined;
     for (const call of result.toolCalls) {
@@ -301,7 +367,12 @@ export async function aiAssistant(
           break;
         }
         failed++;
-        messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(read) });
+        const again = failedAgain(call);
+        messages.push({
+          role: "tool",
+          toolCallId: call.id,
+          content: JSON.stringify(again ? { ...read, hint: REPEATED } : read),
+        });
         continue;
       }
       emit({ type: "status", text: describe(call) });
@@ -319,7 +390,11 @@ export async function aiAssistant(
         output = await runner.run(call.name, call.arguments);
       }
       const ok = !(output as { error?: unknown } | null)?.error && output != null;
-      if (!ok) failed++;
+      if (!ok) {
+        failed++;
+        if (failedAgain(call) && output && typeof output === "object")
+          output = { ...output, hint: REPEATED };
+      }
       emit({ type: "result", ok });
       if (WRITE_NAMES.has(call.name)) {
         const id = (output as { id?: string } | null)?.id;
@@ -334,12 +409,15 @@ export async function aiAssistant(
       });
     }
     if (question) return finish(result.content, question);
+    if (stuck) break;
     if (failed || round + 1 >= FAST_ROUNDS) tier = "smart";
   }
 
-  // Out of steps: one last call without tools, so the user hears what got done.
+  // Out of steps (or stuck on one failing call): one last call without tools, so the
+  // user hears what got done.
   if (stopped()) return;
-  messages.push({ role: "system", content: WRAP_UP });
+  if (stuck) log("warn", "assistant stopped a repeated failing call", { failed });
+  messages.push({ role: "system", content: stuck ? STUCK : WRAP_UP });
   const last = await chatOrStop([]);
   if (last && !stopped()) finish(last.content);
 }

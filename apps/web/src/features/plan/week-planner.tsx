@@ -6,19 +6,24 @@ import { cx } from "@/components/ui/cx";
 import { ErrorState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
 import { PageHeader } from "@/components/ui/page-header";
+import { ProgressBar } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatLocalDate, formatMinutes } from "@/lib/format";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
+import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import { useSettings } from "@/lib/queries";
 import { useTodayDate, useUserTime } from "@/lib/use-today";
 import { CompactTask, type PlanAction } from "./compact-task";
+import { plannedMinutes } from "./day-groups";
 import { Draggable, DropArea, PlanDnd } from "./plan-dnd";
 import { type PlanTask, useTasks } from "./queries";
 import { useMoveTask } from "./use-move-task";
 
-const DEFAULT_TASK_MINUTES = 30;
-
-/** Drag tasks onto days; a day's name opens it as a timeline. */
+/**
+ * The week's load first (planned time, free time, done, the busiest day), then each
+ * day with its planned time against the day's free time. Drag tasks onto days; a
+ * day's name opens it as a timeline.
+ */
 export function WeekPlanner({
   weekStart,
   thisWeek,
@@ -46,6 +51,19 @@ export function WeekPlanner({
   );
   const tray = [...all.values()].filter((t) => t.doAt === null && t.status !== "done");
   const capacity = settings?.dayCapacityMinutes ?? 360;
+  const byDay = days.map((day) => {
+    const tasks = [...all.values()].filter(
+      (t) => t.doAt !== null && toLocalDate(t.doAt, timeZone) === day,
+    );
+    return { day, tasks, planned: plannedMinutes(tasks) };
+  });
+  const weekTasks = byDay.flatMap((d) => d.tasks);
+  const weekPlanned = byDay.reduce((sum, d) => sum + d.planned, 0);
+  const weekDone = weekTasks.filter((t) => t.status === "done").length;
+  const busiest = byDay.reduce<(typeof byDay)[number] | null>(
+    (best, d) => (d.planned > (best?.planned ?? 0) ? d : best),
+    null,
+  );
 
   // The same moves a drag makes, for the keyboard and screen readers.
   const scheduleActions = (task: PlanTask): PlanAction[] => [
@@ -95,6 +113,35 @@ export function WeekPlanner({
             />
           </>
         }
+        summary={
+          <SummaryStrip label="This week at a glance">
+            <StatTile
+              label="Planned"
+              tone="time"
+              value={formatMinutes(weekPlanned)}
+              caption={`${plural(weekTasks.length - weekDone, "open task")} this week`}
+              loading={!week.data}
+            />
+            <StatTile
+              label="Free time"
+              value={formatMinutes(Math.max(0, capacity * 7 - weekPlanned))}
+              caption={`Left of ${formatMinutes(capacity)} a day`}
+              loading={!week.data}
+            />
+            <StatTile
+              label="Done"
+              value={weekDone}
+              caption={weekTasks.length ? `of ${plural(weekTasks.length, "task")}` : "Nothing yet"}
+              loading={!week.data}
+            />
+            <StatTile
+              label="Busiest day"
+              value={busiest ? formatLocalDate(busiest.day) : "None yet"}
+              caption={busiest ? `${formatMinutes(busiest.planned)} planned` : "An open week"}
+              loading={!week.data}
+            />
+          </SummaryStrip>
+        }
       />
       <PlanDnd
         onDrop={onDrop}
@@ -129,13 +176,8 @@ export function WeekPlanner({
           <ErrorState onRetry={() => void week.refetch()} />
         ) : (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-7 lg:gap-2">
-            {days.map((day) => {
-              const tasks = [...all.values()].filter(
-                (t) => t.doAt !== null && toLocalDate(t.doAt, timeZone) === day,
-              );
-              const planned = tasks
-                .filter((t) => t.status !== "done")
-                .reduce((sum, t) => sum + (t.estimateMin ?? DEFAULT_TASK_MINUTES), 0);
+            {byDay.map(({ day, tasks, planned }) => {
+              const full = planned > capacity;
               return (
                 <DropArea
                   key={day}
@@ -149,16 +191,24 @@ export function WeekPlanner({
                   <Link
                     to="/plan/day"
                     search={{ date: day }}
-                    className="flex flex-col rounded-xl px-1.5 py-1 hover:bg-line/40"
+                    className="flex flex-col gap-1.5 rounded-xl px-1.5 py-1 hover:bg-line/40"
                   >
                     <span
                       className={cx("text-callout font-bold", day === today && "text-sky-text")}
                     >
                       {formatLocalDate(day)}
                     </span>
+                    <ProgressBar
+                      value={capacity ? planned / capacity : 0}
+                      tone="sky"
+                      label={`${formatLocalDate(day, "long")}: planned time against free time`}
+                      className="h-1.5"
+                    />
                     <span className="text-caption text-muted tabular">
-                      {planned ? `${formatMinutes(planned)} planned` : "Nothing planned"}
-                      {planned > capacity ? " · a full day" : ""}
+                      {planned
+                        ? `${formatMinutes(planned)} of ${formatMinutes(capacity)}`
+                        : "Nothing planned"}
+                      {full ? " · full" : ""}
                     </span>
                   </Link>
                   {week.data === undefined ? (

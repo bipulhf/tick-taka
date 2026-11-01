@@ -39,6 +39,11 @@ describe("assistant prompt: safety", () => {
 });
 
 describe("assistant prompt: what Tiki says", () => {
+  test("amounts are ৳ first with thousands separators", () => {
+    expect(ASSISTANT_PROMPT).toContain("৳12,500");
+    expect(ASSISTANT_PROMPT).toContain('never "250৳"');
+  });
+
   test("never promises to act later, and the timer has no length", () => {
     expect(ASSISTANT_PROMPT).toContain("you can't do anything later");
     const act = WRITE_TOOLS.find((tool) => tool.name === "act")!;

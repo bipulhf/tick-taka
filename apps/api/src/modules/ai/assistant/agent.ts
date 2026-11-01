@@ -83,6 +83,14 @@ export type AssistantEvent =
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+/** The account an expense or income goes to when none is named: Settings' default, else the first. */
+function defaultAccount(deps: Deps, vocab = vocabulary(deps)) {
+  const { settings } = userTime(deps);
+  return (
+    vocab.accounts.find((a) => a.id === settings.defaultAccountId) ?? vocab.accounts[0] ?? null
+  );
+}
+
 function context(deps: Deps, screen: string | null): string {
   const { today, timeZone, settings, now } = userTime(deps);
   const vocab = vocabulary(deps);
@@ -93,16 +101,15 @@ function context(deps: Deps, screen: string | null): string {
     minute: "2-digit",
     hour12: false,
   }).format(now);
-  const defaultAccount =
-    vocab.accounts.find((a) => a.id === settings.defaultAccountId)?.name ??
-    vocab.accounts[0]?.name ??
-    "none";
+  const account = defaultAccount(deps, vocab)?.name;
   const notes = settings.tikiNotes.length
     ? `What the user asked you to remember:\n${settings.tikiNotes.map((note) => `- ${note}`).join("\n")}`
     : null;
   return [
     `Today is ${today} (${clock}), time zone ${timeZone}.`,
-    `Default account: ${defaultAccount}.`,
+    account
+      ? `Default account: ${account} (expenses and income go here when no account is named; never ask which account).`
+      : "Default account: none (the user has no accounts yet).",
     // "This week" means the user's week, not Monday to Sunday.
     `Weeks start on ${WEEKDAYS[settings.weekStartsOn] ?? "Saturday"}.`,
     describeVocabulary(vocab),
@@ -235,6 +242,7 @@ export async function aiAssistant(
     now: deps.now(),
     today,
     draftMoney,
+    defaultAccountId: defaultAccount(deps)?.id ?? null,
   });
   const prompt = draftMoney
     ? `${ASSISTANT_PROMPT}\n${ASSISTANT_DRAFT_MONEY_NOTE}`

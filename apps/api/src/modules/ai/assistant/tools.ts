@@ -62,7 +62,7 @@ export const WRITE_TOOLS: AiToolDefinition[] = [
   },
   {
     name: "create",
-    description: `Create one record. Fields per entity (all optional unless the app needs them):\n${describeEntities()}`,
+    description: `Create one record. Send every required field; leave out optional ones the user didn't give (the app fills its defaults). Fields per entity:\n${describeEntities()}`,
     parameters: {
       type: "object",
       properties: { entity: entityParam, fields: fieldsParam },
@@ -152,7 +152,14 @@ function statusOf(value: unknown): string | null {
  */
 export function createToolRunner(
   caller: Caller,
-  options: { timeZone: string; now: number; today: LocalDate; draftMoney?: boolean },
+  options: {
+    timeZone: string;
+    now: number;
+    today: LocalDate;
+    draftMoney?: boolean;
+    /** Where an expense or income goes when the model names no account. */
+    defaultAccountId?: string | null;
+  },
 ) {
   const { timeZone, now, today } = options;
   const convert = createFieldConverter(caller, timeZone, now);
@@ -209,7 +216,18 @@ export function createToolRunner(
   async function create(args: Record<string, unknown>) {
     const entity = entityOf(args.entity);
     const def = ENTITIES[entity];
-    const fields = await convert(parseFields(String(args.fields)));
+    const given = await convert(parseFields(String(args.fields)));
+    const fields: Record<string, unknown> = {
+      ...("defaults" in def ? def.defaults : {}),
+      ...given,
+    };
+    if (
+      entity === "transaction" &&
+      fields.accountId === undefined &&
+      (fields.type === "expense" || fields.type === "income") &&
+      options.defaultAccountId
+    )
+      fields.accountId = options.defaultAccountId;
     if (entity === "task" && fields.doAt != null && fields.status === undefined)
       fields.status = "open";
     if (entity === "transaction" && fields.occurredAt === undefined) fields.occurredAt = now;

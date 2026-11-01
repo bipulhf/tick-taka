@@ -73,10 +73,11 @@ function StepList({
                 )}
               />
               <span className="flex min-w-0 items-center gap-2.5">
+                {/* The number gives way below 1280 px, so the step's name has the room. */}
                 <span
                   aria-hidden
                   className={cx(
-                    "flex size-7 shrink-0 items-center justify-center rounded-full text-caption tabular",
+                    "hidden size-7 shrink-0 items-center justify-center rounded-full text-caption tabular xl:flex",
                     on
                       ? "bg-ink text-background"
                       : past
@@ -89,10 +90,17 @@ function StepList({
                 <span className="min-w-0 flex-1">
                   <span
                     className={cx(
-                      "block truncate text-callout font-bold",
+                      "line-clamp-2 text-callout font-bold",
                       !on && !past && "text-muted",
                     )}
                   >
+                    {past ? (
+                      <Check
+                        aria-hidden
+                        className="mr-1 inline size-3.5 align-[-2px] xl:hidden"
+                        strokeWidth={3}
+                      />
+                    ) : null}
                     {item.label}
                   </span>
                   {item.hint ? (

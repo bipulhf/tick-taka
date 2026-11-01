@@ -14,7 +14,7 @@ import { useAreas } from "@/lib/queries";
 import { focusQuickAdd } from "@/lib/ui-state";
 import { useTodayDate, useUserTime } from "@/lib/use-today";
 import { groupByDay } from "./day-groups";
-import { PlanAreas, PlanLinks } from "./plan-home-links";
+import { PlanAreas } from "./plan-home-links";
 import { useTasks } from "./queries";
 
 /**
@@ -104,10 +104,7 @@ export function PlanHome() {
           )}
         </Section>
       </div>
-      <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <PlanAreas />
-        <PlanLinks />
-      </div>
+      <PlanAreas />
     </div>
   );
 }

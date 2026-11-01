@@ -10,7 +10,7 @@ import { Skeleton, SkeletonRows } from "@/components/ui/skeleton";
 import { useOpenPanel } from "@/lib/panel";
 import { useAccounts, useSettings } from "@/lib/queries";
 import { AccountRows } from "./account-rows";
-import { BudgetsAtAGlance, MoneyMore, MoneyShortcuts } from "./money-overview-parts";
+import { BudgetsAtAGlance } from "./money-overview-parts";
 import { useTransactions } from "./queries";
 import { TransactionRow, useLookup } from "./transaction-row";
 
@@ -54,7 +54,6 @@ export function MoneyOverview() {
                 Income
               </Button>
             </div>
-            <MoneyShortcuts />
           </section>
           <Section
             title="Accounts"
@@ -78,11 +77,6 @@ export function MoneyOverview() {
               <AccountRows accounts={list} opens="transactions" />
             )}
           </Section>
-          <div className="hidden lg:block">
-            <Section title="More" id="money-more">
-              <MoneyMore />
-            </Section>
-          </div>
         </div>
         <div className="flex min-w-0 flex-col gap-7">
           <Section
@@ -133,11 +127,6 @@ export function MoneyOverview() {
               </Group>
             )}
           </Section>
-          <div className="lg:hidden">
-            <Section title="More" id="money-more-narrow">
-              <MoneyMore />
-            </Section>
-          </div>
         </div>
       </div>
     </div>

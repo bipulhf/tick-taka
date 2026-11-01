@@ -125,6 +125,26 @@ test("only the newest reply's question can be answered", () => {
   expect(openQuestionId([])).toBeNull();
 });
 
+test("an answer whose turn failed leaves the question open to send again", () => {
+  const asks = message("a2", "assistant", { question: newAccount });
+  const failed = message("a3", "assistant", { failed: true });
+  expect(openQuestionId([asks, message("u2", "user"), failed])).toBe("a2");
+  // Tried twice, both failed.
+  expect(openQuestionId([asks, message("u2", "user"), failed, message("u3", "user"), failed])).toBe(
+    "a2",
+  );
+  // Once a later turn went through, it is answered.
+  expect(
+    openQuestionId([
+      asks,
+      message("u2", "user"),
+      failed,
+      message("u3", "user"),
+      message("a4", "assistant"),
+    ]),
+  ).toBeNull();
+});
+
 test("a question that doesn't read as one is dropped", () => {
   expect(parseQuestion(newAccount)).toEqual(newAccount);
   expect(parseQuestion(null)).toBeUndefined();

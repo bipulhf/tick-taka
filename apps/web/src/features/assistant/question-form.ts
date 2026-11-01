@@ -103,11 +103,21 @@ export function quickReplyMessage(question: AssistantQuestion, value: string): s
 }
 
 /**
- * The one message whose question can still be answered: the newest message, when it
- * is Tiki's and asks one. Any later message (an answer, or the user typing instead)
- * counts as answering it.
+ * The one message whose question can still be answered: Tiki's latest reply, when it
+ * asks one and nothing came after it. Any later message (an answer, or the user
+ * typing instead) counts as answering it, except a turn that failed (the user's
+ * message and the error under it), so a form sent as the connection dropped comes
+ * back to send again.
  */
 export function openQuestionId(messages: readonly ChatMessage[]): string | null {
-  const last = messages.at(-1);
-  return last?.role === "assistant" && last.question && !last.failed ? last.id : null;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (!message || message.failed) continue;
+    if (message.role === "user") {
+      if (messages[i + 1]?.failed) continue;
+      return null;
+    }
+    return message.question ? message.id : null;
+  }
+  return null;
 }

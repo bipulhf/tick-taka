@@ -232,23 +232,30 @@ export function useAssistant() {
   const saveDraft = (messageId: string, index: number) => {
     const draft = chatStore.get().find((m) => m.id === messageId)?.drafts?.[index];
     if (draft?.state !== "pending") return;
+    const saved = `Saved: ${lowerFirst(draft.summary)}`;
+    const savedMemo = `the user saved the draft "${draft.summary}" (${draft.method} ${draft.path})`;
     chatWrite(draftRequest(draft))
       .then((response) => {
         const note = draftOutcome(draft, response);
         if (note) notify(note);
       })
-      // A refusal is said in the toast, with Retry.
-      .catch(() => {});
+      // A refusal is said in the toast, with Retry; the card goes back to Save, not "Saved".
+      .catch(() =>
+        updateMessage(messageId, (m) => ({
+          ...m,
+          drafts: m.drafts?.map((d, i) => (i === index ? { ...d, state: "pending" as const } : d)),
+          actions: m.actions?.filter((a) => a.summary !== saved),
+          memo: m.memo
+            ?.split("; ")
+            .filter((part) => part !== savedMemo)
+            .join("; "),
+        })),
+      );
     updateMessage(messageId, (m) => ({
       ...m,
       drafts: m.drafts?.map((d, i) => (i === index ? { ...d, state: "saved" as const } : d)),
-      actions: [
-        ...(m.actions ?? []),
-        { summary: `Saved: ${lowerFirst(draft.summary)}`, undo: draft.undo },
-      ],
-      memo: [m.memo, `the user saved the draft "${draft.summary}" (${draft.method} ${draft.path})`]
-        .filter(Boolean)
-        .join("; "),
+      actions: [...(m.actions ?? []), { summary: saved, undo: draft.undo }],
+      memo: [m.memo, savedMemo].filter(Boolean).join("; "),
     }));
   };
 

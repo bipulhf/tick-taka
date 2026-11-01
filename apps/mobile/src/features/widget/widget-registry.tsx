@@ -8,6 +8,8 @@ import { type Face, type Look, lookColors } from "./widget-colors";
 import { lookOf, readLooks } from "./widget-looks";
 import { WIDGET_NAMES } from "./widget-names";
 import { SignedOut } from "./widgets/parts";
+import { QuickLogWidget } from "./widgets/quick-log";
+import { SafeSpendWidget } from "./widgets/safe-spend";
 import { TodayWidget } from "./widgets/today";
 import type { WidgetProps } from "./widgets/types";
 
@@ -20,6 +22,8 @@ interface Entry {
 /** Every widget the app draws, by its registered name. */
 export const WIDGETS: Record<string, Entry> = {
   [WIDGET_NAMES.today]: { draw: TodayWidget, small: false },
+  [WIDGET_NAMES.quickLog]: { draw: QuickLogWidget, small: false },
+  [WIDGET_NAMES.spend]: { draw: SafeSpendWidget, small: true },
 };
 
 /** One widget in one look: its own drawing, or the signed-out state. */

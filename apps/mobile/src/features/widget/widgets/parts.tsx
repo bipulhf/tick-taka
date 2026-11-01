@@ -122,6 +122,7 @@ export function Pill({
   flex,
   height = 48,
   padding = 12,
+  width,
 }: {
   label: string;
   c: LookColors;
@@ -132,6 +133,8 @@ export function Pill({
   flex?: number;
   height?: number;
   padding?: number;
+  /** A fixed width (dp), for a round button like ＋. */
+  width?: number;
 }) {
   const primary = tone === "primary";
   return (
@@ -141,6 +144,7 @@ export function Pill({
       accessibilityLabel={accessibilityLabel}
       style={{
         ...(flex ? { flex } : {}),
+        ...(width ? { width } : {}),
         paddingHorizontal: padding,
         height,
         borderRadius: height / 2,

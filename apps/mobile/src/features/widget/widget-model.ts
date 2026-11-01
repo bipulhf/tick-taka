@@ -2,7 +2,7 @@ import { addDays, daysInMonth, toLocalDate } from "@tick-taka/shared/dates";
 import { payAccount } from "@/features/money/pay-account";
 import { payNeedsRate } from "@/features/today/pay-needs-rate";
 import { formatClock, formatLocalDate } from "@/lib/format";
-import type { WidgetBill, WidgetCache, WidgetTask } from "./widget-cache";
+import type { QuickEntry, WidgetBill, WidgetCache, WidgetTask } from "./widget-cache";
 
 /**
  * What each widget shows, chosen from the cache. Pure, so every choice is tested
@@ -203,4 +203,9 @@ export function focusShare(focus: { startedAt: number; endsAt: number }, now: nu
   const length = focus.endsAt - focus.startedAt;
   if (length <= 0) return 1;
   return Math.min(1, Math.max(0, (now - focus.startedAt) / length));
+}
+
+/** A quick-log chip's words, as measured for fitting: "☕ Cha ৳20". */
+export function chipLabel(entry: QuickEntry, amount: string): string {
+  return `${entry.emoji ? `${entry.emoji} ` : ""}${entry.label} ${amount}`;
 }

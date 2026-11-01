@@ -6,6 +6,7 @@ import {
   billOrder,
   billTap,
   budgetShare,
+  chipLabel,
   daysLeft,
   doneOf,
   earlierLabel,
@@ -182,4 +183,10 @@ describe("small widgets", () => {
     expect(focusShare({ startedAt: 0, endsAt: 100 }, 25)).toBe(0.25);
     expect(focusShare({ startedAt: 0, endsAt: 100 }, 500)).toBe(1);
   });
+});
+
+test("quick-log chips read emoji, name and amount", () => {
+  const entry = { label: "Cha", note: "cha", amountMinor: 2_000, categoryId: null };
+  expect(chipLabel({ ...entry, emoji: "☕" }, "৳20")).toBe("☕ Cha ৳20");
+  expect(chipLabel(entry, "৳20")).toBe("Cha ৳20");
 });

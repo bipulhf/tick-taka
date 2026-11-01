@@ -27,6 +27,12 @@ const MAX_ROUNDS = 12;
 const MAX_WRITES = 40;
 const ASK_NAMES = new Set(ASK_TOOLS.map((tool) => tool.name));
 const WRITE_NAMES = new Set(["create", "update", "act", "remember", "forget"]);
+/**
+ * Most of the chat (text and memos) sent back to the model, about 8k tokens: the
+ * request may carry 30 messages of 4,000 characters plus memos, and every model
+ * call of the turn would pay for all of it again.
+ */
+const HISTORY_CHARS = 24_000;
 /** Longest message that may start on the fast model: a short command, not a question. */
 const FAST_MAX_LENGTH = 80;
 /** Calls the fast model may make before a turn moves to the smart one. */
@@ -81,6 +87,20 @@ export type AssistantEvent =
       threadId?: string;
       messageId?: string;
     };
+
+/** The latest messages that fit HISTORY_CHARS; the last one always goes. */
+function recentHistory(history: AssistantMessage[]): AssistantMessage[] {
+  const kept: AssistantMessage[] = [];
+  let left = HISTORY_CHARS;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const message = history[i] as AssistantMessage;
+    const size = message.content.length + (message.memo?.length ?? 0);
+    if (size > left && kept.length > 0) break;
+    kept.unshift(message);
+    left -= size;
+  }
+  return kept;
+}
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -252,7 +272,7 @@ export async function aiAssistant(
     : ASSISTANT_PROMPT;
   const messages: AiChatMessage[] = [
     { role: "system", content: `${prompt}\n\n${context(deps, screen, history)}` },
-    ...history.map(
+    ...recentHistory(history).map(
       (message): AiChatMessage =>
         message.role === "user"
           ? { role: "user", content: message.content }

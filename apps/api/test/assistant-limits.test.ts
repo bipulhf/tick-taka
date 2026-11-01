@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { AppError } from "../src/lib/errors";
 import { type AssistantEvent, aiAssistant } from "../src/modules/ai/assistant/agent";
-import { call, fields, setup } from "./assistant-helpers";
+import { call, chat, fields, setup } from "./assistant-helpers";
 
 type Setup = Awaited<ReturnType<typeof setup>>;
 
@@ -145,5 +145,27 @@ describe("a reply cut off at the token cap", () => {
     s.ai.queueChat({ toolCalls: [task("x".repeat(400))] }, { content: "Shortening." });
     await s.say("add a long task");
     expect(String(s.lastTool().error)).toContain("300");
+  });
+});
+
+describe("long chats", () => {
+  test("only the latest messages that fit the budget go to the model", async () => {
+    const s = await setup();
+    const long = "x".repeat(3900);
+    const messages = Array.from({ length: 29 }, (_, i) =>
+      i % 2 === 0
+        ? { role: "user" as const, content: `${i} ${long}` }
+        : { role: "assistant" as const, content: `${i} ${long}`, memo: long },
+    );
+    s.ai.queueChat({ content: "Hi." });
+    const res = await chat(s.ctx, [...messages, { role: "user", content: "and now?" }]);
+    expect(res.status).toBe(200);
+    const sent = s.ai.chatRequests[0]!.messages;
+    const chars = sent
+      .slice(1)
+      .reduce((sum, m) => sum + String((m as { content: string | null }).content ?? "").length, 0);
+    expect(chars).toBeLessThanOrEqual(24_000 + 200);
+    expect(sent.length).toBeLessThan(31);
+    expect(sent.at(-1)).toEqual({ role: "user", content: "and now?" });
   });
 });

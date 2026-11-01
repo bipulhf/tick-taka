@@ -41,6 +41,8 @@ export function BillRow({ item, settled }: { item: Recurring; settled: boolean }
       }).catch(() => {});
   };
   const paidLabel = isBill ? "Paid" : "Received";
+  // The pill is about this month; the button beside it pays the next due date.
+  const thisMonth = new Date(`${today}T12:00:00`).toLocaleString("en-GB", { month: "short" });
   const pill = billPill(item, settled, today);
   // A late bill's pill names its date, and "Due today" is one: say it once.
   const when =
@@ -63,7 +65,7 @@ export function BillRow({ item, settled }: { item: Recurring; settled: boolean }
                   {billStatusText(item.status, item.dueDate)}
                 </span>
               ) : pill === "paid" ? (
-                paidLabel
+                `${paidLabel} for ${thisMonth}`
               ) : undefined}
             </StatusPill>
           ) : null}

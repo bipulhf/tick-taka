@@ -11,7 +11,9 @@ import {
   doneOf,
   earlierLabel,
   focusShare,
+  focusTask,
   focusUntil,
+  habitCaption,
   habitGrid,
   incomeDue,
   nextLabel,
@@ -189,4 +191,18 @@ test("quick-log chips read emoji, name and amount", () => {
   const entry = { label: "Cha", note: "cha", amountMinor: 2_000, categoryId: null };
   expect(chipLabel({ ...entry, emoji: "☕" }, "৳20")).toBe("☕ Cha ৳20");
   expect(chipLabel(entry, "৳20")).toBe("Cha ৳20");
+});
+
+test("habit rings say the count until full, then the streak", () => {
+  const habit = { id: "h", name: "Water", emoji: "💧", count: 5, target: 8, streak: 7 };
+  expect(habitCaption(habit)).toBe("5/8");
+  expect(habitCaption({ ...habit, count: 8 })).toBe("🔥 7");
+  expect(habitCaption({ ...habit, count: 8, streak: 0 })).toBe("Done");
+});
+
+test("focus from the widget is for an open top-three task, else any open one", () => {
+  const done = task("done", { top: true, done: true });
+  expect(focusTask([done, task("a"), task("b", { top: true })])?.id).toBe("b");
+  expect(focusTask([done, task("a")])?.id).toBe("a");
+  expect(focusTask([done])).toBeNull();
 });

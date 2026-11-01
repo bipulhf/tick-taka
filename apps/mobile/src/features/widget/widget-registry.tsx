@@ -7,6 +7,8 @@ import type { WidgetCache } from "./widget-cache";
 import { type Face, type Look, lookColors } from "./widget-colors";
 import { lookOf, readLooks } from "./widget-looks";
 import { WIDGET_NAMES } from "./widget-names";
+import { FocusWidget } from "./widgets/focus";
+import { HabitsWidget } from "./widgets/habits";
 import { SignedOut } from "./widgets/parts";
 import { QuickLogWidget } from "./widgets/quick-log";
 import { SafeSpendWidget } from "./widgets/safe-spend";
@@ -24,6 +26,8 @@ export const WIDGETS: Record<string, Entry> = {
   [WIDGET_NAMES.today]: { draw: TodayWidget, small: false },
   [WIDGET_NAMES.quickLog]: { draw: QuickLogWidget, small: false },
   [WIDGET_NAMES.spend]: { draw: SafeSpendWidget, small: true },
+  [WIDGET_NAMES.habits]: { draw: HabitsWidget, small: true },
+  [WIDGET_NAMES.focus]: { draw: FocusWidget, small: true },
 };
 
 /** One widget in one look: its own drawing, or the signed-out state. */

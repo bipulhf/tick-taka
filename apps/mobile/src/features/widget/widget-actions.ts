@@ -5,7 +5,7 @@ import { cancelFocusEnd, scheduleFocusEndQuietly } from "@/lib/notifications";
 import type { OutboxRequest } from "@/lib/outbox-policy";
 import { editTime, toServerTime } from "@/lib/server-clock";
 import { readWidgetCache, type WidgetCache, writeWidgetCache } from "./widget-cache";
-import { billTap } from "./widget-model";
+import { billTap, focusTask } from "./widget-model";
 import {
   afterUndo,
   canUndo,
@@ -201,7 +201,7 @@ async function undo(cache: WidgetCache, now: number): Promise<WidgetCache> {
 async function focusStart(cache: WidgetCache, now: number): Promise<WidgetCache> {
   if (cache.focus) return cache;
   const entryId = newId();
-  const task = cache.tasks.find((t) => !t.done && t.top) ?? cache.tasks.find((t) => !t.done);
+  const task = focusTask(cache.tasks);
   const endsAt = now + cache.focusMinutes * 60_000;
   const sent = await deliver([
     {

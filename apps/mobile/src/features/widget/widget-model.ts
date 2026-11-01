@@ -2,7 +2,7 @@ import { addDays, daysInMonth, toLocalDate } from "@tick-taka/shared/dates";
 import { payAccount } from "@/features/money/pay-account";
 import { payNeedsRate } from "@/features/today/pay-needs-rate";
 import { formatClock, formatLocalDate } from "@/lib/format";
-import type { QuickEntry, WidgetBill, WidgetCache, WidgetTask } from "./widget-cache";
+import type { QuickEntry, WidgetBill, WidgetCache, WidgetHabit, WidgetTask } from "./widget-cache";
 
 /**
  * What each widget shows, chosen from the cache. Pure, so every choice is tested
@@ -203,6 +203,17 @@ export function focusShare(focus: { startedAt: number; endsAt: number }, now: nu
   const length = focus.endsAt - focus.startedAt;
   if (length <= 0) return 1;
   return Math.min(1, Math.max(0, (now - focus.startedAt) / length));
+}
+
+/** What a focus session started on the widget is for: an open top-three task, else any open one. */
+export function focusTask(tasks: WidgetTask[]): WidgetTask | null {
+  return tasks.find((t) => !t.done && t.top) ?? tasks.find((t) => !t.done) ?? null;
+}
+
+/** Under a habit ring: its count while under target, then the streak. */
+export function habitCaption(habit: WidgetHabit): string {
+  if (habit.count < habit.target) return `${habit.count}/${habit.target}`;
+  return habit.streak > 0 ? `🔥 ${habit.streak}` : "Done";
 }
 
 /** A quick-log chip's words, as measured for fitting: "☕ Cha ৳20". */

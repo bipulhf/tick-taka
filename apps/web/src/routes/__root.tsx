@@ -5,6 +5,7 @@ import { ConfettiLayer } from "@/components/ui/confetti";
 import { ErrorState } from "@/components/ui/empty-state";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { PayAccountPicker } from "@/features/money/pay-account-picker";
 import { queryClient } from "@/lib/query-client";
 
 export const Route = createRootRoute({
@@ -30,6 +31,7 @@ function Root() {
       <TooltipProvider>
         <Outlet />
         <Toaster />
+        <PayAccountPicker />
         <ConfettiLayer />
       </TooltipProvider>
     </QueryClientProvider>

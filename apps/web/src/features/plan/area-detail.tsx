@@ -109,22 +109,25 @@ export function AreaDetail({ areaId }: { areaId: string }) {
     <div className="flex flex-col gap-7">
       <PageHeader
         title={`${area.emoji} ${area.name}`}
-        subtitle={<AreaSummary areaId={area.id} />}
+        summary={
+          <AreaSummary
+            areaId={area.id}
+            projects={
+              projects.data ? projectList.filter((p) => p.status !== "done").length : undefined
+            }
+          />
+        }
         back={{ to: "/plan", label: "Plan" }}
         actions={
-          <>
-            <Button icon={Pencil} onClick={() => open(`area:${area.id}`)}>
-              Edit area
-            </Button>
-            <Button
-              variant="primary"
-              icon={Plus}
-              onClick={() => open("task:new", { areaId: area.id, status: "inbox" })}
-            >
-              New task
-            </Button>
-          </>
+          <Button icon={Pencil} onClick={() => open(`area:${area.id}`)}>
+            Edit area
+          </Button>
         }
+        primary={{
+          label: "New task",
+          icon: Plus,
+          onClick: () => open("task:new", { areaId: area.id, status: "inbox" }),
+        }}
       />
       <form
         className="flex max-w-xl gap-2"

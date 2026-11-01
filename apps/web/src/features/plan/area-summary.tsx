@@ -1,38 +1,52 @@
-import { Amount } from "@/components/ui/amount";
-import { Skeleton } from "@/components/ui/skeleton";
-import { formatMinutes } from "@/lib/format";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
+import { formatMinutes, plural } from "@/lib/format";
 import { useAreaSummaries } from "./queries";
 
 /**
- * The area page's one-line summary: hours this week, money spent (and earned, when
- * there is some) this month, open tasks. Amounts hide with Hide amounts.
+ * The area page's strip: hours this week, money spent and earned this month, open
+ * tasks. Amounts follow Hide amounts and Bangla digits.
  */
-export function AreaSummary({ areaId }: { areaId: string }) {
+export function AreaSummary({ areaId, projects }: { areaId: string; projects?: number }) {
   const summaries = useAreaSummaries();
-  if (!summaries.data)
-    return summaries.isError ? null : <Skeleton className="mt-1 inline-block h-4 w-72" />;
-  const row = summaries.data.find((r) => r.area.id === areaId);
-  if (!row) return null;
+  if (summaries.isError && !summaries.data) return null;
+  const row = summaries.data?.find((r) => r.area.id === areaId);
+  if (summaries.data && !row) return null;
+  const loading = !row;
   return (
-    <span className="flex flex-wrap gap-x-3 gap-y-1">
-      <span>
-        <span className="font-bold text-sky-text tabular">{formatMinutes(row.weekMinutes)}</span>{" "}
-        this week
-      </span>
-      <span>
-        <Amount minor={row.monthSpentMinor} tone="out" animate={false} className="font-bold" />{" "}
-        spent this month
-      </span>
-      {row.monthIncomeMinor > 0 ? (
-        <span>
-          <Amount minor={row.monthIncomeMinor} tone="in" animate={false} className="font-bold" />{" "}
-          earned
-        </span>
-      ) : null}
-      <span>
-        <span className="font-bold text-ink tabular">{row.openTasks}</span>{" "}
-        {row.openTasks === 1 ? "open task" : "open tasks"}
-      </span>
-    </span>
+    <SummaryStrip label="This area at a glance">
+      <StatTile
+        label="This week"
+        tone="time"
+        value={formatMinutes(row?.weekMinutes ?? 0)}
+        caption="Time tracked"
+        loading={loading}
+      />
+      <StatTile
+        label="Spent this month"
+        tone="out"
+        minor={row?.monthSpentMinor ?? 0}
+        caption="Tagged to this area"
+        loading={loading}
+      />
+      <StatTile
+        label="Earned this month"
+        tone="in"
+        minor={row?.monthIncomeMinor ?? 0}
+        caption={row?.monthIncomeMinor ? "Tagged to this area" : "Nothing yet"}
+        loading={loading}
+      />
+      <StatTile
+        label="Open tasks"
+        value={row?.openTasks ?? 0}
+        caption={
+          projects === undefined
+            ? undefined
+            : projects
+              ? `In ${plural(projects, "active project")} and loose`
+              : "No projects yet"
+        }
+        loading={loading}
+      />
+    </SummaryStrip>
   );
 }

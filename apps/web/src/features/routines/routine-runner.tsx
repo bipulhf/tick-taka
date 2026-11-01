@@ -9,6 +9,8 @@ import { Group } from "@/components/ui/group";
 import { PageHeader } from "@/components/ui/page-header";
 import { ProgressBar } from "@/components/ui/progress";
 import { Skeleton, SkeletonRows } from "@/components/ui/skeleton";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
+import { formatMinutes } from "@/lib/format";
 import { playSound } from "@/lib/sounds";
 import { useRoutines } from "./queries";
 import { RoutineEditor } from "./routine-editor";
@@ -32,6 +34,11 @@ export function RoutineRunner({
   const total = routine?.steps.length ?? 0;
   const doneCount = routine ? routine.steps.filter((s) => checked.has(s.id)).length : 0;
   const allDone = total > 0 && doneCount === total;
+  const minutes = routine?.steps.reduce((sum, s) => sum + (s.minutes ?? 0), 0) ?? 0;
+  const minutesLeft =
+    routine?.steps
+      .filter((s) => !checked.has(s.id))
+      .reduce((sum, s) => sum + (s.minutes ?? 0), 0) ?? 0;
   useEffect(() => {
     if (allDone) celebrate();
   }, [allDone]);
@@ -68,6 +75,30 @@ export function RoutineRunner({
       <PageHeader
         title={`${routine.emoji} ${routine.name}`}
         back={BACK}
+        summary={
+          editing || total === 0 ? undefined : (
+            <SummaryStrip label={`${routine.name} at a glance`}>
+              <StatTile label="Steps" value={total} caption="One at a time" />
+              <StatTile
+                label="Time"
+                tone="time"
+                value={minutes ? formatMinutes(minutes) : "No timers"}
+                caption={
+                  minutes
+                    ? minutesLeft && doneCount
+                      ? `${formatMinutes(minutesLeft)} to go`
+                      : "With every step's timer"
+                    : "Steps run at your pace"
+                }
+              />
+              <StatTile
+                label="Done"
+                value={`${doneCount} of ${total}`}
+                caption={allDone ? "All done" : doneCount ? "Keep going" : "Ready when you are"}
+              />
+            </SummaryStrip>
+          )
+        }
         actions={
           editing ? null : (
             <>
@@ -90,7 +121,7 @@ export function RoutineRunner({
           <div className="flex flex-col gap-1.5">
             <ProgressBar value={total ? doneCount / total : 0} tone="sky" label="Steps done" />
             {total ? (
-              <p className="text-caption text-muted tabular" aria-live="polite">
+              <p className="sr-only" aria-live="polite">
                 {doneCount} of {total} done
               </p>
             ) : null}

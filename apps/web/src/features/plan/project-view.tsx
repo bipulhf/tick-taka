@@ -6,8 +6,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { Segmented } from "@/components/ui/segmented";
 import { SkeletonRows, ViewSkeleton } from "@/components/ui/skeleton";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
 import { TaskRow } from "@/features/tasks/task-row";
-import { plural } from "@/lib/format";
+import { formatMinutes, plural } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import { useAreas } from "@/lib/queries";
 import { PROJECT_STATUSES, type ProjectStatus, useSetProjectStatus } from "./project-status";
@@ -40,6 +41,9 @@ export function ProjectView({ projectId }: { projectId: string }) {
 
   const list = (openTasks.data ?? []).filter((t) => t.status !== "done");
   const finished = (doneTasks.data ?? []).filter((t) => t.status === "done");
+  const estimated = list.filter((t) => t.estimateMin);
+  const estimateMinutes = estimated.reduce((sum, t) => sum + (t.estimateMin ?? 0), 0);
+  const total = list.length + finished.length;
   const addTask = () =>
     open("task:new", { areaId: project.areaId, projectId: project.id, status: "inbox" });
 
@@ -52,14 +56,41 @@ export function ProjectView({ projectId }: { projectId: string }) {
           area ? { to: `/plan/area/${area.id}`, label: area.name } : { to: "/plan", label: "Plan" }
         }
         actions={
-          <>
-            <Button icon={Pencil} onClick={() => open(`project:${project.id}`)}>
-              Edit
-            </Button>
-            <Button variant="primary" icon={Plus} onClick={addTask}>
-              New task
-            </Button>
-          </>
+          <Button icon={Pencil} onClick={() => open(`project:${project.id}`)}>
+            Edit
+          </Button>
+        }
+        primary={{ label: "New task", icon: Plus, onClick: addTask }}
+        summary={
+          <SummaryStrip label={`${project.name} at a glance`}>
+            <StatTile
+              label="Open tasks"
+              value={list.length}
+              caption={list.length ? "Still to do" : "Nothing left"}
+              loading={!openTasks.data}
+            />
+            <StatTile
+              label="Finished"
+              tone="time"
+              value={finished.length >= 50 ? "50+" : finished.length}
+              caption={
+                total && finished.length < 50
+                  ? `${Math.round((finished.length / total) * 100)}% of the tasks`
+                  : "Nicely moving"
+              }
+              loading={!doneTasks.data}
+            />
+            <StatTile
+              label="Time to finish"
+              value={estimateMinutes ? formatMinutes(estimateMinutes) : "Not estimated"}
+              caption={
+                list.length > estimated.length
+                  ? `${plural(list.length - estimated.length, "task")} without an estimate`
+                  : "From every task's estimate"
+              }
+              loading={!openTasks.data}
+            />
+          </SummaryStrip>
         }
       />
       <Segmented<ProjectStatus>

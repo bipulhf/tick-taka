@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { openDebtGroups, repaidShare, signedOutstanding } from "../src/features/money/debt-groups";
+import {
+  debtTotals,
+  openDebtGroups,
+  repaidShare,
+  settledDebts,
+  signedOutstanding,
+} from "../src/features/money/debt-groups";
 import { contributionSource, isFutureDeadline } from "../src/features/money/goal-money";
 
 const accounts = [{ id: "cash" }, { id: "jar" }, { id: "bank" }];
@@ -49,5 +55,34 @@ describe("debts", () => {
     expect(repaidShare(500, 2000)).toBe(0.25);
     expect(repaidShare(3000, 2000)).toBe(1);
     expect(repaidShare(0, 0)).toBe(0);
+  });
+});
+
+describe("debt totals", () => {
+  const loan = (
+    direction: "owed_to_me" | "i_owe",
+    outstandingMinor: number,
+    closedAt: number | null = null,
+    currency = "BDT",
+  ) => ({ direction, outstandingMinor, closedAt, currency });
+  test("open loans in one currency, with the net", () => {
+    expect(
+      debtTotals(
+        [
+          loan("owed_to_me", 2000),
+          loan("owed_to_me", 500, 9),
+          loan("i_owe", 5000),
+          loan("owed_to_me", 70, null, "USD"),
+        ],
+        "BDT",
+      ),
+    ).toEqual({ owedToMeMinor: 2000, iOweMinor: 5000, netMinor: -3000 });
+  });
+  test("settled loans, the latest first", () => {
+    expect(
+      settledDebts([loan("i_owe", 0, 5), loan("i_owe", 10), loan("owed_to_me", 0, 9)]).map(
+        (d) => d.closedAt,
+      ),
+    ).toEqual([9, 5]);
   });
 });

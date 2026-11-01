@@ -1,122 +1,77 @@
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Amount } from "@/components/ui/amount";
-import { Button } from "@/components/ui/button";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
-import { Group } from "@/components/ui/group";
+import { CardGrid, ItemCardSkeletons } from "@/components/ui/item-card";
+import { ListSection } from "@/components/ui/list-section";
 import { PageHeader } from "@/components/ui/page-header";
-import { ProgressBar } from "@/components/ui/progress";
-import { Section } from "@/components/ui/section";
-import { SkeletonRows } from "@/components/ui/skeleton";
-import { formatAmount } from "@/lib/format";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
+import { plural } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
-import { useRowKeyActions } from "@/lib/row-keys";
-import { remove } from "@/lib/write";
-import { DebtForecast, DebtRepay } from "./debt-actions";
-import { openDebtGroups, repaidShare, signedOutstanding } from "./debt-groups";
-import { RowMenu } from "./money-ui";
-import { type Debt, useDebts } from "./queries";
+import { useSettings } from "@/lib/queries";
+import { DebtCard, SettledDebts } from "./debt-card";
+import { debtTotals, openDebtGroups, settledDebts } from "./debt-groups";
+import { useDebts } from "./queries";
 
-function DebtItem({
-  debt,
-  repaying,
-  onRepay,
-}: {
-  debt: Debt;
-  repaying: boolean;
-  onRepay: (open: boolean) => void;
-}) {
-  const open = useOpenPanel();
-  const edit = () => open(`debt:${debt.id}`);
-  const drop = () => void remove(`/debts/${debt.id}`, `“${debt.person}”`).catch(() => {});
-  useRowKeyActions(`debt:${debt.id}`, { remove: drop });
-  const outstanding = signedOutstanding(debt);
-  return (
-    <div data-row={`debt:${debt.id}`} className="group/row flex flex-col gap-3 px-4 py-3.5">
-      {/* Only the summary opens the loan; the forecast and repayment below stay inline. */}
-      <div className="relative flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            data-row-primary
-            onClick={edit}
-            className="min-w-0 flex-1 truncate text-left text-body font-bold after:absolute after:inset-0 after:content-[''] focus-visible:outline-none after:focus-visible:rounded-xl after:focus-visible:ring-2 after:focus-visible:ring-sky-text"
-          >
-            {debt.person}
-          </button>
-          <Amount
-            minor={outstanding}
-            currency={debt.currency}
-            signed
-            tone={outstanding >= 0 ? "in" : "out"}
-            className="text-heading"
-          />
-          <div className="relative z-10">
-            <RowMenu
-              label={`More for ${debt.person}`}
-              items={[
-                { label: "Edit", icon: Pencil, onSelect: edit },
-                { label: "Delete", icon: Trash2, onSelect: drop, danger: true, shortcut: "Del" },
-              ]}
-            />
-          </div>
-        </div>
-        <ProgressBar
-          value={repaidShare(debt.repaidMinor, debt.principalMinor)}
-          tone="ink"
-          label={`${debt.person} repaid`}
-        />
-        <p className="text-caption text-muted">
-          {formatAmount(debt.repaidMinor, { currency: debt.currency })} of{" "}
-          {formatAmount(debt.principalMinor, { currency: debt.currency })} repaid
-          {debt.note ? ` · ${debt.note}` : ""}
-        </p>
-      </div>
-      <div className="sm:max-w-xs">
-        <DebtForecast debt={debt} />
-      </div>
-      {repaying ? (
-        <div className="flex flex-col gap-2">
-          <DebtRepay debt={debt} autoFocus onDone={() => onRepay(false)} />
-          <Button size="sm" variant="ghost" className="self-start" onClick={() => onRepay(false)}>
-            Cancel
-          </Button>
-        </div>
-      ) : (
-        <Button size="sm" className="self-start" onClick={() => onRepay(true)}>
-          Log a repayment
-        </Button>
-      )}
-    </div>
-  );
-}
-
-/** Who owes me and whom I owe, with partial repayments and a payoff forecast. */
+/**
+ * Who owes me and whom I owe: the totals and the net first, then a card per loan with
+ * partial repayments; settled loans fold away at the end.
+ */
 export function DebtsView() {
   const open = useOpenPanel();
   const debts = useDebts();
+  const { data: settings } = useSettings();
   const [repaying, setRepaying] = useState<string | null>(null);
-  const groups = openDebtGroups(debts.data ?? []);
+  const currency = settings?.defaultCurrency ?? "BDT";
+  const list = debts.data ?? [];
+  const groups = openDebtGroups(list);
+  const settled = settledDebts(list);
+  const totals = debtTotals(list, currency);
+  const [owedToMe, iOwe] = groups.map((g) => g.items.length);
   const create = () => open("debt:new");
   const empty = groups.every((g) => g.items.length === 0);
+  const loading = !debts.data;
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
         title="Debts"
-        actions={
-          <Button size="sm" icon={Plus} onClick={create}>
-            New
-          </Button>
+        primary={{ label: "New debt", icon: Plus, onClick: create }}
+        summary={
+          debts.data?.length === 0 ? undefined : (
+            <SummaryStrip label="Loans">
+              <StatTile
+                label="Owed to me"
+                tone="in"
+                minor={totals.owedToMeMinor}
+                currency={currency}
+                caption={owedToMe ? `From ${plural(owedToMe, "person", "people")}` : "Nobody"}
+                loading={loading}
+              />
+              <StatTile
+                label="I owe"
+                tone="out"
+                minor={totals.iOweMinor}
+                currency={currency}
+                caption={iOwe ? `To ${plural(iOwe, "person", "people")}` : "Nobody"}
+                loading={loading}
+              />
+              <StatTile
+                label="Net"
+                tone="flow"
+                minor={totals.netMinor}
+                currency={currency}
+                caption="Owed to me minus what I owe"
+                loading={loading}
+              />
+            </SummaryStrip>
+          )
         }
       />
       {debts.data === undefined ? (
         debts.isError ? (
           <ErrorState onRetry={() => void debts.refetch()} />
         ) : (
-          <div className="grid gap-7 lg:grid-cols-2">
-            <SkeletonRows rows={2} />
-            <SkeletonRows rows={2} />
-          </div>
+          <ItemCardSkeletons count={2} />
         )
       ) : empty ? (
         <EmptyState
@@ -127,25 +82,42 @@ export function DebtsView() {
           mood="relaxed"
         />
       ) : (
-        <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          {groups.map((group) =>
-            group.items.length ? (
-              <Section key={group.title} title={group.title}>
-                <Group label={group.title}>
-                  {group.items.map((debt) => (
-                    <DebtItem
-                      key={debt.id}
-                      debt={debt}
-                      repaying={repaying === debt.id}
-                      onRepay={(on) => setRepaying(on ? debt.id : null)}
-                    />
-                  ))}
-                </Group>
-              </Section>
-            ) : null,
-          )}
-        </div>
+        groups.map((group) =>
+          group.items.length ? (
+            <ListSection
+              key={group.title}
+              id={`debts-${group.items[0]?.direction}`}
+              variant="heading"
+              align="edge"
+              title={group.title}
+              total={
+                <Amount
+                  minor={
+                    group.items[0]?.direction === "owed_to_me"
+                      ? totals.owedToMeMinor
+                      : -totals.iOweMinor
+                  }
+                  currency={currency}
+                  signed
+                  animate={false}
+                />
+              }
+            >
+              <CardGrid label={group.title}>
+                {group.items.map((debt) => (
+                  <DebtCard
+                    key={debt.id}
+                    debt={debt}
+                    repaying={repaying === debt.id}
+                    onRepay={(on) => setRepaying(on ? debt.id : null)}
+                  />
+                ))}
+              </CardGrid>
+            </ListSection>
+          ) : null,
+        )
       )}
+      <SettledDebts debts={settled} />
     </div>
   );
 }

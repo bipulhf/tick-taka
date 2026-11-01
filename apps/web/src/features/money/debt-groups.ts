@@ -28,3 +28,29 @@ export function signedOutstanding(debt: DebtLike): number {
 export function repaidShare(repaidMinor: number, principalMinor: number): number {
   return principalMinor > 0 ? Math.min(1, repaidMinor / principalMinor) : 0;
 }
+
+/**
+ * The strip's totals for open loans in one currency: what's owed to me, what I owe, and
+ * the net (owed to me minus what I owe). Loans in other currencies are left out.
+ */
+export function debtTotals(
+  debts: (DebtLike & { currency: string })[],
+  currency: string,
+): { owedToMeMinor: number; iOweMinor: number; netMinor: number } {
+  let owedToMeMinor = 0;
+  let iOweMinor = 0;
+  for (const debt of debts) {
+    if (debt.closedAt !== null || debt.currency !== currency) continue;
+    const amount = Math.max(0, debt.outstandingMinor);
+    if (debt.direction === "owed_to_me") owedToMeMinor += amount;
+    else iOweMinor += amount;
+  }
+  return { owedToMeMinor, iOweMinor, netMinor: owedToMeMinor - iOweMinor };
+}
+
+/** Settled loans, the latest first. */
+export function settledDebts<T extends DebtLike>(debts: T[]): T[] {
+  return debts
+    .filter((d) => d.closedAt !== null)
+    .sort((a, b) => (b.closedAt ?? 0) - (a.closedAt ?? 0));
+}

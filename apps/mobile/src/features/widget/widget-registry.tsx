@@ -7,11 +7,13 @@ import type { WidgetCache } from "./widget-cache";
 import { type Face, type Look, lookColors } from "./widget-colors";
 import { lookOf, readLooks } from "./widget-looks";
 import { WIDGET_NAMES } from "./widget-names";
+import { BillsWidget } from "./widgets/bills";
 import { FocusWidget } from "./widgets/focus";
 import { HabitsWidget } from "./widgets/habits";
 import { SignedOut } from "./widgets/parts";
 import { QuickLogWidget } from "./widgets/quick-log";
 import { SafeSpendWidget } from "./widgets/safe-spend";
+import { ThisMonthWidget } from "./widgets/this-month";
 import { TodayWidget } from "./widgets/today";
 import type { WidgetProps } from "./widgets/types";
 
@@ -28,6 +30,8 @@ export const WIDGETS: Record<string, Entry> = {
   [WIDGET_NAMES.spend]: { draw: SafeSpendWidget, small: true },
   [WIDGET_NAMES.habits]: { draw: HabitsWidget, small: true },
   [WIDGET_NAMES.focus]: { draw: FocusWidget, small: true },
+  [WIDGET_NAMES.bills]: { draw: BillsWidget, small: false },
+  [WIDGET_NAMES.month]: { draw: ThisMonthWidget, small: true },
 };
 
 /** One widget in one look: its own drawing, or the signed-out state. */

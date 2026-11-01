@@ -5,6 +5,7 @@ import {
   billNote,
   billOrder,
   billTap,
+  budgetLine,
   budgetShare,
   chipLabel,
   daysLeft,
@@ -16,6 +17,7 @@ import {
   habitCaption,
   habitGrid,
   incomeDue,
+  monthName,
   nextLabel,
   nextTask,
   taskListRows,
@@ -205,4 +207,10 @@ test("focus from the widget is for an open top-three task, else any open one", (
   expect(focusTask([done, task("a"), task("b", { top: true })])?.id).toBe("b");
   expect(focusTask([done, task("a")])?.id).toBe("a");
   expect(focusTask([done])).toBeNull();
+});
+
+test("this month names the month and how much of the budgets is used", () => {
+  expect(monthName("2026-11")).toBe("November");
+  expect(budgetLine(0.694, 1)).toBe("69% of budgets used · day 1");
+  expect(budgetLine(null, 12)).toBe("No budgets yet · day 12");
 });

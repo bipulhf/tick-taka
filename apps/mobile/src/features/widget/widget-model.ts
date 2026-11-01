@@ -193,6 +193,32 @@ export function habitGrid(
   return { columns, shown: Math.min(count, columns * rows) };
 }
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/** "November" for 2026-11. */
+export function monthName(month: string): string {
+  return MONTH_NAMES[Number(month.slice(5, 7)) - 1] ?? "";
+}
+
+/** "69% of budgets used · day 1", or that there are none yet. */
+export function budgetLine(share: number | null, day: number): string {
+  const used = share === null ? "No budgets yet" : `${Math.round(share * 100)}% of budgets used`;
+  return `${used} · day ${day}`;
+}
+
 /** "until 3:45 pm" while focusing; no ticking clock (a widget can't tick each second). */
 export function focusUntil(endsAt: number, timeZone: string): string {
   return `until ${formatClock(endsAt, timeZone)}`;

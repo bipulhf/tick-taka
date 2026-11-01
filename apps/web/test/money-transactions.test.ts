@@ -23,6 +23,7 @@ import {
   formSchema,
   transactionBody,
 } from "../src/features/money/transaction-form";
+import { dayNet, summarizeTransactions } from "../src/features/money/transaction-summary";
 
 const TZ = "Asia/Dhaka";
 const bdt = () => "BDT";
@@ -244,5 +245,27 @@ describe("transaction filters", () => {
       ["eat", "Food"],
     ]);
     expect(categoryOptions(cats)).toHaveLength(3);
+  });
+});
+
+describe("summarizeTransactions and dayNet", () => {
+  const items = [
+    { type: "expense", amountMinor: 12_000, accountId: "cash" },
+    { type: "income", amountMinor: 4_500_000, accountId: "bank" },
+    { type: "transfer", amountMinor: 50_000, accountId: "bank", toAccountId: "cash" },
+    { type: "expense", amountMinor: 999, accountId: "usd" },
+  ];
+  const inBdt = (item: { accountId: string | null }) => item.accountId !== "usd";
+  test("adds up spent and earned in one currency, and counts everything", () => {
+    expect(summarizeTransactions(items, inBdt)).toEqual({
+      spentMinor: 12_000,
+      earnedMinor: 4_500_000,
+      netMinor: 4_488_000,
+      count: 4,
+    });
+  });
+  test("a day's net leaves transfers out, unless seen from one account", () => {
+    expect(dayNet(items, inBdt)).toBe(4_488_000);
+    expect(dayNet(items, inBdt, "cash")).toBe(4_538_000);
   });
 });

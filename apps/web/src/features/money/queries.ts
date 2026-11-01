@@ -21,6 +21,34 @@ export function useTransactions(query: TransactionQuery, options: { enabled?: bo
   });
 }
 
+/** How many pages of 200 the summary strip reads before it says "1,000+". */
+const SUMMARY_PAGES = 5;
+
+/**
+ * Every transaction a filter matches (up to 1,000), for the summary strip's totals:
+ * the list itself loads in pages, so its loaded items can't be added up.
+ */
+export function useTransactionsForSummary(query: TransactionQuery) {
+  return useQuery({
+    queryKey: ["transactions", "summary", query],
+    queryFn: async () => {
+      const items: Transaction[] = [];
+      let cursor: string | null = null;
+      for (let page = 0; page < SUMMARY_PAGES; page++) {
+        const result: { items: Transaction[]; nextCursor: string | null } = await unwrap(
+          api.transactions.$get({
+            query: { ...query, limit: "200", ...(cursor ? { cursor } : {}) },
+          }),
+        );
+        items.push(...result.items);
+        cursor = result.nextCursor;
+        if (!cursor) break;
+      }
+      return { items, capped: cursor !== null };
+    },
+  });
+}
+
 export function useTransaction(id: string | null) {
   return useQuery({
     queryKey: ["transaction", id],

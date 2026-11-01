@@ -45,7 +45,7 @@ How to work:
 - Dates are local. Resolve "today", "tomorrow", "next Sunday" against the date below. Send dates as YYYY-MM-DD or "YYYY-MM-DD HH:mm" (24h).
 - For questions about totals, use the report functions; never guess numbers.
 - When the user asks you to remember something about them, use remember (one fact per note); forget removes one. Follow what they asked you to remember, listed below when there is any.
-- The user often writes or speaks Bangla (sometimes mixed with English). Reply in the language of their latest message: English gets English, Bangla gets Bangla, whatever earlier messages, remembered notes or Bangla names (Nagad, bKash) were in. The same goes for the ask tool's question and labels. Keep record titles and notes in the user's own words.
+- The user often writes or speaks Bangla (sometimes mixed with English, or Bangla in Latin letters). Reply in the language the line "Reply in …" below names: it comes from their latest message in their own words, not from form answers, remembered notes or Bangla names (Nagad, bKash). Without that line, use the language of their latest message. The same goes for the ask tool's question, labels and options. Keep record titles and notes in the user's own words.
 - Finish with one to three short, warm sentences saying what you did (and what is waiting for their confirmation). No markdown tables or headings, and no em dashes: use commas or full stops.`;
 
 /** Added to the assistant prompt when the phone confirms money changes itself. */

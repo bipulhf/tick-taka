@@ -14,6 +14,7 @@ import { userTime } from "../../../lib/user-time";
 import { describeVocabulary, vocabulary } from "../context";
 import { ASSISTANT_DRAFT_MONEY_NOTE, ASSISTANT_PROMPT } from "../prompts";
 import { createCaller, type Dispatch } from "./dispatch";
+import { replyLanguage } from "./language";
 import { NOTE_TOOLS } from "./notes";
 import { describeQuestion, QUESTION_TOOL, readQuestion } from "./question";
 import { ASK_TOOLS, runAskTool } from "./read-tools";
@@ -91,7 +92,7 @@ function defaultAccount(deps: Deps, vocab = vocabulary(deps)) {
   );
 }
 
-function context(deps: Deps, screen: string | null): string {
+function context(deps: Deps, screen: string | null, history: AssistantMessage[]): string {
   const { today, timeZone, settings, now } = userTime(deps);
   const vocab = vocabulary(deps);
   const clock = new Intl.DateTimeFormat("en-GB", {
@@ -102,6 +103,7 @@ function context(deps: Deps, screen: string | null): string {
     hour12: false,
   }).format(now);
   const account = defaultAccount(deps, vocab)?.name;
+  const language = replyLanguage(history);
   const notes = settings.tikiNotes.length
     ? `What the user asked you to remember:\n${settings.tikiNotes.map((note) => `- ${note}`).join("\n")}`
     : null;
@@ -115,6 +117,7 @@ function context(deps: Deps, screen: string | null): string {
     describeVocabulary(vocab),
     notes,
     screen,
+    language && `Reply in ${language}.`,
   ]
     .filter((line) => line !== null)
     .join("\n");
@@ -248,7 +251,7 @@ export async function aiAssistant(
     ? `${ASSISTANT_PROMPT}\n${ASSISTANT_DRAFT_MONEY_NOTE}`
     : ASSISTANT_PROMPT;
   const messages: AiChatMessage[] = [
-    { role: "system", content: `${prompt}\n\n${context(deps, screen)}` },
+    { role: "system", content: `${prompt}\n\n${context(deps, screen, history)}` },
     ...history.map(
       (message): AiChatMessage =>
         message.role === "user"

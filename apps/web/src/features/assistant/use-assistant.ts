@@ -134,14 +134,20 @@ export function useAssistant() {
             return change((turn) => ({ ...turn, text: "" }));
           case "action":
             return change((turn) => ({ ...turn, actions: [...turn.actions, event.action] }));
-          case "error":
+          case "error": {
             finished = true;
-            return appendMessage({
+            // Changes made before the error still happened; keep their Undo.
+            const done = liveStore.get()?.actions ?? [];
+            appendMessage({
               role: "assistant",
               content: errorText(new ApiError(500, event.code, event.message)),
+              actions: done,
               steps: settled(),
               failed: true,
             });
+            if (done.length) void queryClient.invalidateQueries();
+            return;
+          }
           case "done": {
             finished = true;
             const drafts = parseDrafts(event.drafts);

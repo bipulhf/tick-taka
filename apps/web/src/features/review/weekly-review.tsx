@@ -10,15 +10,26 @@ import { Skeleton, SkeletonRows } from "@/components/ui/skeleton";
 import { TextField } from "@/components/ui/text-field";
 import { api, unwrap } from "@/lib/api";
 import { friendlyError } from "@/lib/error-copy";
-import { formatLocalDate } from "@/lib/format";
+import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useAiStatus, useAreas, useCategories } from "@/lib/queries";
 import { notify } from "@/lib/toast";
 import { fire } from "@/lib/write";
 import { useWeeklyReview } from "./queries";
 import { StepButtons, Stepper } from "./stepper";
-import { HabitsStep, HoursStep, SpendingStep, WinsStep } from "./weekly-steps";
+import { HabitsStep, HoursStep, SpendingStep, type WeeklyData, WinsStep } from "./weekly-steps";
+import { WeeklyStrip } from "./weekly-strips";
 
 const STEPS = ["Hours", "Spending", "Habits", "Wins", "Next week"] as const;
+
+/** A short state under each step's name; amounts stay off it (Hide amounts). */
+function stepHint(step: number, data: WeeklyData): string {
+  if (step === 0)
+    return `${formatMinutes(data.hoursVsPlan.reduce((sum, r) => sum + r.trackedMinutes, 0))} tracked`;
+  if (step === 1) return plural(data.spending.byCategory.length, "category", "categories");
+  if (step === 2) return `${data.habits.filter((h) => h.streak > 0).length} on a streak`;
+  if (step === 3) return `${plural(data.wins.tasksDone, "task")} done`;
+  return "Pick a focus";
+}
 
 /** A 5-minute guided Sunday flow. The coach explains numbers; it never calculates them. */
 export function WeeklyReview() {
@@ -67,7 +78,7 @@ export function WeeklyReview() {
     <div className="flex flex-col gap-7">
       <PageHeader title="Weekly review" subtitle={`Week of ${formatLocalDate(data.weekStart)}`} />
       <Stepper
-        steps={STEPS.map((label) => ({ label }))}
+        steps={STEPS.map((label, index) => ({ label, hint: stepHint(index, data) }))}
         step={step}
         onStep={onStep}
         label="Weekly review steps"
@@ -84,6 +95,7 @@ export function WeeklyReview() {
           />
         }
       >
+        <WeeklyStrip step={step} data={data} />
         {step === 0 ? <HoursStep data={data} areas={areas} /> : null}
         {step === 1 ? <SpendingStep data={data} categories={categories} /> : null}
         {step === 2 ? <HabitsStep data={data} /> : null}

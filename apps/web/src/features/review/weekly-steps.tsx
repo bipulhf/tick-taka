@@ -68,30 +68,30 @@ export function HoursStep({ data, areas }: { data: WeeklyData; areas: Named[] })
 
 export function SpendingStep({ data, categories }: { data: WeeklyData; categories: Named[] }) {
   const rows = data.spending.byCategory.slice(0, 5);
+  if (rows.length === 0)
+    return (
+      <EmptyState
+        title="No spending this week"
+        message="What you spend this week shows up here, biggest first."
+        mood="relaxed"
+      />
+    );
   return (
-    <div className="flex flex-col gap-5 rounded-2xl bg-card p-5">
-      <div>
-        <Amount minor={data.spending.spentMinor} className="block text-title" animate={false} />
-        <p className="text-callout text-muted">
-          against a flexible weekly share of{" "}
-          <Amount minor={data.spending.flexibleWeeklyBudgetMinor} animate={false} />
-        </p>
-      </div>
-      {rows.length ? (
-        <BarList
-          label="Spending by category this week"
-          tone="coral"
-          items={rows.map((row) => ({
-            key: row.categoryId ?? "none",
-            label: nameOf(
-              categories.find((c) => c.id === row.categoryId),
-              "Uncategorised",
-            ),
-            value: row.amountMinor,
-            valueText: <Amount minor={row.amountMinor} animate={false} />,
-          }))}
-        />
-      ) : null}
+    <div className="flex flex-col gap-4 rounded-2xl bg-card p-5">
+      <h3 className="text-callout font-bold">Where it went</h3>
+      <BarList
+        label="Spending by category this week"
+        tone="coral"
+        items={rows.map((row) => ({
+          key: row.categoryId ?? "none",
+          label: nameOf(
+            categories.find((c) => c.id === row.categoryId),
+            "Uncategorised",
+          ),
+          value: row.amountMinor,
+          valueText: <Amount minor={row.amountMinor} animate={false} />,
+        }))}
+      />
     </div>
   );
 }

@@ -24,6 +24,21 @@ interface Entry {
   small: boolean;
 }
 
+const WIDE = { width: 340, height: 200 };
+const SQUARE = { width: 170, height: 170 };
+
+/** A widget's usual size on the launcher (dp), for previews before it has one. */
+export const PREVIEW_SIZES: Record<string, { width: number; height: number }> = {
+  [WIDGET_NAMES.today]: WIDE,
+  [WIDGET_NAMES.quickLog]: { width: 340, height: 80 },
+  [WIDGET_NAMES.spend]: SQUARE,
+  [WIDGET_NAMES.habits]: SQUARE,
+  [WIDGET_NAMES.bills]: WIDE,
+  [WIDGET_NAMES.focus]: SQUARE,
+  [WIDGET_NAMES.month]: SQUARE,
+  [WIDGET_NAMES.tasks]: { width: 340, height: 300 },
+};
+
 /** Every widget the app draws, by its registered name. */
 export const WIDGETS: Record<string, Entry> = {
   [WIDGET_NAMES.today]: { draw: TodayWidget, small: false },

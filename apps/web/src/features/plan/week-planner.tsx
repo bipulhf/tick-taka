@@ -119,7 +119,7 @@ export function WeekPlanner({
               label="Planned"
               tone="time"
               value={formatMinutes(weekPlanned)}
-              caption={`${plural(weekTasks.length - weekDone, "open task")} this week`}
+              caption={plural(weekTasks.length - weekDone, "open task")}
               loading={!week.data}
             />
             <StatTile
@@ -175,7 +175,7 @@ export function WeekPlanner({
         {week.isError && !week.data ? (
           <ErrorState onRetry={() => void week.refetch()} />
         ) : (
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-7 lg:gap-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 xl:gap-2">
             {byDay.map(({ day, tasks, planned }) => {
               const full = planned > capacity;
               return (
@@ -184,7 +184,7 @@ export function WeekPlanner({
                   id={day}
                   label={formatLocalDate(day, "long")}
                   className={cx(
-                    "flex min-h-28 flex-col gap-2 rounded-2xl p-2 lg:min-h-[420px]",
+                    "flex min-h-28 flex-col gap-2 rounded-2xl p-2 xl:min-h-[420px]",
                     day === today ? "bg-sky/10" : "bg-card/60",
                   )}
                 >

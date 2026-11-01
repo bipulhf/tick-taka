@@ -31,13 +31,15 @@ export interface NavLink {
   icon: LucideIcon;
   /** Keyboard shortcut after G (G T for Today). */
   key?: string;
+  /** Detail pages that belong to this view's tab: one routine sits under Routines. */
+  owns?: string;
 }
 
 export interface NavSection extends NavLink {
   children: NavLink[];
 }
 
-/** The four places, as on the phone's tab bar, each with its views. */
+/** The four places, as on the phone's tab bar, each with its views (the page tabs). */
 export const NAV: NavSection[] = [
   { to: "/", label: "Today", icon: Sun, key: "t", children: [] },
   {
@@ -53,7 +55,7 @@ export const NAV: NavSection[] = [
       { to: "/plan/someday", label: "Someday", icon: Archive },
       { to: "/plan/logbook", label: "Logbook", icon: BookCheck, key: "l" },
       { to: "/plan/habits", label: "Habits", icon: Repeat2, key: "h" },
-      { to: "/plan/routines", label: "Routines", icon: ListChecks },
+      { to: "/plan/routines", label: "Routines", icon: ListChecks, owns: "/plan/routine/" },
       { to: "/plan/time", label: "Time", icon: Timer },
     ],
   },
@@ -94,6 +96,22 @@ export function sectionOf(pathname: string): NavSection {
   return (
     NAV.find((section) => section.to !== "/" && path.startsWith(section.to)) ??
     (NAV[0] as NavSection)
+  );
+}
+
+/**
+ * The section's page tab a path opens: the section's own page only on itself, any
+ * other view on itself and below, plus the detail pages it owns. An area or a project
+ * belongs to no tab. Pure, so it can be tested.
+ */
+export function activeTab(pathname: string, section: NavSection): NavLink | undefined {
+  const path = pathname.replace(/^\/app/, "") || "/";
+  return section.children.find((link) =>
+    link.to === section.to
+      ? path === link.to
+      : path === link.to ||
+        path.startsWith(`${link.to}/`) ||
+        (link.owns !== undefined && path.startsWith(link.owns)),
   );
 }
 

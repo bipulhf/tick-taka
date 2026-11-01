@@ -103,7 +103,6 @@ export function DebtsView() {
     <div className="flex flex-col gap-7">
       <PageHeader
         title="Debts"
-        back={{ to: "/money", label: "Money" }}
         actions={
           <Button size="sm" icon={Plus} onClick={create}>
             New

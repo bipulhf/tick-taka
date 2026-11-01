@@ -68,7 +68,6 @@ export function SomedayList() {
       <PageHeader
         title="Someday"
         subtitle="Ideas parked for later"
-        back={{ to: "/plan", label: "Plan" }}
         actions={
           <Button icon={Plus} onClick={addIdea}>
             Add an idea

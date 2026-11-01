@@ -50,11 +50,7 @@ export function LogbookList() {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader
-        title="Logbook"
-        subtitle={`Week of ${formatLocalDate(weekStart)}`}
-        back={{ to: "/plan", label: "Plan" }}
-      />
+      <PageHeader title="Logbook" subtitle={`Week of ${formatLocalDate(weekStart)}`} />
       <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_300px]">
         <aside aria-label="Filters" className="flex flex-col gap-3 lg:sticky lg:top-0 lg:order-2">
           <div className="relative">

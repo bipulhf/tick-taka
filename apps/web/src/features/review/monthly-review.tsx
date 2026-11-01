@@ -16,8 +16,6 @@ import { useThisMonth } from "@/lib/use-today";
 import { fire } from "@/lib/write";
 import { useMonthlyReview } from "./queries";
 
-const BACK = { to: "/review", label: "Review" };
-
 /** Budgets vs actual and Someday, then a way into Budgets to plan next month. */
 export function MonthlyReview() {
   const navigate = useNavigate();
@@ -30,7 +28,6 @@ export function MonthlyReview() {
     <PageHeader
       title="Monthly review"
       subtitle={formatMonth(month)}
-      back={BACK}
       actions={<MonthStepper month={month} onChange={setMonth} max={thisMonth} />}
     />
   );

@@ -97,7 +97,6 @@ export function BillsView() {
     <div className="flex flex-col gap-7">
       <PageHeader
         title="Bills & income"
-        back={{ to: "/money", label: "Money" }}
         actions={
           <Button variant="primary" icon={Plus} onClick={add}>
             New

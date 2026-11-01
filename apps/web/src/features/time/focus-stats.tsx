@@ -50,7 +50,6 @@ export function FocusStats({ onView }: { onView: (view: TimeView) => void }) {
       <PageHeader
         title="Time"
         subtitle={`Week of ${formatLocalDate(weekStart)}`}
-        back={{ to: "/plan", label: "Plan" }}
         actions={
           <>
             <IconButton

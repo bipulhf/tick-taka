@@ -19,7 +19,6 @@ import { StepButtons, Stepper } from "./stepper";
 import { HabitsStep, HoursStep, SpendingStep, WinsStep } from "./weekly-steps";
 
 const STEPS = ["Hours", "Spending", "Habits", "Wins", "Next week"] as const;
-const BACK = { to: "/review", label: "Review" };
 
 /** A 5-minute guided Sunday flow. The coach explains numbers; it never calculates them. */
 export function WeeklyReview() {
@@ -39,7 +38,7 @@ export function WeeklyReview() {
   if (!data)
     return (
       <div className="flex flex-col gap-7">
-        <PageHeader title="Weekly review" back={BACK} />
+        <PageHeader title="Weekly review" />
         {review.isError ? (
           <ErrorState onRetry={() => void review.refetch()} />
         ) : (
@@ -66,11 +65,7 @@ export function WeeklyReview() {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader
-        title="Weekly review"
-        subtitle={`Week of ${formatLocalDate(data.weekStart)}`}
-        back={BACK}
-      />
+      <PageHeader title="Weekly review" subtitle={`Week of ${formatLocalDate(data.weekStart)}`} />
       <Stepper
         steps={STEPS.map((label) => ({ label }))}
         step={step}

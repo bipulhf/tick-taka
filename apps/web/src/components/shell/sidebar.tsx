@@ -8,7 +8,6 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useIsAdmin } from "@/features/admin/queries";
 import { profileStore, signOut } from "@/lib/auth";
 import { railStore, toggleRail } from "@/lib/prefs";
-import { useAreas } from "@/lib/queries";
 import { useStore } from "@/lib/store";
 import { NAV, type NavLink, sectionOf, tourId } from "./nav";
 
@@ -19,41 +18,22 @@ export function usePath(): string {
   });
 }
 
-function isActive(path: string, to: string, exact: boolean) {
-  return exact ? path === to : path === to || path.startsWith(`${to}/`);
-}
-
-function Item({
-  link,
-  active,
-  rail,
-  depth = 0,
-}: {
-  link: NavLink;
-  active: boolean;
-  rail: boolean;
-  depth?: 0 | 1;
-}) {
+function Item({ link, active, rail }: { link: NavLink; active: boolean; rail: boolean }) {
   const content = (
     <Link
       to={link.to}
-      data-tour={depth === 0 ? tourId(link.to) : undefined}
+      data-tour={tourId(link.to)}
       aria-current={active ? "page" : undefined}
       aria-label={rail ? link.label : undefined}
       className={cx(
         "flex items-center gap-2.5 rounded-xl font-semibold transition-colors duration-150",
         rail ? "size-10 justify-center" : "h-9 px-2.5",
-        depth === 1 && !rail && "h-8 text-callout",
         active
           ? "bg-card text-ink shadow-sm shadow-ink/5"
           : "text-muted hover:bg-line/50 hover:text-ink",
       )}
     >
-      <link.icon
-        aria-hidden
-        className={cx("shrink-0", depth === 1 ? "size-4" : "size-[18px]")}
-        strokeWidth={active ? 2.4 : 2}
-      />
+      <link.icon aria-hidden className="size-[18px] shrink-0" strokeWidth={active ? 2.4 : 2} />
       {rail ? null : <span className="truncate">{link.label}</span>}
     </Link>
   );
@@ -71,16 +51,16 @@ function Item({
 }
 
 /**
- * The wide-screen sidebar, a step darker than the page: the four places, the open
- * one's views beneath it, areas while planning, Settings and the account at the foot.
- * Folds to an icon rail on medium screens or when the person chooses.
+ * The wide-screen sidebar, a step darker than the page: the four places (each one's
+ * pages are tabs over the view, see section-tabs.tsx), then Admin, Settings and the
+ * account at the foot. Folds to an icon rail on medium screens or when the person
+ * chooses.
  */
 export function Sidebar({ forceRail }: { forceRail: boolean }) {
   const path = usePath();
   const chosenRail = useStore(railStore);
   const rail = forceRail || chosenRail;
   const section = sectionOf(path);
-  const { data: areas } = useAreas();
   const profile = useStore(profileStore);
   const isAdmin = useIsAdmin();
 
@@ -115,60 +95,15 @@ export function Sidebar({ forceRail }: { forceRail: boolean }) {
           rail && "items-center",
         )}
       >
-        {NAV.map((top) => {
-          // Settings and Focus belong to no section; Today is only "/" itself.
-          const open = top.to === section.to && (top.to !== "/" || path === "/");
-          const children = top.children;
-          return (
-            <div key={top.to} className={cx("flex flex-col gap-0.5", rail && "items-center")}>
-              <Item
-                link={top}
-                active={open && (rail || children.length === 0 || path === top.to)}
-                rail={rail}
-              />
-              {open && !rail && children.length > 0 ? (
-                <div className="mt-0.5 mb-2 ml-3 flex flex-col gap-0.5 border-l border-line pl-2">
-                  {children.map((child) => (
-                    <Item
-                      key={child.to}
-                      link={child}
-                      depth={1}
-                      rail={false}
-                      active={isActive(path, child.to, child.to === top.to)}
-                    />
-                  ))}
-                  {top.to === "/plan" && areas && areas.length > 0 ? (
-                    <>
-                      <p className="mt-3 mb-1 px-2.5 text-caption text-muted">Areas</p>
-                      {areas.map((area) => {
-                        const to = `/plan/area/${area.id}`;
-                        return (
-                          <Link
-                            key={area.id}
-                            to="/plan/area/$id"
-                            params={{ id: area.id }}
-                            aria-current={path === to ? "page" : undefined}
-                            className={cx(
-                              "flex h-8 items-center gap-2.5 rounded-xl px-2.5 text-callout font-semibold transition-colors",
-                              path === to
-                                ? "bg-card text-ink shadow-sm shadow-ink/5"
-                                : "text-muted hover:bg-line/50 hover:text-ink",
-                            )}
-                          >
-                            <span aria-hidden className="w-4 text-center">
-                              {area.emoji}
-                            </span>
-                            <span className="truncate">{area.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+        {NAV.map((top) => (
+          <Item
+            key={top.to}
+            link={top}
+            // Settings and Focus belong to no section; Today is only "/" itself.
+            active={top.to === section.to && (top.to !== "/" || path === "/")}
+            rail={rail}
+          />
+        ))}
       </div>
 
       <div

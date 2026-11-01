@@ -177,7 +177,6 @@ export function BudgetsView({
     <div className="flex flex-col gap-7">
       <PageHeader
         title="Budgets"
-        back={{ to: "/money", label: "Money" }}
         actions={
           <>
             <MonthStepper

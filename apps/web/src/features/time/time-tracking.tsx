@@ -106,7 +106,6 @@ export function TimeTracking({ onView }: { onView: (view: TimeView) => void }) {
       <PageHeader
         title="Time"
         subtitle="Where this week's hours went"
-        back={{ to: "/plan", label: "Plan" }}
         actions={
           <>
             <Segmented label="Show" options={TIME_VIEWS} value="all" onChange={onView} />

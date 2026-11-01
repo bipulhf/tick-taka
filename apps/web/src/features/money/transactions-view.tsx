@@ -75,7 +75,6 @@ export function TransactionsView({
     <div className="flex flex-col gap-7">
       <PageHeader
         title="Transactions"
-        back={{ to: "/money", label: "Money" }}
         actions={
           <>
             {layout === "month" ? (

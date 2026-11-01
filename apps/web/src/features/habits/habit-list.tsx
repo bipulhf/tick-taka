@@ -113,7 +113,6 @@ export function HabitList() {
       <PageHeader
         title="Habits"
         subtitle="Small repeated actions"
-        back={{ to: "/plan", label: "Plan" }}
         actions={
           <Button variant="primary" icon={Plus} onClick={add}>
             New habit

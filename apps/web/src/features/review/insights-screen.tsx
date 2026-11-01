@@ -53,7 +53,7 @@ export function InsightsScreen() {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader title="Reports" back={{ to: "/review", label: "Review" }} />
+      <PageHeader title="Reports" />
       <div className="flex flex-col gap-4">
         <Segmented
           label="Period"

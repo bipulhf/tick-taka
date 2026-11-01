@@ -74,7 +74,6 @@ export function WeekPlanner({
       <PageHeader
         title="Week"
         subtitle={`${formatLocalDate(weekStart)} – ${formatLocalDate(addDays(weekStart, 6))}`}
-        back={{ to: "/plan", label: "Plan" }}
         actions={
           <>
             <IconButton

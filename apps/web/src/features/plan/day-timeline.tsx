@@ -101,7 +101,6 @@ export function DayTimeline({
       <PageHeader
         title={formatLocalDate(date, "long")}
         subtitle="Drag a task and drop it on a time"
-        back={{ to: "/plan", label: "Plan" }}
         actions={
           <>
             <IconButton

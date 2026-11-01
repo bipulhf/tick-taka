@@ -58,7 +58,6 @@ export function CalendarView() {
     <div className="flex flex-col gap-7">
       <PageHeader
         title={formatMonth(month)}
-        back={{ to: "/plan", label: "Plan" }}
         actions={
           <MonthStepper
             month={month}

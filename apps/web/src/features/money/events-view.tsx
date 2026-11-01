@@ -88,7 +88,6 @@ export function EventsView() {
     <div className="flex flex-col gap-7">
       <PageHeader
         title="Events"
-        back={{ to: "/money", label: "Money" }}
         actions={
           <Button size="sm" icon={Plus} onClick={create}>
             New

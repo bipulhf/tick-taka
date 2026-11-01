@@ -31,7 +31,6 @@ import {
 import { StepButtons, Stepper } from "./stepper";
 
 const storage = () => (typeof sessionStorage === "undefined" ? undefined : sessionStorage);
-const BACK = { to: "/review", label: "Review" };
 
 /** Progress for the shutdown of `date`, kept for this tab. */
 function useProgress(date: string | undefined) {
@@ -67,7 +66,7 @@ export function ShutdownFlow() {
   if (!data || !progress)
     return (
       <div className="flex flex-col gap-7">
-        <PageHeader title="Daily shutdown" back={BACK} />
+        <PageHeader title="Daily shutdown" />
         {shutdown.isError ? (
           <ErrorState onRetry={() => void shutdown.refetch()} />
         ) : (
@@ -112,11 +111,7 @@ export function ShutdownFlow() {
   };
 
   const header = (
-    <PageHeader
-      title="Daily shutdown"
-      subtitle={`${plural(data.tasksDone, "task")} done today`}
-      back={BACK}
-    />
+    <PageHeader title="Daily shutdown" subtitle={`${plural(data.tasksDone, "task")} done today`} />
   );
 
   if (progress.finished)

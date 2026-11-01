@@ -16,6 +16,9 @@ import { Route as AuthFocusRouteImport } from './routes/_auth/focus'
 import { Route as AuthShellIndexRouteImport } from './routes/_auth/_shell/index'
 import { Route as AuthShellSplatRouteImport } from './routes/_auth/_shell/$'
 import { Route as AuthShellAdminRouteImport } from './routes/_auth/_shell/admin'
+import { Route as AuthShellMoneyRouteImport } from './routes/_auth/_shell/money'
+import { Route as AuthShellPlanRouteImport } from './routes/_auth/_shell/plan'
+import { Route as AuthShellReviewRouteImport } from './routes/_auth/_shell/review'
 import { Route as AuthShellSettingsRouteImport } from './routes/_auth/_shell/settings'
 import { Route as AuthShellMoneyIndexRouteImport } from './routes/_auth/_shell/money/index'
 import { Route as AuthShellMoneyAccountsRouteImport } from './routes/_auth/_shell/money/accounts'
@@ -83,152 +86,167 @@ const AuthShellAdminRoute = AuthShellAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthShellRoute,
 } as any)
+const AuthShellMoneyRoute = AuthShellMoneyRouteImport.update({
+  id: '/money',
+  path: '/money',
+  getParentRoute: () => AuthShellRoute,
+} as any)
+const AuthShellPlanRoute = AuthShellPlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => AuthShellRoute,
+} as any)
+const AuthShellReviewRoute = AuthShellReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AuthShellRoute,
+} as any)
 const AuthShellSettingsRoute = AuthShellSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AuthShellRoute,
 } as any)
 const AuthShellMoneyIndexRoute = AuthShellMoneyIndexRouteImport.update({
-  id: '/money/',
-  path: '/money/',
-  getParentRoute: () => AuthShellRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthShellMoneyRoute,
 } as any)
 const AuthShellMoneyAccountsRoute = AuthShellMoneyAccountsRouteImport.update({
-  id: '/money/accounts',
-  path: '/money/accounts',
-  getParentRoute: () => AuthShellRoute,
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => AuthShellMoneyRoute,
 } as any)
 const AuthShellMoneyBillsRoute = AuthShellMoneyBillsRouteImport.update({
-  id: '/money/bills',
-  path: '/money/bills',
-  getParentRoute: () => AuthShellRoute,
+  id: '/bills',
+  path: '/bills',
+  getParentRoute: () => AuthShellMoneyRoute,
 } as any)
 const AuthShellMoneyBudgetsRoute = AuthShellMoneyBudgetsRouteImport.update({
-  id: '/money/budgets',
-  path: '/money/budgets',
-  getParentRoute: () => AuthShellRoute,
+  id: '/budgets',
+  path: '/budgets',
+  getParentRoute: () => AuthShellMoneyRoute,
 } as any)
 const AuthShellMoneyCalendarRoute = AuthShellMoneyCalendarRouteImport.update({
-  id: '/money/calendar',
-  path: '/money/calendar',
-  getParentRoute: () => AuthShellRoute,
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AuthShellMoneyRoute,
 } as any)
 const AuthShellMoneyDebtsRoute = AuthShellMoneyDebtsRouteImport.update({
-  id: '/money/debts',
-  path: '/money/debts',
-  getParentRoute: () => AuthShellRoute,
+  id: '/debts',
+  path: '/debts',
+  getParentRoute: () => AuthShellMoneyRoute,
 } as any)
 const AuthShellMoneyEventsRoute = AuthShellMoneyEventsRouteImport.update({
-  id: '/money/events',
-  path: '/money/events',
-  getParentRoute: () => AuthShellRoute,
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => AuthShellMoneyRoute,
 } as any)
 const AuthShellMoneyGoalsRoute = AuthShellMoneyGoalsRouteImport.update({
-  id: '/money/goals',
-  path: '/money/goals',
-  getParentRoute: () => AuthShellRoute,
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => AuthShellMoneyRoute,
 } as any)
 const AuthShellMoneyTransactionsRoute =
   AuthShellMoneyTransactionsRouteImport.update({
-    id: '/money/transactions',
-    path: '/money/transactions',
-    getParentRoute: () => AuthShellRoute,
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => AuthShellMoneyRoute,
   } as any)
 const AuthShellPlanIndexRoute = AuthShellPlanIndexRouteImport.update({
-  id: '/plan/',
-  path: '/plan/',
-  getParentRoute: () => AuthShellRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanCalendarRoute = AuthShellPlanCalendarRouteImport.update({
-  id: '/plan/calendar',
-  path: '/plan/calendar',
-  getParentRoute: () => AuthShellRoute,
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanDayRoute = AuthShellPlanDayRouteImport.update({
-  id: '/plan/day',
-  path: '/plan/day',
-  getParentRoute: () => AuthShellRoute,
+  id: '/day',
+  path: '/day',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanFocusStatsRoute = AuthShellPlanFocusStatsRouteImport.update({
-  id: '/plan/focus-stats',
-  path: '/plan/focus-stats',
-  getParentRoute: () => AuthShellRoute,
+  id: '/focus-stats',
+  path: '/focus-stats',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanHabitsRoute = AuthShellPlanHabitsRouteImport.update({
-  id: '/plan/habits',
-  path: '/plan/habits',
-  getParentRoute: () => AuthShellRoute,
+  id: '/habits',
+  path: '/habits',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanLogbookRoute = AuthShellPlanLogbookRouteImport.update({
-  id: '/plan/logbook',
-  path: '/plan/logbook',
-  getParentRoute: () => AuthShellRoute,
+  id: '/logbook',
+  path: '/logbook',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanRoutinesRoute = AuthShellPlanRoutinesRouteImport.update({
-  id: '/plan/routines',
-  path: '/plan/routines',
-  getParentRoute: () => AuthShellRoute,
+  id: '/routines',
+  path: '/routines',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanSomedayRoute = AuthShellPlanSomedayRouteImport.update({
-  id: '/plan/someday',
-  path: '/plan/someday',
-  getParentRoute: () => AuthShellRoute,
+  id: '/someday',
+  path: '/someday',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanTimeRoute = AuthShellPlanTimeRouteImport.update({
-  id: '/plan/time',
-  path: '/plan/time',
-  getParentRoute: () => AuthShellRoute,
+  id: '/time',
+  path: '/time',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanWeekRoute = AuthShellPlanWeekRouteImport.update({
-  id: '/plan/week',
-  path: '/plan/week',
-  getParentRoute: () => AuthShellRoute,
+  id: '/week',
+  path: '/week',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellReviewIndexRoute = AuthShellReviewIndexRouteImport.update({
-  id: '/review/',
-  path: '/review/',
-  getParentRoute: () => AuthShellRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthShellReviewRoute,
 } as any)
 const AuthShellReviewAiUsageRoute = AuthShellReviewAiUsageRouteImport.update({
-  id: '/review/ai-usage',
-  path: '/review/ai-usage',
-  getParentRoute: () => AuthShellRoute,
+  id: '/ai-usage',
+  path: '/ai-usage',
+  getParentRoute: () => AuthShellReviewRoute,
 } as any)
 const AuthShellReviewAreasRoute = AuthShellReviewAreasRouteImport.update({
-  id: '/review/areas',
-  path: '/review/areas',
-  getParentRoute: () => AuthShellRoute,
+  id: '/areas',
+  path: '/areas',
+  getParentRoute: () => AuthShellReviewRoute,
 } as any)
 const AuthShellReviewMonthlyRoute = AuthShellReviewMonthlyRouteImport.update({
-  id: '/review/monthly',
-  path: '/review/monthly',
-  getParentRoute: () => AuthShellRoute,
+  id: '/monthly',
+  path: '/monthly',
+  getParentRoute: () => AuthShellReviewRoute,
 } as any)
 const AuthShellReviewPaydayRoute = AuthShellReviewPaydayRouteImport.update({
-  id: '/review/payday',
-  path: '/review/payday',
-  getParentRoute: () => AuthShellRoute,
+  id: '/payday',
+  path: '/payday',
+  getParentRoute: () => AuthShellReviewRoute,
 } as any)
 const AuthShellReviewReportsRoute = AuthShellReviewReportsRouteImport.update({
-  id: '/review/reports',
-  path: '/review/reports',
-  getParentRoute: () => AuthShellRoute,
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthShellReviewRoute,
 } as any)
 const AuthShellReviewShutdownRoute = AuthShellReviewShutdownRouteImport.update({
-  id: '/review/shutdown',
-  path: '/review/shutdown',
-  getParentRoute: () => AuthShellRoute,
+  id: '/shutdown',
+  path: '/shutdown',
+  getParentRoute: () => AuthShellReviewRoute,
 } as any)
 const AuthShellReviewSubscriptionsRoute =
   AuthShellReviewSubscriptionsRouteImport.update({
-    id: '/review/subscriptions',
-    path: '/review/subscriptions',
-    getParentRoute: () => AuthShellRoute,
+    id: '/subscriptions',
+    path: '/subscriptions',
+    getParentRoute: () => AuthShellReviewRoute,
   } as any)
 const AuthShellReviewWeeklyRoute = AuthShellReviewWeeklyRouteImport.update({
-  id: '/review/weekly',
-  path: '/review/weekly',
-  getParentRoute: () => AuthShellRoute,
+  id: '/weekly',
+  path: '/weekly',
+  getParentRoute: () => AuthShellReviewRoute,
 } as any)
 const AuthShellSettingsAiCostRoute = AuthShellSettingsAiCostRouteImport.update({
   id: '/settings_/ai-cost',
@@ -236,19 +254,19 @@ const AuthShellSettingsAiCostRoute = AuthShellSettingsAiCostRouteImport.update({
   getParentRoute: () => AuthShellRoute,
 } as any)
 const AuthShellPlanAreaIdRoute = AuthShellPlanAreaIdRouteImport.update({
-  id: '/plan/area/$id',
-  path: '/plan/area/$id',
-  getParentRoute: () => AuthShellRoute,
+  id: '/area/$id',
+  path: '/area/$id',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanProjectIdRoute = AuthShellPlanProjectIdRouteImport.update({
-  id: '/plan/project/$id',
-  path: '/plan/project/$id',
-  getParentRoute: () => AuthShellRoute,
+  id: '/project/$id',
+  path: '/project/$id',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 const AuthShellPlanRoutineIdRoute = AuthShellPlanRoutineIdRouteImport.update({
-  id: '/plan/routine/$id',
-  path: '/plan/routine/$id',
-  getParentRoute: () => AuthShellRoute,
+  id: '/routine/$id',
+  path: '/routine/$id',
+  getParentRoute: () => AuthShellPlanRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -257,6 +275,9 @@ export interface FileRoutesByFullPath {
   '/focus': typeof AuthFocusRoute
   '/$': typeof AuthShellSplatRoute
   '/admin': typeof AuthShellAdminRoute
+  '/money': typeof AuthShellMoneyRouteWithChildren
+  '/plan': typeof AuthShellPlanRouteWithChildren
+  '/review': typeof AuthShellReviewRouteWithChildren
   '/settings': typeof AuthShellSettingsRoute
   '/money/accounts': typeof AuthShellMoneyAccountsRoute
   '/money/bills': typeof AuthShellMoneyBillsRoute
@@ -339,6 +360,9 @@ export interface FileRoutesById {
   '/_auth/focus': typeof AuthFocusRoute
   '/_auth/_shell/$': typeof AuthShellSplatRoute
   '/_auth/_shell/admin': typeof AuthShellAdminRoute
+  '/_auth/_shell/money': typeof AuthShellMoneyRouteWithChildren
+  '/_auth/_shell/plan': typeof AuthShellPlanRouteWithChildren
+  '/_auth/_shell/review': typeof AuthShellReviewRouteWithChildren
   '/_auth/_shell/settings': typeof AuthShellSettingsRoute
   '/_auth/_shell/': typeof AuthShellIndexRoute
   '/_auth/_shell/money/accounts': typeof AuthShellMoneyAccountsRoute
@@ -382,6 +406,9 @@ export interface FileRouteTypes {
     | '/focus'
     | '/$'
     | '/admin'
+    | '/money'
+    | '/plan'
+    | '/review'
     | '/settings'
     | '/money/accounts'
     | '/money/bills'
@@ -463,6 +490,9 @@ export interface FileRouteTypes {
     | '/_auth/focus'
     | '/_auth/_shell/$'
     | '/_auth/_shell/admin'
+    | '/_auth/_shell/money'
+    | '/_auth/_shell/plan'
+    | '/_auth/_shell/review'
     | '/_auth/_shell/settings'
     | '/_auth/_shell/'
     | '/_auth/_shell/money/accounts'
@@ -555,6 +585,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthShellAdminRouteImport
       parentRoute: typeof AuthShellRoute
     }
+    '/_auth/_shell/money': {
+      id: '/_auth/_shell/money'
+      path: '/money'
+      fullPath: '/money'
+      preLoaderRoute: typeof AuthShellMoneyRouteImport
+      parentRoute: typeof AuthShellRoute
+    }
+    '/_auth/_shell/plan': {
+      id: '/_auth/_shell/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof AuthShellPlanRouteImport
+      parentRoute: typeof AuthShellRoute
+    }
+    '/_auth/_shell/review': {
+      id: '/_auth/_shell/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AuthShellReviewRouteImport
+      parentRoute: typeof AuthShellRoute
+    }
     '/_auth/_shell/settings': {
       id: '/_auth/_shell/settings'
       path: '/settings'
@@ -564,199 +615,199 @@ declare module '@tanstack/react-router' {
     }
     '/_auth/_shell/money/': {
       id: '/_auth/_shell/money/'
-      path: '/money'
+      path: '/'
       fullPath: '/money/'
       preLoaderRoute: typeof AuthShellMoneyIndexRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellMoneyRoute
     }
     '/_auth/_shell/money/accounts': {
       id: '/_auth/_shell/money/accounts'
-      path: '/money/accounts'
+      path: '/accounts'
       fullPath: '/money/accounts'
       preLoaderRoute: typeof AuthShellMoneyAccountsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellMoneyRoute
     }
     '/_auth/_shell/money/bills': {
       id: '/_auth/_shell/money/bills'
-      path: '/money/bills'
+      path: '/bills'
       fullPath: '/money/bills'
       preLoaderRoute: typeof AuthShellMoneyBillsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellMoneyRoute
     }
     '/_auth/_shell/money/budgets': {
       id: '/_auth/_shell/money/budgets'
-      path: '/money/budgets'
+      path: '/budgets'
       fullPath: '/money/budgets'
       preLoaderRoute: typeof AuthShellMoneyBudgetsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellMoneyRoute
     }
     '/_auth/_shell/money/calendar': {
       id: '/_auth/_shell/money/calendar'
-      path: '/money/calendar'
+      path: '/calendar'
       fullPath: '/money/calendar'
       preLoaderRoute: typeof AuthShellMoneyCalendarRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellMoneyRoute
     }
     '/_auth/_shell/money/debts': {
       id: '/_auth/_shell/money/debts'
-      path: '/money/debts'
+      path: '/debts'
       fullPath: '/money/debts'
       preLoaderRoute: typeof AuthShellMoneyDebtsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellMoneyRoute
     }
     '/_auth/_shell/money/events': {
       id: '/_auth/_shell/money/events'
-      path: '/money/events'
+      path: '/events'
       fullPath: '/money/events'
       preLoaderRoute: typeof AuthShellMoneyEventsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellMoneyRoute
     }
     '/_auth/_shell/money/goals': {
       id: '/_auth/_shell/money/goals'
-      path: '/money/goals'
+      path: '/goals'
       fullPath: '/money/goals'
       preLoaderRoute: typeof AuthShellMoneyGoalsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellMoneyRoute
     }
     '/_auth/_shell/money/transactions': {
       id: '/_auth/_shell/money/transactions'
-      path: '/money/transactions'
+      path: '/transactions'
       fullPath: '/money/transactions'
       preLoaderRoute: typeof AuthShellMoneyTransactionsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellMoneyRoute
     }
     '/_auth/_shell/plan/': {
       id: '/_auth/_shell/plan/'
-      path: '/plan'
+      path: '/'
       fullPath: '/plan/'
       preLoaderRoute: typeof AuthShellPlanIndexRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/calendar': {
       id: '/_auth/_shell/plan/calendar'
-      path: '/plan/calendar'
+      path: '/calendar'
       fullPath: '/plan/calendar'
       preLoaderRoute: typeof AuthShellPlanCalendarRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/day': {
       id: '/_auth/_shell/plan/day'
-      path: '/plan/day'
+      path: '/day'
       fullPath: '/plan/day'
       preLoaderRoute: typeof AuthShellPlanDayRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/focus-stats': {
       id: '/_auth/_shell/plan/focus-stats'
-      path: '/plan/focus-stats'
+      path: '/focus-stats'
       fullPath: '/plan/focus-stats'
       preLoaderRoute: typeof AuthShellPlanFocusStatsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/habits': {
       id: '/_auth/_shell/plan/habits'
-      path: '/plan/habits'
+      path: '/habits'
       fullPath: '/plan/habits'
       preLoaderRoute: typeof AuthShellPlanHabitsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/logbook': {
       id: '/_auth/_shell/plan/logbook'
-      path: '/plan/logbook'
+      path: '/logbook'
       fullPath: '/plan/logbook'
       preLoaderRoute: typeof AuthShellPlanLogbookRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/routines': {
       id: '/_auth/_shell/plan/routines'
-      path: '/plan/routines'
+      path: '/routines'
       fullPath: '/plan/routines'
       preLoaderRoute: typeof AuthShellPlanRoutinesRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/someday': {
       id: '/_auth/_shell/plan/someday'
-      path: '/plan/someday'
+      path: '/someday'
       fullPath: '/plan/someday'
       preLoaderRoute: typeof AuthShellPlanSomedayRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/time': {
       id: '/_auth/_shell/plan/time'
-      path: '/plan/time'
+      path: '/time'
       fullPath: '/plan/time'
       preLoaderRoute: typeof AuthShellPlanTimeRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/week': {
       id: '/_auth/_shell/plan/week'
-      path: '/plan/week'
+      path: '/week'
       fullPath: '/plan/week'
       preLoaderRoute: typeof AuthShellPlanWeekRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/review/': {
       id: '/_auth/_shell/review/'
-      path: '/review'
+      path: '/'
       fullPath: '/review/'
       preLoaderRoute: typeof AuthShellReviewIndexRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellReviewRoute
     }
     '/_auth/_shell/review/ai-usage': {
       id: '/_auth/_shell/review/ai-usage'
-      path: '/review/ai-usage'
+      path: '/ai-usage'
       fullPath: '/review/ai-usage'
       preLoaderRoute: typeof AuthShellReviewAiUsageRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellReviewRoute
     }
     '/_auth/_shell/review/areas': {
       id: '/_auth/_shell/review/areas'
-      path: '/review/areas'
+      path: '/areas'
       fullPath: '/review/areas'
       preLoaderRoute: typeof AuthShellReviewAreasRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellReviewRoute
     }
     '/_auth/_shell/review/monthly': {
       id: '/_auth/_shell/review/monthly'
-      path: '/review/monthly'
+      path: '/monthly'
       fullPath: '/review/monthly'
       preLoaderRoute: typeof AuthShellReviewMonthlyRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellReviewRoute
     }
     '/_auth/_shell/review/payday': {
       id: '/_auth/_shell/review/payday'
-      path: '/review/payday'
+      path: '/payday'
       fullPath: '/review/payday'
       preLoaderRoute: typeof AuthShellReviewPaydayRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellReviewRoute
     }
     '/_auth/_shell/review/reports': {
       id: '/_auth/_shell/review/reports'
-      path: '/review/reports'
+      path: '/reports'
       fullPath: '/review/reports'
       preLoaderRoute: typeof AuthShellReviewReportsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellReviewRoute
     }
     '/_auth/_shell/review/shutdown': {
       id: '/_auth/_shell/review/shutdown'
-      path: '/review/shutdown'
+      path: '/shutdown'
       fullPath: '/review/shutdown'
       preLoaderRoute: typeof AuthShellReviewShutdownRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellReviewRoute
     }
     '/_auth/_shell/review/subscriptions': {
       id: '/_auth/_shell/review/subscriptions'
-      path: '/review/subscriptions'
+      path: '/subscriptions'
       fullPath: '/review/subscriptions'
       preLoaderRoute: typeof AuthShellReviewSubscriptionsRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellReviewRoute
     }
     '/_auth/_shell/review/weekly': {
       id: '/_auth/_shell/review/weekly'
-      path: '/review/weekly'
+      path: '/weekly'
       fullPath: '/review/weekly'
       preLoaderRoute: typeof AuthShellReviewWeeklyRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellReviewRoute
     }
     '/_auth/_shell/settings_/ai-cost': {
       id: '/_auth/_shell/settings_/ai-cost'
@@ -767,33 +818,29 @@ declare module '@tanstack/react-router' {
     }
     '/_auth/_shell/plan/area/$id': {
       id: '/_auth/_shell/plan/area/$id'
-      path: '/plan/area/$id'
+      path: '/area/$id'
       fullPath: '/plan/area/$id'
       preLoaderRoute: typeof AuthShellPlanAreaIdRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/project/$id': {
       id: '/_auth/_shell/plan/project/$id'
-      path: '/plan/project/$id'
+      path: '/project/$id'
       fullPath: '/plan/project/$id'
       preLoaderRoute: typeof AuthShellPlanProjectIdRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
     '/_auth/_shell/plan/routine/$id': {
       id: '/_auth/_shell/plan/routine/$id'
-      path: '/plan/routine/$id'
+      path: '/routine/$id'
       fullPath: '/plan/routine/$id'
       preLoaderRoute: typeof AuthShellPlanRoutineIdRouteImport
-      parentRoute: typeof AuthShellRoute
+      parentRoute: typeof AuthShellPlanRoute
     }
   }
 }
 
-interface AuthShellRouteChildren {
-  AuthShellSplatRoute: typeof AuthShellSplatRoute
-  AuthShellAdminRoute: typeof AuthShellAdminRoute
-  AuthShellSettingsRoute: typeof AuthShellSettingsRoute
-  AuthShellIndexRoute: typeof AuthShellIndexRoute
+interface AuthShellMoneyRouteChildren {
   AuthShellMoneyAccountsRoute: typeof AuthShellMoneyAccountsRoute
   AuthShellMoneyBillsRoute: typeof AuthShellMoneyBillsRoute
   AuthShellMoneyBudgetsRoute: typeof AuthShellMoneyBudgetsRoute
@@ -802,6 +849,26 @@ interface AuthShellRouteChildren {
   AuthShellMoneyEventsRoute: typeof AuthShellMoneyEventsRoute
   AuthShellMoneyGoalsRoute: typeof AuthShellMoneyGoalsRoute
   AuthShellMoneyTransactionsRoute: typeof AuthShellMoneyTransactionsRoute
+  AuthShellMoneyIndexRoute: typeof AuthShellMoneyIndexRoute
+}
+
+const AuthShellMoneyRouteChildren: AuthShellMoneyRouteChildren = {
+  AuthShellMoneyAccountsRoute: AuthShellMoneyAccountsRoute,
+  AuthShellMoneyBillsRoute: AuthShellMoneyBillsRoute,
+  AuthShellMoneyBudgetsRoute: AuthShellMoneyBudgetsRoute,
+  AuthShellMoneyCalendarRoute: AuthShellMoneyCalendarRoute,
+  AuthShellMoneyDebtsRoute: AuthShellMoneyDebtsRoute,
+  AuthShellMoneyEventsRoute: AuthShellMoneyEventsRoute,
+  AuthShellMoneyGoalsRoute: AuthShellMoneyGoalsRoute,
+  AuthShellMoneyTransactionsRoute: AuthShellMoneyTransactionsRoute,
+  AuthShellMoneyIndexRoute: AuthShellMoneyIndexRoute,
+}
+
+const AuthShellMoneyRouteWithChildren = AuthShellMoneyRoute._addFileChildren(
+  AuthShellMoneyRouteChildren,
+)
+
+interface AuthShellPlanRouteChildren {
   AuthShellPlanCalendarRoute: typeof AuthShellPlanCalendarRoute
   AuthShellPlanDayRoute: typeof AuthShellPlanDayRoute
   AuthShellPlanFocusStatsRoute: typeof AuthShellPlanFocusStatsRoute
@@ -811,36 +878,13 @@ interface AuthShellRouteChildren {
   AuthShellPlanSomedayRoute: typeof AuthShellPlanSomedayRoute
   AuthShellPlanTimeRoute: typeof AuthShellPlanTimeRoute
   AuthShellPlanWeekRoute: typeof AuthShellPlanWeekRoute
-  AuthShellReviewAiUsageRoute: typeof AuthShellReviewAiUsageRoute
-  AuthShellReviewAreasRoute: typeof AuthShellReviewAreasRoute
-  AuthShellReviewMonthlyRoute: typeof AuthShellReviewMonthlyRoute
-  AuthShellReviewPaydayRoute: typeof AuthShellReviewPaydayRoute
-  AuthShellReviewReportsRoute: typeof AuthShellReviewReportsRoute
-  AuthShellReviewShutdownRoute: typeof AuthShellReviewShutdownRoute
-  AuthShellReviewSubscriptionsRoute: typeof AuthShellReviewSubscriptionsRoute
-  AuthShellReviewWeeklyRoute: typeof AuthShellReviewWeeklyRoute
-  AuthShellSettingsAiCostRoute: typeof AuthShellSettingsAiCostRoute
-  AuthShellMoneyIndexRoute: typeof AuthShellMoneyIndexRoute
   AuthShellPlanIndexRoute: typeof AuthShellPlanIndexRoute
-  AuthShellReviewIndexRoute: typeof AuthShellReviewIndexRoute
   AuthShellPlanAreaIdRoute: typeof AuthShellPlanAreaIdRoute
   AuthShellPlanProjectIdRoute: typeof AuthShellPlanProjectIdRoute
   AuthShellPlanRoutineIdRoute: typeof AuthShellPlanRoutineIdRoute
 }
 
-const AuthShellRouteChildren: AuthShellRouteChildren = {
-  AuthShellSplatRoute: AuthShellSplatRoute,
-  AuthShellAdminRoute: AuthShellAdminRoute,
-  AuthShellSettingsRoute: AuthShellSettingsRoute,
-  AuthShellIndexRoute: AuthShellIndexRoute,
-  AuthShellMoneyAccountsRoute: AuthShellMoneyAccountsRoute,
-  AuthShellMoneyBillsRoute: AuthShellMoneyBillsRoute,
-  AuthShellMoneyBudgetsRoute: AuthShellMoneyBudgetsRoute,
-  AuthShellMoneyCalendarRoute: AuthShellMoneyCalendarRoute,
-  AuthShellMoneyDebtsRoute: AuthShellMoneyDebtsRoute,
-  AuthShellMoneyEventsRoute: AuthShellMoneyEventsRoute,
-  AuthShellMoneyGoalsRoute: AuthShellMoneyGoalsRoute,
-  AuthShellMoneyTransactionsRoute: AuthShellMoneyTransactionsRoute,
+const AuthShellPlanRouteChildren: AuthShellPlanRouteChildren = {
   AuthShellPlanCalendarRoute: AuthShellPlanCalendarRoute,
   AuthShellPlanDayRoute: AuthShellPlanDayRoute,
   AuthShellPlanFocusStatsRoute: AuthShellPlanFocusStatsRoute,
@@ -850,6 +894,29 @@ const AuthShellRouteChildren: AuthShellRouteChildren = {
   AuthShellPlanSomedayRoute: AuthShellPlanSomedayRoute,
   AuthShellPlanTimeRoute: AuthShellPlanTimeRoute,
   AuthShellPlanWeekRoute: AuthShellPlanWeekRoute,
+  AuthShellPlanIndexRoute: AuthShellPlanIndexRoute,
+  AuthShellPlanAreaIdRoute: AuthShellPlanAreaIdRoute,
+  AuthShellPlanProjectIdRoute: AuthShellPlanProjectIdRoute,
+  AuthShellPlanRoutineIdRoute: AuthShellPlanRoutineIdRoute,
+}
+
+const AuthShellPlanRouteWithChildren = AuthShellPlanRoute._addFileChildren(
+  AuthShellPlanRouteChildren,
+)
+
+interface AuthShellReviewRouteChildren {
+  AuthShellReviewAiUsageRoute: typeof AuthShellReviewAiUsageRoute
+  AuthShellReviewAreasRoute: typeof AuthShellReviewAreasRoute
+  AuthShellReviewMonthlyRoute: typeof AuthShellReviewMonthlyRoute
+  AuthShellReviewPaydayRoute: typeof AuthShellReviewPaydayRoute
+  AuthShellReviewReportsRoute: typeof AuthShellReviewReportsRoute
+  AuthShellReviewShutdownRoute: typeof AuthShellReviewShutdownRoute
+  AuthShellReviewSubscriptionsRoute: typeof AuthShellReviewSubscriptionsRoute
+  AuthShellReviewWeeklyRoute: typeof AuthShellReviewWeeklyRoute
+  AuthShellReviewIndexRoute: typeof AuthShellReviewIndexRoute
+}
+
+const AuthShellReviewRouteChildren: AuthShellReviewRouteChildren = {
   AuthShellReviewAiUsageRoute: AuthShellReviewAiUsageRoute,
   AuthShellReviewAreasRoute: AuthShellReviewAreasRoute,
   AuthShellReviewMonthlyRoute: AuthShellReviewMonthlyRoute,
@@ -858,13 +925,33 @@ const AuthShellRouteChildren: AuthShellRouteChildren = {
   AuthShellReviewShutdownRoute: AuthShellReviewShutdownRoute,
   AuthShellReviewSubscriptionsRoute: AuthShellReviewSubscriptionsRoute,
   AuthShellReviewWeeklyRoute: AuthShellReviewWeeklyRoute,
-  AuthShellSettingsAiCostRoute: AuthShellSettingsAiCostRoute,
-  AuthShellMoneyIndexRoute: AuthShellMoneyIndexRoute,
-  AuthShellPlanIndexRoute: AuthShellPlanIndexRoute,
   AuthShellReviewIndexRoute: AuthShellReviewIndexRoute,
-  AuthShellPlanAreaIdRoute: AuthShellPlanAreaIdRoute,
-  AuthShellPlanProjectIdRoute: AuthShellPlanProjectIdRoute,
-  AuthShellPlanRoutineIdRoute: AuthShellPlanRoutineIdRoute,
+}
+
+const AuthShellReviewRouteWithChildren = AuthShellReviewRoute._addFileChildren(
+  AuthShellReviewRouteChildren,
+)
+
+interface AuthShellRouteChildren {
+  AuthShellSplatRoute: typeof AuthShellSplatRoute
+  AuthShellAdminRoute: typeof AuthShellAdminRoute
+  AuthShellMoneyRoute: typeof AuthShellMoneyRouteWithChildren
+  AuthShellPlanRoute: typeof AuthShellPlanRouteWithChildren
+  AuthShellReviewRoute: typeof AuthShellReviewRouteWithChildren
+  AuthShellSettingsRoute: typeof AuthShellSettingsRoute
+  AuthShellIndexRoute: typeof AuthShellIndexRoute
+  AuthShellSettingsAiCostRoute: typeof AuthShellSettingsAiCostRoute
+}
+
+const AuthShellRouteChildren: AuthShellRouteChildren = {
+  AuthShellSplatRoute: AuthShellSplatRoute,
+  AuthShellAdminRoute: AuthShellAdminRoute,
+  AuthShellMoneyRoute: AuthShellMoneyRouteWithChildren,
+  AuthShellPlanRoute: AuthShellPlanRouteWithChildren,
+  AuthShellReviewRoute: AuthShellReviewRouteWithChildren,
+  AuthShellSettingsRoute: AuthShellSettingsRoute,
+  AuthShellIndexRoute: AuthShellIndexRoute,
+  AuthShellSettingsAiCostRoute: AuthShellSettingsAiCostRoute,
 }
 
 const AuthShellRouteWithChildren = AuthShellRoute._addFileChildren(

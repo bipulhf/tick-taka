@@ -43,11 +43,7 @@ export function RoutineList() {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader
-        title="Routines"
-        subtitle="Fewer decisions at the edges of the day"
-        back={{ to: "/plan", label: "Plan" }}
-      />
+      <PageHeader title="Routines" subtitle="Fewer decisions at the edges of the day" />
       <div className="flex flex-col gap-5">
         {routines.isError && !routines.data ? (
           <ErrorState onRetry={() => void routines.refetch()} />

@@ -16,7 +16,6 @@ export function AccountsView() {
     <div className="flex flex-col gap-7">
       <PageHeader
         title="Accounts"
-        back={{ to: "/money", label: "Money" }}
         actions={
           <Button variant="primary" icon={Plus} onClick={add}>
             New

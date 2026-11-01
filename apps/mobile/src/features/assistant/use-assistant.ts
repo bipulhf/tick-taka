@@ -27,6 +27,7 @@ import {
 import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
 import { parseQuestion } from "./question-form";
 import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
+import { deletedMemo, deletionsRefused, draftRefused, undoRefused } from "./refused-writes";
 
 const HISTORY = 20;
 
@@ -206,12 +207,15 @@ export function useAssistant(screen?: AssistantScreen) {
     const action = chatStore.get().find((m) => m.id === messageId)?.actions?.[index];
     if (!action?.undo || action.undone) return;
     const { method, path, body } = action.undo;
-    send({
-      method,
-      path,
-      body: method === "PATCH" ? { ...body, updatedAt: editTime() } : body,
-      label: "Couldn't undo that",
-    });
+    send
+      .async({
+        method,
+        path,
+        body: method === "PATCH" ? { ...body, updatedAt: editTime() } : body,
+        label: "Couldn't undo that",
+      })
+      // A refusal is reported by the outbox; the row offers Undo again.
+      .catch(() => updateMessage(messageId, (m) => undoRefused(m, index)));
     markUndone(messageId, index);
     haptic.tap();
   };
@@ -225,7 +229,12 @@ export function useAssistant(screen?: AssistantScreen) {
       deletions.map((item) =>
         send.async({ method: "DELETE", path: item.path, label: "Couldn't delete that" }),
       ),
-    ).then(() => queryClient.invalidateQueries());
+    ).then((results) => {
+      // Refusals are reported by the outbox; the card asks again about those.
+      const refused = deletions.filter((_, i) => results[i]?.status === "rejected");
+      if (refused.length) updateMessage(messageId, (m) => deletionsRefused(m, deletions, refused));
+      void queryClient.invalidateQueries();
+    });
     updateMessage(messageId, (m) => ({
       ...m,
       deletionChoice: "deleted",
@@ -238,9 +247,7 @@ export function useAssistant(screen?: AssistantScreen) {
           }),
         ),
       ],
-      memo: [m.memo, `the user confirmed and deleted ${deletions.map((d) => d.path).join(", ")}`]
-        .filter(Boolean)
-        .join("; "),
+      memo: [m.memo, deletedMemo(deletions)].filter(Boolean).join("; "),
     }));
     haptic.success();
   };
@@ -249,24 +256,23 @@ export function useAssistant(screen?: AssistantScreen) {
   const saveDraft = (messageId: string, index: number) => {
     const draft = chatStore.get().find((m) => m.id === messageId)?.drafts?.[index];
     if (draft?.state !== "pending") return;
+    const added = {
+      summary: `Saved: ${lowerFirst(draft.summary)}`,
+      memo: `the user saved the draft "${draft.summary}" (${draft.method} ${draft.path})`,
+    };
     send
       .async(draftRequest(draft, editTime()))
       .then((response) => {
         const note = draftOutcome(draft, response);
         if (note) notify(note);
       })
-      // A refusal is reported by the outbox.
-      .catch(() => {});
+      // A refusal is reported by the outbox; the card goes back to Save, not "Saved".
+      .catch(() => updateMessage(messageId, (m) => draftRefused(m, index, added)));
     updateMessage(messageId, (m) => ({
       ...m,
       drafts: m.drafts?.map((d, i) => (i === index ? { ...d, state: "saved" as const } : d)),
-      actions: [
-        ...(m.actions ?? []),
-        { summary: `Saved: ${lowerFirst(draft.summary)}`, undo: draft.undo },
-      ],
-      memo: [m.memo, `the user saved the draft "${draft.summary}" (${draft.method} ${draft.path})`]
-        .filter(Boolean)
-        .join("; "),
+      actions: [...(m.actions ?? []), { summary: added.summary, undo: draft.undo }],
+      memo: [m.memo, added.memo].filter(Boolean).join("; "),
     }));
     haptic.success();
   };

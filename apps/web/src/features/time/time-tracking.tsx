@@ -1,17 +1,18 @@
 import { addDays, startOfLocalDay, startOfWeek } from "@tick-taka/shared/dates";
 import { MoreHorizontal, Pencil, Plus, Timer, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { Group, Row } from "@/components/ui/group";
 import { IconButton } from "@/components/ui/icon-button";
+import { ListSection } from "@/components/ui/list-section";
 import { Menu } from "@/components/ui/menu";
 import { PageHeader } from "@/components/ui/page-header";
 import { ProgressBar } from "@/components/ui/progress";
 import { Section } from "@/components/ui/section";
 import { Segmented } from "@/components/ui/segmented";
 import { SkeletonRows } from "@/components/ui/skeleton";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
 import { useNow } from "@/features/timer/use-now";
-import { formatClock, formatLocalDate, formatMinutes } from "@/lib/format";
+import { formatClock, formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import { useAreas } from "@/lib/queries";
 import { useTodayDate, useUserTime } from "@/lib/use-today";
@@ -79,8 +80,9 @@ function EntryRow({
 }
 
 /**
- * Start/stop timer or manual entry, per area, with a billable flag; this week's hours.
- * "Focus only" swaps in the focus sessions' chart (`FocusStats`).
+ * Start/stop timer or manual entry, per area, with a billable flag: the week at a
+ * glance (hours, focus, billable, top area), hours by area, then entries by day with
+ * each day's total. "Focus only" swaps in the focus sessions' chart (`FocusStats`).
  */
 export function TimeTracking({ onView }: { onView: (view: TimeView) => void }) {
   const open = useOpenPanel();
@@ -93,26 +95,63 @@ export function TimeTracking({ onView }: { onView: (view: TimeView) => void }) {
     startOfLocalDay(addDays(weekStart, 7), timeZone),
   );
   const now = useNow(60_000);
+  const areaOf = (id: string | null) => areas.find((a) => a.id === id);
   const list = (entries.data ?? []).filter((e) => e.endedAt !== null);
   const byArea = minutesByArea(list, now);
   const most = byArea[0]?.[1] ?? 0;
   const total = byArea.reduce((sum, [, minutes]) => sum + minutes, 0);
   const days = entriesByDay(list, timeZone);
+  const focusList = list.filter((e) => e.source === "focus");
+  const focusMinutes = focusList.reduce((sum, e) => sum + minutesOf(e, now), 0);
+  const billableMinutes = list
+    .filter((e) => e.billable)
+    .reduce((sum, e) => sum + minutesOf(e, now), 0);
+  const top = byArea[0];
+  const topArea = top ? areaOf(top[0]) : undefined;
   const logTime = () => open("time-entry:new");
-  const areaOf = (id: string | null) => areas.find((a) => a.id === id);
 
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
         title="Time"
         subtitle="Where this week's hours went"
-        actions={
-          <>
-            <Segmented label="Show" options={TIME_VIEWS} value="all" onChange={onView} />
-            <Button icon={Plus} onClick={logTime}>
-              Log time
-            </Button>
-          </>
+        actions={<Segmented label="Show" options={TIME_VIEWS} value="all" onChange={onView} />}
+        primary={{ label: "Log time", icon: Plus, onClick: logTime }}
+        summary={
+          <SummaryStrip label="This week's time">
+            <StatTile
+              label="This week"
+              tone="time"
+              value={formatMinutes(total)}
+              caption={plural(list.length, "entry", "entries")}
+              loading={!entries.data}
+            />
+            <StatTile
+              label="Focus"
+              tone="time"
+              value={formatMinutes(focusMinutes)}
+              caption={
+                focusList.length ? plural(focusList.length, "focus session") : "No sessions yet"
+              }
+              loading={!entries.data}
+            />
+            <StatTile
+              label="Billable"
+              value={formatMinutes(billableMinutes)}
+              caption={
+                billableMinutes && total
+                  ? `${Math.round((billableMinutes / total) * 100)}% of the week`
+                  : "None this week"
+              }
+              loading={!entries.data}
+            />
+            <StatTile
+              label="Top area"
+              value={top ? (topArea ? `${topArea.emoji} ${topArea.name}` : "No area") : "None yet"}
+              caption={top ? formatMinutes(top[1]) : "Log time to see"}
+              loading={!entries.data}
+            />
+          </SummaryStrip>
         }
       />
       <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -159,15 +198,16 @@ export function TimeTracking({ onView }: { onView: (view: TimeView) => void }) {
         </div>
         <div className="flex flex-col gap-6 lg:order-1">
           {days.map(([day, dayEntries]) => (
-            <section key={day} aria-labelledby={`time-${day}`} className="flex flex-col gap-1.5">
-              <div className="flex items-baseline justify-between px-1">
-                <h2 id={`time-${day}`} className="text-callout font-bold text-muted">
-                  {formatLocalDate(day, "long")}
-                </h2>
-                <span className="text-caption text-muted tabular">
-                  {formatMinutes(dayEntries.reduce((sum, e) => sum + minutesOf(e, now), 0))}
-                </span>
-              </div>
+            <ListSection
+              key={day}
+              id={`time-${day}`}
+              title={
+                day === today
+                  ? `Today · ${formatLocalDate(day, "long")}`
+                  : formatLocalDate(day, "long")
+              }
+              total={formatMinutes(dayEntries.reduce((sum, e) => sum + minutesOf(e, now), 0))}
+            >
               <Group as="ul" label={formatLocalDate(day, "long")}>
                 {dayEntries.map((entry) => (
                   <EntryRow
@@ -178,7 +218,7 @@ export function TimeTracking({ onView }: { onView: (view: TimeView) => void }) {
                   />
                 ))}
               </Group>
-            </section>
+            </ListSection>
           ))}
           {entries.data ? null : <SkeletonRows rows={4} />}
         </div>

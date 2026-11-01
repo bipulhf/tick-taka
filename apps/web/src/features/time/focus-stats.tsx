@@ -10,6 +10,7 @@ import { ProgressBar } from "@/components/ui/progress";
 import { Section } from "@/components/ui/section";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton, SkeletonRows } from "@/components/ui/skeleton";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
 import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useAreas } from "@/lib/queries";
 import { useTodayDate, useUserTime } from "@/lib/use-today";
@@ -44,6 +45,11 @@ export function FocusStats({ onView }: { onView: (view: TimeView) => void }) {
   });
   const byArea = [...(data?.byArea ?? [])].sort((a, b) => b.minutes - a.minutes);
   const most = byArea[0]?.minutes ?? 0;
+  const topArea = byArea[0] ? areas.find((a) => a.id === byArea[0]?.areaId) : undefined;
+  const bestDay = bars.reduce<(typeof bars)[number] | null>(
+    (best, bar) => (bar.value > (best?.value ?? 0) ? bar : best),
+    null,
+  );
 
   return (
     <div className="flex flex-col gap-7">
@@ -65,6 +71,47 @@ export function FocusStats({ onView }: { onView: (view: TimeView) => void }) {
             />
             <Segmented label="Show" options={TIME_VIEWS} value="focus" onChange={onView} />
           </>
+        }
+        summary={
+          data?.sessions === 0 ? undefined : (
+            <SummaryStrip label="Focus this week">
+              <StatTile
+                label="Focus"
+                tone="time"
+                value={formatMinutes(data?.totalMinutes ?? 0)}
+                caption={plural(data?.sessions ?? 0, "focus session")}
+                loading={!data}
+              />
+              <StatTile
+                label="A session"
+                value={
+                  data?.sessions
+                    ? formatMinutes(Math.round(data.totalMinutes / data.sessions))
+                    : "0m"
+                }
+                caption="On average"
+                loading={!data}
+              />
+              <StatTile
+                label="Best day"
+                value={bestDay ? formatLocalDate(bestDay.key) : "None yet"}
+                caption={bestDay ? formatMinutes(bestDay.value) : "Start a session"}
+                loading={!data}
+              />
+              <StatTile
+                label="Top area"
+                value={
+                  byArea[0]
+                    ? topArea
+                      ? `${topArea.emoji} ${topArea.name}`
+                      : "No area"
+                    : "None yet"
+                }
+                caption={byArea[0] ? formatMinutes(byArea[0].minutes) : "Start a session"}
+                loading={!data}
+              />
+            </SummaryStrip>
+          )
         }
       />
       {stats.isError && !data ? (
@@ -88,13 +135,11 @@ export function FocusStats({ onView }: { onView: (view: TimeView) => void }) {
         />
       ) : (
         <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          <section aria-label="This week" className="flex flex-col gap-5 rounded-3xl bg-card p-6">
-            <div>
-              <p className="text-hero tabular">{formatMinutes(data.totalMinutes)}</p>
-              <p className="text-body text-muted">{plural(data.sessions, "focus session")}</p>
+          <Section id="focus-by-day" title="By day">
+            <div className="rounded-2xl bg-card p-5">
+              <WeekBars bars={bars} today={today} />
             </div>
-            <WeekBars bars={bars} today={today} />
-          </section>
+          </Section>
           <Section id="focus-by-area" title="By area">
             <Group as="ul" label="By area">
               {byArea.map((row) => {

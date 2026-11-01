@@ -51,3 +51,36 @@ describe("updates are checked against the route's own schema", () => {
     expect(String(lastTool().error)).toContain("at least one field");
   });
 });
+
+describe("record ids from forms", () => {
+  test("a picked id must still be one of the user's live records", async () => {
+    const { ai, ctx, say, lastTool } = await setup();
+    const cash = await ctx.request<{ id: string }>("POST", "/accounts", {
+      name: "Cash",
+      type: "cash",
+    });
+    const old = await ctx.request<{ id: string }>("POST", "/accounts", {
+      name: "Old bank",
+      type: "bank",
+    });
+    await ctx.request("DELETE", `/accounts/${old.body.id}`);
+    const expense = (account: string) =>
+      call("create", {
+        entity: "transaction",
+        fields: fields({ type: "expense", amount: 50, account }),
+      });
+    ai.queueChat(
+      { toolCalls: [expense(old.body.id)] },
+      { toolCalls: [expense(cash.body.id)] },
+      { content: "Added." },
+    );
+    const res = await say("Amount: 50 BDT\nAccount: Old bank [id x]");
+    const first = ai.chatRequests[1]!.messages.filter((m) => m.role === "tool") as {
+      content: string;
+    }[];
+    expect(first.at(-1)!.content).toContain("No account with id");
+    expect(first.at(-1)!.content).toContain("Existing: Cash");
+    expect(lastTool()).toMatchObject({ ok: true });
+    expect(res.body.actions).toHaveLength(1);
+  });
+});

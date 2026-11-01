@@ -76,8 +76,16 @@ export function createFieldConverter(caller: Caller, timeZone: string, now: numb
   async function resolve(kind: RefKind, value: unknown): Promise<string | null> {
     if (value === null) return null;
     if (typeof value !== "string") throw new FieldError(`${kind} must be a name or id`);
-    if (ULID.test(value) || kind === "task") return value;
+    if (kind === "task") return value;
     const list = await options(kind);
+    // An id (a form's pick, an old chat's) must still be one of the user's live records:
+    // a deleted or archived one, or another user's, goes back to the model with the names.
+    if (ULID.test(value)) {
+      if (list.some((item) => item.id === value)) return value;
+      throw new FieldError(
+        `No ${kind} with id ${value} (deleted, archived or not the user's). Existing: ${list.map((item) => item.name).join(", ") || "none"}`,
+      );
+    }
     const match =
       list.find((item) => norm(item.name) === norm(value)) ??
       list.find((item) => norm(item.name).includes(norm(value)));

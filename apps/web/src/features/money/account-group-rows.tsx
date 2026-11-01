@@ -1,6 +1,7 @@
-import { ArchiveRestore, ChevronRight, Scale } from "lucide-react";
+import { ArchiveRestore, Scale } from "lucide-react";
 import { Amount } from "@/components/ui/amount";
 import { Button } from "@/components/ui/button";
+import { FoldedSection } from "@/components/ui/folded-section";
 import { Group, Row, RowMark } from "@/components/ui/group";
 import { ProgressBar } from "@/components/ui/progress";
 import { useOpenPanel } from "@/lib/panel";
@@ -100,18 +101,11 @@ export function ArchivedAccounts({ accounts }: { accounts: Account[] }) {
     });
   };
   return (
-    <details className="group/archived flex flex-col">
-      <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-lg px-1 py-0.5 text-heading hover:bg-line/40 [&::-webkit-details-marker]:hidden">
-        <ChevronRight
-          aria-hidden
-          className="size-4 text-muted transition-transform duration-150 group-open/archived:rotate-90"
-        />
-        Archived
-        <span className="text-callout font-normal text-muted">({accounts.length})</span>
-      </summary>
-      <p className="mt-1 mb-3 px-1 text-caption font-normal text-muted">
-        Hidden from pickers and totals; their history stays.
-      </p>
+    <FoldedSection
+      title="Archived"
+      count={accounts.length}
+      caption="Hidden from pickers and totals; their history stays."
+    >
       <Group as="ul" label="Archived accounts">
         {accounts.map((account) => (
           <Row
@@ -140,6 +134,6 @@ export function ArchivedAccounts({ accounts }: { accounts: Account[] }) {
           />
         ))}
       </Group>
-    </details>
+    </FoldedSection>
   );
 }

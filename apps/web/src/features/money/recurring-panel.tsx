@@ -21,7 +21,7 @@ import { payRecurring } from "./recurring-pay";
 import { useSplitOffer } from "./split-offer";
 
 /** "recurring:<id>" or "recurring:new": a bill or expected income; Paid / Received logs it. */
-export function RecurringPanel({ id, onClose }: PanelComponentProps) {
+export function RecurringPanel({ id, onClose, preset }: PanelComponentProps) {
   const recurring = useRecurring();
   const item = id === "new" ? undefined : recurring.data?.find((r) => r.id === id);
   // Wait for the record so the form's fields start filled, even with nothing cached.
@@ -39,17 +39,27 @@ export function RecurringPanel({ id, onClose }: PanelComponentProps) {
         )}
       </Panel>
     );
-  return <RecurringForm item={item} onClose={onClose} />;
+  // "Add income" opens a new one as income (`?preset=kind=income`).
+  const kind = preset.get("kind") === "income" ? "income" : "bill";
+  return <RecurringForm item={item} kind={kind} onClose={onClose} />;
 }
 
-function RecurringForm({ item, onClose }: { item: Recurring | undefined; onClose: () => void }) {
+function RecurringForm({
+  item,
+  kind,
+  onClose,
+}: {
+  item: Recurring | undefined;
+  kind: "bill" | "income";
+  onClose: () => void;
+}) {
   const { data: accounts = [] } = useAccounts();
   const { data: settings } = useSettings();
   const { timeZone } = useUserTime();
   const today = useTodayDate();
   // The form as it opened, to tell whether anything typed would be lost.
   const [initial] = useState<RecurringDraft>(() => ({
-    kind: item?.kind ?? "bill",
+    kind: item?.kind ?? kind,
     name: item?.name ?? "",
     amount: item ? amountText(item.amountMinor, item.currency) : "",
     currency: item?.currency ?? "BDT",

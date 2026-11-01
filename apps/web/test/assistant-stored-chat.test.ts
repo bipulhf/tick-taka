@@ -3,9 +3,22 @@ import type { ChatMessage } from "../src/features/assistant/chat-store";
 import {
   fromStored,
   hasNewReplies,
+  keptMessages,
   mergeStored,
   type StoredMessage,
 } from "../src/features/assistant/stored-chat";
+
+test("the chat kept in this browser reads back, dropping what isn't a message", () => {
+  // As the first chats were kept: no questions, cards, steps or ids on the server.
+  const old = { id: "1-0.5", role: "user", content: "Add milk", at: 1 };
+  const reply = { id: "2-0.5", role: "assistant", content: "Added", at: 2, memo: "added task A" };
+  expect(keptMessages([old, reply])).toEqual([old, reply] as ChatMessage[]);
+  expect(
+    keptMessages([null, 3, "x", {}, { ...old, role: "system" }, { ...old, content: null }, old]),
+  ).toEqual([old] as ChatMessage[]);
+  expect(keptMessages({ messages: [old] })).toEqual([]);
+  expect(keptMessages(null)).toEqual([]);
+});
 
 const stored = (id: string, role: "user" | "assistant", extra: Partial<StoredMessage> = {}) =>
   ({

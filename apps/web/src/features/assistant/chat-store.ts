@@ -7,6 +7,7 @@ import type { HttpMethod } from "@/lib/api";
 import { tokenStore } from "@/lib/auth";
 import { createStore } from "@/lib/store";
 import type { ChatDraft } from "./money-drafts";
+import { keptMessages } from "./stored-chat";
 
 export interface ChatAction {
   summary: string;
@@ -64,8 +65,7 @@ const KEEP = 60;
 function read(): ChatMessage[] {
   try {
     const raw = localStorage.getItem(KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? (parsed as ChatMessage[]) : [];
+    return keptMessages(raw ? JSON.parse(raw) : []);
   } catch {
     // Unreadable storage: the chat just starts empty.
     return [];

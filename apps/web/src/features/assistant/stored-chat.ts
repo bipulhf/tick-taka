@@ -24,6 +24,24 @@ export interface StoredMessage {
   createdAt: number;
 }
 
+/**
+ * The chat kept in this browser, read back: anything that isn't a message (damaged
+ * storage, a stray entry) is dropped rather than breaking the chat. Older messages,
+ * from before questions, cards and chats on the server, read as they are.
+ */
+export function keptMessages(raw: unknown): ChatMessage[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (item): item is ChatMessage =>
+      typeof item === "object" &&
+      item !== null &&
+      typeof item.id === "string" &&
+      (item.role === "user" || item.role === "assistant") &&
+      typeof item.content === "string" &&
+      typeof item.at === "number",
+  );
+}
+
 /** One stored message as the chat shows it. Undo isn't kept on the server, so none here. */
 export function fromStored(message: StoredMessage): ChatMessage {
   const question = message.role === "assistant" ? parseQuestion(message.question) : undefined;

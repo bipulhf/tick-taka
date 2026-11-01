@@ -43,6 +43,8 @@ export interface AiChatResult {
   toolCalls: AiToolCall[];
   usage: AiUsage;
   model: string;
+  /** The reply hit the output-token cap: text may stop mid-sentence, tool arguments mid-JSON. */
+  truncated?: boolean;
 }
 
 export interface AiTranscribeRequest {
@@ -61,7 +63,10 @@ export interface AiClient {
     tools: AiToolDefinition[];
     /** When given, the reply streams: called with each piece of text as it arrives. */
     onText?: (delta: string) => void;
-    /** Cancels the call (and stops billing for it) when the caller goes away. */
+    /**
+     * Cancels the call (and stops billing for it) when the caller goes away. Each call
+     * also has its own deadline; running past it rejects with a "timed out" error.
+     */
     signal?: AbortSignal;
   }): Promise<AiChatResult>;
   transcribe(

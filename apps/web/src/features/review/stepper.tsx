@@ -36,10 +36,83 @@ export function useStepKeys(step: number, count: number, onStep: (step: number) 
   }, [step, count, onStep]);
 }
 
+/** The steps across the top on a tablet or desk: a bar, a number (a tick once passed), the name. */
+function StepList({
+  steps,
+  step,
+  onStep,
+}: {
+  steps: Step[];
+  step: number;
+  onStep: (step: number) => void;
+}) {
+  return (
+    <ol
+      className="hidden gap-2 md:grid"
+      style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+    >
+      {steps.map((item, index) => {
+        const on = index === step;
+        const past = index < step;
+        return (
+          <li key={item.label} className="min-w-0">
+            <button
+              type="button"
+              aria-current={on ? "step" : undefined}
+              onClick={() => onStep(index)}
+              className={cx(
+                "flex w-full flex-col gap-2.5 rounded-xl px-3 pt-0 pb-2.5 text-left transition-colors duration-150",
+                on ? "bg-card" : "hover:bg-line/40",
+              )}
+            >
+              <span
+                aria-hidden
+                className={cx(
+                  "h-1 w-full rounded-full",
+                  on || past ? "bg-ink" : "bg-line-strong/40",
+                )}
+              />
+              <span className="flex min-w-0 items-center gap-2.5">
+                <span
+                  aria-hidden
+                  className={cx(
+                    "flex size-7 shrink-0 items-center justify-center rounded-full text-caption tabular",
+                    on
+                      ? "bg-ink text-background"
+                      : past
+                        ? "bg-line text-ink"
+                        : "border border-line-strong text-muted",
+                  )}
+                >
+                  {past ? <Check className="size-3.5" strokeWidth={3} /> : index + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={cx(
+                      "block truncate text-callout font-bold",
+                      !on && !past && "text-muted",
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                  {item.hint ? (
+                    <span className="block truncate text-caption text-muted">{item.hint}</span>
+                  ) : null}
+                </span>
+              </span>
+              <span className="sr-only">{past ? "(done)" : on ? "(current step)" : ""}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /**
- * A guided flow: on a desk the steps are listed down the left, each one a button;
- * on a phone they shrink to a row of bars over the step. The current step's body
- * and the Back / Next buttons sit on the right.
+ * A guided flow: the steps across the top (a row of bars on a phone), then the
+ * current step's numbers and body, and Back / Next in a bar pinned to the bottom of
+ * the view, so they stay in reach however long the step is.
  */
 export function Stepper({
   steps,
@@ -60,76 +133,40 @@ export function Stepper({
   useStepKeys(step, steps.length, onStep);
   const current = steps[step];
   return (
-    <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[232px_minmax(0,1fr)] lg:gap-10">
-      <nav aria-label={label} className="lg:sticky lg:top-6">
-        <ol className="hidden flex-col gap-1 lg:flex">
-          {steps.map((item, index) => {
-            const on = index === step;
-            const past = index < step;
-            return (
-              <li key={item.label}>
-                <button
-                  type="button"
-                  aria-current={on ? "step" : undefined}
-                  onClick={() => onStep(index)}
-                  className={cx(
-                    "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors duration-150",
-                    on ? "bg-card" : "hover:bg-line/40",
-                  )}
-                >
-                  <span
-                    aria-hidden
-                    className={cx(
-                      "flex size-7 shrink-0 items-center justify-center rounded-full text-caption tabular",
-                      on
-                        ? "bg-ink text-background"
-                        : past
-                          ? "bg-line text-ink"
-                          : "border border-line-strong text-muted",
-                    )}
-                  >
-                    {past ? <Check className="size-3.5" strokeWidth={3} /> : index + 1}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span
-                      className={cx("block truncate text-callout font-bold", !on && "text-ink")}
-                    >
-                      {item.label}
-                    </span>
-                    {item.hint ? (
-                      <span className="block truncate text-caption text-muted">{item.hint}</span>
-                    ) : null}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-        <div className="flex flex-col gap-2 lg:hidden">
-          <div className="flex gap-1" aria-hidden>
-            {steps.map((item, index) => (
-              <span
-                key={item.label}
-                className={cx("h-1.5 flex-1 rounded-full", index <= step ? "bg-ink" : "bg-line")}
-              />
-            ))}
-          </div>
-          <p className="text-caption text-muted">
-            Step {step + 1} of {steps.length}
-          </p>
+    <div className="flex flex-col gap-6">
+      <nav aria-label={label}>
+        <StepList steps={steps} step={step} onStep={onStep} />
+        <div className="flex gap-1 md:hidden" aria-hidden>
+          {steps.map((item, index) => (
+            <span
+              key={item.label}
+              className={cx("h-1.5 flex-1 rounded-full", index <= step ? "bg-ink" : "bg-line")}
+            />
+          ))}
         </div>
-        <p className="mt-4 hidden items-center gap-1.5 px-2.5 text-caption text-muted lg:flex">
-          <Kbd>←</Kbd>
-          <Kbd>→</Kbd>
-          move between steps
-        </p>
       </nav>
       <div className="flex min-w-0 flex-col gap-5">
-        <h2 className="text-title" aria-live="polite">
-          {current?.label}
-        </h2>
+        <div className="flex flex-col gap-0.5 px-1">
+          <p className="text-caption text-muted md:hidden">
+            Step {step + 1} of {steps.length}
+          </p>
+          <h2 className="text-title" aria-live="polite">
+            {current?.label}
+          </h2>
+        </div>
         {children}
-        <div className="flex flex-wrap items-center gap-2 pt-2">{footer}</div>
+      </div>
+      <div className="sticky bottom-24 z-10 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-line bg-card p-2 shadow-lg shadow-ink/5 sm:bottom-4">
+        <p className="mr-auto hidden items-center gap-1.5 px-2 text-caption text-muted md:flex">
+          <span className="tabular">
+            Step {step + 1} of {steps.length}
+          </span>
+          <span aria-hidden>·</span>
+          <Kbd>←</Kbd>
+          <Kbd>→</Kbd>
+          to move
+        </p>
+        {footer}
       </div>
     </div>
   );

@@ -28,6 +28,7 @@ import {
   SpendingStep,
   TopThreeStep,
 } from "./shutdown-steps";
+import { ShutdownStrip } from "./shutdown-strips";
 import { StepButtons, Stepper } from "./stepper";
 
 const storage = () => (typeof sessionStorage === "undefined" ? undefined : sessionStorage);
@@ -177,6 +178,12 @@ export function ShutdownFlow() {
           />
         }
       >
+        <ShutdownStrip
+          step={step}
+          data={data}
+          ticked={progress.ticked.length}
+          timeZone={timeZone}
+        />
         {step === 0 ? <DoneTodayStep date={data.date} timeZone={timeZone} /> : null}
         {step === 1 ? (
           <CarryOverStep date={data.date} tomorrow={data.tomorrow} timeZone={timeZone} />

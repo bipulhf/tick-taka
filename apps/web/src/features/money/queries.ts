@@ -73,6 +73,14 @@ export function useBudgetSuggestion(month: string, options: { enabled?: boolean 
   });
 }
 
+/** Every account, archived ones too (the Accounts view's "Archived" section). */
+export function useAccountsWithArchived() {
+  return useQuery({
+    queryKey: ["accounts", "with-archived"],
+    queryFn: () => unwrap(api.accounts.$get({ query: { archived: "true" } })),
+  });
+}
+
 export function useRecurring() {
   return useQuery({ queryKey: ["recurring"], queryFn: () => unwrap(api.recurring.$get()) });
 }

@@ -1,18 +1,40 @@
-import { addMonths, eachDay, localMonthRange, toLocalDate } from "@tick-taka/shared/dates";
+import {
+  addDays,
+  addMonths,
+  eachDay,
+  localMonthRange,
+  monthOf,
+  startOfLocalDay,
+  startOfWeek,
+  toLocalDate,
+} from "@tick-taka/shared/dates";
 
 /** Reports' period choices and the numbers behind each chart. Pure. */
 
-export type Range = "this" | "last" | "quarter";
+export type Range = "week" | "month" | "quarter" | "year";
 
-/** The instants a period covers: this month, last month, or the last three months. */
-export function reportSpan(range: Range, month: string, timeZone: string) {
-  if (range === "this") return localMonthRange(month, timeZone);
-  if (range === "last") return localMonthRange(addMonths(month, -1), timeZone);
+/**
+ * The instants a period covers: this week (from the user's first weekday), this month,
+ * the last three months, or the last twelve, each up to the end of the current one.
+ */
+export function reportSpan(range: Range, today: string, timeZone: string, weekStartsOn = 6) {
+  if (range === "week") {
+    const first = startOfWeek(today, weekStartsOn);
+    return {
+      from: startOfLocalDay(first, timeZone),
+      to: startOfLocalDay(addDays(first, 7), timeZone),
+    };
+  }
+  const month = monthOf(today);
+  const back = range === "month" ? 0 : range === "quarter" ? 2 : 11;
   return {
-    from: localMonthRange(addMonths(month, -2), timeZone).from,
+    from: localMonthRange(addMonths(month, -back), timeZone).from,
     to: localMonthRange(month, timeZone).to,
   };
 }
+
+/** How many months the month-by-month charts show for a period: a year shows its twelve. */
+export const seriesMonths = (range: Range) => (range === "year" ? 12 : 6);
 
 interface CategoryLike {
   id: string;
@@ -69,9 +91,37 @@ export function spendingByDay(
   return eachDay(first, last).map((date) => ({ date, spentMinor: spent.get(date) ?? 0 }));
 }
 
-/** Which days get an axis label: the 1st and every 7th after, so labels never crowd. */
+/**
+ * A year of days summed into weeks (keyed by each week's first day), for a column
+ * chart that stays readable: 52 columns instead of 365.
+ */
+export function spendingByWeek(
+  days: { date: string; spentMinor: number }[],
+  weekStartsOn = 6,
+): { date: string; spentMinor: number }[] {
+  const weeks = new Map<string, number>();
+  for (const day of days) {
+    const key = startOfWeek(day.date, weekStartsOn);
+    weeks.set(key, (weeks.get(key) ?? 0) + day.spentMinor);
+  }
+  return [...weeks.entries()].map(([date, spentMinor]) => ({ date, spentMinor }));
+}
+
+/**
+ * A weekly column's axis label: the month's short name on the first week that starts
+ * in it (a part week at the start of the period stays unlabelled, so labels never touch).
+ */
+export function weekTick(date: string, monthName: (month: string) => string) {
+  return Number(date.slice(8)) <= 7 ? monthName(date.slice(0, 7)) : undefined;
+}
+
+/**
+ * Which days get an axis label: every day of a week; else the 1st and every 7th
+ * after, so labels never crowd.
+ */
 export function dayTick(date: string, index: number, total: number): string | undefined {
   const day = Number(date.slice(8));
+  if (total <= 10) return String(day);
   const every = total > 40 ? 14 : 7;
   return index === 0 || (day - 1) % every === 0 ? String(day) : undefined;
 }

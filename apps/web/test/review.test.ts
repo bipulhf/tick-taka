@@ -11,6 +11,8 @@ import {
   reportSpan,
   rollUpByParent,
   spendingByDay,
+  spendingByWeek,
+  weekTick,
 } from "../src/features/review/insights-data";
 import {
   daysToReviewDay,
@@ -79,10 +81,37 @@ describe("chart scale", () => {
 
 describe("reports", () => {
   test("periods", () => {
-    const thisMonth = reportSpan("this", "2026-10", ZONE);
+    const thisMonth = reportSpan("month", "2026-10-15", ZONE);
     expect(thisMonth.from).toBe(startOfLocalDay("2026-10-01", ZONE));
-    expect(reportSpan("last", "2026-10", ZONE).to).toBe(thisMonth.from);
-    expect(reportSpan("quarter", "2026-10", ZONE).from).toBe(startOfLocalDay("2026-08-01", ZONE));
+    expect(thisMonth.to).toBe(startOfLocalDay("2026-11-01", ZONE));
+    expect(reportSpan("quarter", "2026-10-15", ZONE).from).toBe(
+      startOfLocalDay("2026-08-01", ZONE),
+    );
+    expect(reportSpan("year", "2026-10-15", ZONE).from).toBe(startOfLocalDay("2025-11-01", ZONE));
+    // 2026-10-15 is a Thursday; weeks start on Saturday by default.
+    const week = reportSpan("week", "2026-10-15", ZONE);
+    expect(week.from).toBe(startOfLocalDay("2026-10-10", ZONE));
+    expect(week.to).toBe(startOfLocalDay("2026-10-17", ZONE));
+    expect(reportSpan("week", "2026-10-15", ZONE, 1).from).toBe(
+      startOfLocalDay("2026-10-12", ZONE),
+    );
+  });
+
+  test("a year of days sums into weeks", () => {
+    const weeks = spendingByWeek(
+      [
+        { date: "2026-10-09", spentMinor: 100 },
+        { date: "2026-10-10", spentMinor: 200 },
+        { date: "2026-10-16", spentMinor: 300 },
+      ],
+      6,
+    );
+    expect(weeks).toEqual([
+      { date: "2026-10-03", spentMinor: 100 },
+      { date: "2026-10-10", spentMinor: 500 },
+    ]);
+    expect(weekTick("2026-10-03", (m) => m)).toBe("2026-10");
+    expect(weekTick("2026-10-10", (m) => m)).toBeUndefined();
   });
 
   test("child categories roll into their parent", () => {
@@ -118,22 +147,23 @@ describe("reports", () => {
   });
 
   test("every day of the period up to today, zeros included", () => {
-    const span = reportSpan("this", "2026-10", ZONE);
+    const span = reportSpan("month", "2026-10-03", ZONE);
     const days = spendingByDay([{ date: "2026-10-02", spentMinor: 900 }], span, "2026-10-03", ZONE);
     expect(days).toEqual([
       { date: "2026-10-01", spentMinor: 0 },
       { date: "2026-10-02", spentMinor: 900 },
       { date: "2026-10-03", spentMinor: 0 },
     ]);
-    expect(spendingByDay([], reportSpan("last", "2026-10", ZONE), "2026-10-03", ZONE)).toHaveLength(
-      30,
-    );
+    // A month wholly in the past keeps all its days.
+    const september = reportSpan("month", "2026-09-15", ZONE);
+    expect(spendingByDay([], september, "2026-10-03", ZONE)).toHaveLength(30);
   });
 
   test("day ticks stay sparse", () => {
     expect(dayTick("2026-10-01", 0, 31)).toBe("1");
     expect(dayTick("2026-10-02", 1, 31)).toBeUndefined();
     expect(dayTick("2026-10-08", 7, 31)).toBe("8");
+    expect(dayTick("2026-10-02", 1, 7)).toBe("2");
   });
 });
 

@@ -1,46 +1,57 @@
+import { monthOf, toLocalDate } from "@tick-taka/shared/dates";
 import { useState } from "react";
-import { Amount } from "@/components/ui/amount";
-import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
-import { Section } from "@/components/ui/section";
 import { Segmented } from "@/components/ui/segmented";
-import { Skeleton } from "@/components/ui/skeleton";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
 import { useInsights } from "@/features/money/queries";
-import { useAreas, useCategories, useHourlyRate } from "@/lib/queries";
-import { useThisMonth, useTodayDate, useUserTime } from "@/lib/use-today";
-import { areaStats, type Range, reportSpan, rollUpByParent, spendingByDay } from "./insights-data";
+import { formatLocalDate, formatMinutes, formatMonth } from "@/lib/format";
+import { useAreas, useCategories, useHourlyRate, useSettings } from "@/lib/queries";
+import { useTodayDate, useUserTime } from "@/lib/use-today";
+import { AreaRates, HoursByArea } from "./insights-areas";
 import {
-  AreaRows,
-  CategorySpending,
-  DailySpending,
-  HoursByArea,
-  MonthlyFlow,
-  NetWorth,
-  SectionSkeleton,
-} from "./insights-sections";
+  areaStats,
+  type Range,
+  reportSpan,
+  rollUpByParent,
+  seriesMonths,
+  spendingByDay,
+  spendingByWeek,
+} from "./insights-data";
+import { CategorySpending, MonthlyFlow, NetWorth, SpendingOverTime } from "./insights-sections";
 
 const RANGES: { value: Range; label: string }[] = [
-  { value: "this", label: "This month" },
-  { value: "last", label: "Last month" },
+  { value: "week", label: "Week" },
+  { value: "month", label: "Month" },
   { value: "quarter", label: "3 months" },
+  { value: "year", label: "Year" },
 ];
 
+/** "Sat 31 Oct to Fri 6 Nov", "Nov 2026", "Sep to Nov 2026". */
+function spanText(range: Range, first: string, last: string): string {
+  if (range === "week") return `${formatLocalDate(first)} to ${formatLocalDate(last)}`;
+  if (range === "month") return formatMonth(monthOf(first));
+  return `${formatMonth(monthOf(first))} to ${formatMonth(monthOf(last))}`;
+}
+
 /**
- * Spending by category and by day, income against spending by month, net worth,
- * and hours, spending and hourly rate by area. The period above scopes everything
- * that follows it except the month-by-month charts, which always show half a year.
+ * The period in numbers (earned, spent, net, hours), then every chart in the same
+ * card: spending by category and over time, income against spending by month, net
+ * worth, and hours, spending and hourly rate by area. The period in the header scopes
+ * everything; the month-by-month charts show half a year (a year for Year).
  */
 export function InsightsScreen() {
   const { timeZone } = useUserTime();
-  const month = useThisMonth();
   const today = useTodayDate();
-  const [range, setRange] = useState<Range>("this");
-  const span = reportSpan(range, month, timeZone);
+  const weekStartsOn = useSettings().data?.weekStartsOn;
+  const [range, setRange] = useState<Range>("month");
+  const span = reportSpan(range, today, timeZone, weekStartsOn);
   const summary = useInsights(span.from, span.to);
   const { data: categories = [] } = useCategories();
   const { data: areas = [] } = useAreas();
   const overall = useHourlyRate();
   const data = summary.data;
+  const state = data ? "ready" : summary.isError ? "failed" : "loading";
+  const retry = () => void summary.refetch();
 
   const ranked = rollUpByParent(data?.spendingByCategory ?? [], categories);
   const categoryName = (id: string | null) => {
@@ -49,81 +60,69 @@ export function InsightsScreen() {
   };
   const byArea = areaStats(areas, data);
   const days = data ? spendingByDay(data.byDay, span, today, timeZone) : [];
-  const failed = summary.isError && !data;
+  const weekly = range === "year";
+  const minutes = data?.hoursByArea.reduce((sum, r) => sum + r.minutes, 0) ?? 0;
+  const focus = data?.hoursByArea.reduce((sum, r) => sum + r.focusMinutes, 0) ?? 0;
+  const first = toLocalDate(span.from, timeZone);
+  const last = toLocalDate(span.to - 1, timeZone);
+  const months = seriesMonths(range);
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader title="Reports" />
-      <div className="flex flex-col gap-4">
-        <Segmented
-          label="Period"
-          value={range}
-          onChange={setRange}
-          options={RANGES}
-          className="self-start"
+      <PageHeader
+        title="Reports"
+        subtitle={spanText(range, first, last)}
+        actions={<Segmented label="Period" value={range} onChange={setRange} options={RANGES} />}
+        summary={
+          <SummaryStrip label="This period">
+            <StatTile
+              label="Earned"
+              tone="in"
+              minor={data?.totals.incomeMinor}
+              caption="Money in"
+              loading={!data}
+            />
+            <StatTile
+              label="Spent"
+              tone="out"
+              minor={data?.totals.spentMinor}
+              caption="Money out"
+              loading={!data}
+            />
+            <StatTile
+              label="Net"
+              tone="flow"
+              minor={data?.totals.netMinor}
+              caption="Earned minus spent"
+              loading={!data}
+            />
+            <StatTile
+              label="Hours tracked"
+              tone="time"
+              value={formatMinutes(minutes)}
+              caption={focus ? `${formatMinutes(focus)} of it focus` : "Across every area"}
+              loading={!data}
+            />
+          </SummaryStrip>
+        }
+      />
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
+        <CategorySpending ranked={ranked} name={categoryName} state={state} onRetry={retry} />
+        <SpendingOverTime
+          points={weekly ? spendingByWeek(days, weekStartsOn) : days}
+          unit={weekly ? "week" : "day"}
+          state={state}
+          onRetry={retry}
         />
-        {data ? (
-          <p className="px-1 text-heading">
-            <Amount minor={data.totals.incomeMinor} tone="in" animate={false} /> in,{" "}
-            <Amount minor={data.totals.spentMinor} tone="out" animate={false} /> out
-            <span className="text-muted"> · net </span>
-            <Amount minor={data.totals.netMinor} signed animate={false} />
-          </p>
-        ) : failed ? null : (
-          <Skeleton className="h-7 w-80" />
-        )}
-      </div>
-      {failed ? <ErrorState onRetry={() => void summary.refetch()} /> : null}
-      <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-8">
-        <Section title="Spending by category">
-          {!data ? (
-            failed ? null : (
-              <SectionSkeleton />
-            )
-          ) : ranked.length === 0 ? (
-            <EmptyState
-              title="No spending in this range"
-              message="Spending you log in this period shows up here."
-              mood="relaxed"
-            />
-          ) : (
-            <CategorySpending ranked={ranked} name={categoryName} />
-          )}
-        </Section>
-        <Section title="Spending by day">
-          {!data ? (
-            failed ? null : (
-              <Skeleton className="h-60 rounded-2xl" />
-            )
-          ) : days.length === 0 || ranked.length === 0 ? (
-            <EmptyState
-              title="No spending in this range"
-              message="Spending you log in this period shows up here."
-              mood="relaxed"
-            />
-          ) : (
-            <DailySpending days={days} />
-          )}
-        </Section>
-        <MonthlyFlow />
-        <NetWorth />
-        <Section title="Hours by area">
-          {!data ? failed ? null : <SectionSkeleton rows={3} /> : <HoursByArea rows={byArea} />}
-        </Section>
-        <Section title="By area">
-          {!data ? (
-            failed ? null : (
-              <SectionSkeleton rows={3} />
-            )
-          ) : byArea.length === 0 ? (
-            <EmptyState
-              title="Nothing by area yet"
-              message="Tag time and spending with an area to compare them here."
-            />
-          ) : (
-            <AreaRows rows={byArea} overallRate={overall.data?.rateMinor ?? null} />
-          )}
-        </Section>
+        <MonthlyFlow months={months} />
+        <NetWorth months={months} />
+        <HoursByArea rows={byArea} state={state} onRetry={retry} />
+        <AreaRates
+          rows={byArea}
+          overallRate={overall.data?.rateMinor ?? null}
+          state={state}
+          onRetry={retry}
+        />
       </div>
     </div>
   );

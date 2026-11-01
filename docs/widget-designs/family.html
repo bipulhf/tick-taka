@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; font-family: Nunito, system-ui, sans-serif; background: var(--background, #f6f6f6); color: var(--foreground, #222); }
+  .wrap { padding: 20px; }
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  p.lead { margin: 0 0 16px; color: var(--muted-foreground, #666); font-size: 14px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted-foreground, #666); margin-bottom: 14px; }
+  .legend b { color: var(--foreground, #222); }
+
+  /* Fixed palette for the mockups only (the app's tokens). */
+  .home {
+    --paper: #fff8ee; --card: #ffffff; --ink: #23202b; --muted: #6b655f; --line: #eee5d8;
+    --mango: #ffb547; --sky: #5b8cff; --sky-t: #2c5bcb; --mint: #2ec4a0; --mint-t: #11725d;
+    --coral: #ff7a6b; --coral-t: #b23a2a; --grape: #a57bff; --grape-t: #6e44d6;
+    background: linear-gradient(160deg, #3b4a6b 0%, #6a5b8c 45%, #c98a6b 100%);
+    border-radius: 28px; padding: 18px; display: flex; flex-wrap: wrap; gap: 12px 14px; width: 410px;
+  }
+  .cap { flex-basis: 100%; color: #fff; font-size: 12px; font-weight: 700; opacity: .95; margin: 6px 0 -4px; }
+  .cap em { font-style: normal; font-weight: 600; opacity: .8; }
+  .w { background: var(--paper); border-radius: 22px; padding: 12px 14px; box-sizing: border-box; color: var(--ink);
+       box-shadow: 0 6px 18px rgba(0,0,0,.18); display: flex; flex-direction: column; gap: 6px; overflow: hidden; position: relative; }
+  .w.c4x2 { width: 410px; height: 198px; }
+  .w.c4x1 { width: 410px; height: 92px; }
+  .w.c2x2 { width: 198px; height: 198px; }
+  .w.c4x3 { width: 410px; height: 304px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .between { justify-content: space-between; }
+  .muted { color: var(--muted); }
+  .t11 { font-size: 11px; } .t12 { font-size: 12px; } .t13 { font-size: 13px; } .t15 { font-size: 15px; }
+  .b { font-weight: 800; } .sb { font-weight: 700; }
+  .num { font-variant-numeric: tabular-nums; }
+  .big { font-size: 30px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .mint { color: var(--mint-t); } .coral { color: var(--coral-t); } .skyt { color: var(--sky-t); } .grape { color: var(--grape-t); }
+  .bar { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 6px; }
+  .chk { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--sky-t); flex: none; box-sizing: border-box; }
+  .chk.done { background: var(--sky); border-color: var(--sky); position: relative; }
+  .chk.done::after { content: "✓"; color: #fff; font-size: 11px; font-weight: 800; position: absolute; left: 3px; top: -1px; }
+  .task { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task.done { color: var(--muted); text-decoration: line-through; }
+  .pill { font-size: 12px; font-weight: 800; border-radius: 999px; padding: 6px 10px; background: var(--card); border: 1.5px solid var(--line); white-space: nowrap; }
+  .pill.mango { background: var(--mango); border-color: var(--mango); color: #23202b; }
+  .pill.ink { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { background: var(--card); border-radius: 14px; padding: 7px 9px; font-size: 12px; font-weight: 700; display: flex; gap: 5px; align-items: center; box-shadow: inset 0 0 0 1.5px var(--line); }
+  .chip .a { color: var(--coral-t); font-variant-numeric: tabular-nums; }
+  .toast { position: absolute; left: 10px; right: 10px; bottom: 8px; background: var(--ink); color: var(--paper); border-radius: 12px; padding: 6px 10px; font-size: 12px; display: flex; justify-content: space-between; }
+  .toast b { color: var(--mango); }
+  .ring { width: 46px; height: 46px; }
+  .habit { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: 700; }
+  .bill { display: flex; align-items: center; gap: 8px; background: var(--card); border-radius: 12px; padding: 6px 8px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .tap { display: none; position: absolute; top: 8px; right: 10px; font-size: 10px; font-weight: 800; color: #fff; background: rgba(35,32,43,.55); border-radius: 999px; padding: 2px 7px; }
+  .note { font-size: 12.5px; color: var(--muted-foreground, #666); margin: 10px 2px 0; max-width: 430px; }
+  .grid2 { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Tick &amp; Taka widgets: a family of eight</h2>
+  <p class="lead">Each one does its job from the home screen. The label above each one says what a tap does without opening the app.</p>
+  <div class="legend"><span><b>4×2</b> wide</span><span><b>2×2</b> square</span><span><b>4×1</b> strip</span><span><b>4×3</b> tall, scrolls</span></div>
+
+  <div class="grid2">
+  <div>
+  <div class="home">
+    <div class="cap">1 · Today (4×2) <em>· tick tasks, mark Next done</em></div>
+    <div class="w c4x2">
+      <span class="tap">tick tasks here</span>
+      <div class="row between"><span class="t12 sb muted">Sun 1 Nov · 3 of 5 done</span><span class="t12 sb mint num">Safe ৳483</span></div>
+      <div class="row" style="gap:10px;margin-top:2px">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:7px">
+          <div class="row"><span class="chk done"></span><span class="task done">Email the client</span></div>
+          <div class="row"><span class="chk"></span><span class="task">Prepare slides</span></div>
+          <div class="row"><span class="chk"></span><span class="task">Call bank about card</span></div>
+        </div>
+        <div style="width:118px;background:var(--card);border-radius:14px;padding:8px 10px;box-sizing:border-box">
+          <div class="t11 sb skyt">Next · 10:00 am</div>
+          <div class="t13 b" style="margin:2px 0 6px">Review PRs</div>
+          <div class="row" style="gap:5px"><span class="pill" style="padding:4px 8px">Done</span><span class="pill" style="padding:4px 8px">Later</span></div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:auto;gap:6px"><span class="pill mango">＋ Task</span><span class="pill">− Expense</span><span class="pill">▶ Focus</span><span class="pill">🎙 Tiki</span></div>
+    </div>
+
+    <div class="cap">2 · Quick log (4×1) <em>· one tap logs it</em></div>
+    <div class="w c4x1" style="flex-direction:row;align-items:center;gap:6px;padding:10px">
+      <span class="tap">logs in one tap</span>
+      <div class="chip">☕ Cha <span class="a">৳20</span></div>
+      <div class="chip">🛺 Rickshaw <span class="a">৳60</span></div>
+      <div class="chip">🍱 Lunch <span class="a">৳180</span></div>
+      <div class="chip" style="background:var(--mango);box-shadow:none">＋</div>
+    </div>
+
+    <div class="cap">3 · Safe to spend (2×2) &nbsp;·&nbsp; 4 · Habits (2×2) <em>· tap a ring = +1</em></div>
+    <div class="w c2x2">
+      <span class="t12 sb muted">Safe to spend today</span>
+      <span class="big mint">৳483</span>
+      <div class="bar"><i style="width:28%;background:var(--mint)"></i></div>
+      <span class="t11 muted num">৳190 spent · 30 days left</span>
+      <div class="row" style="margin-top:auto"><span class="pill mango" style="flex:1;text-align:center">− Expense</span></div>
+    </div>
+    <div class="w c2x2">
+      <span class="tap">tap = +1</span>
+      <span class="t12 sb muted">Habits · 2 of 4</span>
+      <div class="row" style="justify-content:space-around;margin-top:4px;flex-wrap:wrap;row-gap:6px">
+        <div class="habit"><svg class="ring" viewBox="0 0 46 46"><circle cx="23" cy="23" r="19" fill="none" stroke="#eee5d8" stroke-width="5"/><circle cx="23" cy="23" r="19" fill="none" stroke="#6e44d6" stroke-width="5" stroke-dasharray="119" stroke-dashoffset="45" stroke-linecap="round" transform="rotate(-90 23 23)"/><text x="23" y="28" text-anchor="middle" font-size="16">💧</text></svg>5/8</div>
+        <div class="habit"><svg class="ring" viewBox="0 0 46 46"><circle cx="23" cy="23" r="19" fill="none" stroke="#6e44d6" stroke-width="5"/><text x="23" y="28" text-anchor="middle" font-size="16">📖</text></svg>🔥 7</div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div>
+  <div class="home">
+    <div class="cap">5 · Bills due (4×2) <em>· Paid without opening</em></div>
+    <div class="w c4x2">
+      <span class="tap">Paid without opening</span>
+      <div class="row between"><span class="t12 sb muted">Bills · ৳15,749 still to pay</span><span class="t12 sb mint">Salary +৳45,000 today</span></div>
+      <div class="bill"><span class="dot" style="background:var(--coral)"></span><div style="flex:1"><div class="t13 b">Electricity</div><div class="t11 coral sb">Was due Wed 28 Oct</div></div><span class="t13 b num">৳2,400</span><span class="pill" style="padding:4px 9px">Paid</span></div>
+      <div class="bill"><span class="dot" style="background:var(--sky)"></span><div style="flex:1"><div class="t13 b">Internet</div><div class="t11 skyt sb">Due today · bKash</div></div><span class="t13 b num">৳1,050</span><span class="pill" style="padding:4px 9px">Paid</span></div>
+      <div class="bill"><span class="dot" style="background:var(--line)"></span><div style="flex:1"><div class="t13 b">Rent</div><div class="t11 muted sb">Tue 3 Nov · Cash</div></div><span class="t13 b num">৳12,000</span><span class="pill" style="padding:4px 9px">Paid</span></div>
+    </div>
+
+    <div class="cap">6 · Focus (2×2) <em>· start / stop</em> &nbsp;·&nbsp; 7 · This month (2×2)</div>
+    <div class="w c2x2" style="align-items:center;text-align:center">
+      <span class="tap">start / stop</span>
+      <span class="t12 sb muted">Focus · Read paper</span>
+      <svg width="54" height="54" viewBox="0 0 54 54"><circle cx="27" cy="27" r="23" fill="none" stroke="#eee5d8" stroke-width="5"/><circle cx="27" cy="27" r="23" fill="none" stroke="#5b8cff" stroke-width="5" stroke-dasharray="144" stroke-dashoffset="52" stroke-linecap="round" transform="rotate(-90 27 27)"/><text x="27" y="33" text-anchor="middle" font-size="18">🌱</text></svg>
+      <span class="t13 b skyt">until 3:45 pm</span>
+      <span class="pill ink" style="padding:5px 14px">■ Stop</span>
+    </div>
+    <div class="w c2x2">
+      <span class="t12 sb muted">November</span>
+      <div class="row between t12"><span class="sb">In</span><span class="b mint num">৳63,500</span></div>
+      <div class="row between t12"><span class="sb">Out</span><span class="b coral num">৳10,070</span></div>
+      <div class="bar"><i style="width:69%;background:var(--coral)"></i></div>
+      <span class="t11 muted">69% of budgets used · day 1</span>
+      <span class="t11 sb" style="margin-top:auto">Food ৳6,100 · top</span>
+    </div>
+
+    <div class="cap">8 · Tasks list (4×3) <em>· tick, scroll, add</em></div>
+    <div class="w c4x3">
+      <span class="tap">tick, scroll, add</span>
+      <div class="row between"><span class="t13 b">Today</span><span class="pill mango" style="padding:4px 10px">＋ Add</span></div>
+      <div class="t11 sb coral">Earlier · 2</div>
+      <div class="row"><span class="chk"></span><span class="task">Call bank about card</span><span class="t11 muted" style="margin-left:auto">Thu</span></div>
+      <div class="row"><span class="chk"></span><span class="task">Fix the sink</span><span class="t11 muted" style="margin-left:auto">Fri</span></div>
+      <div class="t11 sb skyt" style="margin-top:2px">Today · 4</div>
+      <div class="row"><span class="chk done"></span><span class="task done">Email the client</span></div>
+      <div class="row"><span class="chk"></span><span class="task">Review PRs</span><span class="t11 skyt sb" style="margin-left:auto">10:00</span></div>
+      <div class="row"><span class="chk"></span><span class="task">Prepare slides</span><span class="t11 skyt sb" style="margin-left:auto">2:00 pm</span></div>
+      <div class="row"><span class="chk"></span><span class="task">Pay electricity</span></div>
+      <div class="t11 muted" style="margin-top:auto">Tomorrow · 3 more ›</div>
+    </div>
+  </div>
+  </div>
+  </div>
+  <p class="note">Every tap action works from the home screen, even offline: changes queue on the phone and sync later, with an Undo strip like the one quick log shows. Text can't be typed into an Android widget, so "＋ Task", "＋" and "🎙 Tiki" open the app's quick-add or voice chat straight away.</p>
+</div>
+</body>
+</html>

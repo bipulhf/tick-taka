@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; font-family: Nunito, system-ui, sans-serif; background: var(--background, #f6f6f6); color: var(--foreground, #222); }
+  .wrap { padding: 20px; }
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  h3 { font-size: 15px; margin: 22px 0 8px; }
+  p.lead { margin: 0 0 14px; color: var(--muted-foreground, #666); font-size: 14px; }
+  .stage { background: linear-gradient(160deg, #3b4a6b 0%, #6a5b8c 45%, #c98a6b 100%); border-radius: 24px; padding: 18px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .col { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .lbl { color: #fff; font-size: 12px; font-weight: 800; }
+  .sub { color: rgba(255,255,255,.8); font-size: 11px; max-width: 200px; }
+  .w { width: 196px; height: 196px; border-radius: 22px; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  .w.strip { width: 410px; height: 84px; flex-direction: row; align-items: center; gap: 6px; padding: 12px; }
+  .k { font-size: 12px; font-weight: 700; opacity: .75; }
+  .big { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; border-radius: 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 28%; border-radius: 6px; }
+  .s { font-size: 11px; opacity: .75; font-variant-numeric: tabular-nums; }
+  .btn { margin-top: auto; text-align: center; border-radius: 999px; padding: 8px; font-weight: 800; font-size: 13px; }
+  .chip { border-radius: 14px; padding: 8px 10px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+  /* Paper (light) */
+  .paper { background: #fff8ee; color: #23202b; } .paper .big { color: #11725d; } .paper .bar { background: #eee5d8; } .paper .bar i { background: #2ec4a0; } .paper .btn { background: #ffb547; color: #23202b; }
+  /* Night (dark) */
+  .night { background: #22202b; color: #f4f1ea; } .night .big { color: #4fd8b5; } .night .bar { background: #34313f; } .night .bar i { background: #4fd8b5; } .night .btn { background: #ffc266; color: #23202b; }
+  /* Glass (see-through) */
+  .glass { background: rgba(255,255,255,.16); color: #fff; backdrop-filter: blur(14px); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); } .glass .big { color: #fff; } .glass .bar { background: rgba(255,255,255,.3); } .glass .bar i { background: #fff; } .glass .btn { background: rgba(255,255,255,.9); color: #23202b; }
+  /* Mango (bold) */
+  .bold { background: #ffb547; color: #23202b; } .bold .big { color: #23202b; } .bold .bar { background: rgba(35,32,43,.18); } .bold .bar i { background: #23202b; } .bold .btn { background: #23202b; color: #ffb547; }
+
+  .paper .chip { background: #fff; box-shadow: inset 0 0 0 1.5px #eee5d8; } .night .chip { background: #2c2a36; } .glass .chip { background: rgba(255,255,255,.22); } .bold .chip { background: rgba(255,255,255,.55); }
+  .undo { margin-left: auto; background: #23202b; color: #fff8ee; border-radius: 12px; padding: 8px 10px; font-size: 12px; white-space: nowrap; }
+  .undo b { color: #ffb547; }
+  .arrow { color: #fff; font-size: 22px; align-self: center; font-weight: 800; }
+  .seq { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .note { font-size: 12.5px; color: var(--muted-foreground, #666); margin: 10px 2px 0; max-width: 640px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Four styles, picked per widget</h2>
+  <p class="lead">Long-press a widget, choose its look. "Auto" follows the phone's light or dark mode.</p>
+  <div class="stage">
+    <div class="col"><span class="lbl">Paper (light)</span><div class="w paper"><span class="k">Safe to spend today</span><span class="big">৳483</span><div class="bar"><i></i></div><span class="s">৳190 spent · 30 days left</span><span class="btn">− Expense</span></div></div>
+    <div class="col"><span class="lbl">Night (dark)</span><div class="w night"><span class="k">Safe to spend today</span><span class="big">৳483</span><div class="bar"><i></i></div><span class="s">৳190 spent · 30 days left</span><span class="btn">− Expense</span></div></div>
+    <div class="col"><span class="lbl">Glass (see-through)</span><div class="w glass"><span class="k">Safe to spend today</span><span class="big">৳483</span><div class="bar"><i></i></div><span class="s">৳190 spent · 30 days left</span><span class="btn">− Expense</span></div></div>
+    <div class="col"><span class="lbl">Mango (bold)</span><div class="w bold"><span class="k">Safe to spend today</span><span class="big">৳483</span><div class="bar"><i></i></div><span class="s">৳190 spent · 30 days left</span><span class="btn">− Expense</span></div></div>
+  </div>
+
+  <h3>What a tap does, without opening the app</h3>
+  <div class="stage" style="flex-direction:column">
+    <div class="seq">
+      <div class="col"><span class="lbl">Quick log · tap "Cha ৳20"</span>
+        <div class="w strip paper"><span class="chip">☕ Cha ৳20</span><span class="chip">🛺 Rickshaw ৳60</span><span class="chip">🍱 Lunch ৳180</span></div></div>
+      <span class="arrow">→</span>
+      <div class="col"><span class="lbl">Logged on the phone, syncs when online</span>
+        <div class="w strip paper"><span class="chip">☕ Cha ৳20</span><span class="undo">Cha ৳20 logged · <b>Undo</b></span></div></div>
+    </div>
+    <div class="seq">
+      <div class="col"><span class="lbl">Bills · tap "Paid" on Internet</span><span class="sub">Uses the bill's own account (bKash); a bill with no account opens the app's account question once, then remembers it.</span></div>
+      <span class="arrow">→</span>
+      <div class="col"><span class="lbl">Paid, moves to next month, safe to spend updates</span><span class="sub">Same Undo strip for 10 seconds.</span></div>
+    </div>
+    <div class="seq">
+      <div class="col"><span class="lbl">Today / Tasks · tap a circle</span><span class="sub">Ticks the task, plays nothing (widgets are silent), counts toward the streak; a repeating task makes its next copy.</span></div>
+      <span class="arrow">→</span>
+      <div class="col"><span class="lbl">Habits · tap a ring</span><span class="sub">+1 for today; a full ring turns solid grape.</span></div>
+    </div>
+  </div>
+  <p class="note">Hide amounts on the phone shows ৳••• on every widget. Numbers follow the Bangla-digits setting. Widgets refresh after every change in the app, after a tap on the widget, and every 30 minutes; the focus timer shows its end time ("until 3:45 pm") because Android widgets can't tick every second without draining the battery.</p>
+</div>
+</body>
+</html>

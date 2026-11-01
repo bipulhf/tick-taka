@@ -63,15 +63,31 @@ describe("assistant money actions", () => {
   });
 
   test.each([
-    ["contribute_goal", "Add to a goal"],
-    ["repay_debt", "Record a debt repayment"],
-    ["check_balance", "Match an account balance"],
-  ] as const)("%s only proposes a draft when drafting", async (name, summary) => {
+    ["contribute_goal", "Add to a goal", { amountMinor: 1000, fromAccountId: ID }],
+    ["repay_debt", "Record a debt repayment", { amountMinor: 1000, accountId: ID }],
+    ["check_balance", "Match an account balance", { actualMinor: 1000 }],
+  ] as const)("%s only proposes a draft when drafting", async (name, summary, body) => {
     const { ctx, sent, drafts } = context({ drafting: true });
-    const result = await ACTION_HANDLERS[name](ctx, { amountMinor: 1000 }, needId);
+    const result = await ACTION_HANDLERS[name](ctx, { ...body }, needId);
     expect(result).toMatchObject({ draft: true });
     expect(sent).toEqual([]);
     expect(drafts).toEqual([expect.objectContaining({ summary, method: "POST" })]);
+  });
+
+  test.each([
+    ["contribute_goal", "fromAccount"],
+    ["repay_debt", "account"],
+    ["check_balance", "actual"],
+    ["pay_bill", "amount"],
+  ] as const)("a %s draft that Save would refuse goes back to the model", async (name, field) => {
+    const { ctx, drafts } = context({
+      drafting: true,
+      reply: () => ({ id: ID, nextDueAt: NOW }),
+    });
+    const raw = name === "pay_bill" ? { amountMinor: -5 } : { amountMinor: 1000 };
+    const result = await ACTION_HANDLERS[name](ctx, raw, needId);
+    expect(result).toEqual({ error: expect.stringContaining(field) });
+    expect(drafts).toEqual([]);
   });
 
   test("a refused request is reported, not recorded as done", async () => {

@@ -4,7 +4,7 @@ import type { AiToolDefinition } from "../../../ai/client";
 import { ACTION_HANDLERS, ACTIONS, type ActionName } from "./actions";
 import { createCardCollector } from "./cards";
 import type { Caller } from "./dispatch";
-import { draftProblem } from "./draft-check";
+import { draftProblem, updateProblem } from "./draft-check";
 import { describeEntities, ENTITIES, ENTITY_NAMES, type EntityName } from "./entities";
 import { createFieldConverter, FieldError, project } from "./fields";
 import { runNoteTool } from "./notes";
@@ -261,6 +261,8 @@ export function createToolRunner(
     const def = ENTITIES[entity];
     const id = idOf(args.id);
     const fields = await convert(parseFields(String(args.fields)));
+    const problem = updateProblem(entity, fields);
+    if (problem) return fail(problem);
     const before = def.canGet ? await caller.call("GET", `${def.path}/${id}`) : null;
     const previous = before?.ok ? (before.data as Record<string, unknown>) : null;
     const undoBody = previous

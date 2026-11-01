@@ -2,6 +2,7 @@ import { isLocalDate, isLocalMonth, type LocalDate } from "@tick-taka/shared/dat
 import { newId } from "@tick-taka/shared/ids";
 import type { SettingsKey } from "@tick-taka/shared/schemas/settings";
 import type { Caller } from "./dispatch";
+import { actionDraftProblem } from "./draft-check";
 import type { EntityName } from "./entities";
 import { type createFieldConverter, project } from "./fields";
 import { type Action, type DRAFTED, type Draft, isId, label, listOf, type Undo } from "./records";
@@ -60,6 +61,16 @@ export interface ActionContext {
   actions: Action[];
   /** Notes a record this action changed, for the answer's cards. */
   touch: (entity: EntityName, record: unknown) => void;
+}
+
+/** A drafted money action that would be refused on Save goes back to the model instead. */
+function failed(
+  action: ActionName,
+  body: Record<string, unknown>,
+  fail: ActionContext["fail"],
+): { error: string } | null {
+  const problem = actionDraftProblem(action, body);
+  return problem ? fail(problem) : null;
 }
 
 type ActionHandler = (
@@ -121,13 +132,16 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
             },
           };
     if (drafting)
-      return propose({
-        summary: `${raw.skip ? "Skip" : "Pay"} ${label(bill, "a bill")}`,
-        method: "POST",
-        path,
-        body,
-        ...(undo ? { undo } : {}),
-      });
+      return (
+        failed("pay_bill", body, fail) ??
+        propose({
+          summary: `${raw.skip ? "Skip" : "Pay"} ${label(bill, "a bill")}`,
+          method: "POST",
+          path,
+          body,
+          ...(undo ? { undo } : {}),
+        })
+      );
     const result = await caller.call("POST", path, body);
     if (!result.ok) return fail(result.error);
     touch("bill", (result.data as { recurring?: unknown } | null)?.recurring ?? bill);
@@ -146,7 +160,11 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
   ) => {
     const body = { id: newId(now), ...(await convert(raw)) };
     const path = `/goals/${needId()}/contribute`;
-    if (drafting) return propose({ summary: "Add to a goal", method: "POST", path, body });
+    if (drafting)
+      return (
+        failed("contribute_goal", body, fail) ??
+        propose({ summary: "Add to a goal", method: "POST", path, body })
+      );
     const result = await caller.call("POST", path, body);
     if (!result.ok) return fail(result.error);
     touch("goal", (result.data as { goal?: unknown } | null)?.goal);
@@ -159,7 +177,10 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
     const body = { id: newId(now), ...(await convert(raw)) };
     const path = `/debts/${needId()}/repay`;
     if (drafting)
-      return propose({ summary: "Record a debt repayment", method: "POST", path, body });
+      return (
+        failed("repay_debt", body, fail) ??
+        propose({ summary: "Record a debt repayment", method: "POST", path, body })
+      );
     const result = await caller.call("POST", path, body);
     if (!result.ok) return fail(result.error);
     actions.push({ summary: "Recorded a debt repayment" });
@@ -173,7 +194,10 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
     const body = { id: newId(now), ...(await convert(raw)) };
     const path = `/accounts/${needId()}/balance-check`;
     if (drafting)
-      return propose({ summary: "Match an account balance", method: "POST", path, body });
+      return (
+        failed("check_balance", body, fail) ??
+        propose({ summary: "Match an account balance", method: "POST", path, body })
+      );
     const result = await caller.call("POST", path, body);
     if (!result.ok) return fail(result.error);
     actions.push({ summary: "Matched the account balance" });
@@ -231,15 +255,18 @@ export const ACTION_HANDLERS: Record<ActionName, ActionHandler> = {
     const summary = `${setting ? "Set" : "Remove"} the ${existing?.name ? `${existing.name} ` : ""}budget for ${month}`;
     const undo: Undo = { method: "PUT", path, body: before };
     if (drafting)
-      return propose({
-        summary,
-        method: "PUT",
-        path,
-        body,
-        undo,
-        ...(typeof limitMinor === "number" ? { amountMinor: limitMinor } : {}),
-        categoryId,
-      });
+      return (
+        failed("set_budget", body, fail) ??
+        propose({
+          summary,
+          method: "PUT",
+          path,
+          body,
+          undo,
+          ...(typeof limitMinor === "number" ? { amountMinor: limitMinor } : {}),
+          categoryId,
+        })
+      );
     const result = await caller.call("PUT", path, body);
     if (!result.ok) return fail(result.error);
     actions.push({

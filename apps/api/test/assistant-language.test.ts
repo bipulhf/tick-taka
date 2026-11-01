@@ -68,3 +68,13 @@ describe("reply language", () => {
     expect(system()).toContain("Reply in English.");
   });
 });
+
+describe("what the server says itself", () => {
+  test("follows the reply language when the model gives no words", async () => {
+    const { ai, say } = await setup();
+    ai.queueChat({ content: "" });
+    expect((await say("আজকে কী আছে")).body.reply).toBe("এটায় কীভাবে সাহায্য করব বুঝতে পারছি না।");
+    ai.queueChat({ content: "  " });
+    expect((await say("what's up")).body.reply).toBe("I'm not sure how to help with that.");
+  });
+});

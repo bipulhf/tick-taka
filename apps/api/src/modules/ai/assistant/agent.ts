@@ -46,10 +46,27 @@ export const TURN_DEADLINE_MS = 100_000;
 const MAX_SAME_FAILURES = 3;
 /** Left in the memo when a step failed, so the next message starts on the smart model. */
 const STEP_FAILED = "a step failed";
-const CAP_REACHED_PART_WAY =
-  "This month's AI budget ran out part way through. Here is what I did before it stopped; ask again next month or use the app's forms for the rest.";
-const STOPPED_PART_WAY =
-  "I couldn't finish: the AI stopped answering part way through. Here is what I did; ask again for the rest.";
+/** What the server says itself when the model gave no words, in the reply language. */
+const CANNED = {
+  English: {
+    capReached:
+      "This month's AI budget ran out part way through. Here is what I did before it stopped; ask again next month or use the app's forms for the rest.",
+    stopped:
+      "I couldn't finish: the AI stopped answering part way through. Here is what I did; ask again for the rest.",
+    confirm: "Please confirm on screen.",
+    done: "Done.",
+    unsure: "I'm not sure how to help with that.",
+  },
+  Bangla: {
+    capReached:
+      "এই মাসের AI বাজেট মাঝপথে শেষ হয়ে গেছে। থামার আগে যা করেছি তা নিচে আছে; বাকিটা পরের মাসে আবার বলুন, বা অ্যাপের ফর্মে করুন।",
+    stopped:
+      "পুরোটা শেষ করতে পারিনি: AI মাঝপথে উত্তর দেওয়া থামিয়ে দিয়েছে। যা করেছি তা নিচে আছে; বাকিটার জন্য আবার বলুন।",
+    confirm: "স্ক্রিনে নিশ্চিত করুন।",
+    done: "হয়ে গেছে।",
+    unsure: "এটায় কীভাবে সাহায্য করব বুঝতে পারছি না।",
+  },
+};
 const WRAP_UP =
   "You have used every step for this message. Do not call tools. Tell the user, briefly, what you finished and what is still left for them to ask again.";
 const STUCK =
@@ -285,6 +302,7 @@ export async function aiAssistant(
     ),
   ];
   const tools = [...WRITE_TOOLS, ...NOTE_TOOLS, ...ASK_TOOLS, QUESTION_TOOL];
+  const canned = CANNED[replyLanguage(history) ?? "English"];
   let writes = 0;
   let reported = 0;
   let failed = 0;
@@ -315,10 +333,10 @@ export async function aiAssistant(
       question?.question ||
       content?.trim() ||
       (asked || runner.drafts.length
-        ? "Please confirm on screen."
+        ? canned.confirm
         : runner.actions.length
-          ? "Done."
-          : "I'm not sure how to help with that.");
+          ? canned.done
+          : canned.unsure);
     emit({
       type: "done",
       reply,
@@ -353,7 +371,7 @@ export async function aiAssistant(
     if (!(error instanceof AppError) || !didSomething()) throw error;
     // Text streamed before the failure was the start of an answer that won't come.
     emit({ type: "reset" });
-    finish(error.code === "ai_cap_reached" ? CAP_REACHED_PART_WAY : STOPPED_PART_WAY);
+    finish(error.code === "ai_cap_reached" ? canned.capReached : canned.stopped);
     return null;
   };
   /** How often each exact call failed this turn, so a loop on one bad call ends. */

@@ -16,6 +16,8 @@ import { Sheet } from "@/components/ui/sheet";
 import { SkeletonForm } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
+import { ToggleRow } from "@/components/ui/toggle-row";
+import { payAccount, rememberAccountRequest } from "@/features/money/pay-account";
 import { type PayBody, payRecurring } from "@/features/money/recurring-pay";
 import { notifyLogged, useSplitOffer } from "@/features/money/split-offer";
 import { whyRecurring } from "@/features/notifications/reminder-why";
@@ -37,8 +39,17 @@ const CURRENCIES = ["BDT", "USD", "EUR"];
 const REMIND_DAYS = [0, 1, 2, 3, 7];
 const remindLabel = (days: number) => (days === 0 ? "On the day" : `${plural(days, "day")} before`);
 
-/** Create or edit a bill or expected income; "Paid"/"Received" logs it and moves the date. */
-export function RecurringSheet({ id }: { id: string | null }) {
+/**
+ * Create or edit a bill or expected income; "Paid"/"Received" logs it and moves the date.
+ * `askAccount` opens it already asking which account a pay went through (from Today).
+ */
+export function RecurringSheet({
+  id,
+  askAccount = false,
+}: {
+  id: string | null;
+  askAccount?: boolean;
+}) {
   const { data: list } = useRecurring();
   // Wait for the record so the form's fields start filled, even with nothing cached.
   if (id && !list?.some((r) => r.id === id))
@@ -47,16 +58,17 @@ export function RecurringSheet({ id }: { id: string | null }) {
         <SkeletonForm fields={6} />
       </Sheet>
     );
-  return <RecurringForm id={id} />;
+  return <RecurringForm id={id} askAccount={askAccount} />;
 }
 
-function RecurringForm({ id }: { id: string | null }) {
+function RecurringForm({ id, askAccount }: { id: string | null; askAccount: boolean }) {
   const router = useRouter();
   const send = useOutbox();
   const splitOffer = useSplitOffer();
   const remove = useRemove();
   const { data: list } = useRecurring();
-  const { data: accounts = [] } = useAccounts();
+  const { data: loadedAccounts } = useAccounts();
+  const accounts = loadedAccounts ?? [];
   const { data: categories = [] } = useCategories();
   const { data: settings } = useSettings();
   const timeZone = userTime(settings).timeZone;
@@ -78,7 +90,18 @@ function RecurringForm({ id }: { id: string | null }) {
   const [rate, setRate] = useState("");
   const parsed = useMemo(() => (repeat.trim() ? parseRecurrence(`x ${repeat}`) : null), [repeat]);
   const rrule = parsed?.rrule ?? item?.rrule ?? "FREQ=MONTHLY";
-  const account = accounts.find((a) => a.id === accountId);
+  const payDecision = () =>
+    payAccount({
+      chosen: accountId,
+      billAccountId: item?.accountId ?? null,
+      defaultAccountId: settings?.defaultAccountId,
+      accounts: loadedAccounts,
+    });
+  // "Which account was this paid from?", shown in place of the buttons until answered.
+  const [asking, setAsking] = useState(() => askAccount && payDecision().kind === "pick");
+  const [pickFrom, setPickFrom] = useState<string | null>(null);
+  const [remember, setRemember] = useState(true);
+  const account = accounts.find((a) => a.id === (asking ? pickFrom : accountId));
   const foreign = account && account.currency !== currency;
 
   const save = () => {
@@ -117,18 +140,42 @@ function RecurringForm({ id }: { id: string | null }) {
 
   const pay = (skip = false) => {
     if (!item) return;
+    if (skip) return payWith(true, accountId ?? undefined, false);
+    const decision = payDecision();
+    if (decision.kind === "add-account") {
+      notify(
+        item.kind === "bill" ? "Add the account you pay it from" : "Add the account it goes into",
+      );
+      router.push("/account/new");
+      return;
+    }
+    if (decision.kind === "pick") {
+      setPickFrom(null);
+      setRemember(true);
+      setAsking(true);
+      return;
+    }
+    // The account the server would fall back to may not be the one the field shows.
+    if (decision.accountId && decision.accountId !== accountId) setAccountId(decision.accountId);
+    payWith(false, decision.accountId, decision.remember);
+  };
+
+  const payWith = (skip: boolean, payFrom: string | undefined, rememberIt: boolean) => {
+    if (!item) return;
     const body: PayBody = {
       transactionId: newId(),
       // The due date this pay is for: a replay or double tap then changes nothing.
       dueAt: item.nextDueAt,
       skip,
-      ...(accountId ? { accountId } : {}),
+      ...(payFrom ? { accountId: payFrom } : {}),
     };
-    if (foreign && !skip) {
+    const from = accounts.find((a) => a.id === payFrom);
+    if (from && from.currency !== currency && !skip) {
       const value = Number(toAsciiDigits(rate.trim()));
-      if (!(value > 0)) return notify(`Enter the ${currency} → ${account?.currency} rate`);
+      if (!(value > 0)) return notify(`Enter the ${currency} → ${from.currency} rate`);
       body.rate = value;
     }
+    if (payFrom && rememberIt) send(rememberAccountRequest(item, payFrom, editTime()));
     const undo = payRecurring(send, item, body);
     if (skip)
       notify("Skipped this one", {
@@ -146,41 +193,54 @@ function RecurringForm({ id }: { id: string | null }) {
     <Sheet
       title={item ? item.name : "New bill or income"}
       footer={
-        <View className="gap-2">
-          {item ? (
+        item && asking ? (
+          <PayFromAsk
+            item={item}
+            accounts={accounts}
+            value={pickFrom}
+            onChange={setPickFrom}
+            remember={remember}
+            onRemember={setRemember}
+            onCancel={() => setAsking(false)}
+            onPay={() => pickFrom && payWith(false, pickFrom, remember)}
+          />
+        ) : (
+          <View className="gap-2">
+            {item ? (
+              <View className="flex-row gap-2">
+                <Button
+                  label="Skip"
+                  variant="secondary"
+                  onPress={() => pay(true)}
+                  className="flex-1"
+                />
+                <Button
+                  label={item.kind === "bill" ? "Paid" : "Received"}
+                  variant="primary"
+                  onPress={() => pay()}
+                  className="flex-1"
+                />
+              </View>
+            ) : null}
             <View className="flex-row gap-2">
+              {item ? (
+                <DeleteButton
+                  onPress={() => {
+                    remove(`/recurring/${item.id}`, `“${item.name}”`);
+                    router.back();
+                  }}
+                />
+              ) : null}
               <Button
-                label="Skip"
-                variant="secondary"
-                onPress={() => pay(true)}
-                className="flex-1"
-              />
-              <Button
-                label={item.kind === "bill" ? "Paid" : "Received"}
-                variant="primary"
-                onPress={() => pay()}
+                label="Save"
+                variant={item ? "secondary" : "primary"}
+                onPress={save}
+                disabled={!name.trim() || !amount}
                 className="flex-1"
               />
             </View>
-          ) : null}
-          <View className="flex-row gap-2">
-            {item ? (
-              <DeleteButton
-                onPress={() => {
-                  remove(`/recurring/${item.id}`, `“${item.name}”`);
-                  router.back();
-                }}
-              />
-            ) : null}
-            <Button
-              label="Save"
-              variant={item ? "secondary" : "primary"}
-              onPress={save}
-              disabled={!name.trim() || !amount}
-              className="flex-1"
-            />
           </View>
-        </View>
+        )
       }
     >
       {item ? (
@@ -278,5 +338,59 @@ function RecurringForm({ id }: { id: string | null }) {
         />
       </View>
     </Sheet>
+  );
+}
+
+/** Asks which account a pay went through, when the bill has none and Settings has no default. */
+function PayFromAsk({
+  item,
+  accounts,
+  value,
+  onChange,
+  remember,
+  onRemember,
+  onCancel,
+  onPay,
+}: {
+  item: { name: string; kind: Kind };
+  accounts: { id: string; name: string }[];
+  value: string | null;
+  onChange: (id: string) => void;
+  remember: boolean;
+  onRemember: (on: boolean) => void;
+  onCancel: () => void;
+  onPay: () => void;
+}) {
+  const bill = item.kind === "bill";
+  const picked = accounts.find((a) => a.id === value);
+  return (
+    <View className="gap-2">
+      <Text variant="callout">
+        {bill ? "Which account was this paid from?" : "Which account did this go into?"}
+      </Text>
+      <PickerField
+        label={bill ? "Paid from" : "Received into"}
+        value={value}
+        options={accounts.map((a) => ({ id: a.id, label: a.name }))}
+        onChange={(id) => id && onChange(id)}
+      />
+      {picked ? (
+        <ToggleRow
+          label={`Use ${picked.name} for ${item.name} from now on`}
+          value={remember}
+          onChange={onRemember}
+        />
+      ) : null}
+      <View className="flex-row gap-2">
+        <Button label="Cancel" variant="secondary" onPress={onCancel} className="flex-1" />
+        <Button
+          label={bill ? "Paid" : "Received"}
+          variant="primary"
+          onPress={onPay}
+          disabled={!picked}
+          className="flex-1"
+        />
+      </View>
+    </View>
   );
 }

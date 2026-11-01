@@ -8,12 +8,15 @@ import { ListRow } from "@/components/ui/list-row";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { billStatusText } from "@/features/money/bill-status";
+import { payAccount, rememberAccountRequest } from "@/features/money/pay-account";
 import { payRecurring } from "@/features/money/recurring-pay";
 import { notifyLogged, useSplitOffer } from "@/features/money/split-offer";
 import { TaskRow } from "@/features/tasks/task-row";
 import { formatClock, formatMinutes } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { useOutbox } from "@/lib/outbox";
 import { type TodayData, useAccounts, useSettings } from "@/lib/queries";
+import { editTime } from "@/lib/server-clock";
 import { useUserTime } from "@/lib/use-today";
 import { payNeedsRate } from "./pay-needs-rate";
 
@@ -42,16 +45,34 @@ function MoneyRow({ item }: { item: Extract<Item, { kind: "bill" | "payday" }> }
           size="sm"
           variant="secondary"
           onPress={() => {
+            const from = payAccount({
+              billAccountId: item.accountId,
+              defaultAccountId: settings?.defaultAccountId,
+              accounts,
+            });
+            if (from.kind === "add-account") {
+              notify(isBill ? "Add the account you pay it from" : "Add the account it goes into");
+              router.push("/account/new");
+              return;
+            }
+            // Nothing to go by: the sheet opens asking which account.
+            if (from.kind === "pick") {
+              router.push(`/money/recurring/${item.id}?pay=account`);
+              return;
+            }
             // A foreign-currency bill or payday needs its rate, which the sheet asks for.
-            if (payNeedsRate(item, accounts, settings)) {
+            if (payNeedsRate({ ...item, accountId: from.accountId ?? null }, accounts, settings)) {
               router.push(`/money/recurring/${item.id}`);
               return;
             }
+            if (from.accountId && from.remember)
+              send(rememberAccountRequest(item, from.accountId, editTime()));
             const undo = payRecurring(send, item, {
               transactionId: newId(),
               // The due date it pays: a replay or double tap then finds the bill already
               // moved past it and changes nothing, and Undo moves the bill back to it.
               dueAt: item.dueAt,
+              ...(from.accountId ? { accountId: from.accountId } : {}),
             });
             notifyLogged(item.name, undo, splitOffer({ ...item, income: !isBill }));
           }}

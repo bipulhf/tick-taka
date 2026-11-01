@@ -66,15 +66,107 @@
           "widgets": [
             {
               "name": "SafeToSpend",
-              "label": "Tick & Taka",
-              "description": "Today at a glance: safe to spend, next up, and quick add",
-              "previewImage": "./assets/images/widget-preview.png",
+              "label": "Today",
+              "description": "Tick your top three, mark the next thing done, see what's safe to spend",
+              "previewImage": "./assets/images/widget-today.png",
               "minWidth": "250dp",
               "minHeight": "130dp",
               "targetCellWidth": 4,
               "targetCellHeight": 2,
               "resizeMode": "horizontal|vertical",
-              "updatePeriodMillis": 1800000
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable"
+            },
+            {
+              "name": "QuickLog",
+              "label": "Quick log",
+              "description": "Your usual spends as chips: one tap logs it",
+              "previewImage": "./assets/images/widget-quick-log.png",
+              "minWidth": "250dp",
+              "minHeight": "50dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 1,
+              "resizeMode": "horizontal",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable"
+            },
+            {
+              "name": "SafeSpend",
+              "label": "Safe to spend",
+              "description": "Today's number, what's spent and days left",
+              "previewImage": "./assets/images/widget-safe-spend.png",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable"
+            },
+            {
+              "name": "Habits",
+              "label": "Habits",
+              "description": "Habit rings: tap one to count it for today",
+              "previewImage": "./assets/images/widget-habits.png",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable"
+            },
+            {
+              "name": "Bills",
+              "label": "Bills due",
+              "description": "What's still to pay, with Paid right on the home screen",
+              "previewImage": "./assets/images/widget-bills.png",
+              "minWidth": "250dp",
+              "minHeight": "130dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable"
+            },
+            {
+              "name": "Focus",
+              "label": "Focus",
+              "description": "Start or stop a focus period on your next task",
+              "previewImage": "./assets/images/widget-focus.png",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable"
+            },
+            {
+              "name": "ThisMonth",
+              "label": "This month",
+              "description": "Money in and out, budgets used and the top category",
+              "previewImage": "./assets/images/widget-this-month.png",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable"
+            },
+            {
+              "name": "Tasks",
+              "label": "Tasks list",
+              "description": "Earlier and today's tasks to tick, in a list that scrolls",
+              "previewImage": "./assets/images/widget-tasks.png",
+              "minWidth": "250dp",
+              "minHeight": "180dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 3,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable"
             }
           ]
         }

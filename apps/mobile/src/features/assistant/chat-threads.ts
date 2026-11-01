@@ -55,6 +55,24 @@ export function threadTitle(messages: readonly ChatMessage[]): string {
   return (space > TITLE_LENGTH / 2 ? cut.slice(0, space) : cut).trim();
 }
 
+/**
+ * A chat kept on this phone, read back: anything that isn't a message (damaged
+ * storage, a stray entry) is dropped rather than breaking the chat. Older messages,
+ * from before questions, cards and chats on the server, read as they are.
+ */
+export function keptMessages(raw: unknown): ChatMessage[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (item): item is ChatMessage =>
+      typeof item === "object" &&
+      item !== null &&
+      typeof item.id === "string" &&
+      (item.role === "user" || item.role === "assistant") &&
+      typeof item.content === "string" &&
+      typeof item.at === "number",
+  );
+}
+
 /** The server's messages as chat messages: what was done is listed, without Undo. */
 export function fromServer(messages: readonly ServerMessage[]): ChatMessage[] {
   return messages.map((message) => ({

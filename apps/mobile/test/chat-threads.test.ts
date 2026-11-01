@@ -2,12 +2,25 @@ import { describe, expect, test } from "bun:test";
 import type { ChatMessage } from "../src/features/assistant/chat-store";
 import {
   asksToGoAhead,
+  keptMessages,
   type LocalThread,
   mergeThread,
   type ServerMessage,
   threadList,
   threadTitle,
 } from "../src/features/assistant/chat-threads";
+
+test("a chat kept on the phone reads back, dropping what isn't a message", () => {
+  // As the first chats were kept: no questions, cards, steps or server ids.
+  const old = { id: "1-0.5", role: "user", content: "Add milk", at: 1 };
+  const reply = { id: "2-0.5", role: "assistant", content: "Added", at: 2, memo: "added task A" };
+  expect(keptMessages([old, reply])).toEqual([old, reply] as ChatMessage[]);
+  expect(
+    keptMessages([null, 3, "x", {}, { ...old, role: "system" }, { ...old, content: null }, old]),
+  ).toEqual([old] as ChatMessage[]);
+  expect(keptMessages({ messages: [old] })).toEqual([]);
+  expect(keptMessages(null)).toEqual([]);
+});
 
 const server = (id: string, role: "user" | "assistant", content: string, at: number) =>
   ({

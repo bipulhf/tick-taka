@@ -8,7 +8,7 @@ import type { HttpMethod } from "@/lib/api";
 import { secureStorage } from "@/lib/secure-storage";
 import { createStore } from "@/lib/store";
 import { resetOnSignOut } from "@/lib/user-data";
-import { type LocalThread, threadTitle } from "./chat-threads";
+import { keptMessages, type LocalThread, threadTitle } from "./chat-threads";
 import type { ChatDraft } from "./money-drafts";
 
 export interface ChatAction {
@@ -135,14 +135,14 @@ export function loadChat(): Promise<void> {
         secureStorage.getItem(CURRENT_KEY),
         readJson<LocalThread[]>(INDEX_KEY),
       ]);
-      if (index) localThreadsStore.set(index);
+      if (Array.isArray(index)) localThreadsStore.set(index);
       if (current) {
         threadIdStore.set(current);
-        chatStore.set((await readJson<ChatMessage[]>(threadKey(current))) ?? []);
+        chatStore.set(keptMessages(await readJson(threadKey(current))));
         return;
       }
-      const legacy = await readJson<ChatMessage[]>(LEGACY_KEY);
-      startThread(newId(), legacy ?? []);
+      const legacy = await readJson(LEGACY_KEY);
+      startThread(newId(), keptMessages(legacy));
       if (legacy) persist(LEGACY_KEY, null);
     } catch {
       // The storage key may be unreadable for a moment; the chat starts empty and
@@ -163,7 +163,10 @@ export function currentThreadId(): string {
 /** A chat kept on this phone, or null when it isn't (or can't be read now). */
 export async function readLocalThread(id: string): Promise<ChatMessage[] | null> {
   if (id === threadIdStore.get()) return chatStore.get();
-  return readJson<ChatMessage[]>(threadKey(id)).catch(() => null);
+  return readJson(threadKey(id)).then(
+    (raw) => (raw === null ? null : keptMessages(raw)),
+    () => null,
+  );
 }
 
 /** Opens a chat with these messages; the one open before stays kept. */

@@ -90,6 +90,10 @@ apps; each section says what the server does and what the apps show.
   later, and any call after a failed tool call, are `smart`. "History of tool errors"
   means an earlier reply's memo ends in `a step failed`, which the server adds to the
   memo of any turn where a tool call failed.
+- Limits (1 Nov 2026): each model call has a 40 s deadline (streaming included) and a
+  2,000-token output cap; a turn has 100 s. The model gets the latest messages that fit
+  24,000 characters. The same tool call failing three times ends the tool loop with a
+  wrap-up in words.
 
 ## 8. Chats on every device
 
@@ -115,7 +119,9 @@ apps; each section says what the server does and what the apps show.
   deleted chat answers 404 on GET and PATCH. Each turn stores only its last user
   message (the app sends the history, the server doesn't re-store it); sending a
   message to a deleted chat brings it back. A turn that errors or is cancelled stores
-  no reply. Chats aren't in `/sync`; they are in the JSON export.
+  no reply. A turn the AI, the monthly cap or the deadline stops after it changed,
+  drafted or listed something still ends with `done` (a short note as the reply) and
+  is stored. Chats aren't in `/sync`; they are in the JSON export.
 
 ## 9. A check before big changes
 
@@ -172,8 +178,14 @@ invents the missing values.
   user may type instead, which leaves the form unanswered). After sending, the card
   collapses to the answers. Disabled while a turn is running.
 - Prompt rule: before creating a record, if a field the user must decide is missing
-  (account: name, type, opening balance; bill or income: name, amount, due date or
-  repeat; goal: name, target; debt: person, direction, amount; habit: name, how often),
-  call `ask` once with only the missing fields, prefilled with everything already
-  known; never ask for what can be defaulted. Use a quick reply for yes/no and
-  either/or questions, including the "more than 5 changes" check (§9).
+  (account: name, type, opening balance; bill or income: name, amount, how often, next
+  due date; goal: name, target; debt: person, direction, amount; habit: name, how often),
+  call `ask` once with every missing field, prefilled with everything already known
+  (a bill's how often: Monthly); when nothing is missing, create at once. Never ask for
+  what can be defaulted (an expense's account is the default account). Use a quick
+  reply for yes/no and either/or questions, including the "more than 5 changes" check
+  (§9).
+- Language (1 Nov 2026): an answer carries no language of its own, so the server picks
+  it from the latest user message that isn't a form answer (Bengali script or Banglish
+  words: Bangla; other Latin text: English) and adds `Reply in English.` or `Reply in
+  Bangla.` to the context; the form's question and labels follow it.

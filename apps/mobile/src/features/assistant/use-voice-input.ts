@@ -34,6 +34,7 @@ export function useVoiceInput(onText: (text: string) => void) {
   const [state, setState] = useState<VoiceState>("idle");
   // Loudest level heard; null until the recorder reports levels (some phones never do).
   const peak = useRef<number | null>(null);
+  const finishing = useRef(false);
   if (state === "recording" && typeof metering === "number" && metering > (peak.current ?? -160))
     peak.current = metering;
 
@@ -55,7 +56,18 @@ export function useVoiceInput(onText: (text: string) => void) {
   };
 
   const finish = async (keep: boolean) => {
-    if (state !== "recording") return;
+    // Once per note: a second tap on Done, or the time limit seen again on the next
+    // render while the recorder stops, would transcribe it twice.
+    if (state !== "recording" || finishing.current) return;
+    finishing.current = true;
+    try {
+      await wrapUp(keep);
+    } finally {
+      finishing.current = false;
+    }
+  };
+
+  const wrapUp = async (keep: boolean) => {
     await recorder.stop();
     // Back to cue mode, so win sounds mix with music and respect silent mode again.
     await setAudioModeAsync({ ...CUE_AUDIO_MODE, allowsRecording: false });

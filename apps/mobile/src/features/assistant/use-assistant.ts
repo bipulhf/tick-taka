@@ -21,6 +21,7 @@ import {
   loadChat,
   markUndone,
   newChat,
+  threadIdStore,
   updateMessage,
 } from "./chat-store";
 import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
@@ -94,6 +95,8 @@ export function useAssistant(screen?: AssistantScreen) {
     liveStore.set({ steps: [], actions: [], text: "" });
     await loadChat();
     const threadId = currentThreadId();
+    // Another chat open now (or signed out): the reply stays on the server, not in that one.
+    const here = () => threadIdStore.get() === threadId;
     appendMessage({ role: "user", content });
     const history = chatStore
       .get()
@@ -138,6 +141,8 @@ export function useAssistant(screen?: AssistantScreen) {
             finished = true;
             // Changes made before the error still happened; keep their Undo.
             const done = liveStore.get()?.actions ?? [];
+            if (done.length) void queryClient.invalidateQueries();
+            if (!here()) return;
             appendMessage({
               role: "assistant",
               content: errorText(new ApiError(500, event.code, event.message)),
@@ -145,11 +150,12 @@ export function useAssistant(screen?: AssistantScreen) {
               steps: settled(),
               failed: true,
             });
-            if (done.length) void queryClient.invalidateQueries();
             return;
           }
           case "done": {
             finished = true;
+            if (event.actions.length) void queryClient.invalidateQueries();
+            if (!here()) return;
             const drafts = parseDrafts(event.drafts);
             const question = parseQuestion(event.question);
             appendMessage({
@@ -166,10 +172,7 @@ export function useAssistant(screen?: AssistantScreen) {
               ...(question ? { question } : {}),
               ...(event.messageId ? { serverId: event.messageId } : {}),
             });
-            if (event.actions.length) {
-              haptic.success();
-              void queryClient.invalidateQueries();
-            }
+            if (event.actions.length) haptic.success();
             return;
           }
         }
@@ -179,6 +182,8 @@ export function useAssistant(screen?: AssistantScreen) {
       if (!finished) {
         // Changes made before the stream broke still happened; keep their Undo.
         const done = liveStore.get()?.actions ?? [];
+        if (done.length) void queryClient.invalidateQueries();
+        if (!here()) return;
         // An ApiError came before the stream started: the server did nothing. Anything
         // else dropped mid-turn, and the server may have gone on making changes.
         const dropped = !(error instanceof ApiError);
@@ -190,7 +195,6 @@ export function useAssistant(screen?: AssistantScreen) {
           failed: true,
           ...(dropped ? { recover: { since: startedAt, until: editTime() + 180_000 } } : {}),
         });
-        if (done.length) void queryClient.invalidateQueries();
         if (dropped) setTimeout(() => void recoverDroppedTurns(), SETTLE_MS + 500);
       }
     } finally {

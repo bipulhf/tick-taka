@@ -9,6 +9,11 @@ describe("assistant prompt: when to ask", () => {
     expect(ASSISTANT_PROMPT).toContain("an expense or income goes to the default account");
   });
 
+  test("never invents a title, and appointments are tasks, not events", () => {
+    expect(ASSISTANT_PROMPT).toContain("Never make up a title or name");
+    expect(ASSISTANT_PROMPT).toContain("Appointments, meetings, calls and errands");
+  });
+
   test("a bill's form asks how often too, prefilled monthly, and turns it into an rrule", () => {
     expect(ASSISTANT_PROMPT).toContain("bill or income: name, amount, how often, next due date");
     expect(ASSISTANT_PROMPT).toContain("Monthly picked");

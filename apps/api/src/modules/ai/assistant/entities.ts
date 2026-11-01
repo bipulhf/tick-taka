@@ -92,7 +92,7 @@ export const ENTITIES = {
     path: "/events",
     canGet: true,
     fields:
-      "required: name, startsOn (YYYY-MM-DD), endsOn (YYYY-MM-DD, on or after startsOn). Optional: emoji, budget (taka)",
+      "required: name, startsOn (YYYY-MM-DD), endsOn (YYYY-MM-DD, on or after startsOn). Optional: emoji, budget (taka). Only a trip or occasion with a money budget across days, never an appointment (that is a task)",
   },
   routine: {
     path: "/routines",

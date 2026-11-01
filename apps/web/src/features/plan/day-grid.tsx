@@ -1,4 +1,5 @@
 import { localMinuteOfDay } from "@tick-taka/shared/dates";
+import { cx } from "@/components/ui/cx";
 import { useNow } from "@/features/timer/use-now";
 import { formatClock } from "@/lib/format";
 import type { PlanAction } from "./compact-task";
@@ -69,7 +70,11 @@ export function DayGrid({
               style={{ top: top + 30 * PX_PER_MIN, left: GUTTER }}
             />
             <span
-              className="absolute pr-2.5 text-right text-caption text-muted tabular"
+              className={cx(
+                "absolute pr-2.5 text-right text-caption text-muted tabular",
+                // The now-line names the time; an hour label just beside it would peek out.
+                showNow && Math.abs(hour * 60 - nowMinute) < 15 && "invisible",
+              )}
               style={{ top: hour === START_HOUR ? 4 : top - 9, left: 0, width: GUTTER }}
             >
               {hourLabel(hour)}

@@ -16,7 +16,7 @@ import {
   markUndone,
   updateMessage,
 } from "./chat-store";
-import { threadIdForSend } from "./current-thread";
+import { threadIdForSend, threadIdStore } from "./current-thread";
 import { postEventStream } from "./event-stream";
 import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
 import { ownWrites } from "./own-writes";
@@ -101,6 +101,8 @@ export function useAssistant() {
       }));
     // The chat is kept on the server under this id (made with its first message).
     const threadId = threadIdForSend();
+    // Another chat open now (switched, deleted, signed out): the reply stays on the server.
+    const here = () => threadIdStore.get() === threadId;
     liveStore.set({ steps: [], actions: [], text: "" });
     const change = (update: (turn: LiveTurn) => LiveTurn) => {
       const turn = liveStore.get();
@@ -138,6 +140,8 @@ export function useAssistant() {
             finished = true;
             // Changes made before the error still happened; keep their Undo.
             const done = liveStore.get()?.actions ?? [];
+            if (done.length) void queryClient.invalidateQueries();
+            if (!here()) return;
             appendMessage({
               role: "assistant",
               content: errorText(new ApiError(500, event.code, event.message)),
@@ -145,11 +149,12 @@ export function useAssistant() {
               steps: settled(),
               failed: true,
             });
-            if (done.length) void queryClient.invalidateQueries();
             return;
           }
           case "done": {
             finished = true;
+            if (event.actions.length) void queryClient.invalidateQueries();
+            if (!here()) return;
             const drafts = parseDrafts(event.drafts);
             const question = parseQuestion(event.question);
             appendMessage({
@@ -166,7 +171,6 @@ export function useAssistant() {
               ...(question ? { question } : {}),
               ...(event.messageId ? { messageId: event.messageId, rating: null } : {}),
             });
-            if (event.actions.length) void queryClient.invalidateQueries();
             return;
           }
         }
@@ -176,6 +180,8 @@ export function useAssistant() {
       if (!finished) {
         // Changes made before the stream broke still happened; keep their Undo.
         const done = liveStore.get()?.actions ?? [];
+        if (done.length) void queryClient.invalidateQueries();
+        if (!here()) return;
         // An ApiError came before the stream started: the server did nothing. Anything
         // else dropped mid-turn, and the server may have gone on making changes.
         const dropped = !(error instanceof ApiError);
@@ -187,7 +193,6 @@ export function useAssistant() {
           failed: true,
           ...(dropped ? { recover: { since: startedAt(), until: serverNow() + 180_000 } } : {}),
         });
-        if (done.length) void queryClient.invalidateQueries();
         if (dropped) setTimeout(() => void recoverDroppedTurns(), SETTLE_MS + 500);
       }
     } finally {

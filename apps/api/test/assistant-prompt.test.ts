@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { WRITE_TOOLS } from "../src/modules/ai/assistant/tools";
 import { ASSISTANT_PROMPT } from "../src/modules/ai/prompts";
 
 describe("assistant prompt: when to ask", () => {
@@ -34,5 +35,14 @@ describe("assistant prompt: safety", () => {
 
   test("off-topic questions get a short line and a nudge back", () => {
     expect(ASSISTANT_PROMPT).toContain("a nudge back to what you can do here");
+  });
+});
+
+describe("assistant prompt: what Tiki says", () => {
+  test("never promises to act later, and the timer has no length", () => {
+    expect(ASSISTANT_PROMPT).toContain("you can't do anything later");
+    const act = WRITE_TOOLS.find((tool) => tool.name === "act")!;
+    expect(act.description).toContain("runs until the user stops it");
+    expect(act.description).toContain("never that you will");
   });
 });

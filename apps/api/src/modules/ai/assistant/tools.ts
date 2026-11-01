@@ -104,7 +104,7 @@ export const WRITE_TOOLS: AiToolDefinition[] = [
       "contribute_goal: id = goal; fields {amount, fromAccount}.",
       "repay_debt: id = debt; fields {amount, account}.",
       "check_balance: id = account; fields {actual} (the real balance in taka; the app adds an adjustment).",
-      "start_timer: id null; fields {task?: task id, area?, project?, note?}. stop_timer: id null; fields {}.",
+      'start_timer: id null; fields {task?: task id, area?, project?, note?}. It starts a plain timer with no length that runs until the user stops it; you can\'t stop it later, so for "25 minutes" say to stop it in the app then, never that you will. stop_timer: id null; fields {}.',
       "set_budget: id null; fields {month: YYYY-MM, category, limit} (taka; 0 removes it).",
       'update_settings: id null; fields = settings to change, e.g. {dailyTaskGoal: 5, theme: "dark", vacationMode: true}. App lock, AI, currency, default accounts and time zone are only changed by the user in Settings.',
     ].join("\n"),

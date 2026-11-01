@@ -1,5 +1,6 @@
 import { localMinuteOfDay } from "@tick-taka/shared/dates";
 import { useNow } from "@/features/timer/use-now";
+import { formatClock } from "@/lib/format";
 import type { PlanAction } from "./compact-task";
 import { CompactTask } from "./compact-task";
 import { Draggable, DropArea } from "./plan-dnd";
@@ -14,7 +15,7 @@ import {
 } from "./timeline-layout";
 
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
-const GUTTER = "4.25rem";
+const GUTTER = "4.75rem";
 
 /** The hours of a day, with timed tasks placed by their time and a line at "now" today. */
 export function DayGrid({
@@ -47,25 +48,50 @@ export function DayGrid({
       className="relative rounded-2xl bg-card"
       style={{ height: HOURS.length * 60 * PX_PER_MIN + 8 }}
     >
-      {HOURS.map((hour) => (
-        <div
-          key={hour}
-          aria-hidden
-          className="absolute inset-x-0 flex border-t border-line first:border-t-0"
-          style={{ top: (hour - START_HOUR) * 60 * PX_PER_MIN }}
-        >
-          <span className="w-[4.25rem] pt-1 pl-3 text-caption text-muted tabular">
-            {hourLabel(hour)}
-          </span>
-        </div>
-      ))}
+      {/* The rail: hour lines and fainter half hours, beside a column of hour labels. */}
+      <div
+        aria-hidden
+        className="absolute inset-y-0 left-0 border-r border-line"
+        style={{ width: GUTTER }}
+      />
+      {HOURS.map((hour) => {
+        const top = (hour - START_HOUR) * 60 * PX_PER_MIN;
+        return (
+          <div key={hour} aria-hidden>
+            {hour > START_HOUR ? (
+              <span
+                className="absolute right-0 border-t border-line"
+                style={{ top, left: GUTTER }}
+              />
+            ) : null}
+            <span
+              className="absolute right-0 border-t border-dashed border-line/70"
+              style={{ top: top + 30 * PX_PER_MIN, left: GUTTER }}
+            />
+            <span
+              className="absolute pr-2.5 text-right text-caption text-muted tabular"
+              style={{ top: hour === START_HOUR ? 4 : top - 9, left: 0, width: GUTTER }}
+            >
+              {hourLabel(hour)}
+            </span>
+          </div>
+        );
+      })}
       {showNow ? (
         <div
           aria-hidden
-          className="pointer-events-none absolute right-2 z-[5] flex items-center"
-          style={{ top: offsetOf(nowMinute), left: `calc(${GUTTER} - 5px)` }}
+          className="pointer-events-none absolute inset-x-0 z-20 flex items-center"
+          style={{ top: offsetOf(nowMinute) }}
         >
-          <span className="size-2.5 rounded-full bg-sky-text" />
+          <span
+            className="flex shrink-0 justify-end pr-1.5 -translate-y-px"
+            style={{ width: GUTTER }}
+          >
+            <span className="-my-2.5 rounded-full bg-sky px-1.5 text-caption font-bold whitespace-nowrap text-on-mango tabular">
+              {formatClock(now, timeZone)}
+            </span>
+          </span>
+          <span className="-ml-1 size-2 shrink-0 rounded-full bg-sky-text" />
           <span className="h-0.5 flex-1 bg-sky-text" />
         </div>
       ) : null}

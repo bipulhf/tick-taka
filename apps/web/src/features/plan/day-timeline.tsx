@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { IconButton } from "@/components/ui/icon-button";
 import { PageHeader } from "@/components/ui/page-header";
-import { ProgressBar } from "@/components/ui/progress";
 import { Skeleton, SkeletonRows } from "@/components/ui/skeleton";
-import { formatLocalDate, formatMinutes } from "@/lib/format";
+import { StatTile, SummaryStrip } from "@/components/ui/stat-tile";
+import { useFocusStats } from "@/features/time/queries";
+import { formatLocalDate, formatMinutes, plural } from "@/lib/format";
 import { useOpenPanel } from "@/lib/panel";
 import { useToday, useTodayDate, useUserTime } from "@/lib/use-today";
 import { CompactTask, type PlanAction } from "./compact-task";
@@ -20,27 +21,47 @@ import { useMoveTask } from "./use-move-task";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** How full the day is: planned minutes of open tasks against the free time in Settings. */
-function DayFit({ date }: { date: string }) {
+/**
+ * The day at a glance: planned time against the free time in Settings, tasks left,
+ * and focus so far.
+ */
+function DayStrip({ date, tasks }: { date: string; tasks: PlanTask[] | null }) {
+  const { timeZone } = useUserTime();
   const day = useToday(date);
+  const focus = useFocusStats(startOfLocalDay(date, timeZone), endOfLocalDay(date, timeZone));
   const fit = day.data?.date === date ? day.data.dayFit : null;
-  if (!fit?.capacityMinutes) return null;
-  const over = fit.plannedMinutes > fit.capacityMinutes;
+  const left = tasks?.filter((t) => t.status !== "done").length ?? 0;
+  const done = tasks ? tasks.length - left : 0;
+  const capacity = fit?.capacityMinutes ?? 0;
   return (
-    <div className="flex flex-col gap-1.5 px-1">
-      <p className="text-callout text-muted tabular">
-        {fit.plannedMinutes
-          ? `${formatMinutes(fit.plannedMinutes)} planned of ${formatMinutes(fit.capacityMinutes)}`
-          : `${formatMinutes(fit.capacityMinutes)} free, nothing planned yet`}
-        {over ? " · a full day" : ""}
-      </p>
-      <ProgressBar
-        value={fit.plannedMinutes / fit.capacityMinutes}
-        tone="sky"
-        label="Planned time against free time"
-        className="h-1.5"
+    <SummaryStrip label={`${formatLocalDate(date, "long")} at a glance`}>
+      <StatTile
+        label="Planned"
+        tone="time"
+        value={formatMinutes(fit?.plannedMinutes ?? 0)}
+        caption={
+          !capacity
+            ? "Set your free time in Settings"
+            : (fit?.plannedMinutes ?? 0) > capacity
+              ? `A full day, ${formatMinutes(capacity)} free`
+              : `of ${formatMinutes(capacity)} free, ${formatMinutes(capacity - (fit?.plannedMinutes ?? 0))} to spare`
+        }
+        loading={!fit}
       />
-    </div>
+      <StatTile
+        label="Tasks left"
+        value={left}
+        caption={done ? `${done} done so far` : left ? "Nothing done yet" : "A clear day"}
+        loading={!tasks}
+      />
+      <StatTile
+        label="Focus"
+        tone="time"
+        value={formatMinutes(focus.data?.totalMinutes ?? 0)}
+        caption={focus.data?.sessions ? plural(focus.data.sessions, "session") : "No sessions yet"}
+        loading={!focus.data}
+      />
+    </SummaryStrip>
   );
 }
 
@@ -101,6 +122,7 @@ export function DayTimeline({
       <PageHeader
         title={formatLocalDate(date, "long")}
         subtitle="Drag a task and drop it on a time"
+        summary={<DayStrip date={date} tasks={loading ? null : [...all.values()]} />}
         actions={
           <>
             <IconButton
@@ -119,10 +141,7 @@ export function DayTimeline({
           </>
         }
       />
-      <div className="flex flex-col gap-3">
-        <DayFit date={date} />
-        <PlanMyDay date={date} />
-      </div>
+      <PlanMyDay date={date} />
       {tasks.isError && loading ? (
         <ErrorState onRetry={() => void tasks.refetch()} />
       ) : loading ? (

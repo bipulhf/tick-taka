@@ -16,6 +16,7 @@ import { plural } from "@/lib/format";
 import type { ChatAction, ChatMessage, ChatStep } from "./chat-store";
 import { DraftCard } from "./draft-card";
 import { QuestionCard } from "./question-card";
+import { readableMessage } from "./question-form";
 import { ReplyCards } from "./reply-cards";
 import { ReplyFeedback } from "./reply-feedback";
 import { StreamingCaret, ThinkingIndicator } from "./thinking-indicator";
@@ -193,7 +194,7 @@ export function MessageBubble({
     return (
       <div className="max-w-[85%] self-end rounded-3xl rounded-br-lg bg-ink px-4 py-2.5 text-body whitespace-pre-wrap text-background">
         <span className="sr-only">You: </span>
-        {message.content}
+        {readableMessage(message.content)}
       </div>
     );
   }

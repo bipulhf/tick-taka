@@ -121,3 +121,13 @@ export function openQuestionId(messages: readonly ChatMessage[]): string | null 
   }
   return null;
 }
+
+const ID_TAG = / \[id [0-9A-HJKMNP-TV-Z]{26}\]/g;
+
+/**
+ * A sent answer as the user reads it: the record ids the model needs are hidden
+ * ("Account: Cash [id 01J…]" shows as "Account: Cash"). Other text is unchanged.
+ */
+export function readableMessage(content: string): string {
+  return content.replace(ID_TAG, "");
+}

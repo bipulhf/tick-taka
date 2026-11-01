@@ -8,9 +8,19 @@ import {
   openQuestionId,
   parseQuestion,
   quickReplyMessage,
+  readableMessage,
   unreadableAmounts,
 } from "../src/features/assistant/question-form";
 import { fromStored } from "../src/features/assistant/stored-chat";
+
+test("a sent answer reads without the record ids the model needs", () => {
+  const ACCOUNT_ID = "01HZX3K4M5N6P7Q8R9S0T1V2W3";
+  expect(readableMessage(`Name: bKash\nMoved from: Cash [id ${ACCOUNT_ID}]`)).toBe(
+    "Name: bKash\nMoved from: Cash",
+  );
+  expect(readableMessage(`Account: [id ${ACCOUNT_ID}]`)).toBe("Account:");
+  expect(readableMessage("Note: [id here]")).toBe("Note: [id here]");
+});
 
 const ACCOUNT = "01HZX3K4M5N6P7Q8R9S0T1V2W3";
 

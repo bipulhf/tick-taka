@@ -12,6 +12,12 @@ import {
   rollUpByParent,
   spendingByDay,
 } from "../src/features/review/insights-data";
+import {
+  daysToReviewDay,
+  monthlyState,
+  shutdownState,
+  weeklyState,
+} from "../src/features/review/ritual-states";
 import { withTopPicked, withTopUnpicked } from "../src/features/review/shutdown-cache";
 import {
   carriedTo,
@@ -256,6 +262,31 @@ describe("gentle words", () => {
 
   test("over plan shows the extra", () => {
     expect(planShare(90, 60)).toEqual({ filled: 60 / 90, extraMinutes: 30 });
+  });
+});
+
+describe("ritual states", () => {
+  test("shutdown: ready, part way, done", () => {
+    expect(shutdownState(null, 5)).toEqual({ status: "upcoming", label: "Ready tonight" });
+    expect(shutdownState({ step: 2, finished: false }, 5).label).toBe("Step 3 of 5");
+    expect(shutdownState({ step: 4, finished: true }, 5)).toEqual({
+      status: "done",
+      label: "Done tonight",
+    });
+  });
+
+  test("weekly: today, tomorrow, or the day's name", () => {
+    // 2026-11-01 is a Sunday.
+    expect(weeklyState("2026-11-01", 0).label).toBe("Today");
+    expect(weeklyState("2026-11-01", 1).label).toBe("Due tomorrow");
+    expect(weeklyState("2026-11-01", 5).label).toBe("Due Friday");
+    expect(daysToReviewDay("2026-11-07", 0)).toBe(1);
+  });
+
+  test("monthly: days left, sky near the end", () => {
+    expect(monthlyState("2026-11-01")).toEqual({ status: "upcoming", label: "30 days left" });
+    expect(monthlyState("2026-11-27").status).toBe("due_soon");
+    expect(monthlyState("2026-11-30").label).toBe("Ends today");
   });
 });
 

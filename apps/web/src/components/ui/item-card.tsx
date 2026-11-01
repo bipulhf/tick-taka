@@ -3,16 +3,35 @@ import { type RowKeyActions, useRowKeyActions } from "@/lib/row-keys";
 import { cx } from "./cx";
 import { Skeleton } from "./skeleton";
 
+const COLUMNS = {
+  /** Up to three across; each card keeps its own height (goals, loans, events). */
+  three: "items-start xl:grid-cols-3",
+  /**
+   * A fixed set of four read side by side (Review's rituals): two by two, then one
+   * row of four, the cards in a row sharing one height.
+   */
+  four: "xl:grid-cols-4",
+} as const;
+
 /**
  * Cards for things with a shape of their own (a goal's ring, a loan's progress, an
- * event's budget), side by side: one column on a phone, two from 640 px, three from
- * 1280 px. Cards keep their own height, so one opening a form doesn't stretch the rest.
+ * event's budget), side by side: one column on a phone, two from 640 px, three (or
+ * four) from 1280 px. With three, cards keep their own height, so one opening a form
+ * doesn't stretch the rest.
  */
-export function CardGrid({ label, children }: { label: string; children: ReactNode }) {
+export function CardGrid({
+  label,
+  columns = "three",
+  children,
+}: {
+  label: string;
+  columns?: keyof typeof COLUMNS;
+  children: ReactNode;
+}) {
   return (
     <ul
       aria-label={label}
-      className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      className={cx("grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2", COLUMNS[columns])}
     >
       {children}
     </ul>

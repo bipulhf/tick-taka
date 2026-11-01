@@ -1,3 +1,4 @@
+import { daysInMonth, monthOf, parseLocalDate } from "@tick-taka/shared/dates";
 import { toMajor } from "@tick-taka/shared/money";
 import { readAmount } from "./amount-text";
 
@@ -58,6 +59,27 @@ export const lineLimit = (line: LineLike) => line.limitMinor + line.carriedMinor
 export function lineProgress(line: LineLike): number {
   const limit = lineLimit(line);
   return limit > 0 ? line.spentMinor / limit : 1;
+}
+
+/**
+ * A bucket's lines, closest to their limit first (over-limit lines lead); lines with
+ * spending but no budget go last, biggest spend first.
+ */
+export function byCloseness<L extends LineLike>(lines: L[]): L[] {
+  return [...lines].sort((a, b) => {
+    if (a.hasBudget !== b.hasBudget) return a.hasBudget ? -1 : 1;
+    if (!a.hasBudget) return b.spentMinor - a.spentMinor;
+    return lineProgress(b) - lineProgress(a);
+  });
+}
+
+/**
+ * Where today falls in `month`, 0 to 1 (as budgetPace counts it: day of the month over
+ * its length), for the pace mark on each bar. Undefined for any other month.
+ */
+export function paceMark(today: string, month: string): number | undefined {
+  if (monthOf(today) !== month) return undefined;
+  return parseLocalDate(today).day / daysInMonth(month);
 }
 
 /** What the API's whole-month PUT keeps for every line that has a budget. */

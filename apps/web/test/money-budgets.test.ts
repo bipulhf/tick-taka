@@ -2,12 +2,14 @@ import { describe, expect, test } from "bun:test";
 import {
   bucketLines,
   bucketShown,
+  byCloseness,
   editorLines,
   editorPayload,
   editorTotal,
   keptLines,
   lineProgress,
   noBudgets,
+  paceMark,
   parseSuggested,
   withoutLine,
 } from "../src/features/money/budget-lines";
@@ -128,5 +130,44 @@ describe("budgets search: split my pay", () => {
       split: undefined,
       amount: undefined,
     });
+  });
+});
+
+describe("byCloseness and paceMark", () => {
+  const line = (
+    categoryId: string,
+    hasBudget: boolean,
+    limitMinor: number,
+    spentMinor: number,
+  ) => ({
+    categoryId,
+    parentId: null,
+    budgetType: "flexible",
+    hasBudget,
+    limitMinor,
+    rollover: false,
+    carriedMinor: 0,
+    spentMinor,
+    availableMinor: limitMinor - spentMinor,
+  });
+  test("over-limit and nearly-full lines lead; unbudgeted spending goes last", () => {
+    const lines = [
+      line("calm", true, 1000, 100),
+      line("loose", false, 0, 50),
+      line("over", true, 1000, 1200),
+      line("loose-big", false, 0, 500),
+      line("near", true, 1000, 900),
+    ];
+    expect(byCloseness(lines).map((l) => l.categoryId)).toEqual([
+      "over",
+      "near",
+      "calm",
+      "loose-big",
+      "loose",
+    ]);
+  });
+  test("pace mark is today's place in this month only", () => {
+    expect(paceMark("2026-11-15", "2026-11")).toBe(0.5);
+    expect(paceMark("2026-11-15", "2026-10")).toBeUndefined();
   });
 });

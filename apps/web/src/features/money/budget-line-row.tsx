@@ -2,6 +2,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { Amount } from "@/components/ui/amount";
 import { Row, RowMark } from "@/components/ui/group";
 import { ProgressBar } from "@/components/ui/progress";
+import { StatusPill } from "@/components/ui/status-pill";
 import { type LineLike, lineLimit, lineProgress } from "./budget-lines";
 import { RowMenu } from "./money-ui";
 
@@ -12,17 +13,21 @@ export interface BudgetLineView extends LineLike {
 }
 
 /**
- * One category's month: spent of its limit (with what rolled over), a bar, and a
- * calm word when it runs ahead or goes over, so colour is never the only cue.
+ * One category's month: spent of its limit (with what rolled over), a bar with a pace
+ * mark for today, and a calm word when it runs ahead or goes over ("Over by ৳…" in a
+ * coral pill), so colour is never the only cue.
  */
 export function BudgetLineRow({
   line,
   onEdit,
   onRemove,
+  pace,
 }: {
   line: BudgetLineView;
   onEdit: () => void;
   onRemove: () => void;
+  /** Where today falls in the month, 0 to 1; left out for other months. */
+  pace?: number;
 }) {
   const over = line.hasBudget && line.availableMinor < 0;
   return (
@@ -40,14 +45,15 @@ export function BudgetLineRow({
               // Mango is for the primary action; running ahead is said in words.
               tone={over ? "coral" : "mint"}
               label={`${line.name} spent of its budget`}
+              marker={pace}
             />
           ) : null}
           {over || line.pace === "ahead" || line.carriedMinor > 0 ? (
-            <span className="flex flex-wrap gap-x-3 text-caption">
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption">
               {over ? (
-                <span className="text-coral-text">
+                <StatusPill status="over">
                   Over by <Amount minor={-line.availableMinor} animate={false} />
-                </span>
+                </StatusPill>
               ) : line.pace === "ahead" ? (
                 <span className="text-coral-text">Running ahead</span>
               ) : null}

@@ -24,7 +24,13 @@ import {
   threadIdStore,
   updateMessage,
 } from "./chat-store";
-import { draftOutcome, draftRequest, parseDrafts } from "./money-drafts";
+import {
+  draftOutcome,
+  draftRecordId,
+  draftRequest,
+  draftsReplaced,
+  parseDrafts,
+} from "./money-drafts";
 import { parseQuestion } from "./question-form";
 import { recoverDroppedTurns, SETTLE_MS } from "./recover-turn";
 import { deletedMemo, deletionsRefused, draftRefused, undoRefused } from "./refused-writes";
@@ -164,6 +170,10 @@ export function useAssistant(screen?: AssistantScreen) {
             if (!here()) return;
             const drafts = parseDrafts(event.drafts);
             const question = parseQuestion(event.question);
+            // A corrected draft takes the old card's place: the old one can't be saved too.
+            for (const message of chatStore.get())
+              if (draftsReplaced(message, drafts) !== message)
+                updateMessage(message.id, (m) => draftsReplaced(m, drafts));
             appendMessage({
               role: "assistant",
               content: event.reply,
@@ -261,9 +271,11 @@ export function useAssistant(screen?: AssistantScreen) {
   const saveDraft = (messageId: string, index: number) => {
     const draft = chatStore.get().find((m) => m.id === messageId)?.drafts?.[index];
     if (draft?.state !== "pending") return;
+    const id = draftRecordId(draft);
     const added = {
       summary: `Saved: ${lowerFirst(draft.summary)}`,
-      memo: `the user saved the draft "${draft.summary}" (${draft.method} ${draft.path})`,
+      // With the id, Tiki changes the saved record with update instead of looking for it.
+      memo: `the user saved the draft "${draft.summary}" (${draft.method} ${draft.path}${id ? `, id ${id}` : ""})`,
     };
     send
       .async(draftRequest(draft, editTime()))

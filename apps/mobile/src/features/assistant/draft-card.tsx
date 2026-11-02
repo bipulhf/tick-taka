@@ -36,6 +36,12 @@ export function DraftCard({
         Discarded: {view.title}. Nothing was saved.
       </Text>
     );
+  if (draft.state === "replaced")
+    return (
+      <Text variant="caption" tone="muted" className="px-1">
+        Replaced: {view.title}. The corrected one is further down.
+      </Text>
+    );
   // Once saved it shows in the list of changes above, with its Undo.
   if (draft.state === "saved") return null;
   return (

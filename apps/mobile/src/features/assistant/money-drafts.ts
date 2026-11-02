@@ -27,9 +27,46 @@ const draftSchema = z.object({
 
 export type MoneyDraft = z.infer<typeof draftSchema>;
 
-/** A proposed change in the chat and what the user did with it. */
+/**
+ * A proposed change in the chat and what the user did with it; "replaced" when
+ * Tiki corrected it in a later message ("cut from bKash"), which shows the new card.
+ */
 export interface ChatDraft extends MoneyDraft {
-  state: "pending" | "saved" | "discarded";
+  state: "pending" | "saved" | "discarded" | "replaced";
+}
+
+/** The record a draft adds, when it adds one: Tiki corrects a draft under this id. */
+export const draftRecordId = (draft: MoneyDraft): string | null =>
+  draft.method === "POST" && typeof draft.body.id === "string" ? draft.body.id : null;
+
+/**
+ * An earlier message once a new turn's drafts arrive: its pending drafts that a new
+ * one corrects (same record id) become "replaced", and its memo says so. The same
+ * message comes back when none is, so callers can skip the save.
+ */
+export function draftsReplaced<M extends { drafts?: ChatDraft[]; memo?: string }>(
+  message: M,
+  incoming: readonly MoneyDraft[],
+): M {
+  const ids = new Set(incoming.map(draftRecordId).filter((id) => id !== null));
+  const replaced = (draft: ChatDraft) => {
+    const id = draftRecordId(draft);
+    return draft.state === "pending" && id !== null && ids.has(id);
+  };
+  const gone = message.drafts?.filter(replaced) ?? [];
+  if (gone.length === 0) return message;
+  return {
+    ...message,
+    drafts: message.drafts?.map((draft) =>
+      replaced(draft) ? { ...draft, state: "replaced" as const } : draft,
+    ),
+    memo: [
+      message.memo,
+      ...gone.map((draft) => `the draft "${draft.summary}" was replaced by a corrected one`),
+    ]
+      .filter(Boolean)
+      .join("; "),
+  };
 }
 
 /** The well-formed drafts of a `done` event; anything malformed is dropped. */

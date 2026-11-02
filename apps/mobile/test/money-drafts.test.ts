@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   draftOutcome,
   draftRequest,
+  draftsReplaced,
   draftView,
   parseDrafts,
 } from "../src/features/assistant/money-drafts";
@@ -134,5 +135,33 @@ describe("assistant money drafts", () => {
     ]);
     expect(draftOutcome(skip!, { transaction: null, recurring: {} })).toBeNull();
     expect(draftOutcome(parseDrafts([expense])[0]!, { id: "tx-1" })).toBeNull();
+  });
+});
+
+// "cut from bKash" after three expense drafts: Tiki sends them again under the
+// same ids, and the old cards stop offering Save.
+describe("corrected drafts", () => {
+  const moved = { ...expense, body: { ...expense.body, accountId: "bkash" } };
+
+  test("a pending draft a new one corrects is replaced, and the memo says so", () => {
+    const [draft] = parseDrafts([expense]);
+    const message = { drafts: [draft!], memo: "proposed for confirmation" };
+    const after = draftsReplaced(message, parseDrafts([moved]));
+    expect(after.drafts?.[0]?.state).toBe("replaced");
+    expect(after.memo).toBe(
+      'proposed for confirmation; the draft "Add transaction rickshaw" was replaced by a corrected one',
+    );
+  });
+
+  test("saved, discarded or unrelated drafts stay as they are", () => {
+    const [draft] = parseDrafts([expense]);
+    for (const state of ["saved", "discarded"] as const) {
+      const message = { drafts: [{ ...draft!, state }] };
+      expect(draftsReplaced(message, parseDrafts([moved]))).toBe(message);
+    }
+    const other = { ...expense, body: { ...expense.body, id: "tx-2" } };
+    const message = { drafts: [draft!] };
+    expect(draftsReplaced(message, parseDrafts([other]))).toBe(message);
+    expect(draftsReplaced({}, parseDrafts([moved]))).toEqual({});
   });
 });

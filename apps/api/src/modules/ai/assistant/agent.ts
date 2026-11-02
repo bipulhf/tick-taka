@@ -11,8 +11,9 @@ import type { Deps } from "../../../lib/deps";
 import { AppError } from "../../../lib/errors";
 import { log } from "../../../lib/log";
 import { userTime } from "../../../lib/user-time";
-import { describeVocabulary, vocabulary } from "../context";
+import { describeVocabulary, type Vocabulary, vocabulary } from "../context";
 import { ASSISTANT_DRAFT_MONEY_NOTE, ASSISTANT_PROMPT } from "../prompts";
+import { chatAccount, chatAccountNote, describeDrafts } from "./chat-account";
 import { createCaller, type Dispatch } from "./dispatch";
 import { replyLanguage } from "./language";
 import { NOTE_TOOLS } from "./notes";
@@ -46,6 +47,8 @@ export const TURN_DEADLINE_MS = 100_000;
 const MAX_SAME_FAILURES = 3;
 /** Left in the memo when a step failed, so the next message starts on the smart model. */
 const STEP_FAILED = "a step failed";
+/** How the memo of a turn with drafts starts listing them (describeDrafts). */
+const DRAFTS_NOTE = "proposed for confirmation";
 /** What the server says itself when the model gave no words, in the reply language. */
 const CANNED = {
   English: {
@@ -129,9 +132,13 @@ function defaultAccount(deps: Deps, vocab = vocabulary(deps)) {
   );
 }
 
-function context(deps: Deps, screen: string | null, history: AssistantMessage[]): string {
+function context(
+  deps: Deps,
+  vocab: Vocabulary,
+  screen: string | null,
+  history: AssistantMessage[],
+): string {
   const { today, timeZone, settings, now } = userTime(deps);
-  const vocab = vocabulary(deps);
   const clock = new Intl.DateTimeFormat("en-GB", {
     timeZone,
     weekday: "long",
@@ -140,15 +147,18 @@ function context(deps: Deps, screen: string | null, history: AssistantMessage[])
     hour12: false,
   }).format(now);
   const account = defaultAccount(deps, vocab)?.name;
+  const inChat = chatAccount(history, vocab.accounts)?.name;
   const language = replyLanguage(history);
   const notes = settings.tikiNotes.length
     ? `What the user asked you to remember:\n${settings.tikiNotes.map((note) => `- ${note}`).join("\n")}`
     : null;
   return [
     `Today is ${today} (${clock}), time zone ${timeZone}.`,
-    account
-      ? `Default account: ${account} (expenses and income go here when no account is named; never ask which account).`
-      : "Default account: none (the user has no accounts yet).",
+    inChat && inChat !== account
+      ? `Account in this chat: ${inChat} (earlier money in this chat went through it, so expenses and income go here when no account is named, not the default account ${account ?? "(none)"}; never ask which account).`
+      : account
+        ? `Default account: ${account} (expenses and income go here when no account is named; never ask which account).`
+        : "Default account: none (the user has no accounts yet).",
     // "This week" means the user's week, not Monday to Sunday.
     `Weeks start on ${WEEKDAYS[settings.weekStartsOn] ?? "Saturday"}.`,
     describeVocabulary(vocab),
@@ -162,8 +172,8 @@ function context(deps: Deps, screen: string | null, history: AssistantMessage[])
 
 /**
  * Short commands without a question start on the fast model ("spent 120 on
- * rickshaw"); questions, long requests and chats where a step failed before use
- * the smart one.
+ * rickshaw"); questions, long requests, chats where a step failed before and
+ * follow-ups to drafts ("cut from bKash" changes the last turn's) use the smart one.
  */
 function startsFast(history: AssistantMessage[]): boolean {
   const last = history.at(-1);
@@ -171,7 +181,8 @@ function startsFast(history: AssistantMessage[]): boolean {
     last?.role === "user" &&
     last.content.trim().length <= FAST_MAX_LENGTH &&
     !/[?？]/.test(last.content) &&
-    !history.some((message) => message.memo?.includes(STEP_FAILED))
+    !history.some((message) => message.memo?.includes(STEP_FAILED)) &&
+    !history.at(-2)?.memo?.includes(DRAFTS_NOTE)
   );
 }
 
@@ -277,18 +288,20 @@ export async function aiAssistant(
   const { today, timeZone } = userTime(deps);
   const caller = createCaller(dispatch, authorization);
   const screen = await describeScreen(caller, options.screen);
+  const vocab = vocabulary(deps);
   const runner = createToolRunner(caller, {
     timeZone,
     now: deps.now(),
     today,
     draftMoney,
-    defaultAccountId: defaultAccount(deps)?.id ?? null,
+    defaultAccountId: defaultAccount(deps, vocab)?.id ?? null,
+    chatAccountId: chatAccount(history, vocab.accounts)?.id ?? null,
   });
   const prompt = draftMoney
     ? `${ASSISTANT_PROMPT}\n${ASSISTANT_DRAFT_MONEY_NOTE}`
     : ASSISTANT_PROMPT;
   const messages: AiChatMessage[] = [
-    { role: "system", content: `${prompt}\n\n${context(deps, screen, history)}` },
+    { role: "system", content: `${prompt}\n\n${context(deps, vocab, screen, history)}` },
     ...recentHistory(history).map(
       (message): AiChatMessage =>
         message.role === "user"
@@ -324,8 +337,10 @@ export async function aiAssistant(
   const finish = (content: string | null, question?: AssistantQuestion) => {
     const asked = runner.pending.length;
     if (asked) notes.push(`asked to delete ${runner.pending.map((p) => p.path).join(", ")}`);
-    if (runner.drafts.length)
-      notes.push(`proposed for confirmation: ${runner.drafts.map((d) => d.summary).join(", ")}`);
+    if (runner.drafts.length) notes.push(describeDrafts(runner.drafts, vocab.accounts));
+    // First, so a long memo being cut keeps it.
+    const moneyAccount = vocab.accounts.find((a) => a.id === runner.moneyAccountId);
+    if (moneyAccount) notes.unshift(chatAccountNote(moneyAccount.name));
     if (question) notes.push(describeQuestion(question));
     // The failure note goes last and survives a long memo being cut.
     const done = notes.join("; ").slice(0, failed ? 3900 - STEP_FAILED.length - 2 : 3900);

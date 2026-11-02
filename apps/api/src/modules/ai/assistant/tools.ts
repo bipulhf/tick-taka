@@ -65,8 +65,16 @@ export const WRITE_TOOLS: AiToolDefinition[] = [
     description: `Create one record. Send every required field; leave out optional ones the user didn't give (the app fills its defaults). Fields per entity:\n${describeEntities()}`,
     parameters: {
       type: "object",
-      properties: { entity: entityParam, fields: fieldsParam },
-      required: ["entity", "fields"],
+      properties: {
+        entity: entityParam,
+        fields: fieldsParam,
+        draftId: {
+          ...nullableString,
+          description:
+            "Correcting a money draft still waiting for the user's tap: its draftId from Done earlier, with every field again. The new draft replaces it. Otherwise null.",
+        },
+      },
+      required: ["entity", "fields", "draftId"],
       additionalProperties: false,
     },
   },
@@ -159,6 +167,8 @@ export function createToolRunner(
     draftMoney?: boolean;
     /** Where an expense or income goes when the model names no account. */
     defaultAccountId?: string | null;
+    /** The account this chat already put money through; it beats the default. */
+    chatAccountId?: string | null;
   },
 ) {
   const { timeZone, now, today } = options;
@@ -174,6 +184,12 @@ export function createToolRunner(
     return DRAFTED;
   };
   const drafting = options.draftMoney === true;
+  /** The account the turn's latest expense or income went through, for the next message. */
+  let moneyAccountId: string | null = null;
+  const usedAccount = (entity: EntityName, fields: Record<string, unknown>) => {
+    if (entity === "transaction" && typeof fields.accountId === "string")
+      moneyAccountId = fields.accountId;
+  };
 
   const dayStart = (value: unknown) =>
     typeof value === "string" && isLocalDate(value) ? startOfLocalDay(value, timeZone) : null;
@@ -221,21 +237,36 @@ export function createToolRunner(
       ...("defaults" in def ? def.defaults : {}),
       ...given,
     };
-    if (
-      entity === "transaction" &&
-      fields.accountId === undefined &&
-      (fields.type === "expense" || fields.type === "income") &&
-      options.defaultAccountId
-    )
-      fields.accountId = options.defaultAccountId;
+    const plainMoney =
+      entity === "transaction" && (fields.type === "expense" || fields.type === "income");
+    const fallback = options.chatAccountId ?? options.defaultAccountId;
+    if (plainMoney && fields.accountId === undefined && fallback) fields.accountId = fallback;
+    // A named account, or the chat's, carries on; the default alone doesn't.
+    const carries = plainMoney && (given.accountId !== undefined || !!options.chatAccountId);
     if (entity === "task" && fields.doAt != null && fields.status === undefined)
       fields.status = "open";
     if (entity === "transaction" && fields.occurredAt === undefined) fields.occurredAt = now;
     if (entity === "time_entry" && fields.source === undefined) fields.source = "manual";
-    const id = newId(now);
+    const draftId = args.draftId == null || args.draftId === "" ? null : idOf(args.draftId);
+    if (draftId) {
+      if (!drafting || !movesMoney(entity, fields))
+        return fail(
+          "draftId is only for correcting a money draft still waiting for the user's tap",
+        );
+      const saved = def.canGet ? await caller.call("GET", `${def.path}/${draftId}`) : null;
+      if (saved?.ok)
+        return fail(
+          `The user already saved that draft: change the saved ${entity.replace("_", " ")} with update and id ${draftId}`,
+        );
+    }
+    const id = draftId ?? newId(now);
     if (drafting && movesMoney(entity, fields)) {
       const problem = draftProblem(entity, { id, ...fields });
       if (problem) return fail(problem);
+      // Corrected twice in one message: the latest draft is the only card.
+      const earlier = drafts.findIndex((d) => d.method === "POST" && d.body.id === id);
+      if (earlier >= 0) drafts.splice(earlier, 1);
+      if (carries) usedAccount(entity, fields);
       return propose({
         summary: `Add ${entity.replace("_", " ")} ${label(fields, "")}`.trim(),
         method: "POST",
@@ -248,6 +279,7 @@ export function createToolRunner(
     if (!result.ok) return fail(result.error);
     const record = result.data as Record<string, unknown>;
     const recordId = typeof record?.id === "string" ? record.id : id;
+    if (carries) usedAccount(entity, fields);
     cards.touched(entity, record);
     actions.push({
       summary: `Added ${entity.replace("_", " ")} ${label(record, "")}`.trim(),
@@ -273,7 +305,11 @@ export function createToolRunner(
         )
       : null;
     if (drafting && movesMoney(entity, fields)) {
-      if (def.canGet && !before?.ok) return fail(before?.error);
+      if (def.canGet && !before?.ok)
+        return fail(
+          `${before?.error ?? "Not found"}. A draft still waiting for the user's tap isn't saved: correct it with create, every field again and draftId set to this id.`,
+        );
+      if (previous?.type !== "transfer") usedAccount(entity, fields);
       return propose({
         summary: `Change ${entity.replace("_", " ")} ${label(previous, "")}`.trim(),
         method: "PATCH",
@@ -288,6 +324,7 @@ export function createToolRunner(
     const result = await caller.call("PATCH", `${def.path}/${id}`, { ...fields, updatedAt: now });
     if (!result.ok) return fail(result.error);
     const record = result.data as Record<string, unknown>;
+    if (previous?.type !== "transfer") usedAccount(entity, fields);
     const done = entity === "task" && fields.status === "done";
     cards.touched(entity, record ?? (previous && { ...previous, ...fields }));
     actions.push({
@@ -374,6 +411,10 @@ export function createToolRunner(
     pending,
     drafts,
     cards,
+    /** The account this turn's latest expense or income went through, when named. */
+    get moneyAccountId() {
+      return moneyAccountId;
+    },
     async run(name: string, rawArgs: string): Promise<unknown> {
       try {
         const args = JSON.parse(rawArgs || "{}") as Record<string, unknown>;

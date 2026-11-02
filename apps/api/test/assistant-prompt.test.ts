@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { WRITE_TOOLS } from "../src/modules/ai/assistant/tools";
-import { ASSISTANT_PROMPT } from "../src/modules/ai/prompts";
+import { ASSISTANT_DRAFT_MONEY_NOTE, ASSISTANT_PROMPT } from "../src/modules/ai/prompts";
 
 describe("assistant prompt: when to ask", () => {
   test("creates at once when the user gave every value, and never asks for defaults", () => {
@@ -29,6 +29,19 @@ describe("assistant prompt: when to ask", () => {
   test("undo with nothing changed in this chat says so, without a form", () => {
     expect(ASSISTANT_PROMPT).toContain("if nothing was changed in this chat, say so");
     expect(ASSISTANT_PROMPT).toContain("Don't ask with a form.");
+  });
+});
+
+describe("assistant prompt: money in a chat", () => {
+  test("an account named once holds for the chat, and notes say what money was for", () => {
+    expect(ASSISTANT_PROMPT).toContain("holds for the rest of the chat");
+    expect(ASSISTANT_PROMPT).toContain("Put what the money was for in note");
+  });
+
+  test("an unsaved draft is corrected with create and draftId, a saved one with update", () => {
+    expect(ASSISTANT_DRAFT_MONEY_NOTE).toContain("find can't see it");
+    expect(ASSISTANT_DRAFT_MONEY_NOTE).toContain("draftId set to its draftId");
+    expect(ASSISTANT_DRAFT_MONEY_NOTE).toContain("change it with update and that id");
   });
 });
 

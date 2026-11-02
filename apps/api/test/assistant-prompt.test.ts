@@ -20,6 +20,12 @@ describe("assistant prompt: when to ask", () => {
     expect(ASSISTANT_PROMPT).toContain("FREQ=MONTHLY;BYMONTHDAY=");
   });
 
+  test("a debt asks which account the money came into or left, prefilled with the default", () => {
+    expect(ASSISTANT_PROMPT).toContain("debt: person, direction, amount, account");
+    expect(ASSISTANT_PROMPT).toContain("A debt always asks which account the money moved through");
+    expect(ASSISTANT_PROMPT).toContain("a debt's account as the default account");
+  });
+
   test("undo with nothing changed in this chat says so, without a form", () => {
     expect(ASSISTANT_PROMPT).toContain("if nothing was changed in this chat, say so");
     expect(ASSISTANT_PROMPT).toContain("Don't ask with a form.");

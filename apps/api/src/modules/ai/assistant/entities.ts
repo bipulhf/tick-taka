@@ -86,7 +86,7 @@ export const ENTITIES = {
   debt: {
     path: "/debts",
     canGet: true,
-    fields: `required: person, direction (owed_to_me|i_owe, create only), principal (taka, more than 0, create only). Optional: dueAt (${DATE}), note, account (name, create only: where the money moved), closed (boolean, update only)`,
+    fields: `required: person, direction (owed_to_me|i_owe, create only), principal (taka, more than 0, create only). Optional: dueAt (${DATE}), note, account (name, create only: the account borrowed money came into or lent money left; ask for it), closed (boolean, update only)`,
   },
   event: {
     path: "/events",
